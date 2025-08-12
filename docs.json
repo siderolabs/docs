@@ -1,24 +1,23 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
+  "theme": "maple",
   "name": "Siderolabs Test Docs",
   "colors": {
     "primary": "#16A34A",
     "light": "#07C983",
-    "dark": "#15803D"
+    "dark": "#FB326E"
   },
   "favicon": "/favicon.svg",
   "banner": {
-    "content": "🎉 **New Release:** Check out the latest Talos v2.0 features and improvements! [Learn more →](/changelog/june-2025)",
+    "content": "🎉 **TalosCon 2025:** Come to TalosCon in Amsterdam, October 16-17. [Learn more →](https://taloscon.com)",
     "dismissible": true
   },
   "contextual": {
-   "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude"
-   ]
+    "options": ["copy", "view", "chatgpt", "claude"]
+  },
+  "thumbnails": {
+    "appearance": "dark",
+    "background": "/images/og-background.png"
   },
   "navigation": {
     "tabs": [
@@ -27,10 +26,8 @@
         "groups": [
           {
             "group": "Overview",
-            "pages": [
-               "omni/overview/what-is-omni" 
-            ]
-          },  
+            "pages": ["omni/overview/what-is-omni"]
+          },
           {
             "group": "Getting Started",
             "pages": [
@@ -39,27 +36,26 @@
               "omni/getting-started/getting-started",
               "omni/getting-started/use-kubectl-with-omni",
               "omni/getting-started/create-a-cluster"
-            ] 
+            ]
           },
           {
             "group": "Infrastructure and Extensions",
             "pages": [
               {
-                 "group": "Self Hosted",
+                "group": "Self Hosted",
                 "pages": [
-                    "omni/infrastructure-and-extensions/self-hosted/overview",
-                    "omni/infrastructure-and-extensions/self-hosted/deploy-omni-on-prem",
-                    "omni/infrastructure-and-extensions/self-hosted/configure-keycloak-for-omni/configure-keycloak-for-omni",
-                    "omni/infrastructure-and-extensions/self-hosted/how-to-back-up-on-prem-omni-db",
-                    "omni/infrastructure-and-extensions/self-hosted/expose-omni-with-nginx-https"
+                  "omni/infrastructure-and-extensions/self-hosted/overview",
+                  "omni/infrastructure-and-extensions/self-hosted/deploy-omni-on-prem",
+                  "omni/infrastructure-and-extensions/self-hosted/configure-keycloak-for-omni/configure-keycloak-for-omni",
+                  "omni/infrastructure-and-extensions/self-hosted/how-to-back-up-on-prem-omni-db",
+                  "omni/infrastructure-and-extensions/self-hosted/expose-omni-with-nginx-https"
                 ]
               },
               "omni/infrastructure-and-extensions/install-airgapped-omni",
               "omni/infrastructure-and-extensions/infrastructure-providers",
               "omni/infrastructure-and-extensions/machine-registration",
               "omni/infrastructure-and-extensions/install-talos-linux-extensions"
-            ] 
-
+            ]
           },
           {
             "group": "Omni Cluster Setup",
@@ -67,13 +63,13 @@
               {
                 "group": "Register machines with Omni",
                 "pages": [
-                    "omni/omni-cluster-setup/registering-machines/register-machines-with-omni",
-                    "omni/omni-cluster-setup/registering-machines/register-a-bare-metal-machine-iso",
-                    "omni/omni-cluster-setup/registering-machines/register-a-bare-metal-machine-pxe-ipxe",
-                    "omni/omni-cluster-setup/registering-machines/how-to-register-an-aws-ec2-instance",
-                    "omni/omni-cluster-setup/registering-machines/register-a-gcp-instance",
-                    "omni/omni-cluster-setup/registering-machines/register-an-azure-instance",
-                    "omni/omni-cluster-setup/registering-machines/register-a-hetzner-server"
+                  "omni/omni-cluster-setup/registering-machines/register-machines-with-omni",
+                  "omni/omni-cluster-setup/registering-machines/register-a-bare-metal-machine-iso",
+                  "omni/omni-cluster-setup/registering-machines/register-a-bare-metal-machine-pxe-ipxe",
+                  "omni/omni-cluster-setup/registering-machines/how-to-register-an-aws-ec2-instance",
+                  "omni/omni-cluster-setup/registering-machines/register-a-gcp-instance",
+                  "omni/omni-cluster-setup/registering-machines/register-an-azure-instance",
+                  "omni/omni-cluster-setup/registering-machines/register-a-hetzner-server"
                 ]
               },
               "omni/omni-cluster-setup/create-a-kubeconfig-for-a-service-account",
@@ -82,7 +78,6 @@
               "omni/omni-cluster-setup/create-an-omni-service-account",
               "omni/omni-cluster-setup/how-to-set-initial-machine-labels",
               "omni/omni-cluster-setup/setting-up-the-bare-metal-infrastructure-provider"
-
             ]
           },
           {
@@ -101,20 +96,19 @@
           {
             "group": "Security and Authentication",
             "pages": [
-                {
-                    "group": "Using SAML With Omni",
-                    "pages": [
-
-                        "omni/security-and-authentication/using-saml-with-omni/overview",
-                        "omni/security-and-authentication/using-saml-with-omni/configure-saml-and-acls",
-                        "omni/security-and-authentication/using-saml-with-omni/configure-okta-for-omni/configure-okta-for-omni",
-                        "omni/security-and-authentication/using-saml-with-omni/add-a-user-to-omni-with-saml-enabled/add-a-user-to-omni-with-saml-enabled",
-                        "omni/security-and-authentication/using-saml-with-omni/auto-assign-roles-to-saml-users",
-                        "omni/security-and-authentication/using-saml-with-omni/configure-unifi-identity-enterprise-for-omni/configure-unifi-identity-enterprise-for-omni",
-                        "omni/security-and-authentication/using-saml-with-omni/configure-workspace-one-access-for-omni/configure-workspace-one-access-for-omni",
-                        "omni/security-and-authentication/using-saml-with-omni/how-to-configure-entraid-for-omni"
-                    ]
-                },
+              {
+                "group": "Using SAML With Omni",
+                "pages": [
+                  "omni/security-and-authentication/using-saml-with-omni/overview",
+                  "omni/security-and-authentication/using-saml-with-omni/configure-saml-and-acls",
+                  "omni/security-and-authentication/using-saml-with-omni/configure-okta-for-omni/configure-okta-for-omni",
+                  "omni/security-and-authentication/using-saml-with-omni/add-a-user-to-omni-with-saml-enabled/add-a-user-to-omni-with-saml-enabled",
+                  "omni/security-and-authentication/using-saml-with-omni/auto-assign-roles-to-saml-users",
+                  "omni/security-and-authentication/using-saml-with-omni/configure-unifi-identity-enterprise-for-omni/configure-unifi-identity-enterprise-for-omni",
+                  "omni/security-and-authentication/using-saml-with-omni/configure-workspace-one-access-for-omni/configure-workspace-one-access-for-omni",
+                  "omni/security-and-authentication/using-saml-with-omni/how-to-configure-entraid-for-omni"
+                ]
+              },
               "omni/security-and-authentication/authentication-and-authorization",
               "omni/security-and-authentication/how-to-manage-acls",
               "omni/security-and-authentication/omni-kms-disk-encryption",
@@ -138,29 +132,31 @@
       "anchors": [
         {
           "anchor": "Community",
-          "href": "https://mintlify.com/community",
+          "href": "https://slack.dev.talos-systems.io/",
           "icon": "slack"
         }
       ]
     }
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/images/sidero-light.svg",
+    "dark": "/images/sidero-dark.svg"
   },
   "navbar": {
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "https://www.siderolabs.com/support/"
       }
     ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "bluesky": "https://bsky.app/profile/siderolabs.com",
+      "x": "https://x.com/siderolabs",
+      "github": "https://github.com/siderolabs",
+      "linkedin": "https://linkedin.com/company/sidero-labs",
+      "reddit": "https://reddit.com/r/taloslinux"
     }
   }
 }
