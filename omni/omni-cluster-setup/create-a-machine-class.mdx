@@ -1,0 +1,51 @@
+---
+title: Create a Machine Class
+---
+
+This guide shows you how to create and a machine class.
+
+<Tabs>
+
+  <Tab title="UI">
+    First, click the “Machine Classes” section  in the sidebar on the left
+
+    Next, click the “Create Machine Class” button on the right.
+
+    Add machine query conditions by typing them manually in the input box.
+
+    <img src="./images/create-a-machine-class-2.png" alt=""/>
+
+    Clicking the label in the machine list will add them to the input box.
+
+    <img src="./images/create-a-machine-class-3.png" alt=""/>
+
+    Clicking on “+” will add blocks to match the machines using boolean `OR` operator.
+
+    <img src="./images/create-a-machine-class-4.png" alt=""/>
+
+    <img src="./images/create-a-machine-class-5.png" alt=""/>
+
+    Name the machine class, then click “Create Machine Class”.
+  </Tab>
+  <Tab title="CLI">
+    Create a file called `machine-class.yaml` with the following content:
+
+    ```yaml
+    metadata:
+      namespace: default
+      type: MachineClasses.omni.sidero.dev
+      id: test
+    spec:
+      matchlabels:
+        # matches machines with amd64 architecture and more than 2 CPUs
+        - omni.sidero.dev/arch = amd64, omni.sidero.dev/cpus > 2
+    ```
+
+    Create the machine class:
+
+    ```bash
+    omnictl apply -f machine-class.yaml
+    ```
+  </Tab>
+
+</Tabs>

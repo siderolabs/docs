@@ -1,0 +1,25 @@
+---
+title: Create a Patch For Cluster Machines
+---
+
+Omni allows you to create patches and target the patches to all members of a cluster; all control plane nodes; all worker nodes; or specific machines. Upon logging in, click the “Clusters” menu item on the left. Now, select “Config Patches” from the menu under the ellipsis:
+
+<img src="./images/create-a-patch-for-cluster-machines-1.png" alt=""/>
+
+(You can also navigate to the specific cluster, and then select Config Patches in the right hand menu.)
+
+Next, click “Create Patch”:
+
+<img src="./images/create-a-patch-for-cluster-machines-2.png" alt=""/>
+
+Pick the specific machine or class of machines from the “Patch Target” dropdown:
+
+<img src="./images/create-a-patch-for-cluster-machines-3.png" alt=""/>
+
+Type in the desired config patch:
+
+<img src="./images/create-a-patch-for-cluster-machines-4.png" alt=""/>
+
+Click “Save” to create the config patch.
+
+For an example of a patch to enable node-to-node network encryption - the KubeSpan feature of Talos Linux - see [Creating a Hybrid Cluster](../cluster-management/create-a-hybrid-cluster).
