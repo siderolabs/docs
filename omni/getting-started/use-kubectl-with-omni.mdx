@@ -78,7 +78,7 @@ ssh -L 8000:localhost:8000 -L 18000:localhost:18000 $HOST
 
 You can run this in a separate terminal temporarily while you authenticate your CLI tools.
 
-If you want to have the port forwarding happen automatically every time you connect to the host you should update your \~/.ssh/config file to contain the following lines for the host.
+If you want to have the port forwarding happen automatically every time you connect to the host you should update your `~/.ssh/config` file to contain the following lines for the host.
 
 ```
 Host myhost
@@ -86,7 +86,7 @@ Host myhost
   LocalForward 18000 127.0.0.1:18000
 ```
 
-You will also need to disable automatic browser opening because it will likely try to open a browser on the SSH host or fail to open if one is not installed. Do that by adding `--skip-open-browser` in your $KUBECONFIG file.
+You will also need to disable automatic browser opening because it will likely try to open a browser on the SSH host or fail to open if one is not installed. Do that by adding `--skip-open-browser` in your `$KUBECONFIG` file.
 
 ```
       args:

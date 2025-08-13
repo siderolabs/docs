@@ -44,11 +44,11 @@
               {
                 "group": "Self Hosted",
                 "pages": [
-                  "omni/infrastructure-and-extensions/self-hosted/overview",
-                  "omni/infrastructure-and-extensions/self-hosted/deploy-omni-on-prem",
-                  "omni/infrastructure-and-extensions/self-hosted/configure-keycloak-for-omni/configure-keycloak-for-omni",
-                  "omni/infrastructure-and-extensions/self-hosted/how-to-back-up-on-prem-omni-db",
-                  "omni/infrastructure-and-extensions/self-hosted/expose-omni-with-nginx-https"
+                    "omni/infrastructure-and-extensions/self-hosted/overview",
+                    "omni/infrastructure-and-extensions/self-hosted/deploy-omni-on-prem",
+                    "omni/infrastructure-and-extensions/self-hosted/configure-keycloak-for-omni",
+                    "omni/infrastructure-and-extensions/self-hosted/how-to-back-up-on-prem-omni-db",
+                    "omni/infrastructure-and-extensions/self-hosted/expose-omni-with-nginx-https"
                 ]
               },
               "omni/infrastructure-and-extensions/install-airgapped-omni",
@@ -96,23 +96,24 @@
           {
             "group": "Security and Authentication",
             "pages": [
-              {
-                "group": "Using SAML With Omni",
-                "pages": [
-                  "omni/security-and-authentication/using-saml-with-omni/overview",
-                  "omni/security-and-authentication/using-saml-with-omni/configure-saml-and-acls",
-                  "omni/security-and-authentication/using-saml-with-omni/configure-okta-for-omni/configure-okta-for-omni",
-                  "omni/security-and-authentication/using-saml-with-omni/add-a-user-to-omni-with-saml-enabled/add-a-user-to-omni-with-saml-enabled",
-                  "omni/security-and-authentication/using-saml-with-omni/auto-assign-roles-to-saml-users",
-                  "omni/security-and-authentication/using-saml-with-omni/configure-unifi-identity-enterprise-for-omni/configure-unifi-identity-enterprise-for-omni",
-                  "omni/security-and-authentication/using-saml-with-omni/configure-workspace-one-access-for-omni/configure-workspace-one-access-for-omni",
-                  "omni/security-and-authentication/using-saml-with-omni/how-to-configure-entraid-for-omni"
-                ]
-              },
+                {
+                    "group": "Using SAML With Omni",
+                    "pages": [
+
+                        "omni/security-and-authentication/using-saml-with-omni/overview",
+                        "omni/security-and-authentication/using-saml-with-omni/configure-saml-and-acls",
+                        "omni/security-and-authentication/using-saml-with-omni/configure-okta-for-omni",
+                        "omni/security-and-authentication/using-saml-with-omni/add-a-user-to-omni-with-saml-enabled",
+                        "omni/security-and-authentication/using-saml-with-omni/auto-assign-roles-to-saml-users",
+                        "omni/security-and-authentication/using-saml-with-omni/configure-unifi-identity-enterprise-for-omni",
+                        "omni/security-and-authentication/using-saml-with-omni/configure-workspace-one-access-for-omni",
+                        "omni/security-and-authentication/using-saml-with-omni/how-to-configure-entraid-for-omni"
+                    ]
+                },
               "omni/security-and-authentication/authentication-and-authorization",
               "omni/security-and-authentication/how-to-manage-acls",
               "omni/security-and-authentication/omni-kms-disk-encryption",
-              "omni/security-and-authentication/rotate-siderolink-join-token/rotate-siderolink-join-token"
+              "omni/security-and-authentication/rotate-siderolink-join-token"
             ]
           },
           {

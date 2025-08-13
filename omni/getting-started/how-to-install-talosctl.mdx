@@ -2,42 +2,46 @@
 title: Install talosctl
 ---
 
-### Recommended
+`talosctl` is a command-line tool for interacting with the Talos API and managing Talos machines.
 
-The client can be installed and updated via the [Homebrew package manager](https://brew.sh/) for macOS and Linux. You will need to install `brew` and then you can install `talosctl` from the Sidero Labs tap.
+Follow the instructions below to install it on your operating system:
+
+## Linux and macOS
+
+Install and update `talosctl` using the [Homebrew package manager](https://brew.sh/):
 
 ```bash
 brew install siderolabs/tap/sidero-tools
 ```
 
-This will also keep your version of `talosctl` up to date with new releases. This homebrew tap also has formulae for `omnictl` if you need to install that package.
+This will keep your `talosctl` version up to date with new releases. The Homebrew tap also includes a formula for `omnictl`.
 
-### Manual installation
+## Manual installation
 
-You can use a convenience script to install the current, latest version of \`talosctl\`. This will not install `omnictl`or [`kubelogin`](https://github.com/int128/kubelogin)needed for Omni management.
+Alternatively, install the latest version of `talosctl` using this convenience script:
 
 ```
 curl -sL https://talos.dev/install | sh
 ```
 
-You now have `talosctl` installed.
+This script only installs `talosctl`. It does not install `omnictl` or [`kubelogin`](https://github.com/int128/kubelogin) which are required for Omni management.
 
+See [Install and configure omnictl](omni/getting-started/install-and-configure-omnictl.mdx) to install `omnictl` separately.
 
+## Windows
 
-### Windows installation
-
-Windows binaries can be downloaded from GitHub releases for Talos and Omni.
+For Windows, you can download binaries from GitHub releases for Talos and Omni:
 
 * [Talos releases](https://github.com/siderolabs/talos/releases)
 * [Omni releases](https://github.com/siderolabs/omni/releases)
 
 There is also a community managed [winget package for talosctl](https://winget.run/pkg/Sidero/talosctl) available.
 
+## Allowed privileged commands
 
+Omni manages the state of Talos nodes and secures Kubernetes and Talos credentials. Because of this, some `talosctl` commands (such as `talosctl reset`) will return `PermissionDenied` on Omni-managed clusters. These operations must be performed through the Omni UI or API.
 
-### Allowed privileged commands
-
-As Omni manages the state of the Talos nodes, and protects the security of the Kubernetes and Talos credentials, some `talosctl` commands (such as `talosctl reset`) will return `PermissionDenied` on Omni managed clusters - such operations must be done through the Omni UI or API calls. There are some exceptions that are allowed by a user with a minimum role of [Operator](https://omni.siderolabs.com/reference/acls#role):
+However, users with at least the [Operator](https://omni.siderolabs.com/reference/acls#role) role are allowed to run the following commands:
 
 | Command                                        |
 | ---------------------------------------------- |
@@ -50,4 +54,3 @@ As Omni manages the state of the Talos nodes, and protects the security of the K
 | `talosctl restart`                             |
 | `talosctl service <id> [stop\|start\|restart]` |
 | `talosctl shutdown`                            |
-

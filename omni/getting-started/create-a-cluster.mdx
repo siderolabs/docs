@@ -11,11 +11,15 @@ This guide shows you how to create a cluster from registered machines.
   <Tab title="UI">
     First, click the "Clusters" section button in the sidebar. Next, click the "Create Cluster" button.
 
-    You may name the cluster, as well specify the version of Talos Linux and Kubernetes that the cluster should be created with. You may also enable optional cluster features, such as Disk Encryption or [Workload Service Proxying](../cluster-management/expose-an-http-service-from-a-cluster).
+    You may name the cluster, as well specify the version of Talos Linux and Kubernetes that the cluster should be created with. You may also enable optional cluster features, such as [Disk Encryption](../security-and-authentication/omni-kms-disk-encryption) or [Workload Service Proxying](../cluster-management/expose-an-http-service-from-a-cluster).
 
-    > Note that disk encryption can only be enabled during cluster creation. Enabling this checkbox will configure the cluster to use Omni as a [Key Management Server](../security-and-authentication/omni-kms-disk-encryption), and local disk access will not the possible unless the machine is connected to Omni.
+    <Info>
+      Note that disk encryption can only be enabled during cluster creation. Enabling this checkbox will configure the cluster to use Omni as a [Key Management Server](../security-and-authentication/omni-kms-disk-encryption), and local disk access will not the possible unless the machine is connected to Omni.
+    </Info>
 
     From the Available Machines list, select the role (CP for control plane, WX (where X is a number) for workers) for each machine you would like to be a member of the cluster. Optionally, choose the install disk for the OS from the dropdown menu for each machine. 
+
+    <img src="./images/create-a-cluster-available-machines.png" alt=""/>
 
     Finally, click “Create Cluster”
 

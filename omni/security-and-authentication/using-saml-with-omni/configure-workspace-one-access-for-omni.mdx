@@ -8,7 +8,7 @@ This section describes how to create a _Web App_ inside Workspace ONE Acces (WSO
 
 First, login to the WSOA user interface and browse to _**Resources -> Web Apps -> New**_
 
-<img src="./images/web-apps-resources.png" alt=""/>
+<img src="./images/configure-workspace-one-access-web-apps-resources.png" alt=""/>
 
 Next, enter values for the following options before clicking on _Next_.
 
@@ -18,7 +18,7 @@ Next, enter values for the following options before clicking on _Next_.
 | Description | Sidero Omni | A description for the Web App            |
 | Icon        | Image       | An icon to be displayed on the dashboard |
 
-<img src="./images/definition.png" alt=""/>
+<img src="./images/configure-workspace-one-access-definition.png" alt=""/>
 
 On the _**Single Sign-On**_ page, enter the following values:
 
@@ -33,7 +33,7 @@ On the _**Single Sign-On**_ page, enter the following values:
 | Username value      | `${user.userName}`                  | The username sent in the SAML assertion           |
 | Relay State URL     | Blank                               | Leave this empty                                  |
 
-<img src="./images/single-sign-on-authentication-type-settings.png" alt=""/>
+<img src="./images/configure-workspace-one-access-single-sign-on-authentication-type-settings.png" alt=""/>
 
 Still on the _**Single Sign-On**_ page, in the _**Advanced Properties**_ section, set the following toggle buttons;
 
@@ -49,7 +49,7 @@ Still on the _**Single Sign-On**_ page, in the _**Advanced Properties**_ section
 | Digest Algorithm            | SHA-256          | The digest algorithm.            |
 | Assertion Lifetime          | 200              | The assertion lifetime.          |
 
-<img src="./images/single-sign-on-relay-state-url.png" alt=""/>
+<img src="./images/configure-workspace-one-access-single-sign-on-relay-state-url.png" alt=""/>
 
 At the bottom of the _**Single Sign-On**_ page, in the _**Custom Attribute Mapping**_ section, add the following attributes:
 
@@ -60,32 +60,32 @@ At the bottom of the _**Single Sign-On**_ page, in the _**Custom Attribute Mappi
 | lastName  | Unspecified |           | `${user.lastName}`  | The user’s last name     |
 | groups    | Unspecified |           | `${groupNames}`     | The user’s groups        |
 
-<img src="./images/custom-attribute-mapping.png" alt=""/>
+<img src="./images/configure-workspace-one-access-custom-attribute-mapping.png" alt=""/>
 
 Click _**Next**_ to continue and select the access policy as required by your organization.
 
-<img src="./images/access-policies.png" alt=""/>
+<img src="./images/configure-workspace-one-access-access-policies.png" alt=""/>
 
 Now it’s time to click the _**Save & Assign**_ button and permit the Users and Groups allowed to login to Omni.
 
-<img src="./images/cancel-back-save.png" alt=""/>
+<img src="./images/configure-workspace-one-access-cancel-back-save.png" alt=""/>
 
 On the _**Assign**_ screen, enter the following:
 
 * Select the permitted group from your backing Active Directory or LDAP server.
 * Set the _**Deployment Type**_ to _**Automatic**_.
 
-<img src="./images/application-omni-updated.png" alt=""/>
+<img src="./images/configure-workspace-one-access-application-omni-updated.png" alt=""/>
 
 Finally, obtain the _**IdP**_ Metadata URL by clicking on _**Settings**_ and then the _**Copy URL**_ link.
 
-<img src="./images/web-apps-new.png" alt=""/>
+<img src="./images/configure-workspace-one-access-web-apps-new.png" alt=""/>
 
 <Info>
 This is the URL that will be used by Omni in the command line arguments in the next section.
 </Info>
 
-<img src="./images/settings-download-saml-metadata.png" alt=""/>
+<img src="./images/configure-workspace-one-access-settings-download-saml-metadata.png" alt=""/>
 
 ### Omni <a href="#omni" id="omni"></a>
 
@@ -99,8 +99,6 @@ Provide the following flags to the Omni container on launch.
 
 For example;
 
-Copy
-
 ```bash
 --auth-saml-enabled=true
 --auth-saml-url=https://{workspace-one-host}/SAAS/API/1.0/GET/metadata/idp.xml
@@ -110,8 +108,6 @@ Copy
 Now that you have started Omni with the correct flags, refer to the [Auto-assign roles to SAML users](https://omni.siderolabs.com/docs/how-to-guides/how-to-auto-assign-roles-to-saml-users/) guide for information on how to automatically assign roles to users based on their SAML attributes.
 
 Note that when using groups, the group name is prefixed with `saml.omni.sidero.dev/groups/` instead of role. For example;
-
-Copy
 
 ```yaml
 metadata:

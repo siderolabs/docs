@@ -7,75 +7,75 @@ title: Configure Keycloak for Omni
 
 * In the upper left corner of the page, select the dropdown where it says **master**
 
-<img src="./images/keycloak_001.png" alt=""/>
+<img src="./images/configure-keycloak-for-omni-create-realm.png" alt=""/>
 
 * Fill in the **realm name** and select **create**
 
-<img src="./images/keycloak_002.png" alt=""/>
+<img src="./images/configure-keycloak-for-omni-omni-create.png" alt=""/>
 
 3. Find the realm metadata.
 
 * In the realm settings, there is a link to the metadata needed for SAML under Endpoints.
   * Copy the link or save the data to a file. It will be needed for the installation of Omni.
 
-<img src="./images/keycloak_003.png" alt=""/>
+<img src="./images/configure-keycloak-for-omni-openID.png" alt=""/>
 
 4. Create a client
 
 * Select the **Clients** tab on the left
 
-<img src="./images/keycloak_004.png" alt=""/>
+<img src="./images/configure-keycloak-for-omni-create-client.png" alt=""/>
 
 * Fill in the **General Settings** as shown in the example below. **Replace the hostname in the example with your own Omni hostname or IP**.
   * Client type
   * Client ID
   * Name
 
-<img src="./images/keycloak_005.png" alt=""/>
+<img src="./images/configure-keycloak-for-omni-SAML.png" alt=""/>
 
 * Fill in the **Login settings** as shown in the example below. **Replace the hostname in the example with your own Omni hostname or IP**.
   * Root URL
   * Valid redirect URIs
   * Master SAML Processing URL
 
-<img src="./images/keycloak_006.png" alt=""/>
+<img src="./images/configure-keycloak-for-omni-Root-URL.png" alt=""/>
 
 * Modify the **Signature and Encryption** settings.
   * Sign documents: **off**
   * Sign assertions: **on**
 
-<img src="./images/keycloak_007.png" alt=""/>
+<img src="./images/configure-keycloak-for-omni-signature-encryption.png" alt=""/>
 
 * Set the **Client signature required** value to **off**.
 
-<img src="./images/keycloak_008.png" alt=""/>
+<img src="./images/configure-keycloak-for-omni-client-signature.png" alt=""/>
 
 * Modify **Client Scopes**
 
-<img src="./images/keycloak_009.png" alt=""/>
+<img src="./images/configure-keycloak-for-omni-client-scopes.png" alt=""/>
 
 * Select **Add predefined mapper**.
 
-<img src="./images/keycloak_010.png" alt=""/>
+<img src="./images/configure-keycloak-for-omni-predefined-mapper.png" alt=""/>
 
 * The following mappers need to be added because they will be used by Omni will use these attributes for assigning permissions.
   * X500 email
   * X500 givenName
   * X500 surname
 
-<img src="./images/keycloak_011.png" alt=""/>
+<img src="./images/configure-keycloak-for-omni-add-predefined-mappers.png" alt=""/>
 
 * Add a new user (optional)
   * If Keycloak is being used as an Identity Provider, users can be created here.
 
-<img src="./images/keycloak_012.png" alt=""/>
+<img src="" alt="./images/configure-keycloak-for-omni-create-new-user.png"/>
 
 * Enter the **user information** and set the **Email verified** to **Yes**
 
-<img src="./images/keycloak_013.png" alt=""/>
+<img src="./images/configure-keycloak-for-omni-create-new-user-form.png" alt=""/>
 
 * Set a password for the user.
 
-<img src="./images/keycloak_014.png" alt=""/>
+<img src="./images/configure-keycloak-for-omni-no-credentials.png" alt=""/>
 
 ***

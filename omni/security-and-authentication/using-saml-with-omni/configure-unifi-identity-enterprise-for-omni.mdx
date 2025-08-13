@@ -10,15 +10,15 @@ First, login to the UIIE Manager portal and navigate to the SSO Apps section in 
 
 Next, Add a new app. Choose “Add Custom App”
 
-<img src="./images/add-new-app.png" alt=""/>
+<img src="./images/configure-unifi-identity-add-new-app.png" alt=""/>
 
 Next, click Add on the “SAML 2.0” option for Sign-on Method
 
-<img src="./images/add-custom-app.png" alt=""/>
+<img src="./images/configure-unifi-identity-add-custom-app.png" alt=""/>
 
 You’ll now be in the Add SAML 2.0 App screen where we’ll define the app.
 
-<img src="./images/enter-a-valid-url.png" alt=""/>
+<img src="./images/configure-unifi-identity-enter-a-valid-url.png" alt=""/>
 
 | Option                      | Value                                  | Description                                                             |
 | --------------------------- | -------------------------------------- | ----------------------------------------------------------------------- |
@@ -37,15 +37,15 @@ You’ll now be on the screen to manage the app, here you’ll want to assign us
 
 Once you’ve assigned the user(s) accordingly, click the “Settings” bubble at the top of the screen as some final configuration is needed here.
 
-<img src="./images/overview-assignments-settings.png" alt=""/>
+<img src="./images/configure-unifi-identity-overview-assignments-settings.png" alt=""/>
 
 Expand the “Sign On” section at the bottom of the settings page via the “Show More” down arrow.
 
-<img src="./images/sign-on-show-more.png" alt=""/>
+<img src="./images/configure-unifi-identity-sign-on-show-more.png" alt=""/>
 
 At the bottom of this section, you’ll see an “Attibute Statements” block, here the mappings from UIIE to Omni fields needs to be entered as below. Use the “Add Another” button to create new ones.
 
-<img src="./images/attribute-statements.png" alt=""/>
+<img src="./images/configure-unifi-identity-attribute-statements.png" alt=""/>
 
 | Name      | Name Format | Value      | Description              |
 | --------- | ----------- | ---------- | ------------------------ |
@@ -55,7 +55,7 @@ At the bottom of this section, you’ll see an “Attibute Statements” block, 
 
 Lastly, you’ll need the IDP Metadata file which can be obtained via the View Setup Instructions link or downloaded as an xml file via the Identity Provider metadata link; both of which are slightly further up the page.
 
-<img src="./images/sign-on-methods.png" alt=""/>
+<img src="./images/configure-unifi-identity-sign-on-methods.png" alt=""/>
 
 A copy of this file needs to be on the host which will run the Omni container as we’ll feed it in to the container at runtime. You can copy paste contents or download/upload the file whichever is easiest. For the remainder of this guide, we’ll assume this file ends up at the following location on your container host: `~/uiieIDPmetadata.xml`
 
@@ -72,8 +72,6 @@ To get Omni to use UIIE as a SAML provider, the following flags should be passed
 | Omni   | `--auth-saml-metadata-/uiieIDPmetadata.xml`        | The path to the IDP metadata file.                |
 
 For example;
-
-Copy
 
 ```bash
 docker run \

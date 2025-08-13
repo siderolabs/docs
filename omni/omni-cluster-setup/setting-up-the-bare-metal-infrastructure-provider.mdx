@@ -35,7 +35,7 @@ Here, we need to create the service account with the same ID as the ID of the pr
   <Tab title="From Omni Web UI" >
     Navigate to the _Settings - Infra Providers_ tab on the Omni web UI, and setup a new infra provider with ID `bare-metal`&#x20;
 
-    <img src="./images/bare-metal-infra-provider-setup-a-new-infra-provider.png" alt=""/>
+    <img src="./images/bare-metal-infrastructure-provider-setup-a-new-infra-provider.png" alt=""/>
 
     Store the displayed service account key securely for later use.
   </Tab>
@@ -107,9 +107,9 @@ Sample output:
 
 Start tailing its logs in a separate shell:
 
-<pre>
+```bash
 docker logs -f omni-bare-metal-infra-Provider
-</pre>
+```
 
 Sample output:
 
@@ -203,7 +203,6 @@ Let's verify our machines:
 
     The output should look like the following:
 
-    <pre>
     ```
     NAMESPACE   TYPE   ID                                     VERSION   CONNECTED   LASTENDPOINT
     default     Link   33313750-3538-5a43-4a44-315430304c46   5         true
@@ -212,9 +211,8 @@ Let's verify our machines:
     </strong><strong>NAMESPACE        TYPE           ID                                     VERSION   PREFERRED POWER STATE   ACCEPTANCE   CLUSTER TALOS VERSION   EXTENSIONS   WIPE ID                                EXTRA KERNEL ARGS
     </strong><strong>infra-provider   InfraMachine   33313750-3538-5a43-4a44-315430304c46   3         0                       0                                    []
     </strong>infra-provider   InfraMachine   33313750-3538-5a43-4a44-315430304c47   3         0                       0                                    []
-   
-   ```
-    </pre>
+
+    ```
   </Tab>
 
 </Tabs>

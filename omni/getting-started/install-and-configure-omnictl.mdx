@@ -2,28 +2,27 @@
 title: Install and Configure Omnictl
 ---
 
+`omnictl` is the command-line tool for Omni that allows you to authenticate, manage, and interact with Talos-based Kubernetes clusters through its centralized API.
 
+Follow the instructions below to install and configure `omnictl` for your operating system.
 
-## 1. Installation
+## Linux and macOS (Recommended)
 
-Pick one of the installation methods below.
-
-### a. Recommended installation
-
-To install `omnictl`and the kubectl `oidc-login`plugin automatically on macOS and Linux you can use the provided Hombrew formula.
+Install `omnictl` and the `kubectl oidc-login` plugin automatically with [Homebrew](https://brew.sh/):
 
 ```
 brew install siderolabs/tap/sidero-tools
 ```
 
-This will install `talosctl`, `omnictl`, and `kube-oidc_login`and keep them updated.
+This will install and update `talosctl`, `omnictl`, and `kube-oidc_login`.
 
-### b. Manual installation
+## Manual installation
 
 Download `omnictl` from the Omni dashboard.
 
-<Info>
-The downloaded binary will be named according the the selected platform and architecture (e.g. `omnictl-linux-amd64`). It is left as an exercise to the user to move the downloaded binary into your `PATH` and make it executable. This guide assumes the downloaded binary has been renamed `omnictl`.
+The downloaded binary will be named according to the selected platform and architecture (e.g. `omnictl-linux-amd64`).
+
+Rename this binary to `omnictl`, make it executable, and move it into your PATH.
 
 For example, to do so on a mac:
 
@@ -32,7 +31,6 @@ mv omnictl-darwin-arm64 omnictl
 chmod +x omnictl
 mv omnictl /usr/local/bin
 ```
-</Info>
 
 ## 2. Configuration File
 
@@ -42,7 +40,7 @@ Omnictl follows the [XDG Base Directory Specification](https://specifications.fr
 
 Omni configuration is stored under `$XDG_CONFIG_HOME/omni/config`. This means, the correct configuration file locations for `omniconfig` are the following:
 
-<table><thead><tr><th width="119.21484375">OS</th><th>Omniconfig Path</th></tr></thead><tbody><tr><td>Linux</td><td><code>\~/.config/omni/config</code></td></tr><tr><td>MacOS</td><td><code>~/Library/Application Support/omni/config</code></td></tr><tr><td>Windows</td><td><code>%LOCALAPPDATA%\omni\config</code>, e.g., <code>C:\Users\&#x3C;USER>\AppData\Local\omni\config</code></td></tr></tbody></table>
+<table><thead><tr><th width="119.21484375">OS</th><th>Omniconfig Path</th></tr></thead><tbody><tr><td>Linux</td><td><code>\~/.config/omni/config</code></td></tr><tr><td>MacOS</td><td><code>~/Library/Application Support/omni/config</code></td></tr><tr><td>Windows</td><td><code>%LOCALAPPDATA%\omni\config</code>, e.g., <code>C:\Users\<USER>\AppData\Local\omni\config</code></td></tr></tbody></table>
 
 Add the downloaded `omniconfig.yaml` to the default location for your OS to use it with `omnictl`:
 
