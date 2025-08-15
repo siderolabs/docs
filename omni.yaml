@@ -1,0 +1,88 @@
+navigation:
+  tabs:
+    - tab: "Omni"
+      icon: "/images/omni.svg"
+      groups:
+        - group: "Overview"
+          folder: "omni/overview"
+
+        - group: "Getting Started"
+          folder: "omni/getting-started"
+          pages:
+            - "how-to-install-talosctl.mdx"
+            - "install-and-configure-omnictl.mdx"
+            - "getting-started.mdx"
+            - "use-kubectl-with-omni.mdx"
+            - "create-a-cluster.mdx"
+
+        - group: "Infrastructure and Extensions"
+          folder: "omni/infrastructure-and-extensions"
+          pages:
+            - group: "Self Hosted"
+              pages:
+                - "self-hosted/overview"
+                - "self-hosted/deploy-omni-on-prem"
+                - "self-hosted/configure-keycloak-for-omni/configure-keycloak-for-omni"
+                - "self-hosted/how-to-back-up-on-prem-omni-db"
+                - "self-hosted/expose-omni-with-nginx-https"
+            - "install-airgapped-omni.mdx"
+            - "infrastructure-providers.mdx"
+            - "machine-registration.mdx"
+            - "install-talos-linux-extensions.mdx"
+
+        - group: "Omni Cluster Setup"
+          folder: "omni/omni-cluster-setup"
+          pages:
+            - group: "Register machines with Omni"
+              pages:
+                - "registering-machines/register-machines-with-omni"
+                - "registering-machines/register-a-bare-metal-machine-iso"
+                - "registering-machines/register-a-bare-metal-machine-pxe-ipxe"
+                - "registering-machines/how-to-register-an-aws-ec2-instance"
+                - "registering-machines/register-a-gcp-instance"
+                - "registering-machines/register-an-azure-instance"
+                - "registering-machines/register-a-hetzner-server"
+            - "create-a-kubeconfig-for-a-service-account.mdx"
+            - "create-a-machine-class.mdx"
+            - "create-a-patch-for-cluster-machines.mdx"
+            - "create-an-omni-service-account.mdx"
+            - "how-to-set-initial-machine-labels.mdx"
+            - "setting-up-the-bare-metal-infrastructure-provider.mdx"
+
+        - group: "Cluster Management"
+          folder: "omni/cluster-management"
+          pages:
+            - "scale-a-cluster-up-or-down.mdx"
+            - "create-a-hybrid-cluster.mdx"
+            - "upgrading-clusters.mdx"
+            - "expose-an-http-service-from-a-cluster.mdx"
+            - "export-a-cluster-template-from-a-cluster-created-in-the-ui.mdx"
+            - "etcd-backups.mdx"
+            - "restore-etcd-of-a-cluster-managed-by-cluster-templates.mdx"
+            - "using-audit-log.mdx"
+
+        - group: "Security and Authentication"
+          folder: "omni/security-and-authentication"
+          pages:
+            - group: "Using SAML With Omni"
+              pages:
+                - "using-saml-with-omni/overview"
+                - "using-saml-with-omni/configure-saml-and-acls"
+                - "using-saml-with-omni/configure-okta-for-omni/configure-okta-for-omni"
+                - "using-saml-with-omni/add-a-user-to-omni-with-saml-enabled/add-a-user-to-omni-with-saml-enabled"
+                - "using-saml-with-omni/auto-assign-roles-to-saml-users"
+                - "using-saml-with-omni/configure-unifi-identity-enterprise-for-omni/configure-unifi-identity-enterprise-for-omni"
+                - "using-saml-with-omni/configure-workspace-one-access-for-omni/configure-workspace-one-access-for-omni"
+                - "using-saml-with-omni/how-to-configure-entraid-for-omni"
+            - "authentication-and-authorization.mdx"
+            - "how-to-manage-acls.mdx"
+            - "omni-kms-disk-encryption.mdx"
+            - "rotate-siderolink-join-token/rotate-siderolink-join-token"
+
+        - group: "Reference"
+          folder: "omni/reference"
+          pages:
+            - "acls.mdx"
+            - "cli.mdx"
+            - "cluster-templates.mdx"
+            - "generating-omnictl-cli-reference.mdx"
