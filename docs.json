@@ -1,33 +1,52 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
+  "$schema": "https://leaves.mintlify.com/schema/docs.json",
   "theme": "maple",
-  "name": "Siderolabs Test Docs",
+  "name": "Sidero Documentation",
   "colors": {
     "primary": "#16A34A",
     "light": "#07C983",
     "dark": "#FB326E"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/images/favicon.svg",
   "banner": {
     "content": "🎉 **TalosCon 2025:** Come to TalosCon in Amsterdam, October 16-17. [Learn more →](https://taloscon.com)",
     "dismissible": true
   },
   "contextual": {
-    "options": ["copy", "view", "chatgpt", "claude"]
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude"
+    ]
   },
-  "thumbnails": {
-    "appearance": "dark",
-    "background": "/images/og-background.png"
+  "logo": {
+    "light": "/images/sidero-light.svg",
+    "dark": "/images/sidero-dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "https://www.siderolabs.com/support/"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "bluesky": "https://bsky.app/profile/siderolabs.com",
+      "github": "https://github.com/siderolabs",
+      "linkedin": "https://linkedin.com/company/sidero-labs",
+      "reddit": "https://reddit.com/r/taloslinux",
+      "x": "https://x.com/siderolabs"
+    }
   },
   "navigation": {
     "tabs": [
       {
         "tab": "Omni",
+        "icon": "/images/omni.svg",
         "groups": [
-          {
-            "group": "Overview",
-            "pages": ["omni/overview/what-is-omni"]
-          },
           {
             "group": "Getting Started",
             "pages": [
@@ -127,37 +146,6 @@
           }
         ]
       }
-    ],
-
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Community",
-          "href": "https://slack.dev.talos-systems.io/",
-          "icon": "slack"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/images/sidero-light.svg",
-    "dark": "/images/sidero-dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "https://www.siderolabs.com/support/"
-      }
     ]
-  },
-  "footer": {
-    "socials": {
-      "bluesky": "https://bsky.app/profile/siderolabs.com",
-      "x": "https://x.com/siderolabs",
-      "github": "https://github.com/siderolabs",
-      "linkedin": "https://linkedin.com/company/sidero-labs",
-      "reddit": "https://reddit.com/r/taloslinux"
-    }
   }
 }
