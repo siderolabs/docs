@@ -5,6 +5,8 @@ navigation:
       groups:
         - group: "Overview"
           folder: "omni/overview"
+          pages: 
+            - "what-is-omni.mdx"
 
         - group: "Getting Started"
           folder: "omni/getting-started"
@@ -22,7 +24,7 @@ navigation:
               pages:
                 - "self-hosted/overview"
                 - "self-hosted/deploy-omni-on-prem"
-                - "self-hosted/configure-keycloak-for-omni/configure-keycloak-for-omni"
+                - "self-hosted/configure-keycloak-for-omni"
                 - "self-hosted/how-to-back-up-on-prem-omni-db"
                 - "self-hosted/expose-omni-with-nginx-https"
             - "install-airgapped-omni.mdx"
@@ -68,16 +70,16 @@ navigation:
               pages:
                 - "using-saml-with-omni/overview"
                 - "using-saml-with-omni/configure-saml-and-acls"
-                - "using-saml-with-omni/configure-okta-for-omni/configure-okta-for-omni"
-                - "using-saml-with-omni/add-a-user-to-omni-with-saml-enabled/add-a-user-to-omni-with-saml-enabled"
+                - "using-saml-with-omni/configure-okta-for-omni"
+                - "using-saml-with-omni/add-a-user-to-omni-with-saml-enabled"
                 - "using-saml-with-omni/auto-assign-roles-to-saml-users"
-                - "using-saml-with-omni/configure-unifi-identity-enterprise-for-omni/configure-unifi-identity-enterprise-for-omni"
-                - "using-saml-with-omni/configure-workspace-one-access-for-omni/configure-workspace-one-access-for-omni"
+                - "using-saml-with-omni/configure-unifi-identity-enterprise-for-omni"
+                - "using-saml-with-omni/configure-workspace-one-access-for-omni"
                 - "using-saml-with-omni/how-to-configure-entraid-for-omni"
             - "authentication-and-authorization.mdx"
             - "how-to-manage-acls.mdx"
             - "omni-kms-disk-encryption.mdx"
-            - "rotate-siderolink-join-token/rotate-siderolink-join-token"
+            - "rotate-siderolink-join-token"
 
         - group: "Reference"
           folder: "omni/reference"
