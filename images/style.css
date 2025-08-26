@@ -1,0 +1,11 @@
+.nav-logo {
+  height: auto !important;
+  max-height: 40px !important;
+  width: auto !important;
+}
+
+.nav-tabs-item img,
+.nav-tabs-item .nav-logo {
+  background: transparent !important;
+  background-color: transparent !important;
+}
