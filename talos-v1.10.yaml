@@ -93,36 +93,7 @@ navigation:
             - "scaling-down.mdx"
             - "interactive-dashboard.mdx"
             - "workers-on-controlplane.mdx"
-
-        - group: "Kubernetes infrastructure and management"
-          folder: "talos/v1.10/kubernetes-infrastructure-and-management"
-          pages:
-            - group: "CNI"
-              pages:
-                - "cni/deploying-cilium"
-                - "cni/multus"
-            - group: "CSI"
-              pages:
-                - "csi/storage"
-                - "csi/local-storage"
-                - "csi/ceph-with-rook"
-                - "csi/synology-csi"
-            - group: "Security"
-              pages:
-                - "security/pod-security"
-                - "security/seccomp-profiles"
-                - "security/usernamespace"
-            - "device-plugins.mdx"
-            - "kubeprism.mdx"
-            - "inlinemanifests.mdx"
-            - group: "Monitoring & Observability"
-              folder: "talos/v1.10/kubernetes-infrastructure-and-management"
-              pages:
-                - "monitoring-and-observability/deploy-metrics-server"
-                - "monitoring-and-observability/etcd-metrics"
-            - "talos-api-access-from-k8s.mdx"
-            - "upgrading-kubernetes.mdx"
-
+            
         - group: "Networking"
           folder: "talos/v1.10/networking"
           pages:
