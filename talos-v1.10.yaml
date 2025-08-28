@@ -1,6 +1,7 @@
 navigation:
   tabs:
     - tab: "Talos"
+      icon: "/images/talos.svg"
       groups:
         - group: "Overview"
           folder: "talos/v1.10/overview"
@@ -233,3 +234,4 @@ navigation:
             - "talosctl.mdx"
             - "image-factory.mdx"
             - "knowledge-base.mdx"
+
