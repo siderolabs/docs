@@ -45,6 +45,7 @@
     "tabs": [
       {
         "tab": "Talos",
+        "icon": "/images/talos.svg",
         "groups": [
           {
             "group": "Overview",
