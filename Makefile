@@ -39,6 +39,7 @@ docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multipl
 		common.yaml \
 		talos-v1.10.yaml \
 		omni.yaml \
+		kubernetes-guides.yaml \
 		> docs.json
 
 docs.json-local: common.yaml omni.yaml docs-gen/main.go ## Generate docs.json using local Go build
@@ -46,6 +47,7 @@ docs.json-local: common.yaml omni.yaml docs-gen/main.go ## Generate docs.json us
 		../common.yaml \
 		../talos-v1.10.yaml \
 		../omni.yaml \
+		../kubernetes-guides.yaml \
 		> ../docs.json
 
 .PHONY: check-missing
@@ -53,14 +55,16 @@ check-missing: ## Check for MDX files not included in config files
 	docker run --rm -v $(PWD):/workspace -w /workspace $(DOCS_GEN_IMAGE) --detect-missing \
 		common.yaml \
 		talos-v1.10.yaml \
-		omni.yaml 
+		omni.yaml \
+		kubernetes-guides.yaml 
 
 .PHONY: check-missing-local
 check-missing-local: ## Check for missing files using local Go build
 	cd docs-gen && go run . --detect-missing \
 		../common.yaml \
 		../talos-v1.10.yaml \
-		../omni.yaml
+		../omni.yaml \
+		../kubernetes-guides.yaml
 
 .PHONY: generate-deps
 generate-deps: ## Install Go dependencies for the generator

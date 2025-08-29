@@ -3,6 +3,8 @@ title: "KubePrism"
 description: "Enabling in-cluster highly-available controlplane endpoint."
 ---
 
+import { version } from '/snippets/custom-variables.mdx';
+
 Kubernetes pods running in CNI mode can use the `kubernetes.default.svc` service endpoint to access the Kubernetes API server,
 however pods running in host networking mode can only use the external cluster endpoint to access the Kubernetes API server.
 
@@ -39,7 +41,9 @@ Talos spins up a TCP loadbalancer on every machine on the `localhost` on the spe
 
 * the external cluster endpoint as specified in the machine configuration
 * for controlplane machines: `https://localhost:<api-server-local-port>` (`http://localhost:6443` in the default configuration)
-* `https://<controlplane-address>:<api-server-port>` for every controlplane machine (based on the information from [Cluster Discovery](../configure-your-talos-cluster/system-configuration/discovery.mdx))
+* `https://<controlplane-address>:<api-server-port>` for every controlplane machine (based on the information from <a href={`/talos/${version}/configure-your-talos-cluster/system-configuration/discovery`}>
+  Cluster Discovery
+</a>)
 
 KubePrism automatically filters out unhealthy (or unreachable) endpoints, and prefers lower-latency endpoints over higher-latency endpoints.
 

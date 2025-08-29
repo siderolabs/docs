@@ -1,0 +1,44 @@
+navigation:
+  tabs:
+    - tab: "Kubernetes Guides"
+      icon: "/images/kubernetes.svg"
+      groups:
+        - group: "Overview"
+          folder: "kubernetes-guides/overview"
+          pages:
+            - "kubernetes-guides-overview.mdx"
+        - group: "CNI"
+          folder: "kubernetes-guides/cni"
+          pages:
+            - "deploying-cilium.mdx"
+            - "multus.mdx"
+
+        - group: "CSI"
+          folder: "kubernetes-guides/csi"
+          pages:
+            - "storage.mdx"
+            - "local-storage.mdx"
+            - "ceph-with-rook.mdx"
+            - "synology-csi.mdx"
+
+        - group: "Security"
+          folder: "kubernetes-guides/security"
+          pages:
+            - "pod-security.mdx"
+            - "seccomp-profiles.mdx"
+            - "usernamespace.mdx"
+
+        - group: "Monitoring & Observability"
+          folder: "kubernetes-guides/monitoring-and-observability"
+          pages:
+            - "deploy-metrics-server.mdx"
+            - "etcd-metrics.mdx"
+            
+        - group: "Advanced Guides"
+          folder: "kubernetes-guides/advanced-guides"
+          pages: 
+            - "device-plugins.mdx"
+            - "kubeprism.mdx"
+            - "inlinemanifests.mdx"
+            - "talos-api-access-from-k8s.mdx"
+            - "upgrading-kubernetes.mdx"
