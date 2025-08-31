@@ -22,7 +22,7 @@ This can also be done in the BIOS.
 
 ### Configure your network interface in bridge mode (optional)
 
-When you want to leverage [Multus](../kubernetes-infrastructure-and-management/cni/multus.mdx) to give your virtual machines direct access to your node network, your bridge needs to be configured properly.
+When you want to leverage [Multus](../../../kubernetes-guides/cni/multus.mdx) to give your virtual machines direct access to your node network, your bridge needs to be configured properly.
 This can be done by setting your network interface in bridge mode.
 You can look up the network interface name by using the following command:
 
@@ -64,7 +64,7 @@ When we are using KubeVirt, we are also installing the CDI (containerized data i
 For this to work properly, we have to install the `local-path-provisioner`.
 This CNI can be used to write scratch space when importing images with the CDI.
 
-You can install the `local-path-provisioner` by following [this guide](../kubernetes-infrastructure-and-management/csi/local-storage.mdx).
+You can install the `local-path-provisioner` by following [this guide](../../../kubernetes-guides/csi/local-storage.mdx).
 
 ### Configure storage
 
@@ -518,7 +518,7 @@ spec:
           url: "https://fedora.mirror.wearetriple.com/linux/releases/40/Cloud/x86_64/images/Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2"
 ```
 
-In this example we will create a virtual machine that is bound to the bridge interface with the help of [Multus](../kubernetes-infrastructure-and-management/cni/multus.mdx).
+In this example we will create a virtual machine that is bound to the bridge interface with the help of [Multus](../../../kubernetes-guides/cni/multus.mdx).
 You can start the machine with `kubectl virt start fedora-vm`.
 After that you can look up the ip address of the virtual machine with
 

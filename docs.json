@@ -156,47 +156,6 @@
             ]
           },
           {
-            "group": "Kubernetes infrastructure and management",
-            "pages": [
-              {
-                "group": "CNI",
-                "pages": [
-                  "talos/v1.10/kubernetes-infrastructure-and-management/cni/deploying-cilium",
-                  "talos/v1.10/kubernetes-infrastructure-and-management/cni/multus"
-                ]
-              },
-              {
-                "group": "CSI",
-                "pages": [
-                  "talos/v1.10/kubernetes-infrastructure-and-management/csi/storage",
-                  "talos/v1.10/kubernetes-infrastructure-and-management/csi/local-storage",
-                  "talos/v1.10/kubernetes-infrastructure-and-management/csi/ceph-with-rook",
-                  "talos/v1.10/kubernetes-infrastructure-and-management/csi/synology-csi"
-                ]
-              },
-              {
-                "group": "Security",
-                "pages": [
-                  "talos/v1.10/kubernetes-infrastructure-and-management/security/pod-security",
-                  "talos/v1.10/kubernetes-infrastructure-and-management/security/seccomp-profiles",
-                  "talos/v1.10/kubernetes-infrastructure-and-management/security/usernamespace"
-                ]
-              },
-              "talos/v1.10/kubernetes-infrastructure-and-management/device-plugins",
-              "talos/v1.10/kubernetes-infrastructure-and-management/kubeprism",
-              "talos/v1.10/kubernetes-infrastructure-and-management/inlinemanifests",
-              {
-                "group": "Monitoring \u0026 Observability",
-                "pages": [
-                  "talos/v1.10/kubernetes-infrastructure-and-management/monitoring-and-observability/deploy-metrics-server",
-                  "talos/v1.10/kubernetes-infrastructure-and-management/monitoring-and-observability/etcd-metrics"
-                ]
-              },
-              "talos/v1.10/kubernetes-infrastructure-and-management/talos-api-access-from-k8s",
-              "talos/v1.10/kubernetes-infrastructure-and-management/upgrading-kubernetes"
-            ]
-          },
-          {
             "group": "Networking",
             "pages": [
               "talos/v1.10/networking/corporate-proxies",
@@ -443,6 +402,59 @@
               "omni/reference/cli",
               "omni/reference/cluster-templates",
               "omni/reference/generating-omnictl-cli-reference"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Kubernetes Guides",
+        "icon": "/images/kubernetes.svg",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "kubernetes-guides/overview/kubernetes-guides-overview"
+            ]
+          },
+          {
+            "group": "CNI",
+            "pages": [
+              "kubernetes-guides/cni/deploying-cilium",
+              "kubernetes-guides/cni/multus"
+            ]
+          },
+          {
+            "group": "CSI",
+            "pages": [
+              "kubernetes-guides/csi/storage",
+              "kubernetes-guides/csi/local-storage",
+              "kubernetes-guides/csi/ceph-with-rook",
+              "kubernetes-guides/csi/synology-csi"
+            ]
+          },
+          {
+            "group": "Security",
+            "pages": [
+              "kubernetes-guides/security/pod-security",
+              "kubernetes-guides/security/seccomp-profiles",
+              "kubernetes-guides/security/usernamespace"
+            ]
+          },
+          {
+            "group": "Monitoring \u0026 Observability",
+            "pages": [
+              "kubernetes-guides/monitoring-and-observability/deploy-metrics-server",
+              "kubernetes-guides/monitoring-and-observability/etcd-metrics"
+            ]
+          },
+          {
+            "group": "Advanced Guides",
+            "pages": [
+              "kubernetes-guides/advanced-guides/device-plugins",
+              "kubernetes-guides/advanced-guides/kubeprism",
+              "kubernetes-guides/advanced-guides/inlinemanifests",
+              "kubernetes-guides/advanced-guides/talos-api-access-from-k8s",
+              "kubernetes-guides/advanced-guides/upgrading-kubernetes"
             ]
           }
         ]
