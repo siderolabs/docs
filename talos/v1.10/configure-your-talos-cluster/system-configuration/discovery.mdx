@@ -48,7 +48,7 @@ cluster:
 
 Disabling all registries effectively disables member discovery.
 
-> Note: An enabled discovery service is required for [KubeSpan](../../networking/kubespan.mdx) to function correctly.
+> Note: An enabled discovery service is required for [KubeSpan](../../networking/kubespan) to function correctly.
 
 ### Kubernetes Registry
 
@@ -117,7 +117,7 @@ spec:
 
 Node identity is used as the unique `Affiliate` identifier.
 
-Node identity resource is preserved in the [STATE](../../learn-more/architecture.mdx#file-system-partitions) partition in `node-identity.yaml` file.
+Node identity resource is preserved in the [STATE](../../learn-more/architecture#file-system-partitions) partition in `node-identity.yaml` file.
 Node identity is preserved across reboots and upgrades, but it is regenerated if the node is reset (wiped).
 
 #### Affiliates

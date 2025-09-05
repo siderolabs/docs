@@ -14,9 +14,9 @@ We will be using the following NVIDIA system extensions:
 - `nonfree-kmod-nvidia`
 - `nvidia-container-toolkit`
 
-> To build a NVIDIA driver version not published by SideroLabs follow the instructions [here](./nvidia-gpu-proprietary.mdx)
+> To build a NVIDIA driver version not published by SideroLabs follow the instructions [here](./nvidia-gpu-proprietary)
 
-Create the [boot assets](../../platform-specific-installations/boot-assets.mdx) which includes the system extensions mentioned above (or create a custom installer and perform a machine upgrade if Talos is already installed).
+Create the [boot assets](../../platform-specific-installations/boot-assets) which includes the system extensions mentioned above (or create a custom installer and perform a machine upgrade if Talos is already installed).
 
 > Make sure the driver version matches for both the `nonfree-kmod-nvidia` and `nvidia-container-toolkit` extensions.
 > The `nonfree-kmod-nvidia` extension is versioned as `<nvidia-driver-version>-<talos-release-version>` and the `nvidia-container-toolkit` extension is versioned as `<nvidia-driver-version>-<nvidia-container-toolkit-version>`.

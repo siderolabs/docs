@@ -131,7 +131,7 @@ all your control plane nodes, a DNS name with one or more A or AAAA records poin
 to the control plane nodes, or directly the IP of a control plane node.
 
 Which option is best for you will depend on your needs.
-Endpoint selection has been further documented [here](../../getting-started/getting-started.mdx#decide-the-kubernetes-endpoint).
+Endpoint selection has been further documented [here](../../getting-started/getting-started#decide-the-kubernetes-endpoint).
 
 After you decide on which endpoint to use, note down the domain name or IP, as
 we will need it in the next step.
@@ -152,9 +152,9 @@ created talosconfig
 
 At this point, you can modify the generated configs to your liking.
 Depending on the Kubernetes version you want to run, you might need to select a different Talos version, as not all versions are compatible.
- You can find the support matrix [here](../../getting-started/support-matrix.mdx).
+ You can find the support matrix [here](../../getting-started/support-matrix).
 
-Optionally, you can specify [machine configuration patches](../../configure-your-talos-cluster/system-configuration/patching.mdx#configuration-patching-with-talosctl-cli)
+Optionally, you can specify [machine configuration patches](../../configure-your-talos-cluster/system-configuration/patching#configuration-patching-with-talosctl-cli)
 which will be applied during the config generation.
 
 #### Validate the Configuration Files
@@ -216,7 +216,7 @@ We only add one node IP, as that is the entry into our cluster against which our
 All requests to other nodes are proxied through the endpoint, and therefore not
 all nodes need to be manually added to the config.
 You don't want to run your commands against all nodes, as this can destroy your
-cluster if you are not careful [(further documentation)](../../getting-started/getting-started.mdx#configure-your-talosctl-client).
+cluster if you are not careful [(further documentation)](../../getting-started/getting-started#configure-your-talosctl-client).
 
 Set the `endpoints` and `nodes`:
 

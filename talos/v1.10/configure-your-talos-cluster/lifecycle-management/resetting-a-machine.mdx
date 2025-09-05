@@ -18,7 +18,7 @@ talosctl reset -n <node_ip_to_be_reset>
 ```
 
 > WARNING: Running `talosctl reset` on cloud VMs might result in the VM being unable to boot as this wipes the entire disk.
-> It might be more practical to only wipe the [STATE](../../learn-more/architecture.mdx#file-system-partitions) and [EPHEMERAL](../../learn-more/architecture.mdx#file-system-partitions) partitions on a cloud VM if not booting via `iPXE`.
+> It might be more practical to only wipe the [STATE](../../learn-more/architecture#file-system-partitions) and [EPHEMERAL](../../learn-more/architecture#file-system-partitions) partitions on a cloud VM if not booting via `iPXE`.
 > `talosctl reset --system-labels-to-wipe STATE --system-labels-to-wipe EPHEMERAL`
 
 The command includes several flags:

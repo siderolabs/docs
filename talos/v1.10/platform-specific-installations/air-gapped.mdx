@@ -8,14 +8,14 @@ aliases:
 import { release } from '/snippets/custom-variables.mdx';
 
 In this guide we will create a Talos cluster running in an air-gapped environment with all the required images being pulled from an internal registry.
-We will use the [QEMU](./local-platforms/qemu.mdx) provisioner available in `talosctl` to create a local cluster, but the same approach could be used to deploy Talos in bigger air-gapped networks.
+We will use the [QEMU](./local-platforms/qemu) provisioner available in `talosctl` to create a local cluster, but the same approach could be used to deploy Talos in bigger air-gapped networks.
 
 ## Requirements
 
 The follow are requirements for this guide:
 
 - Docker 18.03 or greater
-- Requirements for the Talos [QEMU](./local-platforms/qemu.mdx) cluster
+- Requirements for the Talos [QEMU](./local-platforms/qemu) cluster
 
 ## Identifying Images
 
@@ -165,4 +165,4 @@ machine:
 Other implementations of Docker registry can be used in place of the Docker `registry` image used above to run the registry.
 If required, auth can be configured for the internal registry (and custom TLS certificates if needed).
 
-Please see [pull-through cache guide](../configure-your-talos-cluster/images-container-runtime/pull-through-cache.mdx) for an example using Harbor container registry with Talos.
+Please see [pull-through cache guide](../configure-your-talos-cluster/images-container-runtime/pull-through-cache) for an example using Harbor container registry with Talos.

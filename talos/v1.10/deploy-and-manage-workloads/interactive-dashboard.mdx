@@ -15,6 +15,14 @@ Keys `<F1>` - `<Fn>` can be used to switch between different screens of the dash
 The dashboard is using either UEFI framebuffer or VGA/VESA framebuffer (for legacy BIOS boot).
 For legacy BIOS boot screen resolution can be controlled with the [`vga=` kernel parameter](https://docs.kernel.org/fb/vesafb.html).
 
+## Dashboard Resolution Control
+
+On legacy BIOS systems, the screen resolution can be adjusted with the [`vga=` kernel parameter](https://docs.kernel.org/fb/vesafb.html).
+
+In modern kernels and platforms, this parameter is often ignored. For reliable results, it is recommended to boot with **UEFI**.
+
+When running in **UEFI mode**, you can set the screen resolution through your hypervisor or UEFI firmware settings.
+
 ## Summary Screen (`F1`)
 
 <img src="./images/interactive-dashboard-1.png" alt="Interactive Dashboard Summary Screen" width="920" />
@@ -53,7 +61,7 @@ Monitor screen provides live view of the machine resource usage: CPU, memory, di
 
 <img src="./images/interactive-dashboard-3.png" alt="Interactive Dashboard Summary Screen" width="920" />
 
-Network config screen provides editing capabilities for the `metal` [platform network configuration](../platform-specific-installations/bare-metal-platforms/network-config.mdx).
+Network config screen provides editing capabilities for the `metal` [platform network configuration](../platform-specific-installations/bare-metal-platforms/network-config).
 
 The screen is split into three sections:
 

@@ -6,11 +6,11 @@ description: "A guide to setting up a Talos cluster"
 
 This guide walks you through creating a simple Talos cluster with one control plane node and one or more worker nodes.
 
-If you're looking to set up a cluster with multiple control plane nodes, see [Production Notes](./prodnotes.mdx).
+If you're looking to set up a cluster with multiple control plane nodes, see [Production Notes](./prodnotes).
 
-**New to Talos?** Start with [Quickstart](./quickstart.mdx) to create a local virtual cluster on your workstation.
+**New to Talos?** Start with [Quickstart](./quickstart) to create a local virtual cluster on your workstation.
 
-**Planning for production?** See [Production Notes](./prodnotes.mdx) for additional requirements and best practices.
+**Planning for production?** See [Production Notes](./prodnotes) for additional requirements and best practices.
 
 **Installing on cloud or virtualized platforms?** Check out the [platform-specific guides](../platform-specific-installations) for installation methods tailored to different environments.
 
@@ -27,11 +27,11 @@ Since Talos Linux does not have SSH access, `talosctl` is the  primary tool for 
 brew install siderolabs/tap/talosctl
 ```
 
-Refer to the [talosctl installation guide](./talosctl.mdx) for installation on other platforms.
+Refer to the [talosctl installation guide](./talosctl) for installation on other platforms.
 
 - **Ensure network access**: Your machines will need internet access to download the Talos installer and container images, sync time, and more.
 
-    If you’re working in a restricted network environment, check out the official documentation on using [registry proxies](../configure-your-talos-cluster/images-container-runtime/pull-through-cache.mdx), local registries, or setting up an [air-gapped installation](../platform-specific-installations/air-gapped.mdx).
+    If you’re working in a restricted network environment, check out the official documentation on using [registry proxies](../configure-your-talos-cluster/images-container-runtime/pull-through-cache), local registries, or setting up an [air-gapped installation](../platform-specific-installations/air-gapped).
 
 ## Talos Cluster Setup Overview
 
@@ -223,7 +223,7 @@ For a list of all the commands and operations that `talosctl` provides, see the 
 
 ### What's Next?
 
-- [Set up persistent storage](../../../kubernetes-guides/csi/storage.mdx)
-- [Deploy a Metrics Server](../../../kubernetes-guides/monitoring-and-observability/deploy-metrics-server.mdx)
-- [Explore the talosctl CLI reference](../reference/cli.mdx)
-- [Plan your production deployment](./prodnotes.mdx)
+- [Set up persistent storage](../../../kubernetes-guides/csi/storage)
+- [Deploy a Metrics Server](../../../kubernetes-guides/monitoring-and-observability/deploy-metrics-server)
+- [Explore the talosctl CLI reference](../reference/cli)
+- [Plan your production deployment](./prodnotes)

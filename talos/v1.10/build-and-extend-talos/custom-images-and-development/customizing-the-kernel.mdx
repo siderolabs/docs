@@ -24,7 +24,7 @@ We will go through each step in detail.
 
 ## Building a Custom Kernel
 
-First, you might need to prepare the build environment, follow the [Building Custom Images](./building-images.mdx) guide.
+First, you might need to prepare the build environment, follow the [Building Custom Images](./building-images) guide.
 
 Checkout the [`siderolabs/pkgs`](https://github.com/siderolabs/pkgs) repository:
 
@@ -68,7 +68,7 @@ This will create a container image `127.0.0.1:5005/siderolabs/kernel:$TAG` with 
 
 ## Building Talos Base Artifacts
 
-Follow the [Building Custom Images](./building-images.mdx) guide to set up the Talos source code checkout.
+Follow the [Building Custom Images](./building-images) guide to set up the Talos source code checkout.
 
 If some new kernel modules were introduced, adjust the list of the default modules compiled into the Talos `initramfs` by
 editing the file `hack/modules-ARCH.txt`.
@@ -93,7 +93,7 @@ make imager PKG_KERNEL=127.0.0.1:5005/siderolabs/kernel:$TAG PLATFORM=linux/amd6
 
 ## Building Talos Boot Assets
 
-Follow the [Boot Assets](../../platform-specific-installations/boot-assets.mdx) guide to build Talos boot assets you might need to boot Talos: ISO, `installer` image, etc.
+Follow the [Boot Assets](../../platform-specific-installations/boot-assets) guide to build Talos boot assets you might need to boot Talos: ISO, `installer` image, etc.
 Replace the reference to the `imager` in guide with the reference to the `imager` container built above.
 
 > Note: if you update the `imager` container, don't forget to `docker pull` it, as `docker` caches pulled images and won't pull the updated image automatically.

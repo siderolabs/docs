@@ -10,7 +10,7 @@ SideroLink is a fundamental component of [Sidero Omni](https://www.siderolabs.co
 
 ## Configuration
 
-To configure SideroLink, provide the SideroLink API server address either via the kernel command line argument `siderolink.api` or as a [config document](../reference/configuration/siderolink/siderolinkconfig.mdx).
+To configure SideroLink, provide the SideroLink API server address either via the kernel command line argument `siderolink.api` or as a [config document](../reference/configuration/siderolink/siderolinkconfig).
 
 The SideroLink API URL format is: `https://siderolink.api/?jointoken=token&grpc_tunnel=true`.
 
@@ -33,7 +33,7 @@ The SideroLink API URL format is: `https://siderolink.api/?jointoken=token&grpc_
 When SideroLink is configured, the Talos maintenance mode API listens exclusively on the SideroLink network.
 This allows operations not generally available over the public network, such as retrieving the Talos version and accessing sensitive resources.
 
-Talos Linux always provides the Talos API over SideroLink and automatically permits access over SideroLink even if the [Ingress Firewall](./ingress-firewall.mdx") is enabled.
+Talos Linux always provides the Talos API over SideroLink and automatically permits access over SideroLink even if the [Ingress Firewall](./ingress-firewall) is enabled.
 However, Wireguard connections must still be allowed by the Ingress Firewall.
 
 SideroLink only supports point-to-point connections between Talos machines and the SideroLink management server; direct communication between two Talos machines over SideroLink is not possible.

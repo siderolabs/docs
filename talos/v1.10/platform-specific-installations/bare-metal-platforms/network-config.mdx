@@ -6,7 +6,7 @@ description: "In this guide we will describe how network can be configured on ba
 import { release } from '/snippets/custom-variables.mdx';
 
 By default, Talos will run DHCP client on all interfaces which have a link, and that might be enough for most of the cases.
-If some advanced network configuration is required, it can be done via the [machine configuration](../../reference/configuration/overview.mdx) file.
+If some advanced network configuration is required, it can be done via the [machine configuration](../../reference/configuration/overview) file.
 
 But sometimes it is required to apply network configuration even before the machine configuration can be fetched from the network.
 
@@ -34,7 +34,7 @@ VLANs can be configured via `vlan=` kernel command line parameter:
 vlan=eth0.100:eth0
 ```
 
-See [kernel parameters reference](../../reference/kernel.mdx) for more details.
+See [kernel parameters reference](../../reference/kernel) for more details.
 
 ## Platform Network Configuration
 
@@ -42,8 +42,8 @@ Some platforms (e.g. AWS, Google Cloud, etc.) have their own network configurati
 There is no such mechanism for bare-metal platforms, so Talos provides a way to use platform network config on the `metal` platform to submit the initial network configuration.
 
 The platform network configuration is a YAML document which contains resource specifications for various network resources.
-For the `metal` platform, the [interactive dashboard](../../deploy-and-manage-workloads/interactive-dashboard.mdx) can be used to edit the platform network configuration, also the configuration can be
-created [manually](../../networking/metal-network-configuration.mdx).
+For the `metal` platform, the [interactive dashboard](../../deploy-and-manage-workloads/interactive-dashboard) can be used to edit the platform network configuration, also the configuration can be
+created [manually](../../networking/metal-network-configuration).
 
 The current value of the platform network configuration can be retrieved using the `MetaKeys` resource (key `0x0a`):
 
@@ -67,9 +67,9 @@ docker run --rm -i --privileged ghcr.io/siderolabs/imager:${release} image --pla
 `}
 </CodeBlock>
 
-The platform network configuration gets merged with other sources of network configuration, the details can be found in the [network resources guide](../../learn-more/networking-resources.mdx#configuration-merging").
+The platform network configuration gets merged with other sources of network configuration, the details can be found in the [network resources guide](../../learn-more/networking-resources#configuration-merging").
 
 ## `nocloud` Network Configuration
 
 Some bare-metal providers provide a way to configure network via the `nocloud` data source.
-Talos Linux can automatically pick up this [configuration](../cloud-platforms/nocloud.mdx) when `nocloud` image is used.
+Talos Linux can automatically pick up this [configuration](../cloud-platforms/nocloud) when `nocloud` image is used.

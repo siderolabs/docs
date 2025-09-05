@@ -30,7 +30,7 @@ It is recommended to not use the default VPC so we will create a new one for thi
 
 Change to your desired region and CIDR block and create a VPC:
 
-> Make sure your subnet does not overlap with `10.244.0.0/16` or `10.96.0.0/12` the [default pod and services subnets in Kubernetes](../../troubleshooting/troubleshooting.mdx#conflict-on-kubernetes-and-host-subnets).
+> Make sure your subnet does not overlap with `10.244.0.0/16` or `10.96.0.0/12` the [default pod and services subnets in Kubernetes](../../troubleshooting/troubleshooting#conflict-on-kubernetes-and-host-subnets).
 
 ```bash
 AWS_REGION="us-west-2"
@@ -267,8 +267,8 @@ LISTENER_ARN=$(aws elbv2 create-listener \
 
 ### Create the Machine Configuration Files
 
-We will create a [machine config patch](../../configure-your-talos-cluster/system-configuration/patching.mdx#rfc6902-json-patches) to use the AWS time servers.
-You can create [additional patches](../../reference/configuration/v1alpha1/config.mdx) to customize the configuration as needed.
+We will create a [machine config patch](../../configure-your-talos-cluster/system-configuration/patching#rfc6902-json-patches) to use the AWS time servers.
+You can create [additional patches](../../reference/configuration/v1alpha1/config) to customize the configuration as needed.
 
 ```bash
 cat <<EOF > time-server-patch.yaml

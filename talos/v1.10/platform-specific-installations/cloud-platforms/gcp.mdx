@@ -13,7 +13,7 @@ In this guide, we will create an HA Kubernetes cluster in GCP with 1 worker node
 We will assume an existing [Cloud Storage bucket](https://cloud.google.com/storage/docs/creating-buckets), and some familiarity with Google Cloud.
 If you need more information on Google Cloud specifics, please see the [official Google documentation](https://cloud.google.com/docs/).
 
-[jq](https://stedolan.github.io/jq/) and [talosctl](../../getting-started/quickstart.mdx#talosctl) also needs to be installed
+[jq](https://stedolan.github.io/jq/) and [talosctl](../../getting-started/quickstart#talosctl) also needs to be installed
 
 ## Manual Setup
 
@@ -129,7 +129,7 @@ LB_PUBLIC_IP=$(gcloud compute forwarding-rules describe talos-fwd-rule \
 talosctl gen config talos-k8s-gcp-tutorial https://${LB_PUBLIC_IP}:443
 ```
 
-Additionally, you can specify [machine configuration patches](../../configure-your-talos-cluster/system-configuration/patching.mdx#configuration-patching-with-talosctl-cli) which will be applied during the config generation.
+Additionally, you can specify [machine configuration patches](../../configure-your-talos-cluster/system-configuration/patching#configuration-patching-with-talosctl-cli) which will be applied during the config generation.
 
 ### Compute Creation
 

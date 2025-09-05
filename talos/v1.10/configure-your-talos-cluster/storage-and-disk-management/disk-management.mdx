@@ -176,7 +176,7 @@ Talos Linux provides volume configuration using the following machine configurat
 > Note: The volume configuration in the machine configuration is only applied when the volume has not been provisioned yet.
 > So applying changes after the initial provisioning will not have any effect.
 
-To configure the `EPHEMERAL` (`/var`) volume, append the following [document](../../reference/configuration/block/volumeconfig.mdx) to the machine configuration:
+To configure the `EPHEMERAL` (`/var`) volume, append the following [document](../../reference/configuration/block/volumeconfig) to the machine configuration:
 
 ```yaml
 apiVersion: v1alpha1
@@ -225,13 +225,13 @@ provisioning:
     match: disk.transport == 'nvme' && !system_disk
 ```
 
-> Note: Currently, encryption for `EPHEMERAL` and `STATE` volumes is configured using [another config document](../../reference/configuration/v1alpha1/config.mdx#Config.machine.systemDiskEncryption).
+> Note: Currently, encryption for `EPHEMERAL` and `STATE` volumes is configured using [another config document](../../reference/configuration/v1alpha1/config#Config.machine.systemDiskEncryption).
 
 ### `IMAGECACHE` Volume
 
-This system volume is not provisioned by default, and it only gets created if the [Image Cache](../images-container-runtime/image-cache.mdx#configuration) feature is enabled.
+This system volume is not provisioned by default, and it only gets created if the [Image Cache](../images-container-runtime/image-cache#configuration) feature is enabled.
 
-See [Image Cache configuration](../images-container-runtime/image-cache.mdx#configuration") for more details.
+See [Image Cache configuration](../images-container-runtime/image-cache#configuration") for more details.
 
 ## User Volumes
 
@@ -251,7 +251,7 @@ Disk encryption can be optionally enabled for user volumes.
 
 ### Creating User Volumes
 
-To create a user volume, append the following [document](../../reference/configuration/block/uservolumeconfig.mdx) to the machine configuration:
+To create a user volume, append the following [document](../../reference/configuration/block/uservolumeconfig) to the machine configuration:
 
 ```yaml
 apiVersion: v1alpha1
@@ -381,16 +381,19 @@ Examples of disk selector expressions:
 - `disk.serial.startsWith('deadbeef') && !cdrom`: select disks with serial number starting with `deadbeef` and not of CD-ROM type
 - `'/dev/disk/by-path/pci-0000:00:1f.2-ata-1' in disk.symlinks`: select disks with a specific stable symlink
 
-### Minimum and Maximum Size
+### Minimum, Maximum and Grow
 
 The `minSize` and `maxSize` fields define the minimum and maximum size of the volume, respectively.
 Talos Linux will always ensure that the volume is at least `minSize` in size and will not exceed `maxSize`.
 If `maxSize` is not set, the volume will grow to utilize the maximum available space on the disk.
 
-If `grow` is set to `true`, the volume will automatically grow to utilize the maximum available space on the disk on each boot.
+The `grow` flag controls what happens when the volume already exists:
 
-Setting `minSize` might influence disk selection - if the disk does not have enough free space to satisfy the minimum size requirement, it will not be selected for provisioning.
-
+- **On initial creation:** `grow` is ignored. The new volume is created between `minSize` and `maxSize` (or full disk if `maxSize` is unset).
+- **On subsequent boots (when the volume already exists):**
+  - If `grow: false`, the existing volume size is never changed.
+  - If `grow: true`, and the current volume is smaller than `maxSize` (or `maxSize` is unset), Talos will expand the volume to fill available space after it.
+  
 ## Resources
 
 The configuration of volumes is defined using the `VolumeConfig` resource, while the current state of volumes is stored in the `VolumeStatus` resource.

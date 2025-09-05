@@ -23,7 +23,7 @@ To see a live demo of this writeup, see the video below:
 The follow are requirements for creating the set of caching proxies:
 
 - Docker 18.03 or greater
-- Local cluster requirements for either [docker](../../platform-specific-installations/local-platforms/docker.mdx) or [QEMU](../../platform-specific-installations/local-platforms/qemu.mdx).
+- Local cluster requirements for either [docker](../../platform-specific-installations/local-platforms/docker) or [QEMU](../../platform-specific-installations/local-platforms/qemu).
 
 ## Launch the Caching Docker Registry Proxies
 
@@ -59,7 +59,7 @@ host port (5000, 5001, 5002, 5003 and 5004).
 
 ## Using Caching Registries with `QEMU` Local Cluster
 
-With a [QEMU](../../platform-specific-installations/local-platforms/qemu.mdx) local cluster, a bridge interface is created on the host.
+With a [QEMU](../../platform-specific-installations/local-platforms/qemu) local cluster, a bridge interface is created on the host.
 As registry containers expose their ports on the host, we can use bridge IP to direct proxy requests.
 
 ```bash
@@ -78,7 +78,7 @@ The first time cluster boots, images are pulled and cached, so next cluster boot
 
 ## Using Caching Registries with `docker` Local Cluster
 
-With a [docker](../../platform-specific-installations/local-platforms/docker.mdx) local cluster we can use docker bridge IP, default value for that IP is `172.17.0.1`.
+With a [docker](../../platform-specific-installations/local-platforms/docker) local cluster we can use docker bridge IP, default value for that IP is `172.17.0.1`.
 On Linux, the docker bridge address can be inspected with `ip addr show docker0`.
 
 ```bash
@@ -91,7 +91,7 @@ talosctl cluster create --provisioner docker \
 
 ## Machine Configuration
 
-The caching registries can be configured via machine configuration [patch](../system-configuration/patching.mdx), equivalent to the command line flags above:
+The caching registries can be configured via machine configuration [patch](../system-configuration/patching), equivalent to the command line flags above:
 
 ```yaml
 machine:

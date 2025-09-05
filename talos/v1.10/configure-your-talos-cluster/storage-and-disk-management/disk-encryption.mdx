@@ -6,7 +6,7 @@ aliases:
 ---
 
 It is possible to enable encryption for system disks at the OS level.
-Currently, only [STATE](../../learn-more/architecture.mdx#file-system-partitions) and [EPHEMERAL](../../learn-more/architecture.mdx#file-system-partitions) partitions can be encrypted.
+Currently, only [STATE](../../learn-more/architecture#file-system-partitions) and [EPHEMERAL](../../learn-more/architecture#file-system-partitions) partitions can be encrypted.
 STATE contains the most sensitive node data: secrets and certs.
 The EPHEMERAL partition may contain sensitive workload data.
 Data is encrypted using LUKS2, which is provided by the Linux kernel modules and `cryptsetup` utility.
@@ -31,7 +31,7 @@ Talos Linux supports four encryption methods, which can be combined together for
 - `static` - encrypt with the static passphrase (weakest protection, for `STATE` partition encryption it means that the passphrase will be stored in the `META` partition).
 - `nodeID` - encrypt with the key derived from the node UUID (weak, it is designed to protect against data being leaked or recovered from a drive that has been removed from a Talos Linux node).
 - `kms` - encrypt using key sealed with network KMS (strong, but requires network access to decrypt the data.)
-- `tpm` - encrypt with the key derived from the TPM (strong, when used with [SecureBoot](../../platform-specific-installations/bare-metal-platforms/secureboot.mdx)).
+- `tpm` - encrypt with the key derived from the TPM (strong, when used with [SecureBoot](../../platform-specific-installations/bare-metal-platforms/secureboot)).
 
 > Note: `nodeID` encryption is not designed to protect against attacks where physical access to the machine, including the drive, is available.
 > It uses the hardware characteristics of the machine in order to decrypt the data, so drives that have been removed, or recycled from a cloud environment or attached to a different virtual machine, will maintain their protection and encryption.

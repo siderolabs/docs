@@ -4,13 +4,13 @@ weight: 50
 description: "Discover the latest features and updates in Talos Linux 1.10."
 ---
 
-For critical changes, refer to the [upgrade notes](../configure-your-talos-cluster/lifecycle-management/upgrading-talos.mdx).
+For critical changes, refer to the [upgrade notes](../configure-your-talos-cluster/lifecycle-management/upgrading-talos).
 
 ## Breaking Changes
 
 ### UEFI Boot
 
-Talos 1.10 now uses the `systemd-boot` [bootloader](../platform-specific-installations/bare-metal-platforms/bootloader.mdx) and [Unified Kernel Images (UKIs)](https://uapi-group.org/specifications/specs/unified_kernel_image/) for UEFI systems.
+Talos 1.10 now uses the `systemd-boot` [bootloader](../platform-specific-installations/bare-metal-platforms/bootloader) and [Unified Kernel Images (UKIs)](https://uapi-group.org/specifications/specs/unified_kernel_image/) for UEFI systems.
 Previously, this was limited to Secure Boot systems.
 Upgrades from Talos 1.9 retain the existing bootloader, so this applies only to fresh installations.
 
@@ -25,7 +25,7 @@ Image Factory now supports `<platform>-installer` images (e.g., `aws-installer` 
 
 Starting with Talos 1.10, `.machine.install.extensions` is deprecated and has no effect.
 The field remains for compatibility with older versions.
-Use [Boot Assets](../platform-specific-installations/boot-assets.mdx) instead.
+Use [Boot Assets](../platform-specific-installations/boot-assets) instead.
 The `installer` image is now smaller as tools for host-side extension installation have been removed.
 
 ### `cgroups` v1
@@ -39,16 +39,16 @@ The kernel argument `talos.unified_cgroup_hierarchy` is ignored.
 
 ### User Volumes
 
-Talos introduces [user disk volumes](../configure-your-talos-cluster/storage-and-disk-management/disk-management.mdx#user-volumes) via the [`UserVolumeConfig`](../reference/configuration/block/uservolumeconfig.mdx) machine config.
+Talos introduces [user disk volumes](../configure-your-talos-cluster/storage-and-disk-management/disk-management#user-volumes) via the [`UserVolumeConfig`](../reference/configuration/block/uservolumeconfig) machine config.
 The `.machine.disks` field is deprecated but remains for backward compatibility.
 
 ### Driver Rebind
 
-A new machine config, [`PCIDriverRebindConfig`](../reference/configuration/hardware/pcidriverrebindconfig.mdx), allows rebinding PCI device drivers to different targets.
+A new machine config, [`PCIDriverRebindConfig`](../reference/configuration/hardware/pcidriverrebindconfig), allows rebinding PCI device drivers to different targets.
 
 ### Ethernet Configuration
 
-Talos now supports `ethtool`-style [Ethernet configuration](../networking/ethernet-config.mdx) via [`EthernetConfig`](../reference/configuration/network/ethernetconfig.mdx).
+Talos now supports `ethtool`-style [Ethernet configuration](../networking/ethernet-config) via [`EthernetConfig`](../reference/configuration/network/ethernetconfig).
 Interface status can be checked with `talosctl get ethernetstatus`.
 
 ### Dual-Boot Disk Images and ISOs
@@ -59,7 +59,7 @@ On first boot, Talos determines the boot method and removes the unused bootloade
 For arm64, Talos now uses `systemd-boot`.
 Secure Boot images exclusively use `systemd-boot` as Secure Boot is UEFI-only.
 
-[Imager](../platform-specific-installations/boot-assets.mdx) supports bootloader selection when generating disk images:
+[Imager](../platform-specific-installations/boot-assets) supports bootloader selection when generating disk images:
 
 ```yaml
 output:
@@ -72,7 +72,7 @@ output:
 
 Talos Linux by default now ships an experimental SELinux policy which protects the base operating system from unauthorized access.
 The default SELinux mode is `permissive`, meaning that violations are logged but not enforced.
-See [SELinux](../security/selinux.mdx) for details.
+See [SELinux](../security/selinux) for details.
 
 ## Component Updates
 

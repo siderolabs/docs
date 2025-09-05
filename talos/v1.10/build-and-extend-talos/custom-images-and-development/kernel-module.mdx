@@ -3,7 +3,7 @@ title: "Adding a Kernel Module"
 description: "Create a system extension that includes kernel modules."
 ---
 
-[System extensions](./system-extensions.mdx) in Talos provide ways to add files to the root filesystem and make it possible to run privileged containers as services.
+[System extensions](./system-extensions) in Talos provide ways to add files to the root filesystem and make it possible to run privileged containers as services.
 But Talos still requires that kernel modules be signed with a trusted signing key to be loaded at run time.
 
 To add a kernel module to Talos you will need to create a system extension that is built with the kernel and signed by the same signing key.
@@ -84,7 +84,7 @@ After you've created a pkg.yaml file you can test building your package with the
 Because Talos requires kernel modules to be signed with a signing key only available during the Talos kernel build process we need to build the kernel and package at the same time.
 
 We also need a container registry available to store the built assets.
-Follow the steps in [developing Talos](./developing-talos.mdx#prepare) to create a docker builder and run a local container registry before running this command.
+Follow the steps in [developing Talos](./developing-talos#prepare) to create a docker builder and run a local container registry before running this command.
 
 ```bash
 make kernel my-module-pkg REGISTRY=127.0.0.1:5005 \
@@ -202,7 +202,7 @@ Copy the image that get's pushed and save it as `${EXTENSION_IMAGE}`.
 ## Test the extension
 
 Now we need to create installation media to boot Talos.
-We will build and use [imager](../../platform-specific-installations/boot-assets.mdx) to include our extension.
+We will build and use [imager](../../platform-specific-installations/boot-assets) to include our extension.
 
 Clone the Talos repo.
 

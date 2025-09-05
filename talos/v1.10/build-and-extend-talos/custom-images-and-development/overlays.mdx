@@ -20,11 +20,11 @@ The list of official overlays can be found in the [Overlays GitHub repository](h
 
 Overlays can be used to generate a modified metal image or installer image with the overlay applied.
 
-The process of generating boot assets with overlays is described in the [boot assets guide](../../platform-specific-installations/boot-assets.mdx).
+The process of generating boot assets with overlays is described in the [boot assets guide](../../platform-specific-installations/boot-assets).
 
 ### Example: Booting a Raspberry Pi 4 with an Overlay
 
-Follow the board specific guide for [Raspberry Pi](../../platform-specific-installations/single-board-computers/rpi_generic.mdx) to download or generate the metal disk image and write to an SD card.
+Follow the board specific guide for [Raspberry Pi](../../platform-specific-installations/single-board-computers/rpi_generic) to download or generate the metal disk image and write to an SD card.
 
 Boot the machine with the boot media and apply the machine configuration with the installer image that has the overlay applied.
 
@@ -108,7 +108,7 @@ docker run --rm -t -v ./_out:/out -v /dev:/dev --privileged ghcr.io/siderolabs/i
  It supports passing multiple options by repeating the flag or can be read from a yaml document by passing `--overlay-option=@<path to file>`.
 
 > **Note:** In some cases you need to build a custom imager.
-> In this case, refer to [this guide on how to build a custom images](./building-images.mdx) using an imager.
+> In this case, refer to [this guide on how to build a custom images](./building-images) using an imager.
 
 #### Troubleshooting
 

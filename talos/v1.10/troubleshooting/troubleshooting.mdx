@@ -8,7 +8,7 @@ aliases:
 
 import { k8s_release } from '/snippets/custom-variables.mdx';
 
-In this guide we assume that Talos is configured with default features enabled, such as [Discovery Service](../configure-your-talos-cluster/system-configuration/discovery.mdx) and [KubePrism](../../../kubernetes-guides/advanced-guides/kubeprism.mdx).
+In this guide we assume that Talos is configured with default features enabled, such as [Discovery Service](../configure-your-talos-cluster/system-configuration/discovery) and [KubePrism](../../../kubernetes-guides/advanced-guides/kubeprism).
 If these features are disabled, some of the troubleshooting steps may not apply or may need to be adjusted.
 
 This guide is structured so that it can be followed step-by-step, skip sections which are not relevant to your issue.
@@ -16,24 +16,24 @@ This guide is structured so that it can be followed step-by-step, skip sections 
 ## Network Configuration
 
 As Talos Linux is an API-based operating system, it is important to have networking configured so that the API can be accessed.
-Some information can be gathered from the [Interactive Dashboard](../deploy-and-manage-workloads/interactive-dashboard.mdx) which is available on the machine console.
+Some information can be gathered from the [Interactive Dashboard](../deploy-and-manage-workloads/interactive-dashboard) which is available on the machine console.
 
 When running in the cloud the networking should be configured automatically.
-Whereas when running on bare-metal it may need more specific configuration, see [networking `metal` configuration guide](../platform-specific-installations/bare-metal-platforms/network-config.mdx).
+Whereas when running on bare-metal it may need more specific configuration, see [networking `metal` configuration guide](../platform-specific-installations/bare-metal-platforms/network-config).
 
 ## Talos API
 
-The Talos API runs on [port 50000](../learn-more/talos-network-connectivity.mdx).
+The Talos API runs on [port 50000](../learn-more/talos-network-connectivity).
 Control plane nodes should always serve the Talos API, while worker nodes require access to the control plane nodes to issue TLS certificates for the workers.
 
 ### Firewall Issues
 
-Make sure that the firewall is not blocking port 50000, and [communication](../learn-more/talos-network-connectivity.mdx) on ports 50000/50001 inside the cluster.
+Make sure that the firewall is not blocking port 50000, and [communication](../learn-more/talos-network-connectivity) on ports 50000/50001 inside the cluster.
 
 ### Client Configuration Issues
 
 Make sure to use correct `talosconfig` client configuration file matching your cluster.
-See [getting started](../getting-started/getting-started.mdx) for more information.
+See [getting started](../getting-started/getting-started) for more information.
 
 The most common issue is that `talosctl gen config` writes `talosconfig` to the file in the current directory, while `talosctl` by default picks up the configuration from the default location (`~/.talos/config`).
 The path to the configuration file can be specified with `--talosconfig` flag to `talosctl`.
@@ -53,7 +53,7 @@ The client will automatically retry on other endpoints if there are unavailable 
 
 Worker nodes should not be used as the endpoint, as they are not able to forward request to other nodes.
 
-The [VIP](../networking/vip.mdx) should never be used as Talos API endpoint.
+The [VIP](../networking/vip) should never be used as Talos API endpoint.
 
 ### TCP Loadbalancer
 
@@ -61,13 +61,13 @@ When using a TCP loadbalancer, make sure the loadbalancer endpoint is included i
 
 ## System Requirements
 
-If minimum [system requirements](../getting-started/system-requirements.mdx) are not met, this might manifest itself in various ways, such as random failures when starting services, or failures to pull images from the container registry.
+If minimum [system requirements](../getting-started/system-requirements) are not met, this might manifest itself in various ways, such as random failures when starting services, or failures to pull images from the container registry.
 
 ## Running Health Checks
 
 Talos Linux provides a set of basic health checks with `talosctl health` command which can be used to check the health of the cluster.
 
-In the default mode, `talosctl health` uses information from the [discovery](../configure-your-talos-cluster/system-configuration/discovery.mdx) to get the information about cluster members.
+In the default mode, `talosctl health` uses information from the [discovery](../configure-your-talos-cluster/system-configuration/discovery) to get the information about cluster members.
 This can be overridden with command line flags `--control-plane-nodes` and `--worker-nodes`.
 
 ## Gathering Logs
@@ -77,7 +77,7 @@ The `talosctl support` command can be used to gather logs and other information 
 
 ## Discovery and Cluster Membership
 
-Talos Linux uses [Discovery Service](../configure-your-talos-cluster/system-configuration/discovery.mdx) to discover other nodes in the cluster.
+Talos Linux uses [Discovery Service](../configure-your-talos-cluster/system-configuration/discovery) to discover other nodes in the cluster.
 
 The list of members on each machine should be consistent: `talosctl -n <IP> get members`.
 
@@ -92,7 +92,7 @@ So if the same machine configuration (or secrets) are used to repeatedly create 
 
 ### Removed Members are Still Present
 
-Talos Linux removes itself from the discovery service when it is [reset](../configure-your-talos-cluster/lifecycle-management/resetting-a-machine.mdx).
+Talos Linux removes itself from the discovery service when it is [reset](../configure-your-talos-cluster/lifecycle-management/resetting-a-machine).
 If the machine was not reset, it might show up as a member of the cluster for the maximum TTL of the discovery service (30 minutes), and after that it will be automatically removed.
 
 ## `etcd` Issues
@@ -112,7 +112,7 @@ Common troubleshooting steps:
 
 ### All `etcd` Services are Stuck in `Pre` State
 
-Make sure that a single member was [bootstrapped](../getting-started/getting-started.mdx#kubernetes-bootstrap).
+Make sure that a single member was [bootstrapped](../getting-started/getting-started#kubernetes-bootstrap).
 
 Check that the machine is able to pull the `etcd` container image, check `talosctl dmesg` for messages starting with `retrying:` prefix.
 
@@ -126,11 +126,11 @@ Check that all control plane nodes are reported in `talosctl get members` output
 
 ### `etcd` Reports and Alarm
 
-See [etcd maintenance](../build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance.mdx) guide.
+See [etcd maintenance](../build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance) guide.
 
 ### `etcd` Quorum is Lost
 
-See [disaster recovery](../build-and-extend-talos/cluster-operations-and-maintenance/disaster-recovery.mdx) guide.
+See [disaster recovery](../build-and-extend-talos/cluster-operations-and-maintenance/disaster-recovery) guide.
 
 ### Other Issues
 
@@ -160,7 +160,7 @@ Check that `kubelet` image is available (`talosctl image ls --namespace system`)
 
 Check `kubelet` logs with `talosctl -n IP logs kubelet` for startup errors:
 
-- make sure Kubernetes version is [supported](../getting-started/support-matrix.mdx) with this Talos release
+- make sure Kubernetes version is [supported](../getting-started/support-matrix) with this Talos release
 - make sure `kubelet` extra arguments and extra configuration supplied with Talos machine configuration is valid
 
 ### Talos Complains about Node Not Found
@@ -186,7 +186,7 @@ csr-vlghg   14m   kubernetes.io/kube-apiserver-client-kubelet   system:bootstrap
 
 ### `kubectl get nodes` Reports Wrong Internal IP
 
-Configure the correct internal IP address with [`.machine.kubelet.nodeIP`](../reference/configuration/v1alpha1/config.mdx#Config.machine.kubelet.nodeIP)
+Configure the correct internal IP address with [`.machine.kubelet.nodeIP`](../reference/configuration/v1alpha1/config#Config.machine.kubelet.nodeIP)
 
 ### `kubectl get nodes` Reports Wrong External IP
 
@@ -306,7 +306,7 @@ talosctl -n <IP> logs -k kube-system/kube-apiserver-talos-default-controlplane-1
 
 If the control plane component reports error on startup, check that:
 
-- make sure Kubernetes version is [supported](../getting-started/support-matrix.mdx) with this Talos release
+- make sure Kubernetes version is [supported](../getting-started/support-matrix) with this Talos release
 - make sure extra arguments and extra configuration supplied with Talos machine configuration is valid
 
 ### Kubernetes Bootstrap Manifests
@@ -399,7 +399,7 @@ As mentioned above, this can be achieved by a number of strategies, including:
 
 - an external load balancer
 - DNS records
-- Talos-builtin shared IP ([VIP](../networking/vip.mdx))
+- Talos-builtin shared IP ([VIP](../networking/vip))
 - BGP peering of a shared IP (such as with [kube-vip](https://kube-vip.io))
 
 Using a DNS name here is a good idea, since it allows any other option, while offering
@@ -420,7 +420,7 @@ common node operations like reboots and upgrades.
 
 ### Checking Controller Runtime Logs
 
-Talos runs a set of [controllers](../learn-more/controllers-resources.mdx) which operate on resources to build and support machine operations.
+Talos runs a set of [controllers](../learn-more/controllers-resources) which operate on resources to build and support machine operations.
 
 Some debugging information can be queried from the controller logs with `talosctl logs controller-runtime`:
 

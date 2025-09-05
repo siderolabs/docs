@@ -5,7 +5,7 @@ description: "Running Talos Linux as a pod in Kubernetes."
 
 import { release } from '/snippets/custom-variables.mdx';
 
-Talos Linux can be run as a pod in Kubernetes similar to running Talos in [Docker](../local-platforms/docker.mdx).
+Talos Linux can be run as a pod in Kubernetes similar to running Talos in [Docker](../local-platforms/docker).
 This can be used e.g. to run controlplane nodes inside an existing Kubernetes cluster.
 
 Talos Linux running in Kubernetes is not full Talos Linux experience, as it is running in a container using the host's kernel and network stack.
@@ -22,7 +22,7 @@ Some operations like upgrades and reboots are not supported.
 
 ## Machine Configuration
 
-Machine configuration can be generated using [Getting Started](../../getting-started/getting-started.mdx) guide.
+Machine configuration can be generated using [Getting Started](../../getting-started/getting-started) guide.
 Machine install disk will ge ignored, as the install image.
 The Talos version will be driven by the container image being used.
 

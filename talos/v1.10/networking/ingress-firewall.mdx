@@ -11,8 +11,8 @@ Talos Linux Ingress Firewall doesn't affect the traffic between the Kubernetes p
 
 ## Configuration
 
-Ingress rules are configured as extra documents [NetworkDefaultActionConfig](../reference/configuration/network/networkdefaultactionconfig.mdx) and
-[NetworkRuleConfig](../reference/configuration/network/networkruleconfig.mdx) in the Talos machine configuration:
+Ingress rules are configured as extra documents [NetworkDefaultActionConfig](../reference/configuration/network/networkdefaultactionconfig) and
+[NetworkRuleConfig](../reference/configuration/network/networkruleconfig) in the Talos machine configuration:
 
 ```yaml
 apiVersion: v1alpha1
@@ -64,7 +64,7 @@ The `protocol` might be either `tcp` or `udp`.
 The `ingress` specifies the list of subnets that are allowed to access the host services, with the optional `except` field to exclude a set of addresses from the subnet.
 
 > Note: incorrect configuration of the ingress firewall might result in the host becoming inaccessible over Talos API.
-> It is recommended that the configuration be [applied](../configure-your-talos-cluster/system-configuration/editing-machine-configuration.mdx) in `--mode=try` to ensure it is reverted in case of a mistake.
+> It is recommended that the configuration be [applied](../configure-your-talos-cluster/system-configuration/editing-machine-configuration) in `--mode=try` to ensure it is reverted in case of a mistake.
 
 ## Recommended Rules
 

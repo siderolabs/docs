@@ -143,7 +143,7 @@ mkisofs -joliet -rock -volid 'metal-iso' -output config.iso iso/
 
 #### `talos.config.auth.*`
 
-Kernel parameters prefixed with `talos.config.auth.` are used to configure [OAuth2 authentication for the machine configuration](../security/machine-config-oauth.mdx).
+Kernel parameters prefixed with `talos.config.auth.` are used to configure [OAuth2 authentication for the machine configuration](../security/machine-config-oauth).
 
 #### `talos.config.inline`
 
@@ -152,7 +152,7 @@ The machine configuration should be `zstd` compressed and base64-encoded to be p
 
 > Note: The kernel command line has a limited size (4096 bytes), so this method is only suitable for small configuration documents.
 
-One such example is to provide [a custom CA certificate](../security/certificate-authorities.mdx") via `TrustedRootsConfig` in the machine configuration:
+One such example is to provide [a custom CA certificate](../security/certificate-authorities) via `TrustedRootsConfig` in the machine configuration:
 
 ```shell
 cat config.yaml | zstd --compress --ultra -22 | base64 -w 0

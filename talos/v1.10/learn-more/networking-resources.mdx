@@ -4,13 +4,13 @@ weight: 70
 description: "Delve deeper into networking of Talos Linux."
 ---
 
-Talos network configuration subsystem is powered by [COSI](./controllers-resources.mdx).
+Talos network configuration subsystem is powered by [COSI](./controllers-resources).
 Talos translates network configuration from multiple sources: machine configuration, cloud metadata, network automatic configuration (e.g. DHCP) into COSI resources.
 
 Network configuration and network state can be inspected using `talosctl get` command.
 
 Network machine configuration can be modified using `talosctl edit mc` command (also variants `talosctl patch mc`, `talosctl apply-config`) without a reboot.
-As API access requires network connection, [`--mode=try`](../configure-your-talos-cluster/system-configuration/editing-machine-configuration.mdx)
+As API access requires network connection, [`--mode=try`](../configure-your-talos-cluster/system-configuration/editing-machine-configuration)
 can be used to test the configuration with automatic rollback to avoid losing network access to the node.
 
 ## Resources
@@ -400,7 +400,7 @@ There are several configuration sources for the network configuration, which are
 
 ### Cmdline
 
-The kernel [command line](../reference/kernel.mdx) is parsed for the following options:
+The kernel [command line](../reference/kernel) is parsed for the following options:
 
 * `ip=` option is parsed for node IP, default gateway, hostname, DNS servers, NTP servers;
 * `bond=` option is parsed for bonding interfaces and their options;

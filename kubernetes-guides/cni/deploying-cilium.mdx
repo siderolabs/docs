@@ -12,7 +12,7 @@ Adhering to Talos principles we'll deploy Cilium with IPAM mode set to Kubernete
 As Talos does not allow loading kernel modules by Kubernetes workloads, `SYS_MODULE` capability needs to be dropped from the Cilium default set of values, this override can be seen in the helm/cilium cli install commands.
 Each method can either install Cilium using kube proxy (default) or without: [Kubernetes Without kube-proxy](https://docs.cilium.io/en/v1.16/network/kubernetes/kubeproxy-free/)
 
-In this guide we assume that [KubePrism](../advanced-guides/kubeprism.mdx) is enabled and configured to use the port 7445.
+In this guide we assume that [KubePrism](../advanced-guides/kubeprism) is enabled and configured to use the port 7445.
 
 ## Machine config preparation
 
@@ -429,7 +429,7 @@ For more details see [the discusssion here](https://github.com/siderolabs/talos/
 
     ```Error creating: pods "client-69748f45d8-9b9jg" is forbidden: violates PodSecurity "baseline:latest": non-default capabilities (container "client" must not include "NET_RAW" in securityContext.capabilities.add)```
 
-  This is expected, you can workaround it by adding the `pod-security.kubernetes.io/enforce=privileged` [label on the namespace level](../security/pod-security.mdx).
+  This is expected, you can workaround it by adding the `pod-security.kubernetes.io/enforce=privileged` [label on the namespace level](../security/pod-security).
 
 - Talos has full kernel module support for eBPF, See:
   - [Cilium System Requirements](https://docs.cilium.io/en/stable/operations/system_requirements/)

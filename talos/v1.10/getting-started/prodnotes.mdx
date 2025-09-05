@@ -8,7 +8,7 @@ This guide explains things to consider to create a production quality Talos Linu
 Check out the [Reference Architecture documentation](https://www.siderolabs.com/resource-hub/resources/) for architectural diagrams and guidance on creating production-grade clusters in other environments.
 
 This guide assumes that you’ve already created a development cluster and are familiar with the **Getting Started** documentation.
-If not, please refer to the [Getting Started](./getting-started.mdx) guide for more information.
+If not, please refer to the [Getting Started](./getting-started) guide for more information.
 
 When moving from a learning environment to a production-ready Talos Linux cluster, you have to consider several critical factors:
 
@@ -37,7 +37,7 @@ Follow these steps to boot your machines using the Talos ISO image:
 1. Download the latest ISO for your infrastructure depending on the hardware type from the [Talos Image factory](https://factory.talos.dev/).
 
    **Note**: For network booting and self-built media using published kernel there are a number of required kernel parameters.
-Please see the [kernel docs](../reference/kernel.mdx) getting-started for more information.
+Please see the [kernel docs](../reference/kernel) getting-started for more information.
 
 1. Boot three control planes using the ISO image you just downloaded.
 1. Boot additional machines as worker nodes.
@@ -200,7 +200,7 @@ Replace `<node-ip-address>` with the IP address of the node you want to inspect:
 Check that the values match your worker and control plane node's network and disk settings.
 If the values don't match, you'll need to update your machine configuration..
 
-    **Note**: Refer to the [Talos CLI reference](../reference/cli.mdx) for additional commands to gather more information about your nodes and cluster.
+    **Note**: Refer to the [Talos CLI reference](../reference/cli) for additional commands to gather more information about your nodes and cluster.
 
 ## Step 9: Patch Your Machine Configuration (Optional)
 
@@ -261,9 +261,14 @@ Follow these steps to patch your machine configuration:
     talosctl machineconfig patch worker.yaml --patch @worker-patch-1.yaml --output worker.yaml
     ```
 
-Additionally, you can learn more about [patches](../configure-your-talos-cluster/system-configuration/patching.mdx) from the configuration patches documentation.
+Additionally, you can learn more about [patches](../configure-your-talos-cluster/system-configuration/patching) from the configuration patches documentation.
 
-## Step 10: Apply the Machine Configuration
+## Step 10: Configure Your Multihomed Machines
+
+If your machines are multihomed, i.e., they have more than one IPv4 and/or IPv6 addresses other than loopback, then additional configuration is required.
+Refer to [Multihoming](../networking/multihoming) for more information.
+
+## Step 11: Apply the Machine Configuration
 
 To apply your machine configuration:
 
@@ -293,7 +298,7 @@ To apply your machine configuration:
     done
     ```
 
-## Step 11: Manage Your Talos Configuration File
+## Step 12: Manage Your Talos Configuration File
 
 The `talosconfig` is your key to managing the Talos Linux cluster, without it, you cannot authenticate or communicate with your cluster nodes using `talosctl`.
 
@@ -313,7 +318,7 @@ You have two options for managing your `talosconfig`:
     export TALOSCONFIG=~/.talos/config
     ```
 
-## Step 12: Set Endpoints of Your Control Plane Nodes
+## Step 13: Set Endpoints of Your Control Plane Nodes
 
 Configure your endpoints to enable talosctl to automatically load balance requests and fail over between control plane nodes when individual nodes become unavailable.
 
@@ -332,7 +337,7 @@ If your control plane nodes IP addresses are `192.168.0.2`, `192.168.0.3`, `192.
 talosctl config endpoint 192.168.0.2 192.168.0.3 192.168.0.4
 ```
 
-## Step 13: Bootstrap Your Kubernetes Cluster
+## Step 14: Bootstrap Your Kubernetes Cluster
 
 Wait for your control plane nodes to finish booting, then bootstrap your etcd cluster by running the command below.
 
@@ -345,7 +350,7 @@ talosctl bootstrap --nodes <control-plane-IP>
 **Note**: Run this command ONCE on a SINGLE control plane node.
 If you have multiple control plane nodes, you can choose any of them.
 
-## Step 14: Get Kubernetes Access
+## Step 15: Get Kubernetes Access
 
 Download your `kubeconfig` file to start using `kubectl` with your cluster.
 These commands must be run against a single control plane node.
@@ -367,7 +372,7 @@ export KUBECONFIG=./alternative-kubeconfig
 
 ```
 
-## Step 15: Verify Your Nodes Are Running
+## Step 16: Verify Your Nodes Are Running
 
 Run the command to ensure that your nodes are running:
 
@@ -382,6 +387,6 @@ You now have a working production grade Talos Linux Kubernetes cluster.
 
 ### What's Next?
 
-- [Set up persistent storage](../../../kubernetes-guides/csi/storage.mdx)
-- [Deploy a Metrics Server](../../../kubernetes-guides/monitoring-and-observability/deploy-metrics-server.mdx)
-- [Explore the talosctl CLI reference](../reference/cli.mdx)
+- [Set up persistent storage](../../../kubernetes-guides/csi/storage)
+- [Deploy a Metrics Server](../../../kubernetes-guides/monitoring-and-observability/deploy-metrics-server)
+- [Explore the talosctl CLI reference](../reference/cli)
