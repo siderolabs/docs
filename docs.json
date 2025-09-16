@@ -72,25 +72,25 @@
               {
                 "group": "Bare Metal Platforms",
                 "pages": [
-                  "talos/v1.10/platform-specific-installations/bare-metal-platforms/iso",
-                  "talos/v1.10/platform-specific-installations/bare-metal-platforms/pxe",
                   "talos/v1.10/platform-specific-installations/bare-metal-platforms/bootloader",
-                  "talos/v1.10/platform-specific-installations/bare-metal-platforms/secureboot",
-                  "talos/v1.10/platform-specific-installations/bare-metal-platforms/network-config",
                   "talos/v1.10/platform-specific-installations/bare-metal-platforms/equinix-metal",
-                  "talos/v1.10/platform-specific-installations/bare-metal-platforms/matchbox"
+                  "talos/v1.10/platform-specific-installations/bare-metal-platforms/iso",
+                  "talos/v1.10/platform-specific-installations/bare-metal-platforms/matchbox",
+                  "talos/v1.10/platform-specific-installations/bare-metal-platforms/network-config",
+                  "talos/v1.10/platform-specific-installations/bare-metal-platforms/pxe",
+                  "talos/v1.10/platform-specific-installations/bare-metal-platforms/secureboot"
                 ]
               },
               {
                 "group": "Virtualized Platforms",
                 "pages": [
-                  "talos/v1.10/platform-specific-installations/virtualized-platforms/vmware",
-                  "talos/v1.10/platform-specific-installations/virtualized-platforms/proxmox",
-                  "talos/v1.10/platform-specific-installations/virtualized-platforms/kvm",
                   "talos/v1.10/platform-specific-installations/virtualized-platforms/hyper-v",
-                  "talos/v1.10/platform-specific-installations/virtualized-platforms/xen",
+                  "talos/v1.10/platform-specific-installations/virtualized-platforms/kvm",
                   "talos/v1.10/platform-specific-installations/virtualized-platforms/opennebula",
-                  "talos/v1.10/platform-specific-installations/virtualized-platforms/vagrant-libvirt"
+                  "talos/v1.10/platform-specific-installations/virtualized-platforms/proxmox",
+                  "talos/v1.10/platform-specific-installations/virtualized-platforms/vagrant-libvirt",
+                  "talos/v1.10/platform-specific-installations/virtualized-platforms/vmware",
+                  "talos/v1.10/platform-specific-installations/virtualized-platforms/xen"
                 ]
               },
               {
@@ -124,19 +124,19 @@
               {
                 "group": "Single Board Computers",
                 "pages": [
-                  "talos/v1.10/platform-specific-installations/single-board-computers/rpi_generic",
-                  "talos/v1.10/platform-specific-installations/single-board-computers/rock64",
-                  "talos/v1.10/platform-specific-installations/single-board-computers/rockpi_4",
-                  "talos/v1.10/platform-specific-installations/single-board-computers/rockpi_4c",
-                  "talos/v1.10/platform-specific-installations/single-board-computers/rock4cplus",
-                  "talos/v1.10/platform-specific-installations/single-board-computers/rock5b",
-                  "talos/v1.10/platform-specific-installations/single-board-computers/pine64",
+                  "talos/v1.10/platform-specific-installations/single-board-computers/bananapi_m64",
+                  "talos/v1.10/platform-specific-installations/single-board-computers/nanopi_r4s",
                   "talos/v1.10/platform-specific-installations/single-board-computers/jetson_nano",
+                  "talos/v1.10/platform-specific-installations/single-board-computers/libretech_all_h3_cc_h5",
                   "talos/v1.10/platform-specific-installations/single-board-computers/orangepi_5",
                   "talos/v1.10/platform-specific-installations/single-board-computers/orangepi_r1_plus_lts",
-                  "talos/v1.10/platform-specific-installations/single-board-computers/nanopi_r4s",
-                  "talos/v1.10/platform-specific-installations/single-board-computers/bananapi_m64",
-                  "talos/v1.10/platform-specific-installations/single-board-computers/libretech_all_h3_cc_h5",
+                  "talos/v1.10/platform-specific-installations/single-board-computers/pine64",
+                  "talos/v1.10/platform-specific-installations/single-board-computers/rock64",
+                  "talos/v1.10/platform-specific-installations/single-board-computers/rock4cplus",
+                  "talos/v1.10/platform-specific-installations/single-board-computers/rock5b",
+                  "talos/v1.10/platform-specific-installations/single-board-computers/rockpi_4",
+                  "talos/v1.10/platform-specific-installations/single-board-computers/rockpi_4c",
+                  "talos/v1.10/platform-specific-installations/single-board-computers/rpi_generic",
                   "talos/v1.10/platform-specific-installations/single-board-computers/turing_rk1",
                   "talos/v1.10/platform-specific-installations/single-board-computers/unofficial"
                 ]
@@ -149,41 +149,41 @@
           {
             "group": "Deploying and managing workloads",
             "pages": [
+              "talos/v1.10/deploy-and-manage-workloads/interactive-dashboard",
               "talos/v1.10/deploy-and-manage-workloads/scaling-up",
               "talos/v1.10/deploy-and-manage-workloads/scaling-down",
-              "talos/v1.10/deploy-and-manage-workloads/interactive-dashboard",
               "talos/v1.10/deploy-and-manage-workloads/workers-on-controlplane"
             ]
           },
           {
             "group": "Networking",
             "pages": [
+              "talos/v1.10/networking/advanced-networking",
               "talos/v1.10/networking/corporate-proxies",
+              "talos/v1.10/networking/device-selector",
+              "talos/v1.10/networking/egress-domains",
+              "talos/v1.10/networking/ethernet-config",
               "talos/v1.10/networking/host-dns",
               "talos/v1.10/networking/ingress-firewall",
               "talos/v1.10/networking/kubespan",
-              "talos/v1.10/networking/device-selector",
+              "talos/v1.10/networking/metal-network-configuration",
               "talos/v1.10/networking/multihoming",
               "talos/v1.10/networking/predictable-interface-names",
               "talos/v1.10/networking/siderolink",
               "talos/v1.10/networking/vip",
-              "talos/v1.10/networking/wireguard-network",
-              "talos/v1.10/networking/metal-network-configuration",
-              "talos/v1.10/networking/ethernet-config",
-              "talos/v1.10/networking/advanced-networking",
-              "talos/v1.10/networking/egress-domains"
+              "talos/v1.10/networking/wireguard-network"
             ]
           },
           {
             "group": "Security",
             "pages": [
-              "talos/v1.10/security/rbac",
-              "talos/v1.10/security/certificate-authorities",
-              "talos/v1.10/security/cert-management",
               "talos/v1.10/security/ca-rotation",
+              "talos/v1.10/security/cert-management",
+              "talos/v1.10/security/certificate-authorities",
               "talos/v1.10/security/machine-config-oauth",
-              "talos/v1.10/security/verifying-images",
-              "talos/v1.10/security/selinux"
+              "talos/v1.10/security/rbac",
+              "talos/v1.10/security/selinux",
+              "talos/v1.10/security/verifying-images"
             ]
           },
           {
@@ -192,22 +192,22 @@
               {
                 "group": "Custom Images \u0026 Development",
                 "pages": [
-                  "talos/v1.10/build-and-extend-talos/custom-images-and-development/system-extensions",
                   "talos/v1.10/build-and-extend-talos/custom-images-and-development/building-images",
                   "talos/v1.10/build-and-extend-talos/custom-images-and-development/customizing-the-kernel",
                   "talos/v1.10/build-and-extend-talos/custom-images-and-development/developing-talos",
+                  "talos/v1.10/build-and-extend-talos/custom-images-and-development/extension-services",
                   "talos/v1.10/build-and-extend-talos/custom-images-and-development/kernel-module",
-                  "talos/v1.10/build-and-extend-talos/custom-images-and-development/overlays",
                   "talos/v1.10/build-and-extend-talos/custom-images-and-development/oci-base-spec",
-                  "talos/v1.10/build-and-extend-talos/custom-images-and-development/extension-services"
+                  "talos/v1.10/build-and-extend-talos/custom-images-and-development/overlays",
+                  "talos/v1.10/build-and-extend-talos/custom-images-and-development/system-extensions"
                 ]
               },
               {
                 "group": "Cluster Operations \u0026 Maintenance",
                 "pages": [
-                  "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance",
                   "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/disaster-recovery",
                   "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/cgroups-analysis",
+                  "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance",
                   "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/watchdog"
                 ]
               }
@@ -253,9 +253,9 @@
               {
                 "group": "Hardware \u0026 Drivers",
                 "pages": [
+                  "talos/v1.10/configure-your-talos-cluster/hardware-and-drivers/nvidia-fabricmanager",
                   "talos/v1.10/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu",
-                  "talos/v1.10/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary",
-                  "talos/v1.10/configure-your-talos-cluster/hardware-and-drivers/nvidia-fabricmanager"
+                  "talos/v1.10/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary"
                 ]
               },
               {
@@ -285,17 +285,17 @@
             "group": "Learn more",
             "pages": [
               "talos/v1.10/learn-more/architecture",
-              "talos/v1.10/learn-more/philosophy",
               "talos/v1.10/learn-more/components",
               "talos/v1.10/learn-more/control-plane",
               "talos/v1.10/learn-more/controllers-resources",
-              "talos/v1.10/learn-more/networking-resources",
-              "talos/v1.10/learn-more/talos-network-connectivity",
-              "talos/v1.10/learn-more/kubespan",
-              "talos/v1.10/learn-more/process-capabilities",
-              "talos/v1.10/learn-more/talosctl",
               "talos/v1.10/learn-more/image-factory",
-              "talos/v1.10/learn-more/knowledge-base"
+              "talos/v1.10/learn-more/knowledge-base",
+              "talos/v1.10/learn-more/kubespan",
+              "talos/v1.10/learn-more/networking-resources",
+              "talos/v1.10/learn-more/philosophy",
+              "talos/v1.10/learn-more/process-capabilities",
+              "talos/v1.10/learn-more/talos-network-connectivity",
+              "talos/v1.10/learn-more/talosctl"
             ]
           }
         ]
@@ -349,8 +349,8 @@
                   "omni/omni-cluster-setup/registering-machines/register-a-bare-metal-machine-iso",
                   "omni/omni-cluster-setup/registering-machines/register-a-bare-metal-machine-pxe-ipxe",
                   "omni/omni-cluster-setup/registering-machines/how-to-register-an-aws-ec2-instance",
-                  "omni/omni-cluster-setup/registering-machines/register-a-gcp-instance",
                   "omni/omni-cluster-setup/registering-machines/register-an-azure-instance",
+                  "omni/omni-cluster-setup/registering-machines/register-a-gcp-instance",
                   "omni/omni-cluster-setup/registering-machines/register-a-hetzner-server"
                 ]
               },
@@ -453,9 +453,9 @@
             "group": "Advanced Guides",
             "pages": [
               "kubernetes-guides/advanced-guides/device-plugins",
+              "kubernetes-guides/advanced-guides/inlinemanifests",
               "kubernetes-guides/advanced-guides/kubeprism",
               "kubernetes-guides/advanced-guides/node-labels",
-              "kubernetes-guides/advanced-guides/inlinemanifests",
               "kubernetes-guides/advanced-guides/talos-api-access-from-k8s",
               "kubernetes-guides/advanced-guides/upgrading-kubernetes"
             ]

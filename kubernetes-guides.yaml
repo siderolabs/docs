@@ -38,8 +38,8 @@ navigation:
           folder: "kubernetes-guides/advanced-guides"
           pages: 
             - "device-plugins.mdx"
+            - "inlinemanifests.mdx"
             - "kubeprism.mdx"
             - "node-labels.mdx"
-            - "inlinemanifests.mdx"
             - "talos-api-access-from-k8s.mdx"
             - "upgrading-kubernetes.mdx"
