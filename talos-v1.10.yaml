@@ -102,6 +102,7 @@ navigation:
             - "ingress-firewall.mdx"
             - "kubespan.mdx"
             - "device-selector.mdx"
+            - "multihoming.mdx"
             - "predictable-interface-names.mdx"
             - "siderolink.mdx"
             - "vip.mdx"
@@ -153,6 +154,7 @@ navigation:
                 - "system-configuration/performance-tuning"
                 - "system-configuration/time-sync"
                 - "system-configuration/discovery"
+                - "system-configuration/reproducible-machine-configuration"
                 - "system-configuration/insecure"
             - group: "Images & Container Runtime"
               pages:

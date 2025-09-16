@@ -163,6 +163,7 @@
               "talos/v1.10/networking/ingress-firewall",
               "talos/v1.10/networking/kubespan",
               "talos/v1.10/networking/device-selector",
+              "talos/v1.10/networking/multihoming",
               "talos/v1.10/networking/predictable-interface-names",
               "talos/v1.10/networking/siderolink",
               "talos/v1.10/networking/vip",
@@ -223,6 +224,7 @@
                   "talos/v1.10/configure-your-talos-cluster/system-configuration/performance-tuning",
                   "talos/v1.10/configure-your-talos-cluster/system-configuration/time-sync",
                   "talos/v1.10/configure-your-talos-cluster/system-configuration/discovery",
+                  "talos/v1.10/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
                   "talos/v1.10/configure-your-talos-cluster/system-configuration/insecure"
                 ]
               },
@@ -452,6 +454,7 @@
             "pages": [
               "kubernetes-guides/advanced-guides/device-plugins",
               "kubernetes-guides/advanced-guides/kubeprism",
+              "kubernetes-guides/advanced-guides/node-labels",
               "kubernetes-guides/advanced-guides/inlinemanifests",
               "kubernetes-guides/advanced-guides/talos-api-access-from-k8s",
               "kubernetes-guides/advanced-guides/upgrading-kubernetes"

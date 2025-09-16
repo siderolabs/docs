@@ -39,6 +39,7 @@ navigation:
           pages: 
             - "device-plugins.mdx"
             - "kubeprism.mdx"
+            - "node-labels.mdx"
             - "inlinemanifests.mdx"
             - "talos-api-access-from-k8s.mdx"
             - "upgrading-kubernetes.mdx"
