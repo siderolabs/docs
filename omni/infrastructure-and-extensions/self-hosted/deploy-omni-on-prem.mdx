@@ -106,7 +106,7 @@ gpg --export-secret-key --armor how-to-guide@siderolabs.com > omni.asc
 There are two easy ways to run Omni: docker-compose and a simple `docker run`. We recommend using docker-compose, but both are detailed in separate tabs below.
 
 <Tabs>
-  
+
   <Tab title="Docker Compose">
     #### Export variables
 
@@ -222,6 +222,42 @@ There are two easy ways to run Omni: docker-compose and a simple `docker run`. W
     **Note**
 
     In a default setup, the first user that logs in via SAML will be the “admin”. All subsequent users will receive a read-only role and may need to be granted additional access by the admin user from the “Users” tab in Omni.
+
+    #### OIDC
+
+    ```bash
+    docker run \
+      --net=host \
+      --cap-add=NET_ADMIN \
+      --device /dev/net/tun \
+      -v $PWD/etcd:/_out/etcd \
+      -v <path to full chain TLS certificate>:/tls.crt \
+      -v <path to TLS key>:/tls.key \
+      -v $PWD/omni.asc:/omni.asc \
+      ghcr.io/siderolabs/omni:<tag> \
+        --account-id=$(uuidgen) \
+        --name=onprem-omni \
+        --cert=/tls.crt \
+        --key=/tls.key \
+        --siderolink-api-cert=/tls.crt \
+        --siderolink-api-key=/tls.key \
+        --private-key-source=file:///omni.asc \
+        --event-sink-port=8091 \
+        --bind-addr=0.0.0.0:443 \
+        --siderolink-api-bind-addr=0.0.0.0:8090 \
+        --k8s-proxy-bind-addr=0.0.0.0:8100 \
+        --advertised-api-url=https://<domain name for onprem omni>/ \
+        --siderolink-api-advertised-url=https://<domain name for onprem omni>:8090/ \
+        --siderolink-wireguard-advertised-addr=<ip address of the host running Omni>:50180 \
+        --advertised-kubernetes-proxy-url=https://<domain name for onprem omni>:8100/ \
+        --auth-oidc-enabled \
+        --auth-oidc-client-id <id copied from the OIDC provider>
+        --auth-oidc-client-secret <secret copied from the OIDC provider>
+        --auth-oidc-logout-url <logout URL, optional, copied from the OIDC provider>
+        --auth-oidc-scopes openid \
+        --auth-oidc-scopes profile \
+        --auth-oidc-scopes email
+    ```
 
     **Note**
 
