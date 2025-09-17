@@ -160,7 +160,6 @@
             "pages": [
               "talos/v1.10/networking/advanced-networking",
               "talos/v1.10/networking/corporate-proxies",
-              "talos/v1.10/networking/device-selector",
               "talos/v1.10/networking/egress-domains",
               "talos/v1.10/networking/ethernet-config",
               "talos/v1.10/networking/host-dns",
@@ -168,6 +167,7 @@
               "talos/v1.10/networking/kubespan",
               "talos/v1.10/networking/metal-network-configuration",
               "talos/v1.10/networking/multihoming",
+              "talos/v1.10/networking/device-selector",
               "talos/v1.10/networking/predictable-interface-names",
               "talos/v1.10/networking/siderolink",
               "talos/v1.10/networking/vip",
@@ -328,6 +328,7 @@
                 "pages": [
                   "omni/infrastructure-and-extensions/self-hosted/overview",
                   "omni/infrastructure-and-extensions/self-hosted/deploy-omni-on-prem",
+                  "omni/infrastructure-and-extensions/self-hosted/install-image-factory-on-prem",
                   "omni/infrastructure-and-extensions/self-hosted/configure-keycloak-for-omni",
                   "omni/infrastructure-and-extensions/self-hosted/how-to-back-up-on-prem-omni-db",
                   "omni/infrastructure-and-extensions/self-hosted/expose-omni-with-nginx-https"
