@@ -5,7 +5,7 @@ navigation:
       groups:
         - group: "Overview"
           folder: "omni/overview"
-          pages: 
+          pages:
             - "what-is-omni.mdx"
 
         - group: "Getting Started"
@@ -25,6 +25,7 @@ navigation:
               pages:
                 - "self-hosted/overview"
                 - "self-hosted/deploy-omni-on-prem"
+                - "self-hosted/install-image-factory-on-prem"
                 - "self-hosted/configure-keycloak-for-omni"
                 - "self-hosted/how-to-back-up-on-prem-omni-db"
                 - "self-hosted/expose-omni-with-nginx-https"
