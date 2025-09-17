@@ -9,10 +9,6 @@ colors:
 
 favicon: "/images/favicon.svg"
 
-banner:
-  content: "🎉 Join Oxide + SideroLabs at KubeCon North America 2025 in Atlanta on Nov 12 • [RSVP Free →](https://www.eventbrite.com/e/oxidesidero-at-kubecon-north-america-2025-tickets-1538869282449)"
-  dismissible: true
-
 contextual:
   options:
     - "copy"
