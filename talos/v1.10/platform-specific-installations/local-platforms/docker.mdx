@@ -4,7 +4,7 @@ description: "Creating Talos Kubernetes cluster using Docker."
 aliases:
   - ../../../local-platforms/docker
 ---
-import { release } from '/snippets/custom-variables.mdx';
+import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 In this guide we will create a Kubernetes cluster in Docker, using a containerized version of Talos.
 
@@ -135,7 +135,7 @@ docker run --rm -it
   --mount type=volume,destination=/usr/libexec/kubernetes
   --mount type=volume,destination=/opt 
   -e PLATFORM=container 
-  ghcr.io/siderolabs/talos:${release}
+  ghcr.io/siderolabs/talos:${release_v1_10}
 
 `}
 </CodeBlock>

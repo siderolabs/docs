@@ -3,7 +3,7 @@ title: "Network Configuration"
 description: "In this guide we will describe how network can be configured on bare-metal platforms."
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 By default, Talos will run DHCP client on all interfaces which have a link, and that might be enough for most of the cases.
 If some advanced network configuration is required, it can be done via the [machine configuration](../../reference/configuration/overview) file.
@@ -62,8 +62,8 @@ The initial platform network configuration for the `metal` platform can be also 
 
 <CodeBlock lang="sh">
 {`
-docker run --rm -i ghcr.io/siderolabs/imager:${release} iso --arch amd64 --tar-to-stdout --meta 0x0a='{...}' | tar xz
-docker run --rm -i --privileged ghcr.io/siderolabs/imager:${release} image --platform metal --arch amd64 --tar-to-stdout --meta 0x0a='{...}' | tar xz
+docker run --rm -i ghcr.io/siderolabs/imager:${release_v1_10} iso --arch amd64 --tar-to-stdout --meta 0x0a='{...}' | tar xz
+docker run --rm -i --privileged ghcr.io/siderolabs/imager:${release_v1_10} image --platform metal --arch amd64 --tar-to-stdout --meta 0x0a='{...}' | tar xz
 `}
 </CodeBlock>
 

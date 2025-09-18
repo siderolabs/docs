@@ -5,7 +5,7 @@ aliases:
   - ../../../single-board-computers/rpi_generic
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 Talos disk image for the Raspberry Pi generic should in theory work for the boards supported by [u-boot](https://github.com/u-boot/u-boot/blob/master/doc/board/broadcom/raspberrypi.rst#64-bit) `rpi_arm64_defconfig`.
 This has only been officialy tested on the Raspberry Pi 4 and community tested on one variant of the Compute Module 4 using Super 6C boards.
@@ -55,7 +55,7 @@ Download the image and decompress it:
 
 <CodeBlock lang="sh">
   {`
-curl -LO https://factory.talos.dev/image/ee21ef4a5ef808a9b7484cc0dda0f25075021691c8c09a276591eedb638ea1f9/${release}/metal-arm64.raw.xz
+curl -LO https://factory.talos.dev/image/ee21ef4a5ef808a9b7484cc0dda0f25075021691c8c09a276591eedb638ea1f9/${release_v1_10}/metal-arm64.raw.xz
 xz -d metal-arm64.raw.xz
   `}
 </CodeBlock>
@@ -98,7 +98,7 @@ For example, to upgrade to the latest version of Talos, you can run:
 
 <CodeBlock lang="sh">
   {`
-talosctl -n <node IP or DNS name> upgrade --image=factory.talos.dev/installer/ee21ef4a5ef808a9b7484cc0dda0f25075021691c8c09a276591eedb638ea1f9:${release}
+talosctl -n <node IP or DNS name> upgrade --image=factory.talos.dev/installer/ee21ef4a5ef808a9b7484cc0dda0f25075021691c8c09a276591eedb638ea1f9:${release_v1_10}
   `}
 </CodeBlock>
 
@@ -150,7 +150,7 @@ The returned schematic ID `0db665edfda21c70194e7ca660955425d16cec2aa58ff031e2abf
 
 Now we can download the metal arm64 image:
 
-- https://factory.talos.dev/image/0db665edfda21c70194e7ca660955425d16cec2aa58ff031e2abf72b7c328585/${release}/metal-arm64.raw.xz (download it and burn to a boot media)
+- https://factory.talos.dev/image/0db665edfda21c70194e7ca660955425d16cec2aa58ff031e2abf72b7c328585/${release_v1_10}/metal-arm64.raw.xz (download it and burn to a boot media)
 
 > The Image Factory URL contains both schematic ID and Talos version, and both can be changed to generate different boot assets.
 
@@ -164,7 +164,7 @@ Same way upgrade process can be used to transition to a new set of system extens
 
 <CodeBlock lang="sh">
   {`
-talosctl upgrade --image factory.talos.dev/installer/<new_schematic_id>:${release}
+talosctl upgrade --image factory.talos.dev/installer/<new_schematic_id>:${release_v1_10}
   `}
 </CodeBlock>
 
@@ -179,7 +179,7 @@ First, let's lookup extension images for `vc4` in the [extensions repository](ht
 
 <CodeBlock lang="sh">
   {`
-$ crane export ghcr.io/siderolabs/extensions:${release} | tar x -O image-digests | grep -E 'vc4'
+$ crane export ghcr.io/siderolabs/extensions:${release_v1_10} | tar x -O image-digests | grep -E 'vc4'
 ghcr.io/siderolabs/vc4:v0.1.4@sha256:548b2b121611424f6b1b6cfb72a1669421ffaf2f1560911c324a546c7cee655e
   `}
 </CodeBlock>
@@ -188,7 +188,7 @@ Next we'll lookup the overlay image for `rpi_generic` in the [overlays repositor
 
 <CodeBlock lang="sh">
   {`
-$ crane export ghcr.io/siderolabs/overlays:${release} | tar x -O overlays.yaml | yq '.overlays[] | select(.name=="rpi_generic")'
+$ crane export ghcr.io/siderolabs/overlays:${release_v1_10} | tar x -O overlays.yaml | yq '.overlays[] | select(.name=="rpi_generic")'
 name: rpi_generic
 image: ghcr.io/siderolabs/sbc-raspberrypi:v0.1.0
 digest: sha256:849ace01b9af514d817b05a9c5963a35202e09a4807d12f8a3ea83657c76c863
@@ -199,7 +199,7 @@ Now we can generate the metal image with the following command:
 
 <CodeBlock lang="sh">
   {`
-$ docker run --rm -t -v $PWD/_out:/out -v /dev:/dev --privileged ghcr.io/siderolabs/imager:${release} rpi_generic \
+$ docker run --rm -t -v $PWD/_out:/out -v /dev:/dev --privileged ghcr.io/siderolabs/imager:${release_v1_10} rpi_generic \
   --arch arm64 \
   --overlay-image ghcr.io/siderolabs/sbc-raspberrypi:v0.1.0@sha256:849ace01b9af514d817b05a9c5963a35202e09a4807d12f8a3ea83657c76c863 \
   --overlay-name=rpi_generic \
@@ -220,14 +220,14 @@ profile ready:
 arch: arm64
 platform: metal
 secureboot: false
-version: ${release}
+version: ${release_v1_10}
 input:
   kernel:
     path: /usr/install/arm64/vmlinuz
   initramfs:
     path: /usr/install/arm64/initramfs.xz
   baseInstaller:
-    imageRef: ghcr.io/siderolabs/installer:${release}
+    imageRef: ghcr.io/siderolabs/installer:${release_v1_10}
   systemExtensions:
     - imageRef: ghcr.io/siderolabs/vc4:v0.1.4@sha256:a68c268d40694b7b93c8ac65d6b99892a6152a2ee23fdbffceb59094cc3047fc
 overlay:
@@ -265,7 +265,7 @@ As the next step, we should generate a custom `installer` image which contains a
 
 <CodeBlock lang="sh">
   {`
-$ docker run --rm -t -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release} installer \
+$ docker run --rm -t -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release_v1_10} installer \
   --arch arm64 \
   --overlay-image ghcr.io/siderolabs/sbc-raspberrypi:v0.1.0@sha256:849ace01b9af514d817b05a9c5963a35202e09a4807d12f8a3ea83657c76c863 \
   --overlay-name=rpi_generic \
@@ -291,7 +291,7 @@ The `installer` container image should be pushed to the container registry:
 
 <CodeBlock lang="sh">
   {`
-crane push _out/metal-arm64-installer.tar ghcr.io/<username></username>/installer:${release}
+crane push _out/metal-arm64-installer.tar ghcr.io/<username></username>/installer:${release_v1_10}
   `}
 </CodeBlock>
 

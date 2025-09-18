@@ -5,7 +5,7 @@ aliases:
   - ../../../cloud-platforms/aws
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 ## Creating a Cluster via the AWS CLI
 
@@ -100,11 +100,11 @@ aws ec2 create-route \
 
 ### Official AMI Images
 
-Official AMI image ID can be found in the `cloud-images.json` file attached to the [Talos release](https://github.com/siderolabs/talos/releases).
+Official AMI image ID can be found in the `cloud-images.json` file attached to the [Talos release_v1_10](https://github.com/siderolabs/talos/releases).
 
 <CodeBlock lang="sh">
 {`
-AMI=$(curl -sL https://github.com/siderolabs/talos/releases/download/${release}/cloud-images.json | \
+AMI=$(curl -sL https://github.com/siderolabs/talos/releases/download/${release_v1_10}/cloud-images.json | \
     jq -r '.[] | select(.region == "'$AWS_REGION'") | select (.arch == "amd64") | .id')
 echo $AMI
 `}
@@ -136,7 +136,7 @@ Note that the role should be associated with the S3 bucket we created above.
 First, download the AWS image from Image Factory:
 
 <CodeBlock lang="sh">
-{`curl -L https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release}/aws-amd64.raw.xz | xz -d > disk.raw`}
+{`curl -L https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_10}/aws-amd64.raw.xz | xz -d > disk.raw`}
 </CodeBlock>
 
 Copy the RAW disk to S3 and import it as a snapshot:

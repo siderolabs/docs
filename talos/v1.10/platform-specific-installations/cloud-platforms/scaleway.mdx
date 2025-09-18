@@ -5,7 +5,7 @@ aliases:
   - ../../../cloud-platforms/scaleway
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 Talos is known to work on scaleway.com; however, it is currently mostly undocumented.
 
@@ -19,9 +19,9 @@ The process to run a Talos node in Scaleway is as follows :
 
 <CodeBlock lang="sh">
 {`
-  scw block snapshot import-from-object-storage name=talos-${release} bucket=YOUR-BUCKET key=talos.qcow2 size=10GB 
+  scw block snapshot import-from-object-storage name=talos-${release_v1_10} bucket=YOUR-BUCKET key=talos.qcow2 size=10GB 
 `}
 </CodeBlock>
 
-  This is assuming that you uploaded to a bucket called `YOUR-BUCKET` and a filename of `talos.qcow2`, to be called {`talos-${release}`}.
+  This is assuming that you uploaded to a bucket called `YOUR-BUCKET` and a filename of `talos.qcow2`, to be called {`talos-${release_v1_10}`}.
 - Create your instance using the snapshot using the GUI/CLI/OpenTofu etc.

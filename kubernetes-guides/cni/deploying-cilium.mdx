@@ -10,7 +10,7 @@ aliases:
 This documentation will outline installing Cilium CNI v1.18.0 on Talos in six different ways.
 Adhering to Talos principles we'll deploy Cilium with IPAM mode set to Kubernetes, and using the `cgroupv2` and `bpffs` mount that talos already provides.
 As Talos does not allow loading kernel modules by Kubernetes workloads, `SYS_MODULE` capability needs to be dropped from the Cilium default set of values, this override can be seen in the helm/cilium cli install commands.
-Each method can either install Cilium using kube proxy (default) or without: [Kubernetes Without kube-proxy](https://docs.cilium.io/en/v1.16/network/kubernetes/kubeproxy-free/)
+Each method can either install Cilium using kube proxy (default) or without: [Kubernetes Without kube-proxy](https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/).
 
 In this guide we assume that [KubePrism](../advanced-guides/kubeprism) is enabled and configured to use the port 7445.
 

@@ -3,7 +3,7 @@ title: "Radxa ROCK 4C Plus"
 description: "Installing Talos on Radxa ROCK 4c Plus SBC using raw disk image."
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 ## Prerequisites
 
@@ -16,7 +16,7 @@ Download the latest `talosctl`.
 
 <CodeBlock lang="sh">
   {`
-curl -Lo /usr/local/bin/talosctl https://github.com/siderolabs/talos/releases/download/${release}/talosctl-$(uname -s | tr "[:upper:]" "[:lower:]")-amd64
+curl -Lo /usr/local/bin/talosctl https://github.com/siderolabs/talos/releases/download/${release_v1_10}/talosctl-$(uname -s | tr "[:upper:]" "[:lower:]")-amd64
 chmod +x /usr/local/bin/talosctl
   `}
 </CodeBlock>
@@ -30,7 +30,7 @@ Download the image and decompress it:
 
 <CodeBlock lang="sh">
   {`
-curl -LO https://factory.talos.dev/image/ed7091ab924ef1406dadc4623c90f245868f03d262764ddc2c22c8a19eb37c1c/${release}/metal-arm64.raw.xz
+curl -LO https://factory.talos.dev/image/ed7091ab924ef1406dadc4623c90f245868f03d262764ddc2c22c8a19eb37c1c/${release_v1_10}/metal-arm64.raw.xz
 xz -d metal-arm64.raw.xz
   `}
 </CodeBlock>
@@ -79,6 +79,6 @@ For example, to upgrade to the latest version of Talos, you can run:
 
 <CodeBlock lang="sh">
   {`
-talosctl -n <node IP or DNS name> upgrade --image=factory.talos.dev/installer/ed7091ab924ef1406dadc4623c90f245868f03d262764ddc2c22c8a19eb37c1c:${release}
+talosctl -n <node IP or DNS name> upgrade --image=factory.talos.dev/installer/ed7091ab924ef1406dadc4623c90f245868f03d262764ddc2c22c8a19eb37c1c:${release_v1_10}
   `}
 </CodeBlock>

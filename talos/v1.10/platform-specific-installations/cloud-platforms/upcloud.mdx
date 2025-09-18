@@ -5,7 +5,7 @@ aliases:
   - ../../../cloud-platforms/upcloud
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 In this guide we will create an HA Kubernetes cluster 3 control plane nodes and 1 worker node.
 We assume some familiarity with UpCloud.
@@ -63,7 +63,7 @@ packer {
 
 variable "talos_version" {
   type    = string
-  default = "${release}"
+  default = "${release_v1_10}"
 }
 
 locals {
@@ -180,7 +180,7 @@ for ID in $(seq 3); do
       --title talos-us-nyc1-master-$ID \
       --hostname talos-us-nyc1-master-$ID \
       --plan 2xCPU-4GB \
-      --os "Talos (${release})" \
+      --os "Talos (${release_v1_10})" \
       --user-data "$(cat controlplane.yaml)" \
       --enable-metada
 done
@@ -203,7 +203,7 @@ upctl server create \
   --title talos-us-nyc1-worker-1 \
   --hostname talos-us-nyc1-worker-1 \
   --plan 2xCPU-4GB \
-  --os "Talos (${release})" \
+  --os "Talos (${release_v1_10})" \
   --user-data "$(cat worker.yaml)" \
   --enable-metada
 `}

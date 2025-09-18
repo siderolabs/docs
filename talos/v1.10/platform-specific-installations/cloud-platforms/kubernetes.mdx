@@ -3,7 +3,7 @@ title: "Kubernetes"
 description: "Running Talos Linux as a pod in Kubernetes."
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 Talos Linux can be run as a pod in Kubernetes similar to running Talos in [Docker](../local-platforms/docker).
 This can be used e.g. to run controlplane nodes inside an existing Kubernetes cluster.
@@ -17,7 +17,7 @@ Some operations like upgrades and reboots are not supported.
 * a `talos` container image: 
 
 <CodeBlock lang="sh">
-{`ghcr.io/siderolabs/talos:${release}`}
+{`ghcr.io/siderolabs/talos:${release_v1_10}`}
 </CodeBlock>
 
 ## Machine Configuration
@@ -49,7 +49,7 @@ There might be many ways to run Talos in Kubernetes (StatefulSet, Deployment, si
 env:
   - name: PLATFORM
     value: container
-image: ghcr.io/siderolabs/talos:${release}
+image: ghcr.io/siderolabs/talos:${release_v1_10}
 ports:
   - containerPort: 50000
     name: talos-api

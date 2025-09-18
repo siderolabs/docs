@@ -3,7 +3,7 @@ title: "Building Custom Talos Images"
 description: "How to build a custom Talos image from source."
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 There might be several reasons to build Talos images from source:
 
@@ -18,7 +18,7 @@ git clone https://github.com/siderolabs/talos.git
 
 If building for a specific release, checkout the corresponding tag:
 
-<CodeBlock lang="sh">{`git checkout ${release}`}</CodeBlock>
+<CodeBlock lang="sh">{`git checkout ${release_v1_10}`}</CodeBlock>
 
 ## Set up the Build Environment
 

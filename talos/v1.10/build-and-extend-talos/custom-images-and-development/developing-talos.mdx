@@ -5,7 +5,7 @@ aliases:
   - ../learn-more/developing-talos
 ---
 
-import { version } from '/snippets/custom-variables.mdx';
+import { version_v1_10 } from '/snippets/custom-variables.mdx';
 
 This guide outlines steps and tricks to develop Talos operating systems and related components.
 The guide assumes Linux operating system on the development host.
@@ -90,7 +90,7 @@ sudo --preserve-env=HOME _out/talosctl-linux-amd64 cluster create \
 
 > Note: as boot loader is not used, it's not necessary to  rebuild `installer` each time (old image is fine), but sometimes it's needed (when configuration changes are done and old installer doesn't validate the config).
 >
-> `talosctl cluster create` derives Talos machine configuration version from the install image tag, so sometimes early in the development cycle (when new minor tag is not released yet), machine config version can be overridden with --talos-version={version}.
+> `talosctl cluster create` derives Talos machine configuration version from the install image tag, so sometimes early in the development cycle (when new minor tag is not released yet), machine config version can be overridden with --talos-version={version_v1_10}.
 
 If the `--with-bootloader=false` flag is not enabled, for Talos cluster to pick up new changes to the code (in `initramfs`), it will require a Talos upgrade (so new `installer` should be built).
 With `--with-bootloader=false` flag, Talos always boots from `initramfs` in `_out/` directory, so simple reboot is enough to pick up new code changes.

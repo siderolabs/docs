@@ -5,7 +5,7 @@ aliases:
   - ../../../local-platforms/virtualbox
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 In this guide we will create a Kubernetes cluster using VirtualBox.
 
@@ -45,12 +45,12 @@ mkdir -p _out/
 curl https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/<version>/metal-<arch>.iso -L -o _out/metal-<arch>.iso
 ```
 
-For example version ${release} for `linux` platform:
+For example version ${release_v1_10} for `linux` platform:
 
 <CodeBlock lang="sh">
   {`
   mkdir -p _out/
-  curl https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release}/metal-amd64.iso -L -o _out/metal-amd64.iso
+  curl https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_10}/metal-amd64.iso -L -o _out/metal-amd64.iso
   `}
 </CodeBlock>
 

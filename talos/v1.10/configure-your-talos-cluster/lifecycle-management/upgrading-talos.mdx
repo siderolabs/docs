@@ -5,13 +5,13 @@ aliases:
   - ../guides/upgrading-talos
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 OS upgrades are effected by an API call, which can be sent via the `talosctl` CLI utility.
 
 The upgrade API call passes a node the installer image to use to perform the upgrade.
 
-Each Talos version has a corresponding installer image, listed on the release page for the version, for example <a href={`https://github.com/siderolabs/talos/releases/tag/${release}`}>{release}</a>.
+Each Talos version has a corresponding installer image, listed on the release page for the version, for example <a href={`https://github.com/siderolabs/talos/releases/tag/${release_v1_10}`}>{release_v1_10}</a>.
 
 Upgrades use an A-B image scheme in order to facilitate rollbacks.
 This scheme retains the previous Talos kernel and OS image following each upgrade.
@@ -34,7 +34,7 @@ For example, if upgrading from Talos 1.0 to Talos 1.2.4, the recommended upgrade
 * upgrade from v1.0.6 to latest patch of 1.1 - to v1.1.2
 * upgrade from v1.1.2 to v1.2.4
 
-## Before Upgrade to {release}
+## Before Upgrade to {release_v1_10}
 
 There are no specific actions to be taken before an upgrade.
 
@@ -44,7 +44,7 @@ To see a live demo of an upgrade of Talos Linux, see the video below:
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/AAF6WhX0USo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-## After Upgrade to {release}
+## After Upgrade to {release_v1_10}
 
 There are no specific actions to be taken after an upgrade.
 
@@ -60,7 +60,7 @@ as:
 <CodeBlock lang="sh">
 {`
   $ talosctl upgrade --nodes 10.20.30.40 \
-  --image ghcr.io/siderolabs/installer:${release}
+  --image ghcr.io/siderolabs/installer:${release_v1_10}
 `}
 </CodeBlock>
 

@@ -5,7 +5,7 @@ aliases:
   - ../../../single-board-computers/turing_rk1
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@ Download the latest `talosctl`.
 
 <CodeBlock lang="sh">
   {`
-curl -Lo /usr/local/bin/talosctl https://github.com/siderolabs/talos/releases/download/${release}/talosctl-$(uname -s | tr "[:upper:]" "[:lower:]")-amd64
+curl -Lo /usr/local/bin/talosctl https://github.com/siderolabs/talos/releases/download/${release_v1_10}/talosctl-$(uname -s | tr "[:upper:]" "[:lower:]")-amd64
 chmod +x /usr/local/bin/talosctl
   `}
 </CodeBlock>

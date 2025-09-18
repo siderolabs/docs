@@ -3,7 +3,7 @@ title: "Image Cache"
 description: "How to enable and configure Talos image cache feature."
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 Talos Image Cache feature allows to provide container images to the nodes without the need to pull them from the Internet.
 This feature is useful in environments with limited or no Internet access.
@@ -76,7 +76,7 @@ The disk image can be built with the [imager](../../platform-specific-installati
 <CodeBlock lang="sh">
 {`
 mkdir -p _out/
-docker run --rm -t -v $PWD/_out:/secureboot:ro -v $PWD/_out:/out -v $PWD/image-cache.oci:/image-cache.oci:ro -v /dev:/dev --privileged ghcr.io/siderolabs/imager:${release} metal --image-cache /image-cache.oci
+docker run --rm -t -v $PWD/_out:/secureboot:ro -v $PWD/_out:/out -v $PWD/image-cache.oci:/image-cache.oci:ro -v /dev:/dev --privileged ghcr.io/siderolabs/imager:${release_v1_10} metal --image-cache /image-cache.oci
 `}
 </CodeBlock>
 

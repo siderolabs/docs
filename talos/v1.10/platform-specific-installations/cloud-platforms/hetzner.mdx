@@ -5,7 +5,7 @@ aliases:
   - ../../../cloud-platforms/hetzner
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 ## Upload image
 
@@ -43,7 +43,7 @@ df
 
 # Download the Talos image
 cd /tmp
-wget -O /tmp/talos.raw.xz https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release}/hcloud-amd64.raw.xz
+wget -O /tmp/talos.raw.xz https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_10}/hcloud-amd64.raw.xz
 # Replace system
 xz -d -c /tmp/talos.raw.xz | dd of=/dev/sda && sync
 # shutdown the instance
@@ -76,7 +76,7 @@ packer {
 
 variable "talos_version" {
   type    = string
-  default = "${release}"
+  default = "${release_v1_10}"
 }
 
 variable "arch" {
@@ -163,7 +163,7 @@ For process simplification you can use this `bash` script:
 <CodeBlock lang="sh">
 {`
 #!/usr/bin/env bash
-export TALOS_IMAGE_VERSION=${release} # You can change to the current version
+export TALOS_IMAGE_VERSION=${release_v1_10} # You can change to the current version
 export TALOS_IMAGE_ARCH=amd64 # You can change to arm architecture
 export HCLOUD_SERVER_ARCH=x86 # HCloud server architecture can be x86 or arm
 wget https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/\${TALOS_IMAGE_VERSION}/hcloud-\${TALOS_IMAGE_ARCH}.raw.xz

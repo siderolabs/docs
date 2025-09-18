@@ -5,7 +5,7 @@ aliases:
   - ../../../cloud-platforms/vultr
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 ## Creating a Cluster using the Vultr CLI
 
@@ -22,7 +22,7 @@ First step is to make the Talos ISO available to Vultr by uploading the latest r
 
 <CodeBlock lang="sh">
 {`
-vultr-cli iso create --url https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/ ${release}vultr-amd64.iso
+vultr-cli iso create --url https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/ ${release_v1_10}vultr-amd64.iso
 `}
 </CodeBlock>
 
@@ -34,7 +34,7 @@ Talos Linux can be PXE-booted on Vultr using [Image Factory](../../learn-more/im
 
 <CodeBlock lang="sh">
 {
-`https://pxe.factory.talos.dev/pxe/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release}/vultr-amd64` 
+`https://pxe.factory.talos.dev/pxe/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_10}/vultr-amd64` 
 
 }
 </CodeBlock>

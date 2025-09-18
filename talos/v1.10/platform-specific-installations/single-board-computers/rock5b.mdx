@@ -5,7 +5,7 @@ aliases:
   - ../../../single-board-computers/rock5b
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 ## Prerequisites
 
@@ -25,7 +25,7 @@ Download the image and decompress it:
 
 <CodeBlock lang="sh">
   {`
-curl -LO https://factory.talos.dev/image/[uuid]/${release}/metal-arm64.raw.xz
+curl -LO https://factory.talos.dev/image/[uuid]/${release_v1_10}/metal-arm64.raw.xz
 xz -d metal-arm64.raw.xz
   `}
 </CodeBlock>
