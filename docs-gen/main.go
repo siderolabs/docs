@@ -16,18 +16,19 @@ import (
 
 // Config represents the YAML configuration file structure
 type Config struct {
-	Schema     string           `yaml:"schema"`
-	Theme      string           `yaml:"theme"`
-	Name       string           `yaml:"name"`
-	Colors     Colors           `yaml:"colors"`
-	Favicon    string           `yaml:"favicon"`
-	Banner     *Banner          `yaml:"banner,omitempty"`
-	Contextual *Contextual      `yaml:"contextual,omitempty"`
-	Logo       *Logo            `yaml:"logo,omitempty"`
-	Navbar     *Navbar          `yaml:"navbar,omitempty"`
-	Footer     *Footer          `yaml:"footer,omitempty"`
-	Redirects  []Redirect       `yaml:"redirects,omitempty"`
-	Navigation NavigationConfig `yaml:"navigation"`
+	Schema       string           `yaml:"schema"`
+	Theme        string           `yaml:"theme"`
+	Name         string           `yaml:"name"`
+	Colors       Colors           `yaml:"colors"`
+	Favicon      string           `yaml:"favicon"`
+	Banner       *Banner          `yaml:"banner,omitempty"`
+	Contextual   *Contextual      `yaml:"contextual,omitempty"`
+	Logo         *Logo            `yaml:"logo,omitempty"`
+	Navbar       *Navbar          `yaml:"navbar,omitempty"`
+	Footer       *Footer          `yaml:"footer,omitempty"`
+	Integrations *Integrations    `yaml:"integrations,omitempty"`
+	Redirects    []Redirect       `yaml:"redirects,omitempty"`
+	Navigation   NavigationConfig `yaml:"navigation"`
 }
 
 type Colors struct {
@@ -61,6 +62,14 @@ type NavLink struct {
 
 type Footer struct {
 	Socials map[string]string `yaml:"socials" json:"socials"`
+}
+
+type Integrations struct {
+	GA4 *GA4Integration `yaml:"ga4,omitempty" json:"ga4,omitempty"`
+}
+
+type GA4Integration struct {
+	MeasurementId string `yaml:"measurementId" json:"measurementId"`
 }
 
 type NavigationConfig struct {
@@ -124,18 +133,19 @@ type Redirect struct {
 
 // MintlifyConfig represents the output docs.json structure
 type MintlifyConfig struct {
-	Schema     string             `json:"$schema"`
-	Theme      string             `json:"theme"`
-	Name       string             `json:"name"`
-	Colors     Colors             `json:"colors"`
-	Favicon    string             `json:"favicon"`
-	Banner     *Banner            `json:"banner,omitempty"`
-	Contextual *Contextual        `json:"contextual,omitempty"`
-	Logo       *Logo              `json:"logo,omitempty"`
-	Navbar     *Navbar            `json:"navbar,omitempty"`
-	Footer     *Footer            `json:"footer,omitempty"`
-	Redirects  []Redirect         `json:"redirects,omitempty"`
-	Navigation MintlifyNavigation `json:"navigation"`
+	Schema       string             `json:"$schema"`
+	Theme        string             `json:"theme"`
+	Name         string             `json:"name"`
+	Colors       Colors             `json:"colors"`
+	Favicon      string             `json:"favicon"`
+	Banner       *Banner            `json:"banner,omitempty"`
+	Contextual   *Contextual        `json:"contextual,omitempty"`
+	Logo         *Logo              `json:"logo,omitempty"`
+	Navbar       *Navbar            `json:"navbar,omitempty"`
+	Footer       *Footer            `json:"footer,omitempty"`
+	Integrations *Integrations      `json:"integrations,omitempty"`
+	Redirects    []Redirect         `json:"redirects,omitempty"`
+	Navigation   MintlifyNavigation `json:"navigation"`
 }
 
 type MintlifyNavigation struct {
@@ -187,17 +197,18 @@ func main() {
 
 	// Generate Mintlify config
 	mintlifyConfig := MintlifyConfig{
-		Schema:     mergedConfig.Schema,
-		Theme:      mergedConfig.Theme,
-		Name:       mergedConfig.Name,
-		Colors:     mergedConfig.Colors,
-		Favicon:    mergedConfig.Favicon,
-		Banner:     mergedConfig.Banner,
-		Contextual: mergedConfig.Contextual,
-		Logo:       mergedConfig.Logo,
-		Navbar:     mergedConfig.Navbar,
-		Footer:     mergedConfig.Footer,
-		Redirects:  mergedConfig.Redirects,
+		Schema:       mergedConfig.Schema,
+		Theme:        mergedConfig.Theme,
+		Name:         mergedConfig.Name,
+		Colors:       mergedConfig.Colors,
+		Favicon:      mergedConfig.Favicon,
+		Banner:       mergedConfig.Banner,
+		Contextual:   mergedConfig.Contextual,
+		Logo:         mergedConfig.Logo,
+		Navbar:       mergedConfig.Navbar,
+		Footer:       mergedConfig.Footer,
+		Integrations: mergedConfig.Integrations,
+		Redirects:    mergedConfig.Redirects,
 		Navigation: MintlifyNavigation{
 			Global: mergedConfig.Navigation.Global,
 		},
