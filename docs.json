@@ -41,11 +41,14 @@
       "x": "https://x.com/siderolabs"
     }
   },
+<<<<<<< HEAD
   "integrations": {
     "ga4": {
       "measurementId": "G-PT2W5NT93B"
     }
   },
+=======
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
   "navigation": {
     "tabs": [
       {
@@ -579,17 +582,26 @@
             ]
           },
           {
+<<<<<<< HEAD
             "version": "v1.8",
+=======
+            "version": "Talos - v1.9",
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
             "groups": [
               {
                 "group": "Overview",
                 "pages": [
+<<<<<<< HEAD
                   "talos/v1.8/overview/what-is-talos"
+=======
+                  "talos/v1.9/overview/what-is-talos"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                 ]
               },
               {
                 "group": "Getting Started",
                 "pages": [
+<<<<<<< HEAD
                   "talos/v1.8/getting-started/system-requirements",
                   "talos/v1.8/getting-started/talosctl",
                   "talos/v1.8/getting-started/quickstart",
@@ -598,6 +610,16 @@
                   "talos/v1.8/getting-started/deploy-first-workload",
                   "talos/v1.8/getting-started/what's-new-in-talos",
                   "talos/v1.8/getting-started/support-matrix"
+=======
+                  "talos/v1.9/getting-started/system-requirements",
+                  "talos/v1.9/getting-started/talosctl",
+                  "talos/v1.9/getting-started/quickstart",
+                  "talos/v1.9/getting-started/getting-started",
+                  "talos/v1.9/getting-started/prodnotes",
+                  "talos/v1.9/getting-started/deploy-first-workload",
+                  "talos/v1.9/getting-started/what's-new-in-talos",
+                  "talos/v1.9/getting-started/support-matrix"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                 ]
               },
               {
@@ -606,6 +628,7 @@
                   {
                     "group": "Bare Metal Platforms",
                     "pages": [
+<<<<<<< HEAD
                       "talos/v1.8/platform-specific-installations/bare-metal-platforms/bootloader",
                       "talos/v1.8/platform-specific-installations/bare-metal-platforms/equinix-metal",
                       "talos/v1.8/platform-specific-installations/bare-metal-platforms/iso",
@@ -613,11 +636,21 @@
                       "talos/v1.8/platform-specific-installations/bare-metal-platforms/network-config",
                       "talos/v1.8/platform-specific-installations/bare-metal-platforms/pxe",
                       "talos/v1.8/platform-specific-installations/bare-metal-platforms/secureboot"
+=======
+                      "talos/v1.9/platform-specific-installations/bare-metal-platforms/bootloader",
+                      "talos/v1.9/platform-specific-installations/bare-metal-platforms/equinix-metal",
+                      "talos/v1.9/platform-specific-installations/bare-metal-platforms/iso",
+                      "talos/v1.9/platform-specific-installations/bare-metal-platforms/matchbox",
+                      "talos/v1.9/platform-specific-installations/bare-metal-platforms/network-config",
+                      "talos/v1.9/platform-specific-installations/bare-metal-platforms/pxe",
+                      "talos/v1.9/platform-specific-installations/bare-metal-platforms/secureboot"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                     ]
                   },
                   {
                     "group": "Virtualized Platforms",
                     "pages": [
+<<<<<<< HEAD
                       "talos/v1.8/platform-specific-installations/virtualized-platforms/hyper-v",
                       "talos/v1.8/platform-specific-installations/virtualized-platforms/kvm",
                       "talos/v1.8/platform-specific-installations/virtualized-platforms/opennebula",
@@ -625,11 +658,21 @@
                       "talos/v1.8/platform-specific-installations/virtualized-platforms/vagrant-libvirt",
                       "talos/v1.8/platform-specific-installations/virtualized-platforms/vmware",
                       "talos/v1.8/platform-specific-installations/virtualized-platforms/xen"
+=======
+                      "talos/v1.9/platform-specific-installations/virtualized-platforms/hyper-v",
+                      "talos/v1.9/platform-specific-installations/virtualized-platforms/kvm",
+                      "talos/v1.9/platform-specific-installations/virtualized-platforms/opennebula",
+                      "talos/v1.9/platform-specific-installations/virtualized-platforms/proxmox",
+                      "talos/v1.9/platform-specific-installations/virtualized-platforms/vagrant-libvirt",
+                      "talos/v1.9/platform-specific-installations/virtualized-platforms/vmware",
+                      "talos/v1.9/platform-specific-installations/virtualized-platforms/xen"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                     ]
                   },
                   {
                     "group": "Cloud Platforms",
                     "pages": [
+<<<<<<< HEAD
                       "talos/v1.8/platform-specific-installations/cloud-platforms/akamai",
                       "talos/v1.8/platform-specific-installations/cloud-platforms/aws",
                       "talos/v1.8/platform-specific-installations/cloud-platforms/azure",
@@ -645,19 +688,43 @@
                       "talos/v1.8/platform-specific-installations/cloud-platforms/scaleway",
                       "talos/v1.8/platform-specific-installations/cloud-platforms/upcloud",
                       "talos/v1.8/platform-specific-installations/cloud-platforms/vultr"
+=======
+                      "talos/v1.9/platform-specific-installations/cloud-platforms/akamai",
+                      "talos/v1.9/platform-specific-installations/cloud-platforms/aws",
+                      "talos/v1.9/platform-specific-installations/cloud-platforms/azure",
+                      "talos/v1.9/platform-specific-installations/cloud-platforms/cloudstack",
+                      "talos/v1.9/platform-specific-installations/cloud-platforms/digitalocean",
+                      "talos/v1.9/platform-specific-installations/cloud-platforms/exoscale",
+                      "talos/v1.9/platform-specific-installations/cloud-platforms/gcp",
+                      "talos/v1.9/platform-specific-installations/cloud-platforms/hetzner",
+                      "talos/v1.9/platform-specific-installations/cloud-platforms/kubernetes",
+                      "talos/v1.9/platform-specific-installations/cloud-platforms/nocloud",
+                      "talos/v1.9/platform-specific-installations/cloud-platforms/openstack",
+                      "talos/v1.9/platform-specific-installations/cloud-platforms/oracle",
+                      "talos/v1.9/platform-specific-installations/cloud-platforms/scaleway",
+                      "talos/v1.9/platform-specific-installations/cloud-platforms/upcloud",
+                      "talos/v1.9/platform-specific-installations/cloud-platforms/vultr"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                     ]
                   },
                   {
                     "group": "Local Platforms",
                     "pages": [
+<<<<<<< HEAD
                       "talos/v1.8/platform-specific-installations/local-platforms/docker",
                       "talos/v1.8/platform-specific-installations/local-platforms/qemu",
                       "talos/v1.8/platform-specific-installations/local-platforms/virtualbox"
+=======
+                      "talos/v1.9/platform-specific-installations/local-platforms/docker",
+                      "talos/v1.9/platform-specific-installations/local-platforms/qemu",
+                      "talos/v1.9/platform-specific-installations/local-platforms/virtualbox"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                     ]
                   },
                   {
                     "group": "Single Board Computers",
                     "pages": [
+<<<<<<< HEAD
                       "talos/v1.8/platform-specific-installations/single-board-computers/bananapi_m64",
                       "talos/v1.8/platform-specific-installations/single-board-computers/nanopi_r4s",
                       "talos/v1.8/platform-specific-installations/single-board-computers/jetson_nano",
@@ -678,20 +745,50 @@
                   "talos/v1.8/platform-specific-installations/boot-assets",
                   "talos/v1.8/platform-specific-installations/air-gapped",
                   "talos/v1.8/platform-specific-installations/omni"
+=======
+                      "talos/v1.9/platform-specific-installations/single-board-computers/bananapi_m64",
+                      "talos/v1.9/platform-specific-installations/single-board-computers/nanopi_r4s",
+                      "talos/v1.9/platform-specific-installations/single-board-computers/jetson_nano",
+                      "talos/v1.9/platform-specific-installations/single-board-computers/libretech_all_h3_cc_h5",
+                      "talos/v1.9/platform-specific-installations/single-board-computers/orangepi_5",
+                      "talos/v1.9/platform-specific-installations/single-board-computers/orangepi_r1_plus_lts",
+                      "talos/v1.9/platform-specific-installations/single-board-computers/pine64",
+                      "talos/v1.9/platform-specific-installations/single-board-computers/rock64",
+                      "talos/v1.9/platform-specific-installations/single-board-computers/rock4cplus",
+                      "talos/v1.9/platform-specific-installations/single-board-computers/rock5b",
+                      "talos/v1.9/platform-specific-installations/single-board-computers/rockpi_4",
+                      "talos/v1.9/platform-specific-installations/single-board-computers/rockpi_4c",
+                      "talos/v1.9/platform-specific-installations/single-board-computers/rpi_generic",
+                      "talos/v1.9/platform-specific-installations/single-board-computers/turing_rk1",
+                      "talos/v1.9/platform-specific-installations/single-board-computers/unofficial"
+                    ]
+                  },
+                  "talos/v1.9/platform-specific-installations/boot-assets",
+                  "talos/v1.9/platform-specific-installations/air-gapped",
+                  "talos/v1.9/platform-specific-installations/omni"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                 ]
               },
               {
                 "group": "Deploying and managing workloads",
                 "pages": [
+<<<<<<< HEAD
                   "talos/v1.8/deploy-and-manage-workloads/interactive-dashboard",
                   "talos/v1.8/deploy-and-manage-workloads/scaling-up",
                   "talos/v1.8/deploy-and-manage-workloads/scaling-down",
                   "talos/v1.8/deploy-and-manage-workloads/workers-on-controlplane"
+=======
+                  "talos/v1.9/deploy-and-manage-workloads/interactive-dashboard",
+                  "talos/v1.9/deploy-and-manage-workloads/scaling-up",
+                  "talos/v1.9/deploy-and-manage-workloads/scaling-down",
+                  "talos/v1.9/deploy-and-manage-workloads/workers-on-controlplane"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                 ]
               },
               {
                 "group": "Networking",
                 "pages": [
+<<<<<<< HEAD
                   "talos/v1.8/networking/advanced-networking",
                   "talos/v1.8/networking/corporate-proxies",
                   "talos/v1.8/networking/egress-domains",
@@ -705,17 +802,42 @@
                   "talos/v1.8/networking/siderolink",
                   "talos/v1.8/networking/vip",
                   "talos/v1.8/networking/wireguard-network"
+=======
+                  "talos/v1.9/networking/advanced-networking",
+                  "talos/v1.9/networking/corporate-proxies",
+                  "talos/v1.9/networking/egress-domains",
+                  "talos/v1.9/networking/ethernet-config",
+                  "talos/v1.9/networking/host-dns",
+                  "talos/v1.9/networking/ingress-firewall",
+                  "talos/v1.9/networking/kubespan",
+                  "talos/v1.9/networking/metal-network-configuration",
+                  "talos/v1.9/networking/device-selector",
+                  "talos/v1.9/networking/predictable-interface-names",
+                  "talos/v1.9/networking/siderolink",
+                  "talos/v1.9/networking/vip",
+                  "talos/v1.9/networking/wireguard-network"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                 ]
               },
               {
                 "group": "Security",
                 "pages": [
+<<<<<<< HEAD
                   "talos/v1.8/security/ca-rotation",
                   "talos/v1.8/security/cert-management",
                   "talos/v1.8/security/certificate-authorities",
                   "talos/v1.8/security/machine-config-oauth",
                   "talos/v1.8/security/rbac",
                   "talos/v1.8/security/verifying-images"
+=======
+                  "talos/v1.9/security/ca-rotation",
+                  "talos/v1.9/security/cert-management",
+                  "talos/v1.9/security/certificate-authorities",
+                  "talos/v1.9/security/machine-config-oauth",
+                  "talos/v1.9/security/rbac",
+                  "talos/v1.9/security/selinux",
+                  "talos/v1.9/security/verifying-images"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                 ]
               },
               {
@@ -724,6 +846,7 @@
                   {
                     "group": "Custom Images \u0026 Development",
                     "pages": [
+<<<<<<< HEAD
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/building-images",
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/customizing-the-kernel",
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/developing-talos",
@@ -732,15 +855,32 @@
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/oci-base-spec",
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/overlays",
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/system-extensions"
+=======
+                      "talos/v1.9/build-and-extend-talos/custom-images-and-development/building-images",
+                      "talos/v1.9/build-and-extend-talos/custom-images-and-development/customizing-the-kernel",
+                      "talos/v1.9/build-and-extend-talos/custom-images-and-development/developing-talos",
+                      "talos/v1.9/build-and-extend-talos/custom-images-and-development/extension-services",
+                      "talos/v1.9/build-and-extend-talos/custom-images-and-development/kernel-module",
+                      "talos/v1.9/build-and-extend-talos/custom-images-and-development/oci-base-spec",
+                      "talos/v1.9/build-and-extend-talos/custom-images-and-development/overlays",
+                      "talos/v1.9/build-and-extend-talos/custom-images-and-development/system-extensions"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                     ]
                   },
                   {
                     "group": "Cluster Operations \u0026 Maintenance",
                     "pages": [
+<<<<<<< HEAD
                       "talos/v1.8/build-and-extend-talos/cluster-operations-and-maintenance/disaster-recovery",
                       "talos/v1.8/build-and-extend-talos/cluster-operations-and-maintenance/cgroups-analysis",
                       "talos/v1.8/build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance",
                       "talos/v1.8/build-and-extend-talos/cluster-operations-and-maintenance/watchdog"
+=======
+                      "talos/v1.9/build-and-extend-talos/cluster-operations-and-maintenance/disaster-recovery",
+                      "talos/v1.9/build-and-extend-talos/cluster-operations-and-maintenance/cgroups-analysis",
+                      "talos/v1.9/build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance",
+                      "talos/v1.9/build-and-extend-talos/cluster-operations-and-maintenance/watchdog"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                     ]
                   }
                 ]
@@ -751,6 +891,7 @@
                   {
                     "group": "System Configuration",
                     "pages": [
+<<<<<<< HEAD
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/patching",
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/editing-machine-configuration",
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/performance-tuning",
@@ -758,43 +899,79 @@
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/discovery",
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/insecure"
+=======
+                      "talos/v1.9/configure-your-talos-cluster/system-configuration/patching",
+                      "talos/v1.9/configure-your-talos-cluster/system-configuration/editing-machine-configuration",
+                      "talos/v1.9/configure-your-talos-cluster/system-configuration/performance-tuning",
+                      "talos/v1.9/configure-your-talos-cluster/system-configuration/time-sync",
+                      "talos/v1.9/configure-your-talos-cluster/system-configuration/discovery",
+                      "talos/v1.9/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
+                      "talos/v1.9/configure-your-talos-cluster/system-configuration/insecure"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                     ]
                   },
                   {
                     "group": "Images \u0026 Container Runtime",
                     "pages": [
+<<<<<<< HEAD
                       "talos/v1.8/configure-your-talos-cluster/images-container-runtime/containerd",
                       "talos/v1.8/configure-your-talos-cluster/images-container-runtime/image-cache",
                       "talos/v1.8/configure-your-talos-cluster/images-container-runtime/pull-through-cache",
                       "talos/v1.8/configure-your-talos-cluster/images-container-runtime/static-pods"
+=======
+                      "talos/v1.9/configure-your-talos-cluster/images-container-runtime/containerd",
+                      "talos/v1.9/configure-your-talos-cluster/images-container-runtime/image-cache",
+                      "talos/v1.9/configure-your-talos-cluster/images-container-runtime/pull-through-cache",
+                      "talos/v1.9/configure-your-talos-cluster/images-container-runtime/static-pods"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                     ]
                   },
                   {
                     "group": "Storage \u0026 Disk Management",
                     "pages": [
+<<<<<<< HEAD
                       "talos/v1.8/configure-your-talos-cluster/storage-and-disk-management/disk-encryption",
                       "talos/v1.8/configure-your-talos-cluster/storage-and-disk-management/disk-management"
+=======
+                      "talos/v1.9/configure-your-talos-cluster/storage-and-disk-management/disk-encryption",
+                      "talos/v1.9/configure-your-talos-cluster/storage-and-disk-management/disk-management"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                     ]
                   },
                   {
                     "group": "Logging \u0026 Telemetry",
                     "pages": [
+<<<<<<< HEAD
                       "talos/v1.8/configure-your-talos-cluster/logging-and-telemetry/logging"
+=======
+                      "talos/v1.9/configure-your-talos-cluster/logging-and-telemetry/logging"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                     ]
                   },
                   {
                     "group": "Hardware \u0026 Drivers",
                     "pages": [
+<<<<<<< HEAD
                       "talos/v1.8/configure-your-talos-cluster/hardware-and-drivers/nvidia-fabricmanager",
                       "talos/v1.8/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu",
                       "talos/v1.8/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary"
+=======
+                      "talos/v1.9/configure-your-talos-cluster/hardware-and-drivers/nvidia-fabricmanager",
+                      "talos/v1.9/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu",
+                      "talos/v1.9/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                     ]
                   },
                   {
                     "group": "Lifecycle Management",
                     "pages": [
+<<<<<<< HEAD
                       "talos/v1.8/configure-your-talos-cluster/lifecycle-management/upgrading-talos",
                       "talos/v1.8/configure-your-talos-cluster/lifecycle-management/resetting-a-machine"
+=======
+                      "talos/v1.9/configure-your-talos-cluster/lifecycle-management/upgrading-talos",
+                      "talos/v1.9/configure-your-talos-cluster/lifecycle-management/resetting-a-machine"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                     ]
                   }
                 ]
@@ -802,20 +979,31 @@
               {
                 "group": "Advanced guides",
                 "pages": [
+<<<<<<< HEAD
                   "talos/v1.8/advanced-guides/install-kubevirt",
                   "talos/v1.8/advanced-guides/migrating-from-kubeadm"
+=======
+                  "talos/v1.9/advanced-guides/install-kubevirt",
+                  "talos/v1.9/advanced-guides/migrating-from-kubeadm"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                 ]
               },
               {
                 "group": "Troubleshooting and support",
                 "pages": [
+<<<<<<< HEAD
                   "talos/v1.8/troubleshooting/troubleshooting",
                   "talos/v1.8/troubleshooting/faqs"
+=======
+                  "talos/v1.9/troubleshooting/troubleshooting",
+                  "talos/v1.9/troubleshooting/faqs"
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
                 ]
               },
               {
                 "group": "Learn more",
                 "pages": [
+<<<<<<< HEAD
                   "talos/v1.8/learn-more/architecture",
                   "talos/v1.8/learn-more/components",
                   "talos/v1.8/learn-more/control-plane",
@@ -1343,6 +1531,24 @@
                 ]
               }
             ]
+=======
+                  "talos/v1.9/learn-more/architecture",
+                  "talos/v1.9/learn-more/components",
+                  "talos/v1.9/learn-more/control-plane",
+                  "talos/v1.9/learn-more/controllers-resources",
+                  "talos/v1.9/learn-more/image-factory",
+                  "talos/v1.9/learn-more/knowledge-base",
+                  "talos/v1.9/learn-more/kubespan",
+                  "talos/v1.9/learn-more/networking-resources",
+                  "talos/v1.9/learn-more/philosophy",
+                  "talos/v1.9/learn-more/process-capabilities",
+                  "talos/v1.9/learn-more/talos-network-connectivity",
+                  "talos/v1.9/learn-more/talosctl"
+                ]
+              }
+            ]
+
+>>>>>>> c2465ae (docs: add version 1.9 of talos)
           }
         ]
       },
