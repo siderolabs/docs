@@ -40,8 +40,12 @@ docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multipl
 		common.yaml \
 		talos-v1.11.yaml \
 		talos-v1.10.yaml \
+<<<<<<< HEAD
 		talos-v1.7.yaml \
 		talos-v1.6.yaml \
+=======
+		talos-v1.8.yaml \
+>>>>>>> bd9fb24 (docs: add v1.8 docs)
 		omni.yaml \
 		kubernetes-guides.yaml \
 		> docs.json
@@ -51,8 +55,12 @@ docs.json-local: common.yaml omni.yaml docs-gen/main.go ## Generate docs.json us
 		../common.yaml \
 		../talos-v1.11.yaml \
 		../talos-v1.10.yaml \
+<<<<<<< HEAD
 		../talos-v1.7.yaml \
 		../talos-v1.6.yaml \
+=======
+		../talos-v1.8.yaml \
+>>>>>>> bd9fb24 (docs: add v1.8 docs)
 		../omni.yaml \
 		../kubernetes-guides.yaml \
 		> ../docs.json
@@ -63,8 +71,12 @@ check-missing: ## Check for MDX files not included in config files
 		common.yaml \
 		talos-v1.11.yaml \
 		talos-v1.10.yaml \
+<<<<<<< HEAD
 		talos-v1.7.yaml \
 		talos-v1.6.yaml \
+=======
+		talos-v1.8.yaml \
+>>>>>>> bd9fb24 (docs: add v1.8 docs)
 		omni.yaml \
 		kubernetes-guides.yaml 
 
@@ -74,8 +86,12 @@ check-missing-local: ## Check for missing files using local Go build
 		../common.yaml \
 		../talos-v1.11.yaml \
 		../talos-v1.10.yaml \
+<<<<<<< HEAD
 		../talos-v1.7.yaml \
 		../talos-v1.6.yaml \
+=======
+		../talos-v1.8.yaml \
+>>>>>>> bd9fb24 (docs: add v1.8 docs)
 		../omni.yaml \
 		../kubernetes-guides.yaml
 
