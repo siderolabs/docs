@@ -54,13 +54,12 @@ If the UEFI firmware does not support automatic enrollment, you may need to hit 
 
 Once Talos is running in maintenance mode, verify that secure boot is enabled:
 
-<CodeBlock lang="sh">
-{`
+```sh
 $ talosctl -n <IP> get securitystate --insecure
 NODE   NAMESPACE   TYPE            ID              VERSION   SECUREBOOT
        runtime     SecurityState   securitystate   1         true
-`}
-</CodeBlock>
+
+```
 
 Now we will generate the machine configuration for the node supplying the `installer-secureboot` container image, and applying the patch to enable TPM-based [disk encryption](../../configure-your-talos-cluster/storage-and-disk-management/disk-encryption) (requires TPM 2.0):
 

@@ -200,7 +200,7 @@ Replace `<node-ip-address>` with the IP address of the node you want to inspect:
 Check that the values match your worker and control plane node's network and disk settings.
 If the values don't match, you'll need to update your machine configuration..
 
-    **Note**: Refer to the [Talos CLI reference](../reference/cli) for additional commands to gather more information about your nodes and cluster.
+**Note**: Refer to the [Talos CLI reference](../reference/cli) for additional commands to gather more information about your nodes and cluster.
 
 ## Step 9: Patch Your Machine Configuration (Optional)
 
@@ -369,7 +369,6 @@ talosctl kubeconfig --nodes <control-plane-IP>
 ```bash
 talosctl kubeconfig alternative-kubeconfig --nodes <control-plane-IP>
 export KUBECONFIG=./alternative-kubeconfig
-
 ```
 
 ## Step 16: Verify Your Nodes Are Running
