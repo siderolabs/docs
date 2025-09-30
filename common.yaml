@@ -42,3 +42,7 @@ footer:
       - anchor: "Community"
         href: "https://slack.dev.talos-systems.io/"
         icon: "slack"
+
+integrations:
+  ga4:
+    measurementId: "G-PT2W5NT93B"
