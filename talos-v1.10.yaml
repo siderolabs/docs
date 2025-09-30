@@ -1,4 +1,5 @@
 navigation:
+  version: "v1.10"
   tabs:
     - tab: "Talos"
       icon: "/images/talos.svg"
@@ -93,7 +94,7 @@ navigation:
             - "scaling-up.mdx"
             - "scaling-down.mdx"
             - "workers-on-controlplane.mdx"
-            
+
         - group: "Networking"
           folder: "talos/v1.10/networking"
           pages:

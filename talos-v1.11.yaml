@@ -1,4 +1,5 @@
 navigation:
+  version: "v1.11"
   tabs:
     - tab: "Talos"
       icon: "/images/talos.svg"
@@ -93,7 +94,7 @@ navigation:
             - "scaling-up.mdx"
             - "scaling-down.mdx"
             - "workers-on-controlplane.mdx"
-            
+
         - group: "Networking"
           folder: "talos/v1.11/networking"
           pages:
@@ -166,8 +167,8 @@ navigation:
               folder: "talos/v1.11/configure-your-talos-cluster"
               pages:
                 - group: "Disk Management"
-                  pages: 
-                    - "storage-and-disk-management/disk-management/overview" 
+                  pages:
+                    - "storage-and-disk-management/disk-management/overview"
                     - "storage-and-disk-management/disk-management/common"
                     - "storage-and-disk-management/disk-management/existing"
                     - "storage-and-disk-management/disk-management/layout"
