@@ -251,9 +251,10 @@ There are two easy ways to run Omni: docker-compose and a simple `docker run`. W
         --siderolink-wireguard-advertised-addr=<ip address of the host running Omni>:50180 \
         --advertised-kubernetes-proxy-url=https://<domain name for onprem omni>:8100/ \
         --auth-oidc-enabled \
-        --auth-oidc-client-id <id copied from the OIDC provider>
-        --auth-oidc-client-secret <secret copied from the OIDC provider>
-        --auth-oidc-logout-url <logout URL, optional, copied from the OIDC provider>
+        --auth-oidc-provider-url <URL of the OIDC provider> \
+        --auth-oidc-client-id <id copied from the OIDC provider> \
+        --auth-oidc-client-secret <secret copied from the OIDC provider> \
+        --auth-oidc-logout-url <logout URL, optional, copied from the OIDC provider> \
         --auth-oidc-scopes openid \
         --auth-oidc-scopes profile \
         --auth-oidc-scopes email
