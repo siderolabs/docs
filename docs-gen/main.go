@@ -16,19 +16,20 @@ import (
 
 // Config represents the YAML configuration file structure
 type Config struct {
-	Schema       string           `yaml:"schema"`
-	Theme        string           `yaml:"theme"`
-	Name         string           `yaml:"name"`
-	Colors       Colors           `yaml:"colors"`
-	Favicon      string           `yaml:"favicon"`
-	Banner       *Banner          `yaml:"banner,omitempty"`
-	Contextual   *Contextual      `yaml:"contextual,omitempty"`
-	Logo         *Logo            `yaml:"logo,omitempty"`
-	Navbar       *Navbar          `yaml:"navbar,omitempty"`
-	Footer       *Footer          `yaml:"footer,omitempty"`
-	Integrations *Integrations    `yaml:"integrations,omitempty"`
-	Redirects    []Redirect       `yaml:"redirects,omitempty"`
-	Navigation   NavigationConfig `yaml:"navigation"`
+	Schema       string              `yaml:"schema"`
+	Theme        string              `yaml:"theme"`
+	Name         string              `yaml:"name"`
+	Colors       Colors              `yaml:"colors"`
+	Favicon      string              `yaml:"favicon"`
+	Banner       *Banner             `yaml:"banner,omitempty"`
+	Contextual   *Contextual         `yaml:"contextual,omitempty"`
+	Logo         *Logo               `yaml:"logo,omitempty"`
+	Navbar       *Navbar             `yaml:"navbar,omitempty"`
+	Footer       *Footer             `yaml:"footer,omitempty"`
+	Integrations *Integrations       `yaml:"integrations,omitempty"`
+	Redirects    []Redirect          `yaml:"redirects,omitempty"`
+	Navigation   NavigationConfig    `yaml:"navigation"`
+	VersionsMap  map[string][]TabConfig `yaml:"-"` // Internal use only, not from YAML
 }
 
 type Colors struct {
@@ -73,14 +74,16 @@ type GA4Integration struct {
 }
 
 type NavigationConfig struct {
-	Tabs   []TabConfig `yaml:"tabs"`
-	Global *GlobalNav  `yaml:"global,omitempty"`
+	Version string      `yaml:"version,omitempty"`
+	Tabs    []TabConfig `yaml:"tabs"`
+	Global  *GlobalNav  `yaml:"global,omitempty"`
 }
 
 type TabConfig struct {
-	Tab    string        `yaml:"tab"`
-	Icon   string        `yaml:"icon,omitempty"`
-	Groups []GroupConfig `yaml:"groups"`
+	Tab     string        `yaml:"tab"`
+	Icon    string        `yaml:"icon,omitempty"`
+	Version string        `yaml:"-"` // Set internally from NavigationConfig.Version
+	Groups  []GroupConfig `yaml:"groups"`
 }
 
 type GroupConfig struct {
@@ -154,9 +157,15 @@ type MintlifyNavigation struct {
 }
 
 type MintlifyTab struct {
-	Tab    string          `json:"tab"`
-	Icon   string          `json:"icon,omitempty"`
-	Groups []MintlifyGroup `json:"groups"`
+	Tab      string            `json:"tab"`
+	Icon     string            `json:"icon,omitempty"`
+	Versions []MintlifyVersion `json:"versions,omitempty"`
+	Groups   []MintlifyGroup   `json:"groups,omitempty"`
+}
+
+type MintlifyVersion struct {
+	Version string          `json:"version"`
+	Groups  []MintlifyGroup `json:"groups"`
 }
 
 type MintlifyGroup struct {
@@ -215,7 +224,59 @@ func main() {
 	}
 
 	// Process navigation tabs
+	processedVersionedTabs := make(map[string]bool)
+
+	// First, process versioned tabs
+	for tabName, versions := range mergedConfig.VersionsMap {
+		tab := MintlifyTab{
+			Tab:  tabName,
+		}
+
+		// Get icon from first version
+		if len(versions) > 0 {
+			tab.Icon = versions[0].Icon
+		}
+
+		// Process each version
+		for _, versionConfig := range versions {
+			version := MintlifyVersion{
+				Version: versionConfig.Version,
+			}
+
+			for _, groupConfig := range versionConfig.Groups {
+				group := MintlifyGroup{
+					Group: groupConfig.Group,
+				}
+
+				// Only process explicitly defined pages
+				if len(groupConfig.Pages) > 0 {
+					pages, err := processManualPages(groupConfig.Pages, groupConfig.Folder)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "Error processing manual pages for group %s: %v\n", groupConfig.Group, err)
+						continue
+					}
+					group.Pages = pages
+				} else {
+					continue
+				}
+
+				version.Groups = append(version.Groups, group)
+			}
+
+			tab.Versions = append(tab.Versions, version)
+		}
+
+		mintlifyConfig.Navigation.Tabs = append(mintlifyConfig.Navigation.Tabs, tab)
+		processedVersionedTabs[tabName] = true
+	}
+
+	// Then, process non-versioned tabs
 	for _, tabConfig := range mergedConfig.Navigation.Tabs {
+		// Skip if already processed as versioned tab
+		if processedVersionedTabs[tabConfig.Tab] {
+			continue
+		}
+
 		tab := MintlifyTab{
 			Tab:  tabConfig.Tab,
 			Icon: tabConfig.Icon,
@@ -266,6 +327,7 @@ func main() {
 func mergeConfigs(configPaths []string) (Config, error) {
 	var mergedConfig Config
 	var allTabs []TabConfig
+	versionsMap := make(map[string][]TabConfig) // Map of tab name -> versions
 
 	for i, configPath := range configPaths {
 		configData, err := os.ReadFile(configPath)
@@ -284,12 +346,22 @@ func mergeConfigs(configPaths []string) (Config, error) {
 			mergedConfig.Navigation.Tabs = nil // Clear tabs to rebuild
 		}
 
-		// Collect tabs from all files in order
-		allTabs = append(allTabs, config.Navigation.Tabs...)
+		// If this config has a version, group tabs by name for version support
+		if config.Navigation.Version != "" {
+			for _, tab := range config.Navigation.Tabs {
+				// Store the version on the tab config for later use
+				tab.Version = config.Navigation.Version
+				versionsMap[tab.Tab] = append(versionsMap[tab.Tab], tab)
+			}
+		} else {
+			// Collect tabs from all files in order (non-versioned)
+			allTabs = append(allTabs, config.Navigation.Tabs...)
+		}
 	}
 
 	// Set merged tabs
 	mergedConfig.Navigation.Tabs = allTabs
+	mergedConfig.VersionsMap = versionsMap
 
 	return mergedConfig, nil
 }
