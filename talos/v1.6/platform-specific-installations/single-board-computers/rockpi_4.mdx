@@ -5,7 +5,7 @@ aliases:
   - ../../../single-board-computers/rockpi_4c
 ---
 
-import { release_v1_7  } from '/snippets/custom-variables.mdx';
+import { release_v1_6  } from '/snippets/custom-variables.mdx';
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@ Download the latest `talosctl`.
 
 <CodeBlock lang="sh">
   {`
-curl -Lo /usr/local/bin/talosctl https://github.com/siderolabs/talos/releases/download/${release_v1_7 }/talosctl-$(uname -s | tr "[:upper:]" "[:lower:]")-amd64
+curl -Lo /usr/local/bin/talosctl https://github.com/siderolabs/talos/releases/download/${release_v1_6 }/talosctl-$(uname -s | tr "[:upper:]" "[:lower:]")-amd64
 chmod +x /usr/local/bin/talosctl
   `}
 </CodeBlock>
@@ -33,7 +33,7 @@ Download the image and decompress it:
 
 <CodeBlock lang="sh">
   {`
-curl -LO https://factory.talos.dev/image/25d2690bb48685de5939edd6dee83a0e09591311e64ad03c550de00f8a521f51/${release_v1_7 }/metal-arm64.raw.xz
+curl -LO https://factory.talos.dev/image/25d2690bb48685de5939edd6dee83a0e09591311e64ad03c550de00f8a521f51/${release_v1_6 }/metal-arm64.raw.xz
 xz -d metal-arm64.raw.xz
   `}
 </CodeBlock>
@@ -93,7 +93,7 @@ For example, to upgrade to the latest version of Talos, you can run:
 
 <CodeBlock lang="sh">
   {`
-talosctl -n <node IP or DNS name> upgrade --image=factory.talos.dev/installer/25d2690bb48685de5939edd6dee83a0e09591311e64ad03c550de00f8a521f51:${release_v1_7 }
+talosctl -n <node IP or DNS name> upgrade --image=factory.talos.dev/installer/25d2690bb48685de5939edd6dee83a0e09591311e64ad03c550de00f8a521f51:${release_v1_6 }
   `}
 </CodeBlock>
 

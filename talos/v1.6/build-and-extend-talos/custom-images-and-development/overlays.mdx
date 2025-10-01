@@ -2,7 +2,7 @@
 title: "Overlays"
 description: "Overlays"
 ---
-import { release_v1_7  } from '/snippets/custom-variables.mdx';
+import { release_v1_6  } from '/snippets/custom-variables.mdx';
 
 Overlays provide a way to customize Talos Linux boot image.
 Overlays hook into the Talos install steps and can be used to provide additional boot assets (in the case of single board computers),
@@ -33,7 +33,7 @@ Boot the machine with the boot media and apply the machine configuration with th
 {`# Talos machine configuration patch
 machine:
   install:
-    image: factory.talos.dev/installer/fc1cceeb5711cd263877b6b808fbf4942a8deda65e8804c114a0b5bae252dc50:${release_v1_7 }
+    image: factory.talos.dev/installer/fc1cceeb5711cd263877b6b808fbf4942a8deda65e8804c114a0b5bae252dc50:${release_v1_6 }
 `}
 </CodeBlock>
 

@@ -5,7 +5,7 @@ aliases:
   - ../../../bare-metal-platforms/equinix-metal
 ---
 
-import { release_v1_7  } from '/snippets/custom-variables.mdx';
+import { release_v1_6  } from '/snippets/custom-variables.mdx';
 
 You can create a Talos Linux cluster on Equinix Metal in a variety of ways, such as through the EM web UI, or the `metal` command line tool.
 
@@ -68,10 +68,10 @@ The convention we use is `#!talos`.
 
 Talos Linux can be PXE-booted on Equinix Metal using [Image Factory](../../learn-more/image-factory), using the `equinixMetal` platform: e.g. 
 <code>
-{`https://pxe.factory.talos.dev/pxe/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_7 }/equinixMetal-amd64`}
+{`https://pxe.factory.talos.dev/pxe/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_6 }/equinixMetal-amd64`}
 </code>
 
-This URL references the default schematic for Talos version **{release_v1_7 }** with an `amd64` architecture.
+This URL references the default schematic for Talos version **{release_v1_6 }** with an `amd64` architecture.
 
 Follow the Image Factory guide to create a custom schematic, e.g. with CPU microcode updates.
 
@@ -102,14 +102,14 @@ metal device create \
   --project-id $PROJECT_ID \
   --facility $FACILITY \
   --operating-system "custom_ipxe" \
-  --ipxe-script-url "https://pxe.factory.talos.dev/pxe/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_7 }/equinixMetal-amd64" \
+  --ipxe-script-url "https://pxe.factory.talos.dev/pxe/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_6 }/equinixMetal-amd64" \
   --plan $PLAN\
   --hostname $HOSTNAME\
   --userdata-file controlplane.yaml
 `}
 </CodeBlock>
 
-e.g. <code>{`metal device create -p <projectID> -f da11 -O custom_ipxe -P c3.small.x86 -H steve.test.11 --userdata-file ./controlplane.yaml --ipxe-script-url "https://pxe.factory.talos.dev/pxe/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_7 }/equinixMetal-amd64"`}</code>
+e.g. <code>{`metal device create -p <projectID> -f da11 -O custom_ipxe -P c3.small.x86 -H steve.test.11 --userdata-file ./controlplane.yaml --ipxe-script-url "https://pxe.factory.talos.dev/pxe/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_6 }/equinixMetal-amd64"`}</code>
 
 Repeat this to create each control plane node desired: there should usually be 3 for a HA cluster.
 

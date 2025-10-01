@@ -4,7 +4,7 @@ weight: 30
 description: "Recommendations for setting up a Talos Linux cluster in production."
 ---
 
-import { release_v1_7  } from '/snippets/custom-variables.mdx';
+import { release_v1_6  } from '/snippets/custom-variables.mdx';
 
 This document explains recommendations for running Talos Linux in production.
 
@@ -14,8 +14,8 @@ This document explains recommendations for running Talos Linux in production.
 
 For network booting and self-built media, you can use the published kernel and initramfs images:
 
-- X86: <a href={`https://github.com/siderolabs/talos/releases/download/${release_v1_7 }/vmlinuz-amd64`}>vmlinuz-amd64</a> <a href={`https://github.com/siderolabs/talos/releases/download/${release_v1_7 }/initramfs-amd64.xz`}>initramfs-amd64.xz</a>
-- ARM64: <a href={`https://github.com/siderolabs/talos/releases/download/${release_v1_7 }/vmlinuz-arm64`}>vmlinuz-arm64</a> <a href={`https://github.com/siderolabs/talos/releases/download/${release_v1_7 }/initramfs-arm64.xz`}>initramfs-arm64.xz</a>
+- X86: <a href={`https://github.com/siderolabs/talos/releases/download/${release_v1_6 }/vmlinuz-amd64`}>vmlinuz-amd64</a> <a href={`https://github.com/siderolabs/talos/releases/download/${release_v1_6 }/initramfs-amd64.xz`}>initramfs-amd64.xz</a>
+- ARM64: <a href={`https://github.com/siderolabs/talos/releases/download/${release_v1_6 }/vmlinuz-arm64`}>vmlinuz-arm64</a> <a href={`https://github.com/siderolabs/talos/releases/download/${release_v1_6 }/initramfs-arm64.xz`}>initramfs-arm64.xz</a>
 
 Note that to use alternate booting, there are a number of required kernel parameters.
 Please see the [kernel](../reference/kernel) docs for more information.

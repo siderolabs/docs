@@ -38,13 +38,10 @@ docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multipl
 	docker pull $(DOCS_GEN_IMAGE)
 	docker run --rm -v $(PWD):/workspace -w /workspace $(DOCS_GEN_IMAGE) \
 		common.yaml \
-		talos-v1.10.yaml \
-<<<<<<< HEAD
 		talos-v1.11.yaml \
-		talos-v1.6.yaml \
-=======
+		talos-v1.10.yaml \
 		talos-v1.7.yaml \
->>>>>>> d6cca9f (docs: add version 1.7)
+		talos-v1.6.yaml \
 		omni.yaml \
 		kubernetes-guides.yaml \
 		> docs.json
@@ -52,13 +49,10 @@ docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multipl
 docs.json-local: common.yaml omni.yaml docs-gen/main.go ## Generate docs.json using local Go build
 	cd docs-gen && go run . \
 		../common.yaml \
-		../talos-v1.10.yaml \
-<<<<<<< HEAD
 		../talos-v1.11.yaml \
-		../talos-v1.6.yaml \
-=======
+		../talos-v1.10.yaml \
 		../talos-v1.7.yaml \
->>>>>>> d6cca9f (docs: add version 1.7)
+		../talos-v1.6.yaml \
 		../omni.yaml \
 		../kubernetes-guides.yaml \
 		> ../docs.json
@@ -67,13 +61,10 @@ docs.json-local: common.yaml omni.yaml docs-gen/main.go ## Generate docs.json us
 check-missing: ## Check for MDX files not included in config files
 	docker run --rm -v $(PWD):/workspace -w /workspace $(DOCS_GEN_IMAGE) --detect-missing \
 		common.yaml \
-		talos-v1.10.yaml \
-<<<<<<< HEAD
 		talos-v1.11.yaml \
-		talos-v1.6.yaml \
-=======
+		talos-v1.10.yaml \
 		talos-v1.7.yaml \
->>>>>>> d6cca9f (docs: add version 1.7)
+		talos-v1.6.yaml \
 		omni.yaml \
 		kubernetes-guides.yaml 
 
@@ -81,13 +72,10 @@ check-missing: ## Check for MDX files not included in config files
 check-missing-local: ## Check for missing files using local Go build
 	cd docs-gen && go run . --detect-missing \
 		../common.yaml \
-		../talos-v1.10.yaml \
-<<<<<<< HEAD
 		../talos-v1.11.yaml \
-		../talos-v1.6.yaml \
-=======
+		../talos-v1.10.yaml \
 		../talos-v1.7.yaml \
->>>>>>> d6cca9f (docs: add version 1.7)
+		../talos-v1.6.yaml \
 		../omni.yaml \
 		../kubernetes-guides.yaml
 

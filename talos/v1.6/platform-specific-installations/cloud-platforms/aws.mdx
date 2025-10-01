@@ -5,7 +5,7 @@ aliases:
   - ../../../cloud-platforms/aws
 ---
 
-import { release_v1_7  } from '/snippets/custom-variables.mdx';
+import { release_v1_6  } from '/snippets/custom-variables.mdx';
 
 ## Creating a Cluster via the AWS CLI
 
@@ -45,7 +45,7 @@ SUBNET="(the subnet ID of the created subnet)"
 
 Official AMI image ID can be found in the `cloud-images.json` file attached to the Talos release:
 
-<CodeBlock language="bash">{`AMI=$(curl -sL https://github.com/siderolabs/talos/releases/download/${release_v1_7}/cloud-images.json | \
+<CodeBlock language="bash">{`AMI=$(curl -sL https://github.com/siderolabs/talos/releases/download/${release_v1_6}/cloud-images.json | \
   jq -r '.[] | select(.region == "'$REGION'") | select(.arch == "amd64") | .id')
 echo "$AMI"`}</CodeBlock>
 
@@ -79,7 +79,7 @@ First, download the AWS image from a Talos release:
 
 <CodeBlock lang="sh">
 {`
-curl -L https://github.com/siderolabs/talos/releases/download/${release_v1_7}/aws-amd64.raw.xz | xz -d > disk.raw
+curl -L https://github.com/siderolabs/talos/releases/download/${release_v1_6}/aws-amd64.raw.xz | xz -d > disk.raw
 `}
 </CodeBlock>
 

@@ -4,7 +4,7 @@ weight: 55
 description: "Image Factory generates customized Talos Linux images based on configured schematics."
 ---
 
-import { release_v1_7  } from '/snippets/custom-variables.mdx';
+import { release_v1_6  } from '/snippets/custom-variables.mdx';
 
 The Image Factory provides a way to download Talos Linux artifacts.
 Artifacts can be generated with customizations defined by a "schematic".
@@ -90,16 +90,16 @@ Image Factory provides several frontends to retrieve models:
 The links to different models are available in the [Image Factory UI](#ui), and a full list of possible models is documented at [GitHub](https://github.com/siderolabs/image-factory#readme).
 
 In this guide we will provide a list of examples:
-* <a href={`https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_7 }/metal-amd64.iso`}> amd64 ISO (for Talos {release_v1_7 }, "vanilla" schematic) </a>
+* <a href={`https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_6 }/metal-amd64.iso`}> amd64 ISO (for Talos {release_v1_6 }, "vanilla" schematic) </a>
 
-*  <a href={`https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_7 }/aws-arm64.raw.xz`}> arm64 AWS image (for Talos {release_v1_7 }, "vanilla" schematic) </a>
+*  <a href={`https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_6 }/aws-arm64.raw.xz`}> arm64 AWS image (for Talos {release_v1_6 }, "vanilla" schematic) </a>
 
-* <a href={`https://pxe.factory.talos.dev/pxe/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_7 }/metal-amd64`}> amd64 PXE boot script (for Talos {release_v1_7 }, "vanilla" schematic)  </a>
+* <a href={`https://pxe.factory.talos.dev/pxe/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_6 }/metal-amd64`}> amd64 PXE boot script (for Talos {release_v1_6 }, "vanilla" schematic)  </a>
 
-* Talos `<code>` installer image (for Talos {release_v1_7 }, “vanilla” schematic, architecture is detected automatically):  
+* Talos `<code>` installer image (for Talos {release_v1_6 }, “vanilla” schematic, architecture is detected automatically):  
 
 <CodeBlock lang="sh">
-{`factory.talos.dev/installer/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:${release_v1_7 }`}
+{`factory.talos.dev/installer/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:${release_v1_6 }`}
 </CodeBlock>
 
 The `installer` image can be used to install Talos Linux on a bare-metal machine, or to upgrade an existing Talos Linux installation.

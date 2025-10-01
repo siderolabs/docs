@@ -3,7 +3,7 @@ title: "Host DNS"
 description: "How to configure Talos host DNS caching server."
 ---
 
-import { release_v1_7  } from '/snippets/custom-variables.mdx';
+import { release_v1_6  } from '/snippets/custom-variables.mdx';
 
 Talos Linux starting with 1.7.0 provides a caching DNS resolver for host workloads (including host networking pods).
 Host DNS resolver is enabled by default for clusters created with Talos 1.7, and it can be enabled manually on upgrade.
@@ -105,8 +105,8 @@ When enabled, Talos Linux uses [discovery](../configure-your-talos-cluster/syste
 {`
 $ talosctl get members
 NODE         NAMESPACE   TYPE     ID                             VERSION   HOSTNAME                       MACHINE TYPE   OS                        ADDRESSES
-172.20.0.2   cluster     Member   talos-default-controlplane-1   1         talos-default-controlplane-1   controlplane   Talos ${release_v1_7 }   ["172.20.0.2"]
-172.20.0.2   cluster     Member   talos-default-worker-1         1         talos-default-worker-1         worker         Talos ${release_v1_7 }   ["172.20.0.3"]
+172.20.0.2   cluster     Member   talos-default-controlplane-1   1         talos-default-controlplane-1   controlplane   Talos ${release_v1_6 }   ["172.20.0.2"]
+172.20.0.2   cluster     Member   talos-default-worker-1         1         talos-default-worker-1         worker         Talos ${release_v1_6 }   ["172.20.0.3"]
 `}
 </CodeBlock>
 

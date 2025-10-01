@@ -5,7 +5,7 @@ aliases:
   - ../guides/air-gapped
 ---
 
-import { release_v1_7  } from '/snippets/custom-variables.mdx';
+import { release_v1_6  } from '/snippets/custom-variables.mdx';
 
 In this guide we will create a Talos cluster running in an air-gapped environment with all the required images being pulled from an internal registry.
 We will use the [QEMU](./local-platforms/qemu) provisioner available in `talosctl` to create a local cluster, but the same approach could be used to deploy Talos in bigger air-gapped networks.
@@ -114,7 +114,7 @@ The endpoint being used is `10.5.0.1`, as this is the default bridge interface a
 
 <CodeBlock lang="sh">
 {`
-$ sudo --preserve-env=HOME talosctl cluster create --provisioner=qemu --install-image=ghcr.io/siderolabs/installer:${release_v1_7 } \
+$ sudo --preserve-env=HOME talosctl cluster create --provisioner=qemu --install-image=ghcr.io/siderolabs/installer:${release_v1_6 } \
   --registry-mirror docker.io=http://10.5.0.1:6000 \
   --registry-mirror gcr.io=http://10.5.0.1:6000 \
   --registry-mirror ghcr.io=http://10.5.0.1:6000 \

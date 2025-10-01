@@ -3,7 +3,7 @@ title: "SecureBoot"
 description: "Booting Talos in SecureBoot mode on UEFI platforms."
 ---
 
-import { release_v1_7  } from '/snippets/custom-variables.mdx';
+import { release_v1_6  } from '/snippets/custom-variables.mdx';
 
 Talos now supports booting on UEFI systems in SecureBoot mode.
 When combined with TPM-based disk encryption, this provides [Trusted Boot](https://0pointer.net/blog/brave-new-trusted-boot-world.html) experience.
@@ -25,7 +25,7 @@ As Talos Linux is fully contained in the UKI image, the full operating system is
 
 > Note: The SecureBoot images are available for Talos releases starting from `v1.5.0`.
 
-The easiest way to get started with SecureBoot is to download the <a href={`https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_7 }/metal-amd64-secureboot.iso`}>
+The easiest way to get started with SecureBoot is to download the <a href={`https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_6 }/metal-amd64-secureboot.iso`}>
   ISO
 </a>, and
 boot it on a UEFI-enabled system which has SecureBoot enabled in setup mode.
@@ -35,7 +35,7 @@ The install should performed using SecureBoot installer (put it Talos machine co
 
 <CodeBlock lang="sh">
 {`
-factory.talos.dev/installer-secureboot/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:${release_v1_7 }.
+factory.talos.dev/installer-secureboot/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:${release_v1_6 }.
 `}
 </CodeBlock>
 
@@ -84,7 +84,7 @@ Generate machine configuration:
 
 <CodeBlock lang="sh">
 {`
-talosctl gen config <cluster-name> https://<endpoint>:6443 --install-image=factory.talos.dev/installer-secureboot/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:${release_v1_7 } --install-disk=/dev/sda --config-patch @tpm-disk-encryption.yaml
+talosctl gen config <cluster-name> https://<endpoint>:6443 --install-image=factory.talos.dev/installer-secureboot/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:${release_v1_6 } --install-disk=/dev/sda --config-patch @tpm-disk-encryption.yaml
 `}
 </CodeBlock>
 
@@ -196,12 +196,12 @@ In this guide we will generate a SecureBoot ISO image and an installer image.
 
 <CodeBlock lang="sh">
 {`
-$ docker run --rm -t -v $PWD/_out:/secureboot:ro -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release_v1_7 } secureboot-iso
+$ docker run --rm -t -v $PWD/_out:/secureboot:ro -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release_v1_6 } secureboot-iso
 profile ready:
 arch: amd64
 platform: metal
 secureboot: true
-version: ${release_v1_7 }
+version: ${release_v1_6 }
 input:
   kernel:
     path: /usr/install/amd64/vmlinuz
@@ -236,12 +236,12 @@ Next, the installer image should be generated to install Talos to disk on a Secu
 
 <CodeBlock lang="sh">
 {`
-$ docker run --rm -t -v $PWD/_out:/secureboot:ro -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release_v1_7 } secureboot-installer
+$ docker run --rm -t -v $PWD/_out:/secureboot:ro -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release_v1_6 } secureboot-installer
 profile ready:
 arch: amd64
 platform: metal
 secureboot: true
-version: ${release_v1_7 }
+version: ${release_v1_6 }
 input:
   kernel:
     path: /usr/install/amd64/vmlinuz
@@ -252,7 +252,7 @@ input:
   sdBoot:
     path: /usr/install/amd64/systemd-boot.efi
   baseInstaller:
-    imageRef: ghcr.io/siderolabs/installer:${release_v1_7 }
+    imageRef: ghcr.io/siderolabs/installer:${release_v1_6 }
   secureboot:
     signingKeyPath: /secureboot/uki-signing-key.pem
     signingCertPath: /secureboot/uki-signing-cert.pem
@@ -276,7 +276,7 @@ The generated container image should be pushed to some container registry which 
 
 <CodeBlock lang="sh">
 {`
-crane push _out/installer-amd64-secureboot.tar ghcr.io/<user>/installer-amd64-secureboot:${release_v1_7 }
+crane push _out/installer-amd64-secureboot.tar ghcr.io/<user>/installer-amd64-secureboot:${release_v1_6 }
 `}
 </CodeBlock>
 

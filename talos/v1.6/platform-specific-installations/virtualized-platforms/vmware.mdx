@@ -5,7 +5,7 @@ aliases:
   - ../../../virtualized-platforms/vmware
 ---
 
-import { release_v1_7 , version } from '/snippets/custom-variables.mdx';
+import { release_v1_6 , version } from '/snippets/custom-variables.mdx';
 
 ## Creating a Cluster via the `govc` CLI
 
@@ -121,13 +121,13 @@ You can do this by issuing:
 
 <CodeBlock lang="sh">
   {`
-curl -fsSL "https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${version_v1_10}/talos-guides/install/virtualized-platforms/vmware/vmware.sh" | sed s/latest/${release_v1_7 }/ > vmware.sh
+curl -fsSL "https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${version_v1_10}/talos-guides/install/virtualized-platforms/vmware/vmware.sh" | sed s/latest/${release_v1_6 }/ > vmware.sh
   `}
 </CodeBlock>
 
 This script has default variables for things like Talos version and cluster name that may be interesting to tweak before deploying.
 
-The script downloads VMWare OVA with `talos-vmtoolsd` from <a href={`https://factory.talos.dev/?arch=amd64&cmdline-set=true&extensions=-&extensions=siderolabs%2Fvmtoolsd-guest-agent&platform=vmware&target=cloud&version=${release_v1_7 }`}>
+The script downloads VMWare OVA with `talos-vmtoolsd` from <a href={`https://factory.talos.dev/?arch=amd64&cmdline-set=true&extensions=-&extensions=siderolabs%2Fvmtoolsd-guest-agent&platform=vmware&target=cloud&version=${release_v1_6 }`}>
   Image Factory
 </a> extension pre-installed.
 

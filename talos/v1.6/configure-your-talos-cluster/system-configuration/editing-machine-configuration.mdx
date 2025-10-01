@@ -5,7 +5,7 @@ aliases:
   - ../../guides/editing-machine-configuration
 ---
 
-import { release_v1_7 , k8s_release } from '/snippets/custom-variables.mdx';
+import { release_v1_6 , k8s_release } from '/snippets/custom-variables.mdx';
 
 Talos node state is fully defined by [machine configuration](../../reference/configuration/overview).
 Initial configuration is delivered to the node at bootstrap time, but configuration can be updated while the node is running.
@@ -31,7 +31,7 @@ Each of these commands can operate in one of four modes:
 Additionally, there is also `talosctl get machineconfig -o yaml`, which retrieves the current node configuration API resource and contains the machine configuration in the `.spec` field.
 It can be used to modify the configuration locally before being applied to the node.
 
-The list of config changes allowed to be applied immediately in Talos{release_v1_7 }:
+The list of config changes allowed to be applied immediately in Talos{release_v1_6 }:
 
 * `.debug`
 * `.cluster`

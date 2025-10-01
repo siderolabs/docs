@@ -5,7 +5,7 @@ aliases:
   - ../../../cloud-platforms/gcp
 ---
 
-import { release_v1_7 , version } from '/snippets/custom-variables.mdx';
+import { release_v1_6 , version } from '/snippets/custom-variables.mdx';
 
 ## Creating a Cluster via the CLI
 
@@ -283,7 +283,7 @@ resources:
     type: talos-ha.jinja
     properties:
       zone: us-west1-b
-      talosVersion: ${release_v1_7 }
+      talosVersion: ${release_v1_6 }
       externalCloudProvider: false
       controlPlaneNodeCount: 5
       controlPlaneNodeType: n1-standard-1
