@@ -109,9 +109,6 @@ machine:
 
 The specified `extraTags` are added to every message sent to the destination verbatim.
 
-> `syslog` is considered a service in Talos, and so messages/logs sent to syslog (e.g., by system extensions) are considered
-> service logs and will be sent to any configured remote receivers without further configuration.
-
 ### Kernel logs
 
 Kernel log delivery can be enabled with the `talos.logging.kernel` kernel command line argument, which can be specified

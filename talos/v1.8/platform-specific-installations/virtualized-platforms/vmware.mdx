@@ -5,7 +5,7 @@ aliases:
   - ../../../virtualized-platforms/vmware
 ---
 
-import { release_v1_8, version } from '/snippets/custom-variables.mdx';
+import { release_v1_8, version_v1_8 } from '/snippets/custom-variables.mdx';
 
 ## Creating a Cluster via the `govc` CLI
 
@@ -30,7 +30,7 @@ You can do this by issuing:
 
 <CodeBlock lang="sh">
   {`
-curl -fsSLO https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${version_v1_10}/talos-guides/install/virtualized-platforms/vmware/cp.patch.yaml
+curl -fsSLO https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${version_v1_8}/talos-guides/install/virtualized-platforms/vmware/cp.patch.yaml
   `}
 </CodeBlock>
 
@@ -68,21 +68,6 @@ $ talosctl validate --config worker.yaml --mode cloud
 worker.yaml is valid for cloud mode
 ```
 
-> Note: Using VMXNET network interfaces in VMware will cause the default [Flannel CNI](https://github.com/flannel-io/flannel) backend (vxlan) to not work between nodes.
-> To avoid this problem it is recommended to use Intel e1000 network interfaces or apply the patch below to use the host [gateway backend](https://github.com/flannel-io/flannel/blob/master/Documentation/backends.md).
-
-If you apply the patch you can save this to a separate file (e.g. cni-patch.yaml) and apply it via `talosctl`.
-
-```yaml
-cluster:
-  network:
-    cni:
-      name: flannel
-      flannel:
-        extraArgs:
-          - --flannel-backend=host-gw
-```
-
 ## Set Environment Variables
 
 `govc` makes use of the following environment variables
@@ -117,7 +102,7 @@ You can do this by issuing:
 
 <CodeBlock lang="sh">
   {`
-curl -fsSL "https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${version_v1_10}/talos-guides/install/virtualized-platforms/vmware/vmware.sh" | sed s/latest/${release_v1_8}/ > vmware.sh
+curl -fsSL "https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${version_v1_8}/talos-guides/install/virtualized-platforms/vmware/vmware.sh" | sed s/latest/${release_v1_8}/ > vmware.sh
   `}
 </CodeBlock>
 

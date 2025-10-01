@@ -175,13 +175,13 @@ Run the following to create three total control plane nodes:
 <CodeBlock lang="sh">
 {`
 for ID in $(seq 3); do
-    upctl server create \
-      --zone us-nyc1 \
-      --title talos-us-nyc1-master-$ID \
-      --hostname talos-us-nyc1-master-$ID \
-      --plan 2xCPU-4GB \
-      --os "Talos (${release_v1_8})" \
-      --user-data "$(cat controlplane.yaml)" \
+    upctl server create \\
+      --zone us-nyc1 \\
+      --title talos-us-nyc1-master-$ID \\
+      --hostname talos-us-nyc1-master-$ID \\
+      --plan 2xCPU-4GB \\
+      --os "Talos (${release_v1_8})" \\
+      --user-data "$(cat controlplane.yaml)" \\
       --enable-metada
 done
 `}
@@ -198,13 +198,13 @@ Run the following to create a worker node:
 
 <CodeBlock lang="sh">
 {`
-upctl server create \
-  --zone us-nyc1 \
-  --title talos-us-nyc1-worker-1 \
-  --hostname talos-us-nyc1-worker-1 \
-  --plan 2xCPU-4GB \
-  --os "Talos (${release_v1_8})" \
-  --user-data "$(cat worker.yaml)" \
+upctl server create \\
+  --zone us-nyc1 \\
+  --title talos-us-nyc1-worker-1 \\
+  --hostname talos-us-nyc1-worker-1 \\
+  --plan 2xCPU-4GB \\
+  --os "Talos (${release_v1_8})" \\
+  --user-data "$(cat worker.yaml)" \\
   --enable-metada
 `}
 </CodeBlock>

@@ -150,7 +150,7 @@ The returned schematic ID `0db665edfda21c70194e7ca660955425d16cec2aa58ff031e2abf
 
 Now we can download the metal arm64 image:
 
-- https://factory.talos.dev/image/0db665edfda21c70194e7ca660955425d16cec2aa58ff031e2abf72b7c328585/${release_v1_8}/metal-arm64.raw.xz (download it and burn to a boot media)
+- <a href= {`https://factory.talos.dev/image/0db665edfda21c70194e7ca660955425d16cec2aa58ff031e2abf72b7c328585/${release_v1_8}/metal-arm64.raw.xz`}> Download it and burn to a boot media </a>
 
 > The Image Factory URL contains both schematic ID and Talos version, and both can be changed to generate different boot assets.
 
@@ -199,10 +199,10 @@ Now we can generate the metal image with the following command:
 
 <CodeBlock lang="sh">
   {`
-$ docker run --rm -t -v $PWD/_out:/out -v /dev:/dev --privileged ghcr.io/siderolabs/imager:${release_v1_8} rpi_generic \
-  --arch arm64 \
-  --overlay-image ghcr.io/siderolabs/sbc-raspberrypi:v0.1.0@sha256:849ace01b9af514d817b05a9c5963a35202e09a4807d12f8a3ea83657c76c863 \
-  --overlay-name=rpi_generic \
+$ docker run --rm -t -v $PWD/_out:/out -v /dev:/dev --privileged ghcr.io/siderolabs/imager:${release_v1_8} rpi_generic \\
+  --arch arm64 \\
+  --overlay-image ghcr.io/siderolabs/sbc-raspberrypi:v0.1.0@sha256:849ace01b9af514d817b05a9c5963a35202e09a4807d12f8a3ea83657c76c863 \\
+  --overlay-name=rpi_generic \\
   --overlay-option="configTxt=$(cat <<EOF
 gpu_mem=128
 kernel=u-boot.bin
@@ -214,7 +214,7 @@ dtoverlay=disable-wifi
 avoid_warnings=2
 dtoverlay=vc4-kms-v3d,noaudio
 EOF
-)" \
+)" \\
   --system-extension-image ghcr.io/siderolabs/vc4:v0.1.4@sha256:548b2b121611424f6b1b6cfb72a1669421ffaf2f1560911c324a546c7cee655e
 profile ready:
 arch: arm64
@@ -265,10 +265,10 @@ As the next step, we should generate a custom `installer` image which contains a
 
 <CodeBlock lang="sh">
   {`
-$ docker run --rm -t -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release_v1_8} installer \
-  --arch arm64 \
-  --overlay-image ghcr.io/siderolabs/sbc-raspberrypi:v0.1.0@sha256:849ace01b9af514d817b05a9c5963a35202e09a4807d12f8a3ea83657c76c863 \
-  --overlay-name=rpi_generic \
+$ docker run --rm -t -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release_v1_8} installer \\
+  --arch arm64 \\
+  --overlay-image ghcr.io/siderolabs/sbc-raspberrypi:v0.1.0@sha256:849ace01b9af514d817b05a9c5963a35202e09a4807d12f8a3ea83657c76c863 \\
+  --overlay-name=rpi_generic \\
   --overlay-option="configTxt=$(cat <<EOF
 gpu_mem=128
 kernel=u-boot.bin
@@ -280,7 +280,7 @@ dtoverlay=disable-wifi
 avoid_warnings=2
 dtoverlay=vc4-kms-v3d,noaudio
 EOF
-)" \
+)" \\
   --system-extension-image ghcr.io/siderolabs/vc4:v0.1.4@sha256:548b2b121611424f6b1b6cfb72a1669421ffaf2f1560911c324a546c7cee655e
 ...
 output asset path: /out/metal-arm64-installer.tar
