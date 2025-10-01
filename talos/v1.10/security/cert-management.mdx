@@ -33,7 +33,7 @@ A specific [role](./rbac) and certificate lifetime can be specified.
 ### From Secrets Bundle
 
 If a secrets bundle (`secrets.yaml` from `talosctl gen secrets`) was saved while
-[generating machine configuration](../../introduction/getting-started/#configure-talos):
+[generating machine configuration](../getting-started/#configure-talos):
 
 ```shell
 talosctl gen config --with-secrets secrets.yaml --output-types talosconfig -o talosconfig <cluster-name> https://<cluster-endpoint>
