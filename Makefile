@@ -35,10 +35,12 @@ broken-links: ## Run broken links check
 		$(MINT_IMAGE) broken-links
 
 docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multiple config files
+	docker pull $(DOCS_GEN_IMAGE)
 	docker run --rm -v $(PWD):/workspace -w /workspace $(DOCS_GEN_IMAGE) \
 		common.yaml \
 		talos-v1.10.yaml \
 		talos-v1.11.yaml \
+		talos-v1.6.yaml \
 		omni.yaml \
 		kubernetes-guides.yaml \
 		> docs.json
@@ -48,6 +50,7 @@ docs.json-local: common.yaml omni.yaml docs-gen/main.go ## Generate docs.json us
 		../common.yaml \
 		../talos-v1.10.yaml \
 		../talos-v1.11.yaml \
+		../talos-v1.6.yaml \
 		../omni.yaml \
 		../kubernetes-guides.yaml \
 		> ../docs.json
@@ -58,6 +61,7 @@ check-missing: ## Check for MDX files not included in config files
 		common.yaml \
 		talos-v1.10.yaml \
 		talos-v1.11.yaml \
+		talos-v1.6.yaml \
 		omni.yaml \
 		kubernetes-guides.yaml 
 
@@ -67,6 +71,7 @@ check-missing-local: ## Check for missing files using local Go build
 		../common.yaml \
 		../talos-v1.10.yaml \
 		../talos-v1.11.yaml \
+		../talos-v1.6.yaml \
 		../omni.yaml \
 		../kubernetes-guides.yaml
 
