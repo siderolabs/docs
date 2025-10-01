@@ -1713,6 +1713,7 @@
                 ]
               },
               "omni/security-and-authentication/authentication-and-authorization",
+              "omni/security-and-authentication/oidc-login-with-tailscale",
               "omni/security-and-authentication/how-to-manage-acls",
               "omni/security-and-authentication/omni-kms-disk-encryption",
               "omni/security-and-authentication/rotate-siderolink-join-token"
