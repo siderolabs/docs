@@ -53,26 +53,17 @@
         "icon": "/images/talos.svg",
         "versions": [
           {
-<<<<<<< HEAD
             "version": "v1.11",
-=======
-            "version": "Talos - v1.10",
->>>>>>> bd9fb24 (docs: add v1.8 docs)
             "groups": [
               {
                 "group": "Overview",
                 "pages": [
-<<<<<<< HEAD
                   "talos/v1.11/overview/what-is-talos"
-=======
-                  "talos/v1.10/overview/what-is-talos"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               },
               {
                 "group": "Getting Started",
                 "pages": [
-<<<<<<< HEAD
                   "talos/v1.11/getting-started/system-requirements",
                   "talos/v1.11/getting-started/talosctl",
                   "talos/v1.11/getting-started/quickstart",
@@ -81,16 +72,6 @@
                   "talos/v1.11/getting-started/deploy-first-workload",
                   "talos/v1.11/getting-started/what's-new-in-talos",
                   "talos/v1.11/getting-started/support-matrix"
-=======
-                  "talos/v1.10/getting-started/system-requirements",
-                  "talos/v1.10/getting-started/talosctl",
-                  "talos/v1.10/getting-started/quickstart",
-                  "talos/v1.10/getting-started/getting-started",
-                  "talos/v1.10/getting-started/prodnotes",
-                  "talos/v1.10/getting-started/deploy-first-workload",
-                  "talos/v1.10/getting-started/what's-new-in-talos-1.10",
-                  "talos/v1.10/getting-started/support-matrix"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               },
               {
@@ -99,7 +80,6 @@
                   {
                     "group": "Bare Metal Platforms",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.11/platform-specific-installations/bare-metal-platforms/bootloader",
                       "talos/v1.11/platform-specific-installations/bare-metal-platforms/equinix-metal",
                       "talos/v1.11/platform-specific-installations/bare-metal-platforms/iso",
@@ -107,21 +87,11 @@
                       "talos/v1.11/platform-specific-installations/bare-metal-platforms/network-config",
                       "talos/v1.11/platform-specific-installations/bare-metal-platforms/pxe",
                       "talos/v1.11/platform-specific-installations/bare-metal-platforms/secureboot"
-=======
-                      "talos/v1.10/platform-specific-installations/bare-metal-platforms/bootloader",
-                      "talos/v1.10/platform-specific-installations/bare-metal-platforms/equinix-metal",
-                      "talos/v1.10/platform-specific-installations/bare-metal-platforms/iso",
-                      "talos/v1.10/platform-specific-installations/bare-metal-platforms/matchbox",
-                      "talos/v1.10/platform-specific-installations/bare-metal-platforms/network-config",
-                      "talos/v1.10/platform-specific-installations/bare-metal-platforms/pxe",
-                      "talos/v1.10/platform-specific-installations/bare-metal-platforms/secureboot"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Virtualized Platforms",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.11/platform-specific-installations/virtualized-platforms/hyper-v",
                       "talos/v1.11/platform-specific-installations/virtualized-platforms/kvm",
                       "talos/v1.11/platform-specific-installations/virtualized-platforms/opennebula",
@@ -129,21 +99,11 @@
                       "talos/v1.11/platform-specific-installations/virtualized-platforms/vagrant-libvirt",
                       "talos/v1.11/platform-specific-installations/virtualized-platforms/vmware",
                       "talos/v1.11/platform-specific-installations/virtualized-platforms/xen"
-=======
-                      "talos/v1.10/platform-specific-installations/virtualized-platforms/hyper-v",
-                      "talos/v1.10/platform-specific-installations/virtualized-platforms/kvm",
-                      "talos/v1.10/platform-specific-installations/virtualized-platforms/opennebula",
-                      "talos/v1.10/platform-specific-installations/virtualized-platforms/proxmox",
-                      "talos/v1.10/platform-specific-installations/virtualized-platforms/vagrant-libvirt",
-                      "talos/v1.10/platform-specific-installations/virtualized-platforms/vmware",
-                      "talos/v1.10/platform-specific-installations/virtualized-platforms/xen"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Cloud Platforms",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.11/platform-specific-installations/cloud-platforms/akamai",
                       "talos/v1.11/platform-specific-installations/cloud-platforms/aws",
                       "talos/v1.11/platform-specific-installations/cloud-platforms/azure",
@@ -159,43 +119,19 @@
                       "talos/v1.11/platform-specific-installations/cloud-platforms/scaleway",
                       "talos/v1.11/platform-specific-installations/cloud-platforms/upcloud",
                       "talos/v1.11/platform-specific-installations/cloud-platforms/vultr"
-=======
-                      "talos/v1.10/platform-specific-installations/cloud-platforms/akamai",
-                      "talos/v1.10/platform-specific-installations/cloud-platforms/aws",
-                      "talos/v1.10/platform-specific-installations/cloud-platforms/azure",
-                      "talos/v1.10/platform-specific-installations/cloud-platforms/cloudstack",
-                      "talos/v1.10/platform-specific-installations/cloud-platforms/digitalocean",
-                      "talos/v1.10/platform-specific-installations/cloud-platforms/exoscale",
-                      "talos/v1.10/platform-specific-installations/cloud-platforms/gcp",
-                      "talos/v1.10/platform-specific-installations/cloud-platforms/hetzner",
-                      "talos/v1.10/platform-specific-installations/cloud-platforms/kubernetes",
-                      "talos/v1.10/platform-specific-installations/cloud-platforms/nocloud",
-                      "talos/v1.10/platform-specific-installations/cloud-platforms/openstack",
-                      "talos/v1.10/platform-specific-installations/cloud-platforms/oracle",
-                      "talos/v1.10/platform-specific-installations/cloud-platforms/scaleway",
-                      "talos/v1.10/platform-specific-installations/cloud-platforms/upcloud",
-                      "talos/v1.10/platform-specific-installations/cloud-platforms/vultr"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Local Platforms",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.11/platform-specific-installations/local-platforms/docker",
                       "talos/v1.11/platform-specific-installations/local-platforms/qemu",
                       "talos/v1.11/platform-specific-installations/local-platforms/virtualbox"
-=======
-                      "talos/v1.10/platform-specific-installations/local-platforms/docker",
-                      "talos/v1.10/platform-specific-installations/local-platforms/qemu",
-                      "talos/v1.10/platform-specific-installations/local-platforms/virtualbox"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Single Board Computers",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.11/platform-specific-installations/single-board-computers/bananapi_m64",
                       "talos/v1.11/platform-specific-installations/single-board-computers/nanopi_r4s",
                       "talos/v1.11/platform-specific-installations/single-board-computers/jetson_nano",
@@ -216,50 +152,20 @@
                   "talos/v1.11/platform-specific-installations/boot-assets",
                   "talos/v1.11/platform-specific-installations/air-gapped",
                   "talos/v1.11/platform-specific-installations/omni"
-=======
-                      "talos/v1.10/platform-specific-installations/single-board-computers/bananapi_m64",
-                      "talos/v1.10/platform-specific-installations/single-board-computers/nanopi_r4s",
-                      "talos/v1.10/platform-specific-installations/single-board-computers/jetson_nano",
-                      "talos/v1.10/platform-specific-installations/single-board-computers/libretech_all_h3_cc_h5",
-                      "talos/v1.10/platform-specific-installations/single-board-computers/orangepi_5",
-                      "talos/v1.10/platform-specific-installations/single-board-computers/orangepi_r1_plus_lts",
-                      "talos/v1.10/platform-specific-installations/single-board-computers/pine64",
-                      "talos/v1.10/platform-specific-installations/single-board-computers/rock64",
-                      "talos/v1.10/platform-specific-installations/single-board-computers/rock4cplus",
-                      "talos/v1.10/platform-specific-installations/single-board-computers/rock5b",
-                      "talos/v1.10/platform-specific-installations/single-board-computers/rockpi_4",
-                      "talos/v1.10/platform-specific-installations/single-board-computers/rockpi_4c",
-                      "talos/v1.10/platform-specific-installations/single-board-computers/rpi_generic",
-                      "talos/v1.10/platform-specific-installations/single-board-computers/turing_rk1",
-                      "talos/v1.10/platform-specific-installations/single-board-computers/unofficial"
-                    ]
-                  },
-                  "talos/v1.10/platform-specific-installations/boot-assets",
-                  "talos/v1.10/platform-specific-installations/air-gapped",
-                  "talos/v1.10/platform-specific-installations/omni"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               },
               {
                 "group": "Deploying and managing workloads",
                 "pages": [
-<<<<<<< HEAD
                   "talos/v1.11/deploy-and-manage-workloads/interactive-dashboard",
                   "talos/v1.11/deploy-and-manage-workloads/scaling-up",
                   "talos/v1.11/deploy-and-manage-workloads/scaling-down",
                   "talos/v1.11/deploy-and-manage-workloads/workers-on-controlplane"
-=======
-                  "talos/v1.10/deploy-and-manage-workloads/interactive-dashboard",
-                  "talos/v1.10/deploy-and-manage-workloads/scaling-up",
-                  "talos/v1.10/deploy-and-manage-workloads/scaling-down",
-                  "talos/v1.10/deploy-and-manage-workloads/workers-on-controlplane"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               },
               {
                 "group": "Networking",
                 "pages": [
-<<<<<<< HEAD
                   "talos/v1.11/networking/advanced-networking",
                   "talos/v1.11/networking/corporate-proxies",
                   "talos/v1.11/networking/egress-domains",
@@ -274,28 +180,11 @@
                   "talos/v1.11/networking/siderolink",
                   "talos/v1.11/networking/vip",
                   "talos/v1.11/networking/wireguard-network"
-=======
-                  "talos/v1.10/networking/advanced-networking",
-                  "talos/v1.10/networking/corporate-proxies",
-                  "talos/v1.10/networking/egress-domains",
-                  "talos/v1.10/networking/ethernet-config",
-                  "talos/v1.10/networking/host-dns",
-                  "talos/v1.10/networking/ingress-firewall",
-                  "talos/v1.10/networking/kubespan",
-                  "talos/v1.10/networking/metal-network-configuration",
-                  "talos/v1.10/networking/multihoming",
-                  "talos/v1.10/networking/device-selector",
-                  "talos/v1.10/networking/predictable-interface-names",
-                  "talos/v1.10/networking/siderolink",
-                  "talos/v1.10/networking/vip",
-                  "talos/v1.10/networking/wireguard-network"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               },
               {
                 "group": "Security",
                 "pages": [
-<<<<<<< HEAD
                   "talos/v1.11/security/ca-rotation",
                   "talos/v1.11/security/cert-management",
                   "talos/v1.11/security/certificate-authorities",
@@ -303,15 +192,6 @@
                   "talos/v1.11/security/rbac",
                   "talos/v1.11/security/selinux",
                   "talos/v1.11/security/verifying-images"
-=======
-                  "talos/v1.10/security/ca-rotation",
-                  "talos/v1.10/security/cert-management",
-                  "talos/v1.10/security/certificate-authorities",
-                  "talos/v1.10/security/machine-config-oauth",
-                  "talos/v1.10/security/rbac",
-                  "talos/v1.10/security/selinux",
-                  "talos/v1.10/security/verifying-images"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               },
               {
@@ -320,7 +200,6 @@
                   {
                     "group": "Custom Images \u0026 Development",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.11/build-and-extend-talos/custom-images-and-development/building-images",
                       "talos/v1.11/build-and-extend-talos/custom-images-and-development/customizing-the-kernel",
                       "talos/v1.11/build-and-extend-talos/custom-images-and-development/developing-talos",
@@ -329,32 +208,15 @@
                       "talos/v1.11/build-and-extend-talos/custom-images-and-development/oci-base-spec",
                       "talos/v1.11/build-and-extend-talos/custom-images-and-development/overlays",
                       "talos/v1.11/build-and-extend-talos/custom-images-and-development/system-extensions"
-=======
-                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/building-images",
-                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/customizing-the-kernel",
-                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/developing-talos",
-                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/extension-services",
-                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/kernel-module",
-                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/oci-base-spec",
-                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/overlays",
-                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/system-extensions"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Cluster Operations \u0026 Maintenance",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.11/build-and-extend-talos/cluster-operations-and-maintenance/disaster-recovery",
                       "talos/v1.11/build-and-extend-talos/cluster-operations-and-maintenance/cgroups-analysis",
                       "talos/v1.11/build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance",
                       "talos/v1.11/build-and-extend-talos/cluster-operations-and-maintenance/watchdog"
-=======
-                      "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/disaster-recovery",
-                      "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/cgroups-analysis",
-                      "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance",
-                      "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/watchdog"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   }
                 ]
@@ -365,7 +227,6 @@
                   {
                     "group": "System Configuration",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.11/configure-your-talos-cluster/system-configuration/patching",
                       "talos/v1.11/configure-your-talos-cluster/system-configuration/editing-machine-configuration",
                       "talos/v1.11/configure-your-talos-cluster/system-configuration/performance-tuning",
@@ -373,37 +234,20 @@
                       "talos/v1.11/configure-your-talos-cluster/system-configuration/discovery",
                       "talos/v1.11/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
                       "talos/v1.11/configure-your-talos-cluster/system-configuration/insecure"
-=======
-                      "talos/v1.10/configure-your-talos-cluster/system-configuration/patching",
-                      "talos/v1.10/configure-your-talos-cluster/system-configuration/editing-machine-configuration",
-                      "talos/v1.10/configure-your-talos-cluster/system-configuration/performance-tuning",
-                      "talos/v1.10/configure-your-talos-cluster/system-configuration/time-sync",
-                      "talos/v1.10/configure-your-talos-cluster/system-configuration/discovery",
-                      "talos/v1.10/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
-                      "talos/v1.10/configure-your-talos-cluster/system-configuration/insecure"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Images \u0026 Container Runtime",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.11/configure-your-talos-cluster/images-container-runtime/containerd",
                       "talos/v1.11/configure-your-talos-cluster/images-container-runtime/image-cache",
                       "talos/v1.11/configure-your-talos-cluster/images-container-runtime/pull-through-cache",
                       "talos/v1.11/configure-your-talos-cluster/images-container-runtime/static-pods"
-=======
-                      "talos/v1.10/configure-your-talos-cluster/images-container-runtime/containerd",
-                      "talos/v1.10/configure-your-talos-cluster/images-container-runtime/image-cache",
-                      "talos/v1.10/configure-your-talos-cluster/images-container-runtime/pull-through-cache",
-                      "talos/v1.10/configure-your-talos-cluster/images-container-runtime/static-pods"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Storage \u0026 Disk Management",
                     "pages": [
-<<<<<<< HEAD
                       {
                         "group": "Disk Management",
                         "pages": [
@@ -419,46 +263,27 @@
                       },
                       "talos/v1.11/configure-your-talos-cluster/storage-and-disk-management/disk-encryption",
                       "talos/v1.11/configure-your-talos-cluster/storage-and-disk-management/swap"
-=======
-                      "talos/v1.10/configure-your-talos-cluster/storage-and-disk-management/disk-encryption",
-                      "talos/v1.10/configure-your-talos-cluster/storage-and-disk-management/disk-management"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Logging \u0026 Telemetry",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.11/configure-your-talos-cluster/logging-and-telemetry/logging"
-=======
-                      "talos/v1.10/configure-your-talos-cluster/logging-and-telemetry/logging"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Hardware \u0026 Drivers",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.11/configure-your-talos-cluster/hardware-and-drivers/nvidia-fabricmanager",
                       "talos/v1.11/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu",
                       "talos/v1.11/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary"
-=======
-                      "talos/v1.10/configure-your-talos-cluster/hardware-and-drivers/nvidia-fabricmanager",
-                      "talos/v1.10/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu",
-                      "talos/v1.10/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Lifecycle Management",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.11/configure-your-talos-cluster/lifecycle-management/upgrading-talos",
                       "talos/v1.11/configure-your-talos-cluster/lifecycle-management/resetting-a-machine"
-=======
-                      "talos/v1.10/configure-your-talos-cluster/lifecycle-management/upgrading-talos",
-                      "talos/v1.10/configure-your-talos-cluster/lifecycle-management/resetting-a-machine"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   }
                 ]
@@ -466,32 +291,21 @@
               {
                 "group": "Advanced guides",
                 "pages": [
-<<<<<<< HEAD
                   "talos/v1.11/advanced-guides/install-kubevirt",
                   "talos/v1.11/advanced-guides/migrating-from-kubeadm",
                   "talos/v1.11/advanced-guides/SBOM"
-=======
-                  "talos/v1.10/advanced-guides/install-kubevirt",
-                  "talos/v1.10/advanced-guides/migrating-from-kubeadm"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               },
               {
                 "group": "Troubleshooting and support",
                 "pages": [
-<<<<<<< HEAD
                   "talos/v1.11/troubleshooting/troubleshooting",
                   "talos/v1.11/troubleshooting/faqs"
-=======
-                  "talos/v1.10/troubleshooting/troubleshooting",
-                  "talos/v1.10/troubleshooting/faqs"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               },
               {
                 "group": "Learn more",
                 "pages": [
-<<<<<<< HEAD
                   "talos/v1.11/learn-more/architecture",
                   "talos/v1.11/learn-more/components",
                   "talos/v1.11/learn-more/control-plane",
@@ -504,46 +318,22 @@
                   "talos/v1.11/learn-more/process-capabilities",
                   "talos/v1.11/learn-more/talos-network-connectivity",
                   "talos/v1.11/learn-more/talosctl"
-=======
-                  "talos/v1.10/learn-more/architecture",
-                  "talos/v1.10/learn-more/components",
-                  "talos/v1.10/learn-more/control-plane",
-                  "talos/v1.10/learn-more/controllers-resources",
-                  "talos/v1.10/learn-more/image-factory",
-                  "talos/v1.10/learn-more/knowledge-base",
-                  "talos/v1.10/learn-more/kubespan",
-                  "talos/v1.10/learn-more/networking-resources",
-                  "talos/v1.10/learn-more/philosophy",
-                  "talos/v1.10/learn-more/process-capabilities",
-                  "talos/v1.10/learn-more/talos-network-connectivity",
-                  "talos/v1.10/learn-more/talosctl"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               }
             ]
-
           },
           {
-<<<<<<< HEAD
             "version": "v1.10",
-=======
-            "version": "Talos - v1.8",
->>>>>>> bd9fb24 (docs: add v1.8 docs)
             "groups": [
               {
                 "group": "Overview",
                 "pages": [
-<<<<<<< HEAD
                   "talos/v1.10/overview/what-is-talos"
-=======
-                  "talos/v1.8/overview/what-is-talos"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               },
               {
                 "group": "Getting Started",
                 "pages": [
-<<<<<<< HEAD
                   "talos/v1.10/getting-started/system-requirements",
                   "talos/v1.10/getting-started/talosctl",
                   "talos/v1.10/getting-started/quickstart",
@@ -552,16 +342,6 @@
                   "talos/v1.10/getting-started/deploy-first-workload",
                   "talos/v1.10/getting-started/what's-new-in-talos",
                   "talos/v1.10/getting-started/support-matrix"
-=======
-                  "talos/v1.8/getting-started/system-requirements",
-                  "talos/v1.8/getting-started/talosctl",
-                  "talos/v1.8/getting-started/quickstart",
-                  "talos/v1.8/getting-started/getting-started",
-                  "talos/v1.8/getting-started/prodnotes",
-                  "talos/v1.8/getting-started/deploy-first-workload",
-                  "talos/v1.8/getting-started/what's-new-in-talos",
-                  "talos/v1.8/getting-started/support-matrix"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               },
               {
@@ -570,7 +350,6 @@
                   {
                     "group": "Bare Metal Platforms",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.10/platform-specific-installations/bare-metal-platforms/bootloader",
                       "talos/v1.10/platform-specific-installations/bare-metal-platforms/equinix-metal",
                       "talos/v1.10/platform-specific-installations/bare-metal-platforms/iso",
@@ -578,21 +357,11 @@
                       "talos/v1.10/platform-specific-installations/bare-metal-platforms/network-config",
                       "talos/v1.10/platform-specific-installations/bare-metal-platforms/pxe",
                       "talos/v1.10/platform-specific-installations/bare-metal-platforms/secureboot"
-=======
-                      "talos/v1.8/platform-specific-installations/bare-metal-platforms/bootloader",
-                      "talos/v1.8/platform-specific-installations/bare-metal-platforms/equinix-metal",
-                      "talos/v1.8/platform-specific-installations/bare-metal-platforms/iso",
-                      "talos/v1.8/platform-specific-installations/bare-metal-platforms/matchbox",
-                      "talos/v1.8/platform-specific-installations/bare-metal-platforms/network-config",
-                      "talos/v1.8/platform-specific-installations/bare-metal-platforms/pxe",
-                      "talos/v1.8/platform-specific-installations/bare-metal-platforms/secureboot"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Virtualized Platforms",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.10/platform-specific-installations/virtualized-platforms/hyper-v",
                       "talos/v1.10/platform-specific-installations/virtualized-platforms/kvm",
                       "talos/v1.10/platform-specific-installations/virtualized-platforms/opennebula",
@@ -600,21 +369,11 @@
                       "talos/v1.10/platform-specific-installations/virtualized-platforms/vagrant-libvirt",
                       "talos/v1.10/platform-specific-installations/virtualized-platforms/vmware",
                       "talos/v1.10/platform-specific-installations/virtualized-platforms/xen"
-=======
-                      "talos/v1.8/platform-specific-installations/virtualized-platforms/hyper-v",
-                      "talos/v1.8/platform-specific-installations/virtualized-platforms/kvm",
-                      "talos/v1.8/platform-specific-installations/virtualized-platforms/opennebula",
-                      "talos/v1.8/platform-specific-installations/virtualized-platforms/proxmox",
-                      "talos/v1.8/platform-specific-installations/virtualized-platforms/vagrant-libvirt",
-                      "talos/v1.8/platform-specific-installations/virtualized-platforms/vmware",
-                      "talos/v1.8/platform-specific-installations/virtualized-platforms/xen"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Cloud Platforms",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.10/platform-specific-installations/cloud-platforms/akamai",
                       "talos/v1.10/platform-specific-installations/cloud-platforms/aws",
                       "talos/v1.10/platform-specific-installations/cloud-platforms/azure",
@@ -630,43 +389,19 @@
                       "talos/v1.10/platform-specific-installations/cloud-platforms/scaleway",
                       "talos/v1.10/platform-specific-installations/cloud-platforms/upcloud",
                       "talos/v1.10/platform-specific-installations/cloud-platforms/vultr"
-=======
-                      "talos/v1.8/platform-specific-installations/cloud-platforms/akamai",
-                      "talos/v1.8/platform-specific-installations/cloud-platforms/aws",
-                      "talos/v1.8/platform-specific-installations/cloud-platforms/azure",
-                      "talos/v1.8/platform-specific-installations/cloud-platforms/cloudstack",
-                      "talos/v1.8/platform-specific-installations/cloud-platforms/digitalocean",
-                      "talos/v1.8/platform-specific-installations/cloud-platforms/exoscale",
-                      "talos/v1.8/platform-specific-installations/cloud-platforms/gcp",
-                      "talos/v1.8/platform-specific-installations/cloud-platforms/hetzner",
-                      "talos/v1.8/platform-specific-installations/cloud-platforms/kubernetes",
-                      "talos/v1.8/platform-specific-installations/cloud-platforms/nocloud",
-                      "talos/v1.8/platform-specific-installations/cloud-platforms/openstack",
-                      "talos/v1.8/platform-specific-installations/cloud-platforms/oracle",
-                      "talos/v1.8/platform-specific-installations/cloud-platforms/scaleway",
-                      "talos/v1.8/platform-specific-installations/cloud-platforms/upcloud",
-                      "talos/v1.8/platform-specific-installations/cloud-platforms/vultr"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Local Platforms",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.10/platform-specific-installations/local-platforms/docker",
                       "talos/v1.10/platform-specific-installations/local-platforms/qemu",
                       "talos/v1.10/platform-specific-installations/local-platforms/virtualbox"
-=======
-                      "talos/v1.8/platform-specific-installations/local-platforms/docker",
-                      "talos/v1.8/platform-specific-installations/local-platforms/qemu",
-                      "talos/v1.8/platform-specific-installations/local-platforms/virtualbox"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Single Board Computers",
                     "pages": [
-<<<<<<< HEAD
                       "talos/v1.10/platform-specific-installations/single-board-computers/bananapi_m64",
                       "talos/v1.10/platform-specific-installations/single-board-computers/nanopi_r4s",
                       "talos/v1.10/platform-specific-installations/single-board-computers/jetson_nano",
@@ -687,7 +422,242 @@
                   "talos/v1.10/platform-specific-installations/boot-assets",
                   "talos/v1.10/platform-specific-installations/air-gapped",
                   "talos/v1.10/platform-specific-installations/omni"
-=======
+                ]
+              },
+              {
+                "group": "Deploying and managing workloads",
+                "pages": [
+                  "talos/v1.10/deploy-and-manage-workloads/interactive-dashboard",
+                  "talos/v1.10/deploy-and-manage-workloads/scaling-up",
+                  "talos/v1.10/deploy-and-manage-workloads/scaling-down",
+                  "talos/v1.10/deploy-and-manage-workloads/workers-on-controlplane"
+                ]
+              },
+              {
+                "group": "Networking",
+                "pages": [
+                  "talos/v1.10/networking/advanced-networking",
+                  "talos/v1.10/networking/corporate-proxies",
+                  "talos/v1.10/networking/egress-domains",
+                  "talos/v1.10/networking/ethernet-config",
+                  "talos/v1.10/networking/host-dns",
+                  "talos/v1.10/networking/ingress-firewall",
+                  "talos/v1.10/networking/kubespan",
+                  "talos/v1.10/networking/metal-network-configuration",
+                  "talos/v1.10/networking/multihoming",
+                  "talos/v1.10/networking/device-selector",
+                  "talos/v1.10/networking/predictable-interface-names",
+                  "talos/v1.10/networking/siderolink",
+                  "talos/v1.10/networking/vip",
+                  "talos/v1.10/networking/wireguard-network"
+                ]
+              },
+              {
+                "group": "Security",
+                "pages": [
+                  "talos/v1.10/security/ca-rotation",
+                  "talos/v1.10/security/cert-management",
+                  "talos/v1.10/security/certificate-authorities",
+                  "talos/v1.10/security/machine-config-oauth",
+                  "talos/v1.10/security/rbac",
+                  "talos/v1.10/security/selinux",
+                  "talos/v1.10/security/verifying-images"
+                ]
+              },
+              {
+                "group": "Build and extend Talos",
+                "pages": [
+                  {
+                    "group": "Custom Images \u0026 Development",
+                    "pages": [
+                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/building-images",
+                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/customizing-the-kernel",
+                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/developing-talos",
+                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/extension-services",
+                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/kernel-module",
+                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/oci-base-spec",
+                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/overlays",
+                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/system-extensions"
+                    ]
+                  },
+                  {
+                    "group": "Cluster Operations \u0026 Maintenance",
+                    "pages": [
+                      "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/disaster-recovery",
+                      "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/cgroups-analysis",
+                      "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance",
+                      "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/watchdog"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Configure your Talos cluster",
+                "pages": [
+                  {
+                    "group": "System Configuration",
+                    "pages": [
+                      "talos/v1.10/configure-your-talos-cluster/system-configuration/patching",
+                      "talos/v1.10/configure-your-talos-cluster/system-configuration/editing-machine-configuration",
+                      "talos/v1.10/configure-your-talos-cluster/system-configuration/performance-tuning",
+                      "talos/v1.10/configure-your-talos-cluster/system-configuration/time-sync",
+                      "talos/v1.10/configure-your-talos-cluster/system-configuration/discovery",
+                      "talos/v1.10/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
+                      "talos/v1.10/configure-your-talos-cluster/system-configuration/insecure"
+                    ]
+                  },
+                  {
+                    "group": "Images \u0026 Container Runtime",
+                    "pages": [
+                      "talos/v1.10/configure-your-talos-cluster/images-container-runtime/containerd",
+                      "talos/v1.10/configure-your-talos-cluster/images-container-runtime/image-cache",
+                      "talos/v1.10/configure-your-talos-cluster/images-container-runtime/pull-through-cache",
+                      "talos/v1.10/configure-your-talos-cluster/images-container-runtime/static-pods"
+                    ]
+                  },
+                  {
+                    "group": "Storage \u0026 Disk Management",
+                    "pages": [
+                      "talos/v1.10/configure-your-talos-cluster/storage-and-disk-management/disk-encryption",
+                      "talos/v1.10/configure-your-talos-cluster/storage-and-disk-management/disk-management"
+                    ]
+                  },
+                  {
+                    "group": "Logging \u0026 Telemetry",
+                    "pages": [
+                      "talos/v1.10/configure-your-talos-cluster/logging-and-telemetry/logging"
+                    ]
+                  },
+                  {
+                    "group": "Hardware \u0026 Drivers",
+                    "pages": [
+                      "talos/v1.10/configure-your-talos-cluster/hardware-and-drivers/nvidia-fabricmanager",
+                      "talos/v1.10/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu",
+                      "talos/v1.10/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary"
+                    ]
+                  },
+                  {
+                    "group": "Lifecycle Management",
+                    "pages": [
+                      "talos/v1.10/configure-your-talos-cluster/lifecycle-management/upgrading-talos",
+                      "talos/v1.10/configure-your-talos-cluster/lifecycle-management/resetting-a-machine"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Advanced guides",
+                "pages": [
+                  "talos/v1.10/advanced-guides/install-kubevirt",
+                  "talos/v1.10/advanced-guides/migrating-from-kubeadm"
+                ]
+              },
+              {
+                "group": "Troubleshooting and support",
+                "pages": [
+                  "talos/v1.10/troubleshooting/troubleshooting",
+                  "talos/v1.10/troubleshooting/faqs"
+                ]
+              },
+              {
+                "group": "Learn more",
+                "pages": [
+                  "talos/v1.10/learn-more/architecture",
+                  "talos/v1.10/learn-more/components",
+                  "talos/v1.10/learn-more/control-plane",
+                  "talos/v1.10/learn-more/controllers-resources",
+                  "talos/v1.10/learn-more/image-factory",
+                  "talos/v1.10/learn-more/knowledge-base",
+                  "talos/v1.10/learn-more/kubespan",
+                  "talos/v1.10/learn-more/networking-resources",
+                  "talos/v1.10/learn-more/philosophy",
+                  "talos/v1.10/learn-more/process-capabilities",
+                  "talos/v1.10/learn-more/talos-network-connectivity",
+                  "talos/v1.10/learn-more/talosctl"
+                ]
+              }
+            ]
+          },
+          {
+            "version": "v1.8",
+            "groups": [
+              {
+                "group": "Overview",
+                "pages": [
+                  "talos/v1.8/overview/what-is-talos"
+                ]
+              },
+              {
+                "group": "Getting Started",
+                "pages": [
+                  "talos/v1.8/getting-started/system-requirements",
+                  "talos/v1.8/getting-started/talosctl",
+                  "talos/v1.8/getting-started/quickstart",
+                  "talos/v1.8/getting-started/getting-started",
+                  "talos/v1.8/getting-started/prodnotes",
+                  "talos/v1.8/getting-started/deploy-first-workload",
+                  "talos/v1.8/getting-started/what's-new-in-talos",
+                  "talos/v1.8/getting-started/support-matrix"
+                ]
+              },
+              {
+                "group": "Platform specific installation",
+                "pages": [
+                  {
+                    "group": "Bare Metal Platforms",
+                    "pages": [
+                      "talos/v1.8/platform-specific-installations/bare-metal-platforms/bootloader",
+                      "talos/v1.8/platform-specific-installations/bare-metal-platforms/equinix-metal",
+                      "talos/v1.8/platform-specific-installations/bare-metal-platforms/iso",
+                      "talos/v1.8/platform-specific-installations/bare-metal-platforms/matchbox",
+                      "talos/v1.8/platform-specific-installations/bare-metal-platforms/network-config",
+                      "talos/v1.8/platform-specific-installations/bare-metal-platforms/pxe",
+                      "talos/v1.8/platform-specific-installations/bare-metal-platforms/secureboot"
+                    ]
+                  },
+                  {
+                    "group": "Virtualized Platforms",
+                    "pages": [
+                      "talos/v1.8/platform-specific-installations/virtualized-platforms/hyper-v",
+                      "talos/v1.8/platform-specific-installations/virtualized-platforms/kvm",
+                      "talos/v1.8/platform-specific-installations/virtualized-platforms/opennebula",
+                      "talos/v1.8/platform-specific-installations/virtualized-platforms/proxmox",
+                      "talos/v1.8/platform-specific-installations/virtualized-platforms/vagrant-libvirt",
+                      "talos/v1.8/platform-specific-installations/virtualized-platforms/vmware",
+                      "talos/v1.8/platform-specific-installations/virtualized-platforms/xen"
+                    ]
+                  },
+                  {
+                    "group": "Cloud Platforms",
+                    "pages": [
+                      "talos/v1.8/platform-specific-installations/cloud-platforms/akamai",
+                      "talos/v1.8/platform-specific-installations/cloud-platforms/aws",
+                      "talos/v1.8/platform-specific-installations/cloud-platforms/azure",
+                      "talos/v1.8/platform-specific-installations/cloud-platforms/cloudstack",
+                      "talos/v1.8/platform-specific-installations/cloud-platforms/digitalocean",
+                      "talos/v1.8/platform-specific-installations/cloud-platforms/exoscale",
+                      "talos/v1.8/platform-specific-installations/cloud-platforms/gcp",
+                      "talos/v1.8/platform-specific-installations/cloud-platforms/hetzner",
+                      "talos/v1.8/platform-specific-installations/cloud-platforms/kubernetes",
+                      "talos/v1.8/platform-specific-installations/cloud-platforms/nocloud",
+                      "talos/v1.8/platform-specific-installations/cloud-platforms/openstack",
+                      "talos/v1.8/platform-specific-installations/cloud-platforms/oracle",
+                      "talos/v1.8/platform-specific-installations/cloud-platforms/scaleway",
+                      "talos/v1.8/platform-specific-installations/cloud-platforms/upcloud",
+                      "talos/v1.8/platform-specific-installations/cloud-platforms/vultr"
+                    ]
+                  },
+                  {
+                    "group": "Local Platforms",
+                    "pages": [
+                      "talos/v1.8/platform-specific-installations/local-platforms/docker",
+                      "talos/v1.8/platform-specific-installations/local-platforms/qemu",
+                      "talos/v1.8/platform-specific-installations/local-platforms/virtualbox"
+                    ]
+                  },
+                  {
+                    "group": "Single Board Computers",
+                    "pages": [
                       "talos/v1.8/platform-specific-installations/single-board-computers/bananapi_m64",
                       "talos/v1.8/platform-specific-installations/single-board-computers/nanopi_r4s",
                       "talos/v1.8/platform-specific-installations/single-board-computers/jetson_nano",
@@ -708,44 +678,20 @@
                   "talos/v1.8/platform-specific-installations/boot-assets",
                   "talos/v1.8/platform-specific-installations/air-gapped",
                   "talos/v1.8/platform-specific-installations/omni"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               },
               {
                 "group": "Deploying and managing workloads",
                 "pages": [
-<<<<<<< HEAD
-                  "talos/v1.10/deploy-and-manage-workloads/interactive-dashboard",
-                  "talos/v1.10/deploy-and-manage-workloads/scaling-up",
-                  "talos/v1.10/deploy-and-manage-workloads/scaling-down",
-                  "talos/v1.10/deploy-and-manage-workloads/workers-on-controlplane"
-=======
                   "talos/v1.8/deploy-and-manage-workloads/interactive-dashboard",
                   "talos/v1.8/deploy-and-manage-workloads/scaling-up",
                   "talos/v1.8/deploy-and-manage-workloads/scaling-down",
                   "talos/v1.8/deploy-and-manage-workloads/workers-on-controlplane"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               },
               {
                 "group": "Networking",
                 "pages": [
-<<<<<<< HEAD
-                  "talos/v1.10/networking/advanced-networking",
-                  "talos/v1.10/networking/corporate-proxies",
-                  "talos/v1.10/networking/egress-domains",
-                  "talos/v1.10/networking/ethernet-config",
-                  "talos/v1.10/networking/host-dns",
-                  "talos/v1.10/networking/ingress-firewall",
-                  "talos/v1.10/networking/kubespan",
-                  "talos/v1.10/networking/metal-network-configuration",
-                  "talos/v1.10/networking/multihoming",
-                  "talos/v1.10/networking/device-selector",
-                  "talos/v1.10/networking/predictable-interface-names",
-                  "talos/v1.10/networking/siderolink",
-                  "talos/v1.10/networking/vip",
-                  "talos/v1.10/networking/wireguard-network"
-=======
                   "talos/v1.8/networking/advanced-networking",
                   "talos/v1.8/networking/corporate-proxies",
                   "talos/v1.8/networking/egress-domains",
@@ -759,29 +705,17 @@
                   "talos/v1.8/networking/siderolink",
                   "talos/v1.8/networking/vip",
                   "talos/v1.8/networking/wireguard-network"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               },
               {
                 "group": "Security",
                 "pages": [
-<<<<<<< HEAD
-                  "talos/v1.10/security/ca-rotation",
-                  "talos/v1.10/security/cert-management",
-                  "talos/v1.10/security/certificate-authorities",
-                  "talos/v1.10/security/machine-config-oauth",
-                  "talos/v1.10/security/rbac",
-                  "talos/v1.10/security/selinux",
-                  "talos/v1.10/security/verifying-images"
-=======
                   "talos/v1.8/security/ca-rotation",
                   "talos/v1.8/security/cert-management",
                   "talos/v1.8/security/certificate-authorities",
                   "talos/v1.8/security/machine-config-oauth",
                   "talos/v1.8/security/rbac",
-                  "talos/v1.8/security/selinux",
                   "talos/v1.8/security/verifying-images"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               },
               {
@@ -790,16 +724,6 @@
                   {
                     "group": "Custom Images \u0026 Development",
                     "pages": [
-<<<<<<< HEAD
-                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/building-images",
-                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/customizing-the-kernel",
-                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/developing-talos",
-                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/extension-services",
-                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/kernel-module",
-                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/oci-base-spec",
-                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/overlays",
-                      "talos/v1.10/build-and-extend-talos/custom-images-and-development/system-extensions"
-=======
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/building-images",
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/customizing-the-kernel",
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/developing-talos",
@@ -808,23 +732,15 @@
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/oci-base-spec",
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/overlays",
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/system-extensions"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Cluster Operations \u0026 Maintenance",
                     "pages": [
-<<<<<<< HEAD
-                      "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/disaster-recovery",
-                      "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/cgroups-analysis",
-                      "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance",
-                      "talos/v1.10/build-and-extend-talos/cluster-operations-and-maintenance/watchdog"
-=======
                       "talos/v1.8/build-and-extend-talos/cluster-operations-and-maintenance/disaster-recovery",
                       "talos/v1.8/build-and-extend-talos/cluster-operations-and-maintenance/cgroups-analysis",
                       "talos/v1.8/build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance",
                       "talos/v1.8/build-and-extend-talos/cluster-operations-and-maintenance/watchdog"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   }
                 ]
@@ -835,15 +751,6 @@
                   {
                     "group": "System Configuration",
                     "pages": [
-<<<<<<< HEAD
-                      "talos/v1.10/configure-your-talos-cluster/system-configuration/patching",
-                      "talos/v1.10/configure-your-talos-cluster/system-configuration/editing-machine-configuration",
-                      "talos/v1.10/configure-your-talos-cluster/system-configuration/performance-tuning",
-                      "talos/v1.10/configure-your-talos-cluster/system-configuration/time-sync",
-                      "talos/v1.10/configure-your-talos-cluster/system-configuration/discovery",
-                      "talos/v1.10/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
-                      "talos/v1.10/configure-your-talos-cluster/system-configuration/insecure"
-=======
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/patching",
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/editing-machine-configuration",
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/performance-tuning",
@@ -851,71 +758,43 @@
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/discovery",
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/insecure"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Images \u0026 Container Runtime",
                     "pages": [
-<<<<<<< HEAD
-                      "talos/v1.10/configure-your-talos-cluster/images-container-runtime/containerd",
-                      "talos/v1.10/configure-your-talos-cluster/images-container-runtime/image-cache",
-                      "talos/v1.10/configure-your-talos-cluster/images-container-runtime/pull-through-cache",
-                      "talos/v1.10/configure-your-talos-cluster/images-container-runtime/static-pods"
-=======
                       "talos/v1.8/configure-your-talos-cluster/images-container-runtime/containerd",
                       "talos/v1.8/configure-your-talos-cluster/images-container-runtime/image-cache",
                       "talos/v1.8/configure-your-talos-cluster/images-container-runtime/pull-through-cache",
                       "talos/v1.8/configure-your-talos-cluster/images-container-runtime/static-pods"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Storage \u0026 Disk Management",
                     "pages": [
-<<<<<<< HEAD
-                      "talos/v1.10/configure-your-talos-cluster/storage-and-disk-management/disk-encryption",
-                      "talos/v1.10/configure-your-talos-cluster/storage-and-disk-management/disk-management"
-=======
                       "talos/v1.8/configure-your-talos-cluster/storage-and-disk-management/disk-encryption",
                       "talos/v1.8/configure-your-talos-cluster/storage-and-disk-management/disk-management"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Logging \u0026 Telemetry",
                     "pages": [
-<<<<<<< HEAD
-                      "talos/v1.10/configure-your-talos-cluster/logging-and-telemetry/logging"
-=======
                       "talos/v1.8/configure-your-talos-cluster/logging-and-telemetry/logging"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Hardware \u0026 Drivers",
                     "pages": [
-<<<<<<< HEAD
-                      "talos/v1.10/configure-your-talos-cluster/hardware-and-drivers/nvidia-fabricmanager",
-                      "talos/v1.10/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu",
-                      "talos/v1.10/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary"
-=======
                       "talos/v1.8/configure-your-talos-cluster/hardware-and-drivers/nvidia-fabricmanager",
                       "talos/v1.8/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu",
                       "talos/v1.8/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   },
                   {
                     "group": "Lifecycle Management",
                     "pages": [
-<<<<<<< HEAD
-                      "talos/v1.10/configure-your-talos-cluster/lifecycle-management/upgrading-talos",
-                      "talos/v1.10/configure-your-talos-cluster/lifecycle-management/resetting-a-machine"
-=======
                       "talos/v1.8/configure-your-talos-cluster/lifecycle-management/upgrading-talos",
                       "talos/v1.8/configure-your-talos-cluster/lifecycle-management/resetting-a-machine"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                     ]
                   }
                 ]
@@ -923,43 +802,32 @@
               {
                 "group": "Advanced guides",
                 "pages": [
-<<<<<<< HEAD
-                  "talos/v1.10/advanced-guides/install-kubevirt",
-                  "talos/v1.10/advanced-guides/migrating-from-kubeadm"
-=======
                   "talos/v1.8/advanced-guides/install-kubevirt",
                   "talos/v1.8/advanced-guides/migrating-from-kubeadm"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               },
               {
                 "group": "Troubleshooting and support",
                 "pages": [
-<<<<<<< HEAD
-                  "talos/v1.10/troubleshooting/troubleshooting",
-                  "talos/v1.10/troubleshooting/faqs"
-=======
                   "talos/v1.8/troubleshooting/troubleshooting",
                   "talos/v1.8/troubleshooting/faqs"
->>>>>>> bd9fb24 (docs: add v1.8 docs)
                 ]
               },
               {
                 "group": "Learn more",
                 "pages": [
-<<<<<<< HEAD
-                  "talos/v1.10/learn-more/architecture",
-                  "talos/v1.10/learn-more/components",
-                  "talos/v1.10/learn-more/control-plane",
-                  "talos/v1.10/learn-more/controllers-resources",
-                  "talos/v1.10/learn-more/image-factory",
-                  "talos/v1.10/learn-more/knowledge-base",
-                  "talos/v1.10/learn-more/kubespan",
-                  "talos/v1.10/learn-more/networking-resources",
-                  "talos/v1.10/learn-more/philosophy",
-                  "talos/v1.10/learn-more/process-capabilities",
-                  "talos/v1.10/learn-more/talos-network-connectivity",
-                  "talos/v1.10/learn-more/talosctl"
+                  "talos/v1.8/learn-more/architecture",
+                  "talos/v1.8/learn-more/components",
+                  "talos/v1.8/learn-more/control-plane",
+                  "talos/v1.8/learn-more/controllers-resources",
+                  "talos/v1.8/learn-more/image-factory",
+                  "talos/v1.8/learn-more/knowledge-base",
+                  "talos/v1.8/learn-more/kubespan",
+                  "talos/v1.8/learn-more/networking-resources",
+                  "talos/v1.8/learn-more/philosophy",
+                  "talos/v1.8/learn-more/process-capabilities",
+                  "talos/v1.8/learn-more/talos-network-connectivity",
+                  "talos/v1.8/learn-more/talosctl"
                 ]
               }
             ]
@@ -1475,23 +1343,6 @@
                 ]
               }
             ]
-=======
-                  "talos/v1.8/learn-more/architecture",
-                  "talos/v1.8/learn-more/components",
-                  "talos/v1.8/learn-more/control-plane",
-                  "talos/v1.8/learn-more/controllers-resources",
-                  "talos/v1.8/learn-more/image-factory",
-                  "talos/v1.8/learn-more/knowledge-base",
-                  "talos/v1.8/learn-more/kubespan",
-                  "talos/v1.8/learn-more/networking-resources",
-                  "talos/v1.8/learn-more/philosophy",
-                  "talos/v1.8/learn-more/process-capabilities",
-                  "talos/v1.8/learn-more/talos-network-connectivity",
-                  "talos/v1.8/learn-more/talosctl"
-                ]
-              }
-            ]
->>>>>>> bd9fb24 (docs: add v1.8 docs)
           }
         ]
       },
