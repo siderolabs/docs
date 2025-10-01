@@ -16,6 +16,7 @@ navigation:
             - "getting-started.mdx"
             - "use-kubectl-with-omni.mdx"
             - "create-a-cluster.mdx"
+            - "support-matrix.mdx"
 
         - group: "Infrastructure and Extensions"
           folder: "omni/infrastructure-and-extensions"
