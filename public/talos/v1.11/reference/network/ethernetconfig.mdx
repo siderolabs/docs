@@ -3,6 +3,15 @@ description: EthernetConfig is a config document to configure Ethernet interface
 title: EthernetConfig
 ---
 
+
+
+
+
+
+
+
+
+
 ```yaml
 apiVersion: v1alpha1
 kind: EthernetConfig
@@ -22,14 +31,19 @@ channels:
 | Field | Type | Description | Value(s) |
 |-------|------|-------------|----------|
 |`name` |string |Name of the link (interface).  | |
-|`features` |map[string]bool |<details><summary>Configuration for Ethernet features.</summary><br />Set of features available and whether they can be enabled or disabled is driver specific.<br />Use `talosctl get ethernetstatus <link> -o yaml` to get the list of available features and<br />their current status.</details>  | |
-|`rings` |<a href="#EthernetConfig.rings">EthernetRingsConfig</a> |<details><summary>Configuration for Ethernet link rings.</summary><br />This is similar to `ethtool -G` command.</details>  | |
-|`channels` |<a href="#EthernetConfig.channels">EthernetChannelsConfig</a> |<details><summary>Configuration for Ethernet link channels.</summary><br />This is similar to `ethtool -L` command.</details>  | |
+|`features` |map[string]bool |Configuration for Ethernet features.<br /><br />Set of features available and whether they can be enabled or disabled is driver specific.<br />Use `talosctl get ethernetstatus {"<"}link{">"} -o yaml` to get the list of available features and<br />their current status.  | |
+|`rings` |<a href="#EthernetConfig.rings">EthernetRingsConfig</a> |Configuration for Ethernet link rings.<br /><br />This is similar to `ethtool -G` command.  | |
+|`channels` |<a href="#EthernetConfig.channels">EthernetChannelsConfig</a> |Configuration for Ethernet link channels.<br /><br />This is similar to `ethtool -L` command.  | |
+
+
 
 
 ## rings
 
 EthernetRingsConfig is a configuration for Ethernet link rings.
+
+
+
 
 | Field | Type | Description | Value(s) |
 |-------|------|-------------|----------|
@@ -45,9 +59,16 @@ EthernetRingsConfig is a configuration for Ethernet link rings.
 |`tcp-data-split` |bool |TCP data split enabled.  | |
 
 
+
+
+
+
 ## channels
 
 EthernetChannelsConfig is a configuration for Ethernet link channels.
+
+
+
 
 | Field | Type | Description | Value(s) |
 |-------|------|-------------|----------|

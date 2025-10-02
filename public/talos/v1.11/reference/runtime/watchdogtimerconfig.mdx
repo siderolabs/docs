@@ -1,0 +1,32 @@
+---
+description: WatchdogTimerConfig is a watchdog timer config document.
+title: WatchdogTimerConfig
+---
+
+
+
+
+
+
+
+
+
+
+```yaml
+apiVersion: v1alpha1
+kind: WatchdogTimerConfig
+device: /dev/watchdog0 # Path to the watchdog device.
+timeout: 2m0s # Timeout for the watchdog.
+```
+
+
+| Field | Type | Description | Value(s) |
+|-------|------|-------------|----------|
+|`device` |string |Path to the watchdog device. <Accordion title="Show example(s)">`device: /dev/watchdog0`</Accordion> | |
+|`timeout` |Duration |Timeout for the watchdog.<br /><br />If Talos is unresponsive for this duration, the watchdog will reset the system.<br /><br />Default value is 1 minute, minimum value is 10 seconds.  | |
+
+
+
+
+
+

@@ -1,12 +1,7 @@
 ---
-description: |
-    UserVolumeConfig is a user volume configuration document.
-    User volume is automatically allocated as a partition on the specified disk
-    and mounted under `/var/mnt/<name>`.
-    The partition label is automatically generated as `u-<name>`.
+description: 'UserVolumeConfig is a user volume configuration document. User volume is automatically allocated as a partition on the specified disk and mounted under `/var/mnt/<name>`. The partition label is automatically generated as `u-<name>`.'
 title: UserVolumeConfig
 ---
-
 
 
 
@@ -66,9 +61,10 @@ encryption:
     #     - no_write_workqueue
 ```
 
+
 | Field | Type | Description | Value(s) |
 |-------|------|-------------|----------|
-|`name` |string |<details><summary>Name of the volume.</summary><br />Name might be between 1 and 34 characters long and can only contain:<br />lowercase and uppercase ASCII letters, digits, and hyphens.</details>  | |
+|`name` |string |Name of the volume.<br /><br />Name might be between 1 and 34 characters long and can only contain:<br />lowercase and uppercase ASCII letters, digits, and hyphens.  | |
 |`provisioning` |<a href="#UserVolumeConfig.provisioning">ProvisioningSpec</a> |The provisioning describes how the volume is provisioned.  | |
 |`filesystem` |<a href="#UserVolumeConfig.filesystem">FilesystemSpec</a> |The filesystem describes how the volume is formatted.  | |
 |`encryption` |<a href="#UserVolumeConfig.encryption">EncryptionSpec</a> |The encryption describes how the volume is encrypted.  | |
@@ -87,8 +83,8 @@ ProvisioningSpec describes how the volume is provisioned.
 |-------|------|-------------|----------|
 |`diskSelector` |<a href="#UserVolumeConfig.provisioning.diskSelector">DiskSelector</a> |The disk selector expression.  | |
 |`grow` |bool |Should the volume grow to the size of the disk (if possible).  | |
-|`minSize` |ByteSize |<details><summary>The minimum size of the volume.</summary><br />Size is specified in bytes, but can be expressed in human readable format, e.g. 100MB.</details> <details><summary>Show example(s)</summary>`minSize: 2.5GiB`</details> | |
-|`maxSize` |ByteSize |<details><summary>The maximum size of the volume, if not specified the volume can grow to the size of the</summary>disk.<br /><br />Size is specified in bytes, but can be expressed in human readable format, e.g. 100MB.</details> <details><summary>Show example(s)</summary>`maxSize: 50GiB`</details> | |
+|`minSize` |ByteSize |The minimum size of the volume.<br /><br />Size is specified in bytes, but can be expressed in human readable format, e.g. 100MB. <Accordion title="Show example(s)">`minSize: 2.5GiB`</Accordion> | |
+|`maxSize` |ByteSize |The maximum size of the volume, if not specified the volume can grow to the size of the<br />disk.<br /><br />Size is specified in bytes, but can be expressed in human readable format, e.g. 100MB. <Accordion title="Show example(s)">`maxSize: 50GiB`</Accordion> | |
 
 
 
@@ -102,7 +98,11 @@ DiskSelector selects a disk for the volume.
 
 | Field | Type | Description | Value(s) |
 |-------|------|-------------|----------|
-| `match` | Expression | The Common Expression Language (CEL) expression to match the disk. <details><summary>Show example(s)</summary>`match: disk.size > 120u * GB && disk.size < 1u * TB` <br /> `match: disk.transport == "sata" && !disk.rotational && !system_disk`</details> | |
+|`match` |Expression |The Common Expression Language (CEL) expression to match the disk. <Accordion title="Show example(s)">`match: disk.size \> 120u * GB && disk.size \< 1u * TB`<br />`match: disk.transport == "sata" && !disk.rotational && !system_disk`</Accordion> | |
+
+
+
+
 
 
 
@@ -117,6 +117,7 @@ FilesystemSpec configures the filesystem for the volume.
 | Field | Type | Description | Value(s) |
 |-------|------|-------------|----------|
 |`type` |FilesystemType |Filesystem type. Default is `xfs`.  |`ext4`<br />`xfs`<br /> |
+|`projectQuotaSupport` |bool |Enables project quota support, valid only for 'xfs' filesystem.<br /><br />Note: changing this value might require a full remount of the filesystem.  | |
 
 
 
@@ -158,12 +159,15 @@ encryption:
 
 | Field | Type | Description | Value(s) |
 |-------|------|-------------|----------|
-| `provider` | EncryptionProviderType | Encryption provider to use for the encryption. | `luks2`<br /> |
-| `keys` | <a href="#UserVolumeConfig.encryption.keys.">[]EncryptionKey</a> | Defines the encryption keys generation and storage method. | |
-| `cipher` | string | Cipher to use for the encryption. Depends on the encryption provider. <details><summary>Show example(s)</summary>`cipher: aes-xts-plain64`</details> | `aes-xts-plain64`<br />`xchacha12,aes-adiantum-plain64`<br />`xchacha20,aes-adiantum-plain64`<br /> |
-| `keySize` | uint | Defines the encryption key length. | |
-| `blockSize` | uint64 | Defines the encryption sector size. <details><summary>Show example(s)</summary>`blockSize: 4096`</details> | |
-| `options` | []string | Additional --perf parameters for the LUKS2 encryption. <details><summary>Show example(s)</summary>```yaml{"\n"}options:{"\n"}    - no_read_workqueue{"\n"}    - no_write_workqueue{"\n"}```</details> | `no_read_workqueue`<br />`no_write_workqueue`<br />`same_cpu_crypt`<br /> |
+|`provider` |EncryptionProviderType |Encryption provider to use for the encryption.  |`luks2`<br /> |
+|`keys` |<a href="#UserVolumeConfig.encryption.keys.">[]EncryptionKey</a> |Defines the encryption keys generation and storage method.  | |
+|`cipher` |string |Cipher to use for the encryption. Depends on the encryption provider. <Accordion title="Show example(s)">`cipher: aes-xts-plain64`</Accordion> |`aes-xts-plain64`<br />`xchacha12,aes-adiantum-plain64`<br />`xchacha20,aes-adiantum-plain64`<br /> |
+|`keySize` |uint |Defines the encryption key length.  | |
+|`blockSize` |uint64 |Defines the encryption sector size. <Accordion title="Show example(s)">`blockSize: 4096`</Accordion> | |
+|`options` |[]string |Additional --perf parameters for the LUKS2 encryption. <Accordion title="Show example(s)">`options:\n    - no_read_workqueue\n    - no_write_workqueue`</Accordion> |`no_read_workqueue`<br />`no_write_workqueue`<br />`same_cpu_crypt`<br /> |
+
+
+
 
 ### keys[]
 
@@ -179,6 +183,7 @@ EncryptionKey represents configuration for disk encryption key.
 |`nodeID` |<a href="#UserVolumeConfig.encryption.keys..nodeID">EncryptionKeyNodeID</a> |Deterministically generated key from the node UUID and PartitionLabel.  | |
 |`kms` |<a href="#UserVolumeConfig.encryption.keys..kms">EncryptionKeyKMS</a> |KMS managed encryption key.  | |
 |`tpm` |<a href="#UserVolumeConfig.encryption.keys..tpm">EncryptionKeyTPM</a> |Enable TPM based disk encryption.  | |
+|`lockToState` |bool |Lock the disk encryption key to the random salt stored in the STATE partition. This is useful to prevent the volume from being unlocked if STATE partition is compromised or replaced. It is recommended to use this option with TPM disk encryption for non-STATE volumes.  | |
 
 
 
@@ -243,7 +248,7 @@ EncryptionKeyTPM represents a key that is generated and then sealed/unsealed by 
 
 | Field | Type | Description | Value(s) |
 |-------|------|-------------|----------|
-|`checkSecurebootStatusOnEnroll` |bool |<details><summary>Check that Secureboot is enabled in the EFI firmware.</summary>If Secureboot is not enabled, the enrollment of the key will fail. As the TPM key is anyways bound to the value of PCR 7, changing Secureboot status or configuration after the initial enrollment will make the key unusable.</details>  | |
+|`checkSecurebootStatusOnEnroll` |bool |Check that Secureboot is enabled in the EFI firmware.<br />If Secureboot is not enabled, the enrollment of the key will fail. As the TPM key is anyways bound to the value of PCR 7, changing Secureboot status or configuration after the initial enrollment will make the key unusable.  | |
 
 
 
