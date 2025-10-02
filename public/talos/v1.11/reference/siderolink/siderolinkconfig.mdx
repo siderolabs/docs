@@ -3,6 +3,15 @@ description: SideroLinkConfig is a SideroLink connection machine configuration d
 title: SideroLinkConfig
 ---
 
+
+
+
+
+
+
+
+
+
 ```yaml
 apiVersion: v1alpha1
 kind: SideroLinkConfig
@@ -12,8 +21,8 @@ apiUrl: https://siderolink.api/jointoken?token=secret # SideroLink API URL to co
 
 | Field | Type | Description | Value(s) |
 |-------|------|-------------|----------|
-|`apiUrl` |URL |SideroLink API URL to connect to. <details><summary>Show example(s)</summary>`apiUrl: https://siderolink.api/?jointoken=secret`</details> | |
-|`uniqueToken` |string |<details><summary>SideroLink unique token to use for the connection (optional).</summary><br />This value is overridden with META key UniqueMachineToken.</details>  | |
+|`apiUrl` |URL |SideroLink API URL to connect to. <Accordion title="Show example(s)">`apiUrl: https://siderolink.api/?jointoken=secret`</Accordion> | |
+|`uniqueToken` |string |SideroLink unique token to use for the connection (optional).<br /><br />This value is overridden with META key UniqueMachineToken.  | |
 
 
 

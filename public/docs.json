@@ -297,6 +297,25 @@
                 ]
               },
               {
+                "group": "Reference",
+                "pages": [
+                  "talos/v1.11/reference/cli",
+                  {
+                    "group": "Configuration",
+                    "pages": [
+                      {
+                        "group": "Runtime",
+                        "pages": [
+                          "talos/v1.11/reference/runtime/kmsglogconfig",
+                          "talos/v1.11/reference/runtime/eventsinkconfig",
+                          "talos/v1.11/reference/runtime/watchdogtimerconfig"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
                 "group": "Troubleshooting and support",
                 "pages": [
                   "talos/v1.11/troubleshooting/troubleshooting",
