@@ -90,7 +90,7 @@ for id in $(seq 3); do
   linode-cli linodes config-update ${linode_id} ${confiig_id} --kernel "linode/direct-disk"
 
   # add machine to nodebalancer
-  private_ip=$(linode-cli linodes list --label ${linode_label} --format ipv4 --json | jq -r ".[0].ipv4[1]")
+  private_ip=$(linode-cli linodes list --label ${linode_label} --format ipv4 --json | jq -r ".[0].ipv4[1]
   linode-cli nodebalancers node-create ${NODEBALANCER_ID}  ${NODEBALANCER_CONFIG_ID}  --label ${linode_label} --address ${private_ip}:6443
 done
 ```
@@ -131,7 +131,7 @@ Set the `endpoints` and `nodes`:
 
 ```bash
 export LINODE_LABEL=talos-control-plane-1
-export LINODE_IP=$(linode-cli linodes list --label ${LINODE_LABEL} --format ipv4 --json | jq -r ".[0].ipv4[0]")
+export LINODE_IP=$(linode-cli linodes list --label ${LINODE_LABEL} --format ipv4 --json | jq -r ".[0].ipv4[0]
 talosctl --talosconfig talosconfig config endpoint ${LINODE_IP}
 talosctl --talosconfig talosconfig config node ${LINODE_IP}
 ```
