@@ -5,6 +5,9 @@ MINT_IMAGE := ghcr.io/siderolabs/docs-mint:latest
 CONTAINER_NAME := docs-preview
 PORT := 3000
 DOCS_GEN_IMAGE := ghcr.io/siderolabs/docs-gen:latest
+DOCS_CONVERT_IMAGE := ghcr.io/siderolabs/docs-convert:latest
+TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.11.2
+TALOS_VERSION := v1.11
 
 # Default target
 .PHONY: help
@@ -21,7 +24,7 @@ docs-preview: ## Build and run the documentation preview server
 	docker run --rm -it \
 		--name $(CONTAINER_NAME) \
 		-p $(PORT):$(PORT) \
-		-v $(PWD):/docs \
+		-v $(PWD)/public:/docs \
 		$(MINT_IMAGE) dev
 
 preview: docs-preview ## Alias for docs-preview
@@ -46,7 +49,7 @@ docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multipl
 		talos-v1.6.yaml \
 		omni.yaml \
 		kubernetes-guides.yaml \
-		> docs.json
+		> public/docs.json
 
 docs.json-local: common.yaml omni.yaml docs-gen/main.go ## Generate docs.json using local Go build
 	cd docs-gen && go run . \
@@ -59,7 +62,7 @@ docs.json-local: common.yaml omni.yaml docs-gen/main.go ## Generate docs.json us
 		../talos-v1.6.yaml \
 		../omni.yaml \
 		../kubernetes-guides.yaml \
-		> ../docs.json
+		> ../public/docs.json
 
 .PHONY: check-missing
 check-missing: ## Check for MDX files not included in config files
@@ -95,6 +98,10 @@ generate-deps: ## Install Go dependencies for the generator
 build-docs-gen-container: ## Build the docs-gen container locally
 	docker build -t $(DOCS_GEN_IMAGE) ./docs-gen
 
+.PHONY: build-docs-convert-container
+build-docs-convert-container: ## Build the docs-convert container locally
+	docker build -t $(DOCS_CONVERT_IMAGE) ./docs-convert
+
 .PHONY: test-docs-gen
 test-docs-gen: ## Run tests for the docs-gen utility
 	cd docs-gen && go test -v
@@ -110,4 +117,25 @@ test-docs-gen-race: ## Run tests with race detection
 
 .PHONY: test-all
 test-all: test-docs-gen ## Run all tests
+
+.PHONY: generate-talos-reference
+generate-talos-reference: ## Generate Talos reference docs and convert to MDX
+	@echo "Generating Talos reference documentation..."
+	docker pull $(TALOSCTL_IMAGE)
+	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
+	@echo "Converting generated docs to MDX..."
+	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD):/workspace $(DOCS_CONVERT_IMAGE) \
+		/workspace/_out/docs /workspace/talos/$(TALOS_VERSION)/reference
+	rm -rf _out/docs
+	@echo "Reference documentation generated in talos/$(TALOS_VERSION)/reference/"
+
+.PHONY: generate-talos-reference-local
+generate-talos-reference-local: ## Generate Talos reference docs using local Go build
+	@echo "Generating Talos reference documentation..."
+	@docker run --rm -v $(PWD)/docs-convert/docs:/docs alpine:latest rm -rf /docs/*
+	docker pull $(TALOSCTL_IMAGE)
+	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD)/docs-convert/docs:/docs $(TALOSCTL_IMAGE) docs /docs
+	@echo "Converting generated docs to MDX..."
+	cd docs-convert && go run main.go docs ../talos/$(TALOS_VERSION)/reference
+	@echo "Reference documentation generated in talos/$(TALOS_VERSION)/reference/"
 

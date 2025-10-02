@@ -198,6 +198,18 @@ navigation:
             - "migrating-from-kubeadm.mdx"
             - "SBOM.mdx"
 
+        - group: "Reference"
+          folder: "talos/v1.11/reference"
+          pages:
+            - "cli.mdx"
+            - group: "Configuration"
+              pages:
+                - group: "Runtime"
+                  pages:
+                    - "runtime/kmsglogconfig.mdx"
+                    - "runtime/eventsinkconfig.mdx"
+                    - "runtime/watchdogtimerconfig.mdx"
+
         - group: "Troubleshooting and support"
           folder: "talos/v1.11/troubleshooting"
           pages:
