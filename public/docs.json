@@ -299,18 +299,38 @@
               {
                 "group": "Reference",
                 "pages": [
+                  "talos/v1.11/reference/v1alpha1/config",
                   "talos/v1.11/reference/cli",
+                  "talos/v1.11/reference/extensions/extensionserviceconfig",
+                  "talos/v1.11/reference/hardware/pcidriverrebindconfig",
+                  "talos/v1.11/reference/security/trustedrootsconfig",
+                  "talos/v1.11/reference/siderolink/siderolinkconfig",
                   {
-                    "group": "Configuration",
+                    "group": "Block",
                     "pages": [
-                      {
-                        "group": "Runtime",
-                        "pages": [
-                          "talos/v1.11/reference/runtime/kmsglogconfig",
-                          "talos/v1.11/reference/runtime/eventsinkconfig",
-                          "talos/v1.11/reference/runtime/watchdogtimerconfig"
-                        ]
-                      }
+                      "talos/v1.11/reference/block/existingvolumeconfig",
+                      "talos/v1.11/reference/block/rawvolumeconfig",
+                      "talos/v1.11/reference/block/swapvolumeconfig",
+                      "talos/v1.11/reference/block/uservolumeconfig",
+                      "talos/v1.11/reference/block/volumeconfig",
+                      "talos/v1.11/reference/block/zswapconfig"
+                    ]
+                  },
+                  {
+                    "group": "Network",
+                    "pages": [
+                      "talos/v1.11/reference/network/ethernetconfig",
+                      "talos/v1.11/reference/network/kubespanendpointsconfig",
+                      "talos/v1.11/reference/network/networkdefaultactionconfig",
+                      "talos/v1.11/reference/network/networkruleconfig"
+                    ]
+                  },
+                  {
+                    "group": "Runtime",
+                    "pages": [
+                      "talos/v1.11/reference/runtime/eventsinkconfig",
+                      "talos/v1.11/reference/runtime/kmsglogconfig",
+                      "talos/v1.11/reference/runtime/watchdogtimerconfig"
                     ]
                   }
                 ]
