@@ -57,7 +57,6 @@ Verify which resources are retrievable in `--insecure` mode by following these s
 
     ```bash
     NODE_IP=<node_ip>
-
     ```
 
 1. List resources available in `--insecure` mode:
@@ -65,7 +64,6 @@ Verify which resources are retrievable in `--insecure` mode by following these s
     ```bash
     talosctl get rd --insecure --nodes $NODE_IP -o json \
     | jq -r 'select(.spec.sensitivity == null) | .spec.aliases[0]'
-
     ```
 
 1. List resources not available in `--insecure` mode:
@@ -73,7 +71,6 @@ Verify which resources are retrievable in `--insecure` mode by following these s
     ```bash
     talosctl get rd --insecure --nodes $NODE_IP -o json \
     | jq -r 'select(.spec.sensitivity != null) | .spec.aliases[0]'
-
     ```
 
 `talosctl meta`

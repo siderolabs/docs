@@ -98,13 +98,13 @@ This guide assumes the user has a working API token,and the [Equinix Metal CLI](
 
 <CodeBlock lang="sh">
 {`
-metal device create \
-  --project-id $PROJECT_ID \
-  --facility $FACILITY \
-  --operating-system "custom_ipxe" \
-  --ipxe-script-url "https://pxe.factory.talos.dev/pxe/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_6 }/equinixMetal-amd64" \
-  --plan $PLAN\
-  --hostname $HOSTNAME\
+metal device create \\
+  --project-id $PROJECT_ID \\
+  --facility $FACILITY \\
+  --operating-system "custom_ipxe" \\
+  --ipxe-script-url "https://pxe.factory.talos.dev/pxe/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_6 }/equinixMetal-amd64" \\
+  --plan $PLAN \\
+  --hostname $HOSTNAME \\
   --userdata-file controlplane.yaml
 `}
 </CodeBlock>

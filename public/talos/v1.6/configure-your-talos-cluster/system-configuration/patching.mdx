@@ -215,6 +215,8 @@ The goal is to update pod and service subnets and disable default CNI (Flannel).
 
 <Tabs>
 <Tab title="Strategic merge patch" >
+
+```yaml
 cluster:
   network:
     podSubnets:
@@ -223,8 +225,12 @@ cluster:
       - 192.0.0.0/12
     cni:
       name: none
+```
+
 </Tab>
 <Tab title="JSON patch" >
+
+```json
 - op: replace
   path: /cluster/network/podSubnets
   value:
@@ -237,6 +243,8 @@ cluster:
   path: /cluster/network/cni
   value:
     name: none
+
+```
 </Tab>
 </Tabs>
 
@@ -268,18 +276,26 @@ The goal is to set the `kubelet` node IP to come from the subnet `192.168.10.0/2
 
 <Tabs>
 <Tab title="Strategic merge patch" >
+
+```yaml
 machine:
   kubelet:
     nodeIP:
       validSubnets:
         - 192.168.10.0/24
+```
+
 </Tab>
 <Tab title="JSON patch" >
+
+```json
 - op: add
   path: /machine/kubelet/nodeIP
   value:
     validSubnets:
       - 192.168.10.0/24
+```
+
 </Tab>
 </Tabs>
 

@@ -3,7 +3,7 @@ title: "CA Rotation"
 description: "How to rotate Talos and Kubernetes API root certificate authorities."
 ---
 
-import { release_v1_7  } from '/snippets/custom-variables.mdx';
+import { release_v1_7 } from '/snippets/custom-variables.mdx';
 
 In general, you almost never need to rotate the root CA certificate and key for the Talos API and Kubernetes API.
 Talos sets up root certificate authorities with the lifetime of 10 years, and all Talos and Kubernetes API certificates are issued by these root CAs.
@@ -73,28 +73,28 @@ contexts:
     talos-default:
         ....
 > Verifying connectivity with existing PKI:
-  - 172.20.0.2: OK (version ${release_v1_7 })
-  - 172.20.0.3: OK (version ${release_v1_7 })
+  - 172.20.0.2: OK (version ${release_v1_7})
+  - 172.20.0.3: OK (version ${release_v1_7})
 > Adding new Talos CA as accepted...
   - 172.20.0.2: OK
   - 172.20.0.3: OK
 > Verifying connectivity with new client cert, but old server CA:
 2024/04/17 21:26:07 retrying error: rpc error: code = Unavailable desc = connection error: desc = "error reading server preface: remote error: tls: unknown certificate authority"
-  - 172.20.0.2: OK (version ${release_v1_7 })
-  - 172.20.0.3: OK (version ${release_v1_7 })
+  - 172.20.0.2: OK (version ${release_v1_7})
+  - 172.20.0.3: OK (version ${release_v1_7})
 > Making new Talos CA the issuing CA, old Talos CA the accepted CA...
   - 172.20.0.2: OK
   - 172.20.0.3: OK
 > Verifying connectivity with new PKI:
 2024/04/17 21:26:08 retrying error: rpc error: code = Unavailable desc = connection error: desc = "transport: authentication handshake failed: tls: failed to verify certificate: x509: certificate signed by unknown authority (possibly because of \"x509: Ed25519 verification failure\" while trying to verify candidate authority certificate \"talos\")"
-  - 172.20.0.2: OK (version ${release_v1_7 })
-  - 172.20.0.3: OK (version ${release_v1_7 })
+  - 172.20.0.2: OK (version ${release_v1_7})
+  - 172.20.0.3: OK (version ${release_v1_7})
 > Removing old Talos CA from the accepted CAs...
   - 172.20.0.2: OK
   - 172.20.0.3: OK
 > Verifying connectivity with new PKI:
-  - 172.20.0.2: OK (version ${release_v1_7 })
-  - 172.20.0.3: OK (version ${release_v1_7 })
+  - 172.20.0.2: OK (version ${release_v1_7})
+  - 172.20.0.3: OK (version ${release_v1_7})
 > Writing new talosconfig to "talosconfig"
   `}
 </CodeBlock>

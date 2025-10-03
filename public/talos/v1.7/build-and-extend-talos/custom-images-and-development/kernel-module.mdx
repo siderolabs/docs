@@ -14,7 +14,7 @@ System extensions without kernel modules work without this requirement, but ther
 Talos is built from the [pkgs](https://github.com/siderolabs/pkgs/) repo and the first step will be to add your custom package to that repo to be built with Talos.
 You can look at other packages in that repository for examples of what should be included.
 
-The only file required to create a package is a pkg.yaml file in a folder.
+The only file required to create a package is a `pkg.yaml` file in a folder.
 Let's create an example package to walk through each step.
 
 Clone the repo and create a folder.
@@ -51,7 +51,7 @@ The next step is to create a `pkg.yaml` file to tell [`bldr`](https://github.com
 The `bldr` tool has assumptions about directory structure and steps you can read about in the GitHub repo.
 
 This example does not build a kernel module, but it can be used as a basis for your own packages.
-Please also see existing pkg.yaml files in [the pkgs repo](https://github.com/siderolabs/pkgs)
+Please also see existing `pkg.yaml` files in [the pkgs repo](https://github.com/siderolabs/pkgs)
 
 ```bash
 name: my-module-pkg   # name of your package
@@ -80,7 +80,7 @@ finalize:             # copy directory structure from source to destination
 
 ## Build the package and kernel
 
-After you've created a pkg.yaml file you can test building your package with the make target you generated earlier.
+After you've created a `pkg.yaml` file you can test building your package with the make target you generated earlier.
 Because Talos requires kernel modules to be signed with a signing key only available during the Talos kernel build process we need to build the kernel and package at the same time.
 
 We also need a container registry available to store the built assets.
@@ -154,7 +154,7 @@ metadata:
       version: ">= v1.10.0"  # what version of Talos is supported
 ```
 
-Create a pkg.yaml file in the my-module folder which works similarly to our pkg.yaml file for our package, but this time starts from the base image we built in the first step.
+Create a `pkg.yaml` file in the my-module folder which works similarly to our `pkg.yaml` file for our package, but this time starts from the base image we built in the first step.
 The local directory is mounted into the container at `/pkg` so we can copy files from that directory.
 
 ```yaml

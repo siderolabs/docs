@@ -125,7 +125,7 @@ generate-talos-reference: ## Generate Talos reference docs and convert to MDX
 	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
 	@echo "Converting generated docs to MDX..."
 	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD):/workspace $(DOCS_CONVERT_IMAGE) \
-		/workspace/_out/docs /workspace/talos/$(TALOS_VERSION)/reference
+		/workspace/_out/docs /workspace/public/talos/$(TALOS_VERSION)/reference
 	rm -rf _out/docs
 	@echo "Reference documentation generated in talos/$(TALOS_VERSION)/reference/"
 

@@ -120,7 +120,6 @@ navigation:
             - "certificate-authorities.mdx"
             - "machine-config-oauth.mdx"
             - "rbac.mdx"
-            - "selinux.mdx"
             - "verifying-images.mdx"
 
         - group: "Build and extend Talos"

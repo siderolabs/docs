@@ -755,7 +755,6 @@
                   "talos/v1.9/security/certificate-authorities",
                   "talos/v1.9/security/machine-config-oauth",
                   "talos/v1.9/security/rbac",
-                  "talos/v1.9/security/selinux",
                   "talos/v1.9/security/verifying-images"
                 ]
               },
@@ -1155,7 +1154,6 @@
                   {
                     "group": "Bare Metal Platforms",
                     "pages": [
-                      "talos/v1.7/platform-specific-installations/bare-metal-platforms/bootloader",
                       "talos/v1.7/platform-specific-installations/bare-metal-platforms/digital-rebar",
                       "talos/v1.7/platform-specific-installations/bare-metal-platforms/equinix-metal",
                       "talos/v1.7/platform-specific-installations/bare-metal-platforms/iso",
@@ -1183,7 +1181,6 @@
                       "talos/v1.7/platform-specific-installations/cloud-platforms/akamai",
                       "talos/v1.7/platform-specific-installations/cloud-platforms/aws",
                       "talos/v1.7/platform-specific-installations/cloud-platforms/azure",
-                      "talos/v1.7/platform-specific-installations/cloud-platforms/cloudstack",
                       "talos/v1.7/platform-specific-installations/cloud-platforms/digitalocean",
                       "talos/v1.7/platform-specific-installations/cloud-platforms/exoscale",
                       "talos/v1.7/platform-specific-installations/cloud-platforms/gcp",
@@ -1212,17 +1209,13 @@
                       "talos/v1.7/platform-specific-installations/single-board-computers/nanopi_r4s",
                       "talos/v1.7/platform-specific-installations/single-board-computers/jetson_nano",
                       "talos/v1.7/platform-specific-installations/single-board-computers/libretech_all_h3_cc_h5",
-                      "talos/v1.7/platform-specific-installations/single-board-computers/orangepi_5",
                       "talos/v1.7/platform-specific-installations/single-board-computers/orangepi_r1_plus_lts",
                       "talos/v1.7/platform-specific-installations/single-board-computers/pine64",
                       "talos/v1.7/platform-specific-installations/single-board-computers/rock64",
                       "talos/v1.7/platform-specific-installations/single-board-computers/rock4cplus",
-                      "talos/v1.7/platform-specific-installations/single-board-computers/rock5b",
                       "talos/v1.7/platform-specific-installations/single-board-computers/rockpi_4",
                       "talos/v1.7/platform-specific-installations/single-board-computers/rockpi_4c",
-                      "talos/v1.7/platform-specific-installations/single-board-computers/rpi_generic",
-                      "talos/v1.7/platform-specific-installations/single-board-computers/turing_rk1",
-                      "talos/v1.7/platform-specific-installations/single-board-computers/unofficial"
+                      "talos/v1.7/platform-specific-installations/single-board-computers/rpi_generic"
                     ]
                   },
                   "talos/v1.7/platform-specific-installations/boot-assets",
@@ -1265,7 +1258,6 @@
                   "talos/v1.7/security/certificate-authorities",
                   "talos/v1.7/security/machine-config-oauth",
                   "talos/v1.7/security/rbac",
-                  "talos/v1.7/security/selinux",
                   "talos/v1.7/security/verifying-images"
                 ]
               },
@@ -1411,7 +1403,6 @@
                   {
                     "group": "Bare Metal Platforms",
                     "pages": [
-                      "talos/v1.6/platform-specific-installations/bare-metal-platforms/bootloader",
                       "talos/v1.6/platform-specific-installations/bare-metal-platforms/digital-rebar",
                       "talos/v1.6/platform-specific-installations/bare-metal-platforms/equinix-metal",
                       "talos/v1.6/platform-specific-installations/bare-metal-platforms/iso",
@@ -1426,7 +1417,6 @@
                     "pages": [
                       "talos/v1.6/platform-specific-installations/virtualized-platforms/hyper-v",
                       "talos/v1.6/platform-specific-installations/virtualized-platforms/kvm",
-                      "talos/v1.6/platform-specific-installations/virtualized-platforms/opennebula",
                       "talos/v1.6/platform-specific-installations/virtualized-platforms/proxmox",
                       "talos/v1.6/platform-specific-installations/virtualized-platforms/vagrant-libvirt",
                       "talos/v1.6/platform-specific-installations/virtualized-platforms/vmware",
@@ -1436,15 +1426,12 @@
                   {
                     "group": "Cloud Platforms",
                     "pages": [
-                      "talos/v1.6/platform-specific-installations/cloud-platforms/akamai",
                       "talos/v1.6/platform-specific-installations/cloud-platforms/aws",
                       "talos/v1.6/platform-specific-installations/cloud-platforms/azure",
-                      "talos/v1.6/platform-specific-installations/cloud-platforms/cloudstack",
                       "talos/v1.6/platform-specific-installations/cloud-platforms/digitalocean",
                       "talos/v1.6/platform-specific-installations/cloud-platforms/exoscale",
                       "talos/v1.6/platform-specific-installations/cloud-platforms/gcp",
                       "talos/v1.6/platform-specific-installations/cloud-platforms/hetzner",
-                      "talos/v1.6/platform-specific-installations/cloud-platforms/kubernetes",
                       "talos/v1.6/platform-specific-installations/cloud-platforms/nocloud",
                       "talos/v1.6/platform-specific-installations/cloud-platforms/openstack",
                       "talos/v1.6/platform-specific-installations/cloud-platforms/oracle",
@@ -1468,17 +1455,11 @@
                       "talos/v1.6/platform-specific-installations/single-board-computers/nanopi_r4s",
                       "talos/v1.6/platform-specific-installations/single-board-computers/jetson_nano",
                       "talos/v1.6/platform-specific-installations/single-board-computers/libretech_all_h3_cc_h5",
-                      "talos/v1.6/platform-specific-installations/single-board-computers/orangepi_5",
-                      "talos/v1.6/platform-specific-installations/single-board-computers/orangepi_r1_plus_lts",
                       "talos/v1.6/platform-specific-installations/single-board-computers/pine64",
                       "talos/v1.6/platform-specific-installations/single-board-computers/rock64",
-                      "talos/v1.6/platform-specific-installations/single-board-computers/rock4cplus",
-                      "talos/v1.6/platform-specific-installations/single-board-computers/rock5b",
                       "talos/v1.6/platform-specific-installations/single-board-computers/rockpi_4",
                       "talos/v1.6/platform-specific-installations/single-board-computers/rockpi_4c",
-                      "talos/v1.6/platform-specific-installations/single-board-computers/rpi_generic",
-                      "talos/v1.6/platform-specific-installations/single-board-computers/turing_rk1",
-                      "talos/v1.6/platform-specific-installations/single-board-computers/unofficial"
+                      "talos/v1.6/platform-specific-installations/single-board-computers/rpi_generic"
                     ]
                   },
                   "talos/v1.6/platform-specific-installations/boot-assets",
@@ -1521,7 +1502,6 @@
                   "talos/v1.6/security/certificate-authorities",
                   "talos/v1.6/security/machine-config-oauth",
                   "talos/v1.6/security/rbac",
-                  "talos/v1.6/security/selinux",
                   "talos/v1.6/security/verifying-images"
                 ]
               },
@@ -1546,8 +1526,7 @@
                     "pages": [
                       "talos/v1.6/build-and-extend-talos/cluster-operations-and-maintenance/disaster-recovery",
                       "talos/v1.6/build-and-extend-talos/cluster-operations-and-maintenance/cgroups-analysis",
-                      "talos/v1.6/build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance",
-                      "talos/v1.6/build-and-extend-talos/cluster-operations-and-maintenance/watchdog"
+                      "talos/v1.6/build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance"
                     ]
                   }
                 ]
