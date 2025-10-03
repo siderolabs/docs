@@ -21,7 +21,7 @@ Likewise, Talos may be manually rolled back via API (or `talosctl rollback`), wh
 Unless explicitly told to `preserve` data, an upgrade will cause the node to wipe the [EPHEMERAL](../../learn-more/architecture#file-system-partitions) partition, remove itself from the etcd cluster (if it is a controlplane node), and make itself as pristine as is possible.
 (This is the desired behavior except in specialised use cases such as single-node clusters.)
 
-*Note* An upgrade of the Talos Linux OS will not (since v1.0) apply an upgrade to the Kubernetes version by default.
+**Note**: An upgrade of the Talos Linux OS will not (since v1.0) apply an upgrade to the Kubernetes version by default.
 Kubernetes upgrades should be managed separately per [upgrading kubernetes](../../../../kubernetes-guides/advanced-guides/upgrading-kubernetes).
 
 ## Supported Upgrade Paths

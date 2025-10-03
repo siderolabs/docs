@@ -22,7 +22,7 @@ To deploy a sample application to your cluster:
     kubectl get pods,services # Lists the deployed pods and services
     ```
 
-1. Create a NODE_IP variable by retrieving an IP address of any one of your nodes:
+1. Create a `NODE_IP` variable by retrieving an IP address of any one of your nodes:
 
     ```bash
     NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}'; echo)

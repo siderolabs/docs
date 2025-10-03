@@ -344,7 +344,8 @@ crane export <your-private-registry>/<your-extension>:latest <your-extension>
 When can then reference the tarball in a suitable `profile.yaml` for our intended architecture and output.
 In this case we want to build an `amd64`, bare-metal installer.
 
-```yaml
+<CodeBlock lang="sh">
+{`
 # profile.yaml
 arch: amd64
 platform: metal
@@ -362,14 +363,16 @@ input:
 output:
   kind: installer
   outFormat: raw
- ```
+
+`}
+</CodeBlock>
 
 To build the asset we pass `profile.yaml` to `imager` via stdin
 
 <CodeBlock lang="sh">
 {`
-$ cat profile.yaml | docker run --rm -i \
--v $PWD/_out:/out -v $PWD/<your-extension>:/<your-extension> \
+$ cat profile.yaml | docker run --rm -i \\
+-v $PWD/_out:/out -v $PWD/<your-extension>:/<your-extension> \\
 ghcr.io/siderolabs/imager:${release_v1_6 } -
 `}
 </CodeBlock>

@@ -43,7 +43,7 @@ SUBNET="(the subnet ID of the created subnet)"
 
 ### Official AMI Images
 
-Official AMI image ID can be found in the `cloud-images.json` file attached to the Talos release:
+Official AMI image ID can be found in the `cloud-images.json` file attached to the [Talos release](https://github.com/siderolabs/talos/releases).
 
 <CodeBlock language="bash">{`AMI=$(curl -sL https://github.com/siderolabs/talos/releases/download/${release_v1_6}/cloud-images.json | \
   jq -r '.[] | select(.region == "'$REGION'") | select(.arch == "amd64") | .id')

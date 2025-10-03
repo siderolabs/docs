@@ -18,6 +18,7 @@ To reliably regenerate reproducible machine configurations, that is, configurati
 > **Note**: If you leave the Talos version contract unset, or change it to a newer version, `talosctl gen config` may
 > generate a different machine configuration that introduces new fields or defaults that did not exist in your original
 > config.
+> 
 >
 > This can silently change cluster behavior and break reproducibility. Only update `--talos-version` when you
 > explicitly want to upgrade Talos.
