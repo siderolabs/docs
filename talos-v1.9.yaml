@@ -94,7 +94,7 @@ navigation:
             - "scaling-up.mdx"
             - "scaling-down.mdx"
             - "workers-on-controlplane.mdx"
-            
+
         - group: "Networking"
           folder: "talos/v1.9/networking"
           pages:
@@ -185,6 +185,27 @@ navigation:
             - "install-kubevirt.mdx"
             - "migrating-from-kubeadm.mdx"
 
+        - group: "Reference"
+          folder: "talos/v1.9/reference"
+          pages:
+            - "v1alpha1/config.mdx"
+            - "kernel.mdx"
+            - "cli.mdx"
+            - "extensions/extensionserviceconfig.mdx"
+            - "security/trustedrootsconfig.mdx"
+            - "siderolink/siderolinkconfig.mdx"
+            - "block/volumeconfig.mdx"
+            - group: "Network"
+              pages:
+                - "network/kubespanendpointsconfig.mdx"
+                - "network/networkdefaultactionconfig.mdx"
+                - "network/networkruleconfig.mdx"
+            - group: "Runtime"
+              pages:
+                - "runtime/eventsinkconfig.mdx"
+                - "runtime/kmsglogconfig.mdx"
+                - "runtime/watchdogtimerconfig.mdx"
+
         - group: "Troubleshooting and support"
           folder: "talos/v1.9/troubleshooting"
           pages:
@@ -206,4 +227,3 @@ navigation:
             - "process-capabilities.mdx"
             - "talos-network-connectivity.mdx"
             - "talosctl.mdx"
-
