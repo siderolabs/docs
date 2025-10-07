@@ -1710,6 +1710,29 @@
                 ]
               },
               {
+                "group": "Reference",
+                "pages": [
+                  "talos/v1.6/reference/v1alpha1/config",
+                  "talos/v1.6/reference/kernel",
+                  "talos/v1.6/reference/cli",
+                  "talos/v1.6/reference/siderolink/siderolinkconfig",
+                  {
+                    "group": "Network",
+                    "pages": [
+                      "talos/v1.6/reference/network/networkdefaultactionconfig",
+                      "talos/v1.6/reference/network/networkruleconfig"
+                    ]
+                  },
+                  {
+                    "group": "Runtime",
+                    "pages": [
+                      "talos/v1.6/reference/runtime/eventsinkconfig",
+                      "talos/v1.6/reference/runtime/kmsglogconfig"
+                    ]
+                  }
+                ]
+              },
+              {
                 "group": "Troubleshooting and support",
                 "pages": [
                   "talos/v1.6/troubleshooting/troubleshooting",
