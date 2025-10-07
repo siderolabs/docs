@@ -187,6 +187,32 @@ navigation:
             - "install-kubevirt.mdx"
             - "migrating-from-kubeadm.mdx"
 
+        - group: "Reference"
+          folder: "talos/v1.10/reference"
+          pages:
+            - "v1alpha1/config.mdx"
+            - "kernel.mdx"
+            - "cli.mdx"
+            - "extensions/extensionserviceconfig.mdx"
+            - "hardware/pcidriverrebindconfig.mdx"
+            - "security/trustedrootsconfig.mdx"
+            - "siderolink/siderolinkconfig.mdx"
+            - group: "Block"
+              pages:
+                - "block/uservolumeconfig.mdx"
+                - "block/volumeconfig.mdx"
+            - group: "Network"
+              pages:
+                - "network/ethernetconfig.mdx"
+                - "network/kubespanendpointsconfig.mdx"
+                - "network/networkdefaultactionconfig.mdx"
+                - "network/networkruleconfig.mdx"
+            - group: "Runtime"
+              pages:
+                - "runtime/eventsinkconfig.mdx"
+                - "runtime/kmsglogconfig.mdx"
+                - "runtime/watchdogtimerconfig.mdx"
+
         - group: "Troubleshooting and support"
           folder: "talos/v1.10/troubleshooting"
           pages:

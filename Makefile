@@ -122,6 +122,8 @@ test-all: test-docs-gen ## Run all tests
 generate-talos-reference: ## Generate Talos reference docs and convert to MDX
 	@echo "Generating Talos reference documentation..."
 	docker pull $(TALOSCTL_IMAGE)
+	docker pull $(DOCS_CONVERT_IMAGE)
+	mkdir -p _out/docs
 	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
 	@echo "Converting generated docs to MDX..."
 	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD):/workspace $(DOCS_CONVERT_IMAGE) \
@@ -133,6 +135,7 @@ generate-talos-reference: ## Generate Talos reference docs and convert to MDX
 generate-talos-reference-local: ## Generate Talos reference docs using local Go build
 	@echo "Generating Talos reference documentation..."
 	docker pull $(TALOSCTL_IMAGE)
+	mkdir -p _out/docs
 	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
 	@echo "Converting generated docs to MDX..."
 	cd docs-convert && go run main.go ../_out/docs ../public/talos/$(TALOS_VERSION)/reference
