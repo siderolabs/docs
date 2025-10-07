@@ -1,28 +1,44 @@
 ---
-title: What is Talos?
+title: What is Talos Linux?
 weight: 10
-description: "A quick introduction in to what Talos is and why it should be used."
+description: "Talos Linux is the best OS for Kubernetes."
 ---
 
-Talos is a container optimized Linux distro; a reimagining of Linux for distributed systems such as Kubernetes.
-Designed to be as minimal as possible while still maintaining practicality.
+Talos Linux is a Kubernetes optimized Linux distro.
+It does one thing and it does it better than any general purpose Linux distribution.
+Boot it on [bare metal](../getting-started/getting-started) or [in a VM](../platform-specific-installations/cloud-platforms/aws) and have a Kubernetes cluster in minutes.
+
+<iframe
+  className="w-full aspect-video rounded-xl"
+  src="https://www.youtube.com/embed/IO2Yo3N46nk"
+  title="Run Talos Linux in Docker"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+></iframe>
+
+It runs on your Kubernetes nodes and hosts your workloads.
+It also runs the Kubernetes control plane components including the etcd database.
+With a single use case and focus it removes complicated and fragile configuration, maintenance, and security vulnerabilities.
+
+It's designed to be as minimal as possible while still maintaining practicality.
 For these reasons, Talos has a number of features unique to it:
 
-- it is immutable
-- it is atomic
-- it is ephemeral
-- it is minimal
-- it is secure by default
-- it is managed via a single declarative configuration file and gRPC API
+- API managed
+- Immutable file system
+- Minimal packages
+- Secure by default
 
-Talos can be deployed on container, cloud, virtualized, and bare metal platforms.
+Talos can be deployed anywhere you can run a modern Linux kernel.
 
-## Why Talos
+## API Managed
 
-In having less, Talos offers more.
-Security.
-Efficiency.
-Resiliency.
-Consistency.
+Talos is managed by a single, declarative gRPC API.
+This is the most unique thing about Talos and something Talos users love.
 
-All of these areas are improved simply by having less.
+Imagine a Linux distribution that had configuration management built in.
+That didn't have fragile cloud-init scripts that wrap `bash` scripts in yaml.
+
+Talos ships with a network API for all configuration and troubleshooting needs.
+You can [read more about the philosophy behind Talos and Sidero products](../learn-more/philosophy).
+
