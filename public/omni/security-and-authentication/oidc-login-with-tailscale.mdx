@@ -1,0 +1,167 @@
+---
+title: OIDC login with Tailscale
+---
+
+Tailscale provides seamless OIDC authentication through [tsidp](https://github.com/tailscale/tsidp). When accessing Omni through tailscale, you can make use of this through the following steps.
+
+### Prerequisites
+
+You will need [a tailscale account](https://login.tailscale.com/start) with the MagicDNS and HTTPS certificates features enabled.
+
+### Tailscale setup
+
+Browse to https://login.tailscale.com/admin/acls/file to edit the access controls for your tailnet, and add the following JSON to the grants section:
+
+```json tsidp-grant.json
+  "grants": [
+    {
+      "src": ["*"],
+      "dst": ["*"],
+      "app": {
+        "tailscale.com/cap/tsidp": [
+          {
+            "users": ["*"],
+            "resources": ["*"],
+            "allow_admin_ui": true,
+            "allow_dcr": true,
+            "extraClaims": {
+              "email_verified": true
+            },
+            "includeInUserInfo": true
+          }
+        ]
+      }
+    }
+  ]
+```
+
+On https://login.tailscale.com/admin/settings/keys, generate a new auth key. Make sure to select "Reusable" so it can be used for both tsidp and the tailscale reverse proxy we'll use for Omni.
+Finally, go to https://login.tailscale.com/admin/dns and note your Tailnet DNS name.
+
+### Prepare deployment
+
+Create a new folder with the following files, replacing secrets and your Tailnet DNS name as needed:
+
+```env .env
+TS_AUTHKEY=your-generated-key
+OIDC_ISSUER_URL=https://tsidp.your-tailnet.ts.net
+```
+
+Generate a private key for Omni:
+```bash
+gpg --quick-generate-key "Omni (Used for etcd data encryption) how-to-guide@siderolabs.com" rsa4096 cert never
+gpg --list-secret-keys
+gpg --quick-add-key <fingerprint> rsa4096 encr never
+gpg --export-secret-key --armor how-to-guide@siderolabs.com > omni.asc
+```
+
+```json serve-config.json
+{
+  "TCP": {
+    "443": {
+      "HTTPS": true
+    },
+    "8090": {
+      "HTTPS": true
+    },
+    "8100": {
+      "HTTPS": true
+    }
+  },
+  "Web": {
+    "omni.your-tailnet.ts.net:443": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://omni:8080"
+        }
+      }
+    },
+    "omni.your-tailnet.ts.net:8090": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://omni:8090"
+        }
+      }
+    },
+    "omni.your-tailnet.ts.net:8100": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://omni:8100"
+        }
+      }
+    }
+  }
+}
+```
+
+```yaml docker-compose.yml
+services:
+  tsidp:
+    image: ghcr.io/tailscale/tsidp:latest
+    environment:
+      - TAILSCALE_USE_WIP_CODE=1
+      - TS_HOSTNAME=tsidp
+    volumes:
+      - tsidp-data:/var/lib/tsidp
+    env_file:
+      - .env
+    command:
+      - "--dir=/var/lib/tsidp"
+
+  omni-tailscale:
+    image: tailscale/tailscale:latest
+    environment:
+      - TS_SERVE_CONFIG=/config/serve.json
+      - TS_HOSTNAME=omni
+      - TS_STATE_DIR=/var/lib/tailscale
+    env_file:
+      - .env
+    volumes:
+      - ./serve-config.json:/config/serve.json:ro
+      - ts-state:/var/lib/tailscale
+  
+  omni:
+    image: ghcr.io/siderolabs/omni:latest
+    volumes:
+      - omni-data:/_out/etcd
+      - ./omni.asc:/omni.asc:ro
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    command:
+      - --private-key-source=file:///omni.asc
+      - --advertised-api-url=https://omni.your-tailnet.ts.net/
+      - --machine-api-advertised-url=https://omni.your-tailnet.ts.net:8090/
+      - --advertised-kubernetes-proxy-url=https://omni.your-tailnet.ts.net:8100/
+      - --siderolink-wireguard-advertised-addr=omni.your-tailnet.ts.net:50180
+      - --auth-oidc-enabled
+      - --auth-oidc-provider-url=${OIDC_ISSUER_URL}
+      - --auth-oidc-client-id=${OIDC_CLIENT_ID}
+      - --auth-oidc-client-secret=${OIDC_CLIENT_SECRET}
+      - --auth-oidc-scopes=openid
+      - --auth-oidc-scopes=profile
+      - --auth-oidc-scopes=email
+      - --initial-users=your-user@tsidp.your-tailnet.ts.net
+
+volumes:
+  tsidp-data:
+  ts-state:
+  omni-data:
+```
+
+### OIDC client setup
+
+At this point all that's left to do is to set up the OIDC client configuration. Start up only tsidp:
+```bash
+docker compose up tsidp
+```
+Then browse to https://tsidp.your-tailnet.ts.net and create a new client. For the redirect URI, use `https://omni.your-tailnet.ts.net/oidc/consume`.
+Copy the client ID and secret, and add them to your .env file:
+```env .env
+...
+OIDC_CLIENT_ID=paste-client-id-here
+OIDC_CLIENT_SECRET=paste-secret-here
+```
+
+Now start up the complete stack with `docker compose up` and browse to https://omni.your-tailnet.ts.net/. You should be prompted to log in with your tailscale user and then taken to the Omni UI. 
+If login fails, you may need to change the `--initial-users` flag to match the user displayed on the login screen.
