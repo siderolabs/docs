@@ -174,6 +174,22 @@ navigation:
             - "install-kubevirt.mdx"
             - "migrating-from-kubeadm.mdx"
 
+        - group: "Reference"
+          folder: "talos/v1.6/reference"
+          pages:
+            - "v1alpha1/config.mdx"
+            - "kernel.mdx"
+            - "cli.mdx"
+            - "siderolink/siderolinkconfig.mdx"
+            - group: "Network"
+              pages:
+                - "network/networkdefaultactionconfig.mdx"
+                - "network/networkruleconfig.mdx"
+            - group: "Runtime"
+              pages:
+                - "runtime/eventsinkconfig.mdx"
+                - "runtime/kmsglogconfig.mdx"
+
         - group: "Troubleshooting and support"
           folder: "talos/v1.6/troubleshooting"
           pages:
@@ -195,4 +211,3 @@ navigation:
             - "process-capabilities.mdx"
             - "talos-network-connectivity.mdx"
             - "talosctl.mdx"
-
