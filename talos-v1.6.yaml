@@ -177,18 +177,19 @@ navigation:
         - group: "Reference"
           folder: "talos/v1.6/reference"
           pages:
-            - "v1alpha1/config.mdx"
+            - "configuration/overview.mdx"
+            - "configuration/v1alpha1/config.mdx"
             - "kernel.mdx"
             - "cli.mdx"
-            - "siderolink/siderolinkconfig.mdx"
+            - "configuration/siderolink/siderolinkconfig.mdx"
             - group: "Network"
               pages:
-                - "network/networkdefaultactionconfig.mdx"
-                - "network/networkruleconfig.mdx"
+                - "configuration/network/networkdefaultactionconfig.mdx"
+                - "configuration/network/networkruleconfig.mdx"
             - group: "Runtime"
               pages:
-                - "runtime/eventsinkconfig.mdx"
-                - "runtime/kmsglogconfig.mdx"
+                - "configuration/runtime/eventsinkconfig.mdx"
+                - "configuration/runtime/kmsglogconfig.mdx"
 
         - group: "Troubleshooting and support"
           folder: "talos/v1.6/troubleshooting"

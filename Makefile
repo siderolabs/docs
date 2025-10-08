@@ -127,9 +127,9 @@ generate-talos-reference: ## Generate Talos reference docs and convert to MDX
 	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
 	@echo "Converting generated docs to MDX..."
 	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD):/workspace $(DOCS_CONVERT_IMAGE) \
-		/workspace/_out/docs /workspace/public/talos/$(TALOS_VERSION)/reference
+		/workspace/_out/docs /workspace/public/talos/$(TALOS_VERSION)/reference/configuration/
 	rm -rf _out/docs
-	@echo "Reference documentation generated in talos/$(TALOS_VERSION)/reference/"
+	@echo "Reference documentation generated in public/talos/$(TALOS_VERSION)/reference/configuration"
 
 .PHONY: generate-talos-reference-local
 generate-talos-reference-local: ## Generate Talos reference docs using local Go build
@@ -138,6 +138,6 @@ generate-talos-reference-local: ## Generate Talos reference docs using local Go 
 	mkdir -p _out/docs
 	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
 	@echo "Converting generated docs to MDX..."
-	cd docs-convert && go run main.go ../_out/docs ../public/talos/$(TALOS_VERSION)/reference
-	@echo "Reference documentation generated in public/talos/$(TALOS_VERSION)/reference/"
+	cd docs-convert && go run main.go ../_out/docs ../public/talos/$(TALOS_VERSION)/reference/configuration/
+	@echo "Reference documentation generated in public/talos/$(TALOS_VERSION)/reference/configuration/"
 
