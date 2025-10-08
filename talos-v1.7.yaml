@@ -183,20 +183,21 @@ navigation:
         - group: "Reference"
           folder: "talos/v1.7/reference"
           pages:
-            - "v1alpha1/config.mdx"
+            - "configuration/overview.mdx"
+            - "configuration/v1alpha1/config.mdx"
             - "kernel.mdx"
             - "cli.mdx"
-            - "extensions/extensionserviceconfig.mdx"
-            - "siderolink/siderolinkconfig.mdx"
+            - "configuration/extensions/extensionserviceconfig.mdx"
+            - "configuration/siderolink/siderolinkconfig.mdx"
             - group: "Network"
               pages:
-                - "network/networkdefaultactionconfig.mdx"
-                - "network/networkruleconfig.mdx"
+                - "configuration/network/networkdefaultactionconfig.mdx"
+                - "configuration/network/networkruleconfig.mdx"
             - group: "Runtime"
               pages:
-                - "runtime/eventsinkconfig.mdx"
-                - "runtime/kmsglogconfig.mdx"
-                - "runtime/watchdogtimerconfig.mdx"
+                - "configuration/runtime/eventsinkconfig.mdx"
+                - "configuration/runtime/kmsglogconfig.mdx"
+                - "configuration/runtime/watchdogtimerconfig.mdx"
 
         - group: "Troubleshooting and support"
           folder: "talos/v1.7/troubleshooting"
@@ -219,4 +220,3 @@ navigation:
             - "process-capabilities.mdx"
             - "talos-network-connectivity.mdx"
             - "talosctl.mdx"
-
