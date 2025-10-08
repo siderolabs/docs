@@ -19,11 +19,16 @@ type Config struct {
 	Schema       string              `yaml:"schema"`
 	Theme        string              `yaml:"theme"`
 	Name         string              `yaml:"name"`
+	Description  string              `yaml:"description,omitempty"`
 	Colors       Colors              `yaml:"colors"`
 	Favicon      string              `yaml:"favicon"`
 	Banner       *Banner             `yaml:"banner,omitempty"`
 	Contextual   *Contextual         `yaml:"contextual,omitempty"`
 	Logo         *Logo               `yaml:"logo,omitempty"`
+	Thumbnails   *Thumbnails         `yaml:"thumbnails,omitempty"`
+	SEO          *SEO                `yaml:"seo,omitempty"`
+	Search       *Search             `yaml:"search,omitempty"`
+	Errors       *Errors             `yaml:"errors,omitempty"`
 	Navbar       *Navbar             `yaml:"navbar,omitempty"`
 	Footer       *Footer             `yaml:"footer,omitempty"`
 	Integrations *Integrations       `yaml:"integrations,omitempty"`
@@ -52,6 +57,11 @@ type Logo struct {
 	Dark  string `yaml:"dark" json:"dark"`
 }
 
+type Thumbnails struct {
+	Appearance string `yaml:"appearance,omitempty" json:"appearance,omitempty"`
+	Background string `yaml:"background,omitempty" json:"background,omitempty"`
+}
+
 type Navbar struct {
 	Links []NavLink `yaml:"links" json:"links"`
 }
@@ -71,6 +81,25 @@ type Integrations struct {
 
 type GA4Integration struct {
 	MeasurementId string `yaml:"measurementId" json:"measurementId"`
+}
+
+type SEO struct {
+	Metatags map[string]string `yaml:"metatags,omitempty" json:"metatags,omitempty"`
+	Indexing string            `yaml:"indexing,omitempty" json:"indexing,omitempty"`
+}
+
+type Search struct {
+	Prompt string `yaml:"prompt,omitempty" json:"prompt,omitempty"`
+}
+
+type Errors struct {
+	Error404 *Error404 `yaml:"404,omitempty" json:"404,omitempty"`
+}
+
+type Error404 struct {
+	Redirect    *bool  `yaml:"redirect,omitempty" json:"redirect,omitempty"`
+	Title       string `yaml:"title,omitempty" json:"title,omitempty"`
+	Description string `yaml:"description,omitempty" json:"description,omitempty"`
 }
 
 type NavigationConfig struct {
@@ -139,11 +168,16 @@ type MintlifyConfig struct {
 	Schema       string             `json:"$schema"`
 	Theme        string             `json:"theme"`
 	Name         string             `json:"name"`
+	Description  string             `json:"description,omitempty"`
 	Colors       Colors             `json:"colors"`
 	Favicon      string             `json:"favicon"`
 	Banner       *Banner            `json:"banner,omitempty"`
 	Contextual   *Contextual        `json:"contextual,omitempty"`
 	Logo         *Logo              `json:"logo,omitempty"`
+	Thumbnails   *Thumbnails        `json:"thumbnails,omitempty"`
+	SEO          *SEO               `json:"seo,omitempty"`
+	Search       *Search            `json:"search,omitempty"`
+	Errors       *Errors            `json:"errors,omitempty"`
 	Navbar       *Navbar            `json:"navbar,omitempty"`
 	Footer       *Footer            `json:"footer,omitempty"`
 	Integrations *Integrations      `json:"integrations,omitempty"`
@@ -209,11 +243,16 @@ func main() {
 		Schema:       mergedConfig.Schema,
 		Theme:        mergedConfig.Theme,
 		Name:         mergedConfig.Name,
+		Description:  mergedConfig.Description,
 		Colors:       mergedConfig.Colors,
 		Favicon:      mergedConfig.Favicon,
 		Banner:       mergedConfig.Banner,
 		Contextual:   mergedConfig.Contextual,
 		Logo:         mergedConfig.Logo,
+		Thumbnails:   mergedConfig.Thumbnails,
+		SEO:          mergedConfig.SEO,
+		Search:       mergedConfig.Search,
+		Errors:       mergedConfig.Errors,
 		Navbar:       mergedConfig.Navbar,
 		Footer:       mergedConfig.Footer,
 		Integrations: mergedConfig.Integrations,

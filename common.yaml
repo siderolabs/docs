@@ -24,6 +24,9 @@ logo:
   light: "/images/sidero-light.svg"
   dark: "/images/sidero-dark.svg"
 
+thumbnails:
+  background: "/images/og-background.png"
+
 navbar:
   links:
     - label: "Support"
