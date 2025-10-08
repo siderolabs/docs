@@ -20,6 +20,7 @@ Do not edit manually. For more information, see https://github.com/siderolabs/do
     - [NetIP](#common.NetIP)
     - [NetIPPort](#common.NetIPPort)
     - [NetIPPrefix](#common.NetIPPrefix)
+    - [PEMEncodedCertificate](#common.PEMEncodedCertificate)
     - [PEMEncodedCertificateAndKey](#common.PEMEncodedCertificateAndKey)
     - [PEMEncodedKey](#common.PEMEncodedKey)
     - [URL](#common.URL)
@@ -29,6 +30,25 @@ Do not edit manually. For more information, see https://github.com/siderolabs/do
     - [ContainerdNamespace](#common.ContainerdNamespace)
   
     - [File-level Extensions](#common/common.proto-extensions)
+  
+- [resource/definitions/block/block.proto](#resource/definitions/block/block.proto)
+    - [DeviceSpec](#talos.resource.definitions.block.DeviceSpec)
+    - [DiscoveredVolumeSpec](#talos.resource.definitions.block.DiscoveredVolumeSpec)
+    - [DiscoveryRefreshRequestSpec](#talos.resource.definitions.block.DiscoveryRefreshRequestSpec)
+    - [DiscoveryRefreshStatusSpec](#talos.resource.definitions.block.DiscoveryRefreshStatusSpec)
+    - [DiskSelector](#talos.resource.definitions.block.DiskSelector)
+    - [DiskSpec](#talos.resource.definitions.block.DiskSpec)
+    - [EncryptionKey](#talos.resource.definitions.block.EncryptionKey)
+    - [EncryptionSpec](#talos.resource.definitions.block.EncryptionSpec)
+    - [FilesystemSpec](#talos.resource.definitions.block.FilesystemSpec)
+    - [LocatorSpec](#talos.resource.definitions.block.LocatorSpec)
+    - [MountSpec](#talos.resource.definitions.block.MountSpec)
+    - [PartitionSpec](#talos.resource.definitions.block.PartitionSpec)
+    - [ProvisioningSpec](#talos.resource.definitions.block.ProvisioningSpec)
+    - [SystemDiskSpec](#talos.resource.definitions.block.SystemDiskSpec)
+    - [UserDiskConfigStatusSpec](#talos.resource.definitions.block.UserDiskConfigStatusSpec)
+    - [VolumeConfigSpec](#talos.resource.definitions.block.VolumeConfigSpec)
+    - [VolumeStatusSpec](#talos.resource.definitions.block.VolumeStatusSpec)
   
 - [resource/definitions/cluster/cluster.proto](#resource/definitions/cluster/cluster.proto)
     - [AffiliateSpec](#talos.resource.definitions.cluster.AffiliateSpec)
@@ -43,6 +63,11 @@ Do not edit manually. For more information, see https://github.com/siderolabs/do
     - [SeccompProfileSpec](#talos.resource.definitions.cri.SeccompProfileSpec)
   
 - [resource/definitions/enums/enums.proto](#resource/definitions/enums/enums.proto)
+    - [BlockEncryptionKeyType](#talos.resource.definitions.enums.BlockEncryptionKeyType)
+    - [BlockEncryptionProviderType](#talos.resource.definitions.enums.BlockEncryptionProviderType)
+    - [BlockFilesystemType](#talos.resource.definitions.enums.BlockFilesystemType)
+    - [BlockVolumePhase](#talos.resource.definitions.enums.BlockVolumePhase)
+    - [BlockVolumeType](#talos.resource.definitions.enums.BlockVolumeType)
     - [KubespanPeerState](#talos.resource.definitions.enums.KubespanPeerState)
     - [MachineType](#talos.resource.definitions.enums.MachineType)
     - [NethelpersADSelect](#talos.resource.definitions.enums.NethelpersADSelect)
@@ -95,6 +120,7 @@ Do not edit manually. For more information, see https://github.com/siderolabs/do
   
 - [resource/definitions/hardware/hardware.proto](#resource/definitions/hardware/hardware.proto)
     - [MemoryModuleSpec](#talos.resource.definitions.hardware.MemoryModuleSpec)
+    - [PCIDeviceSpec](#talos.resource.definitions.hardware.PCIDeviceSpec)
     - [ProcessorSpec](#talos.resource.definitions.hardware.ProcessorSpec)
     - [SystemInformationSpec](#talos.resource.definitions.hardware.SystemInformationSpec)
   
@@ -124,6 +150,7 @@ Do not edit manually. For more information, see https://github.com/siderolabs/do
     - [KubeletSpecSpec](#talos.resource.definitions.k8s.KubeletSpecSpec)
     - [ManifestSpec](#talos.resource.definitions.k8s.ManifestSpec)
     - [ManifestStatusSpec](#talos.resource.definitions.k8s.ManifestStatusSpec)
+    - [NodeAnnotationSpecSpec](#talos.resource.definitions.k8s.NodeAnnotationSpecSpec)
     - [NodeIPConfigSpec](#talos.resource.definitions.k8s.NodeIPConfigSpec)
     - [NodeIPSpec](#talos.resource.definitions.k8s.NodeIPSpec)
     - [NodeLabelSpecSpec](#talos.resource.definitions.k8s.NodeLabelSpecSpec)
@@ -161,9 +188,12 @@ Do not edit manually. For more information, see https://github.com/siderolabs/do
     - [BondSlave](#talos.resource.definitions.network.BondSlave)
     - [BridgeMasterSpec](#talos.resource.definitions.network.BridgeMasterSpec)
     - [BridgeSlave](#talos.resource.definitions.network.BridgeSlave)
+    - [BridgeVLANSpec](#talos.resource.definitions.network.BridgeVLANSpec)
     - [DHCP4OperatorSpec](#talos.resource.definitions.network.DHCP4OperatorSpec)
     - [DHCP6OperatorSpec](#talos.resource.definitions.network.DHCP6OperatorSpec)
+    - [DNSResolveCacheSpec](#talos.resource.definitions.network.DNSResolveCacheSpec)
     - [HardwareAddrSpec](#talos.resource.definitions.network.HardwareAddrSpec)
+    - [HostDNSConfigSpec](#talos.resource.definitions.network.HostDNSConfigSpec)
     - [HostnameSpecSpec](#talos.resource.definitions.network.HostnameSpecSpec)
     - [HostnameStatusSpec](#talos.resource.definitions.network.HostnameStatusSpec)
     - [LinkRefreshSpec](#talos.resource.definitions.network.LinkRefreshSpec)
@@ -212,7 +242,11 @@ Do not edit manually. For more information, see https://github.com/siderolabs/do
   
 - [resource/definitions/runtime/runtime.proto](#resource/definitions/runtime/runtime.proto)
     - [DevicesStatusSpec](#talos.resource.definitions.runtime.DevicesStatusSpec)
+    - [DiagnosticSpec](#talos.resource.definitions.runtime.DiagnosticSpec)
     - [EventSinkConfigSpec](#talos.resource.definitions.runtime.EventSinkConfigSpec)
+    - [ExtensionServiceConfigFile](#talos.resource.definitions.runtime.ExtensionServiceConfigFile)
+    - [ExtensionServiceConfigSpec](#talos.resource.definitions.runtime.ExtensionServiceConfigSpec)
+    - [ExtensionServiceConfigStatusSpec](#talos.resource.definitions.runtime.ExtensionServiceConfigStatusSpec)
     - [KernelModuleSpecSpec](#talos.resource.definitions.runtime.KernelModuleSpecSpec)
     - [KernelParamSpecSpec](#talos.resource.definitions.runtime.KernelParamSpecSpec)
     - [KernelParamStatusSpec](#talos.resource.definitions.runtime.KernelParamStatusSpec)
@@ -227,6 +261,8 @@ Do not edit manually. For more information, see https://github.com/siderolabs/do
     - [SecurityStateSpec](#talos.resource.definitions.runtime.SecurityStateSpec)
     - [UniqueMachineTokenSpec](#talos.resource.definitions.runtime.UniqueMachineTokenSpec)
     - [UnmetCondition](#talos.resource.definitions.runtime.UnmetCondition)
+    - [WatchdogTimerConfigSpec](#talos.resource.definitions.runtime.WatchdogTimerConfigSpec)
+    - [WatchdogTimerStatusSpec](#talos.resource.definitions.runtime.WatchdogTimerStatusSpec)
   
 - [resource/definitions/secrets/secrets.proto](#resource/definitions/secrets/secrets.proto)
     - [APICertsSpec](#talos.resource.definitions.secrets.APICertsSpec)
@@ -244,6 +280,8 @@ Do not edit manually. For more information, see https://github.com/siderolabs/do
   
 - [resource/definitions/siderolink/siderolink.proto](#resource/definitions/siderolink/siderolink.proto)
     - [ConfigSpec](#talos.resource.definitions.siderolink.ConfigSpec)
+    - [StatusSpec](#talos.resource.definitions.siderolink.StatusSpec)
+    - [TunnelSpec](#talos.resource.definitions.siderolink.TunnelSpec)
   
 - [resource/definitions/time/time.proto](#resource/definitions/time/time.proto)
     - [AdjtimeStatusSpec](#talos.resource.definitions.time.AdjtimeStatusSpec)
@@ -344,6 +382,8 @@ Do not edit manually. For more information, see https://github.com/siderolabs/do
     - [ListRequest](#machine.ListRequest)
     - [LoadAvg](#machine.LoadAvg)
     - [LoadAvgResponse](#machine.LoadAvgResponse)
+    - [LogsContainer](#machine.LogsContainer)
+    - [LogsContainersResponse](#machine.LogsContainersResponse)
     - [LogsRequest](#machine.LogsRequest)
     - [MachineConfig](#machine.MachineConfig)
     - [MachineStatusEvent](#machine.MachineStatusEvent)
@@ -428,6 +468,7 @@ Do not edit manually. For more information, see https://github.com/siderolabs/do
     - [Version](#machine.Version)
     - [VersionInfo](#machine.VersionInfo)
     - [VersionResponse](#machine.VersionResponse)
+    - [Xattr](#machine.Xattr)
   
     - [ApplyConfigurationRequest.Mode](#machine.ApplyConfigurationRequest.Mode)
     - [ConnectRecord.State](#machine.ConnectRecord.State)
@@ -783,6 +824,35 @@ Common metadata message nested in all reply message types
 
 
 
+<a name="common.PEMEncodedCertificate"></a>
+
+### PEMEncodedCertificate
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>crt</td>
+      <td>[bytes](#bytes)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
 <a name="common.PEMEncodedCertificateAndKey"></a>
 
 ### PEMEncodedCertificateAndKey
@@ -1035,6 +1105,959 @@ Common metadata message nested in all reply message types
     </tr>
   </tbody>
 </table>
+
+
+<a name="resource/definitions/block/block.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## resource/definitions/block/block.proto
+
+
+
+<a name="talos.resource.definitions.block.DeviceSpec"></a>
+
+### DeviceSpec
+DeviceSpec is the spec for devices status.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>type</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>major</td>
+      <td>[int64](#int64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>minor</td>
+      <td>[int64](#int64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>partition_name</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>partition_number</td>
+      <td>[int64](#int64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>generation</td>
+      <td>[int64](#int64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>device_path</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>parent</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.block.DiscoveredVolumeSpec"></a>
+
+### DiscoveredVolumeSpec
+DiscoveredVolumeSpec is the spec for DiscoveredVolumes resource.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>size</td>
+      <td>[uint64](#uint64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>sector_size</td>
+      <td>[uint64](#uint64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>io_size</td>
+      <td>[uint64](#uint64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>name</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>uuid</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>label</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>block_size</td>
+      <td>[uint32](#uint32)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>filesystem_block_size</td>
+      <td>[uint32](#uint32)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>probed_size</td>
+      <td>[uint64](#uint64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>partition_uuid</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>partition_type</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>partition_label</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>partition_index</td>
+      <td>[uint64](#uint64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>type</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>device_path</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>parent</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>dev_path</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>parent_dev_path</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>pretty_size</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.block.DiscoveryRefreshRequestSpec"></a>
+
+### DiscoveryRefreshRequestSpec
+DiscoveryRefreshRequestSpec is the spec for DiscoveryRefreshRequest.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>request</td>
+      <td>[int64](#int64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.block.DiscoveryRefreshStatusSpec"></a>
+
+### DiscoveryRefreshStatusSpec
+DiscoveryRefreshStatusSpec is the spec for DiscoveryRefreshStatus status.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>request</td>
+      <td>[int64](#int64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.block.DiskSelector"></a>
+
+### DiskSelector
+DiskSelector selects a disk for the volume.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>match</td>
+      <td>[google.api.expr.v1alpha1.CheckedExpr](#google.api.expr.v1alpha1.CheckedExpr)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.block.DiskSpec"></a>
+
+### DiskSpec
+DiskSpec is the spec for Disks status.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>size</td>
+      <td>[uint64](#uint64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>io_size</td>
+      <td>[uint64](#uint64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>sector_size</td>
+      <td>[uint64](#uint64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>readonly</td>
+      <td>[bool](#bool)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>model</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>serial</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>modalias</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>wwid</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>bus_path</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>sub_system</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>transport</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>rotational</td>
+      <td>[bool](#bool)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>cdrom</td>
+      <td>[bool](#bool)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>dev_path</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>pretty_size</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.block.EncryptionKey"></a>
+
+### EncryptionKey
+EncryptionKey is the spec for volume encryption key.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>slot</td>
+      <td>[int64](#int64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>type</td>
+      <td>[talos.resource.definitions.enums.BlockEncryptionKeyType](#talos.resource.definitions.enums.BlockEncryptionKeyType)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>static_passphrase</td>
+      <td>[bytes](#bytes)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>kms_endpoint</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>tpm_check_secureboot_status_on_enroll</td>
+      <td>[bool](#bool)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.block.EncryptionSpec"></a>
+
+### EncryptionSpec
+EncryptionSpec is the spec for volume encryption.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>provider</td>
+      <td>[talos.resource.definitions.enums.BlockEncryptionProviderType](#talos.resource.definitions.enums.BlockEncryptionProviderType)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>keys</td>
+      <td>[EncryptionKey](#talos.resource.definitions.block.EncryptionKey)</td>
+      <td>repeated</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>cipher</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>key_size</td>
+      <td>[uint64](#uint64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>block_size</td>
+      <td>[uint64](#uint64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>perf_options</td>
+      <td>[string](#string)</td>
+      <td>repeated</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.block.FilesystemSpec"></a>
+
+### FilesystemSpec
+FilesystemSpec is the spec for volume filesystem.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>type</td>
+      <td>[talos.resource.definitions.enums.BlockFilesystemType](#talos.resource.definitions.enums.BlockFilesystemType)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>label</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.block.LocatorSpec"></a>
+
+### LocatorSpec
+LocatorSpec is the spec for volume locator.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>match</td>
+      <td>[google.api.expr.v1alpha1.CheckedExpr](#google.api.expr.v1alpha1.CheckedExpr)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.block.MountSpec"></a>
+
+### MountSpec
+MountSpec is the spec for volume mount.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>target_path</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.block.PartitionSpec"></a>
+
+### PartitionSpec
+PartitionSpec is the spec for volume partitioning.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>min_size</td>
+      <td>[uint64](#uint64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>max_size</td>
+      <td>[uint64](#uint64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>grow</td>
+      <td>[bool](#bool)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>label</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>type_uuid</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.block.ProvisioningSpec"></a>
+
+### ProvisioningSpec
+ProvisioningSpec is the spec for volume provisioning.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>disk_selector</td>
+      <td>[DiskSelector](#talos.resource.definitions.block.DiskSelector)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>partition_spec</td>
+      <td>[PartitionSpec](#talos.resource.definitions.block.PartitionSpec)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>wave</td>
+      <td>[int64](#int64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>filesystem_spec</td>
+      <td>[FilesystemSpec](#talos.resource.definitions.block.FilesystemSpec)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.block.SystemDiskSpec"></a>
+
+### SystemDiskSpec
+SystemDiskSpec is the spec for SystemDisks resource.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>disk_id</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>dev_path</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.block.UserDiskConfigStatusSpec"></a>
+
+### UserDiskConfigStatusSpec
+UserDiskConfigStatusSpec is the spec for UserDiskConfigStatus resource.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ready</td>
+      <td>[bool](#bool)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.block.VolumeConfigSpec"></a>
+
+### VolumeConfigSpec
+VolumeConfigSpec is the spec for VolumeConfig resource.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>parent_id</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>type</td>
+      <td>[talos.resource.definitions.enums.BlockVolumeType](#talos.resource.definitions.enums.BlockVolumeType)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>provisioning</td>
+      <td>[ProvisioningSpec](#talos.resource.definitions.block.ProvisioningSpec)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>locator</td>
+      <td>[LocatorSpec](#talos.resource.definitions.block.LocatorSpec)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>mount</td>
+      <td>[MountSpec](#talos.resource.definitions.block.MountSpec)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>encryption</td>
+      <td>[EncryptionSpec](#talos.resource.definitions.block.EncryptionSpec)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.block.VolumeStatusSpec"></a>
+
+### VolumeStatusSpec
+VolumeStatusSpec is the spec for VolumeStatus resource.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>phase</td>
+      <td>[talos.resource.definitions.enums.BlockVolumePhase](#talos.resource.definitions.enums.BlockVolumePhase)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>location</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>error_message</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>uuid</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>partition_uuid</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>pre_fail_phase</td>
+      <td>[talos.resource.definitions.enums.BlockVolumePhase](#talos.resource.definitions.enums.BlockVolumePhase)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>parent_location</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>partition_index</td>
+      <td>[int64](#int64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>size</td>
+      <td>[uint64](#uint64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>filesystem</td>
+      <td>[talos.resource.definitions.enums.BlockFilesystemType](#talos.resource.definitions.enums.BlockFilesystemType)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>mount_location</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>encryption_provider</td>
+      <td>[talos.resource.definitions.enums.BlockEncryptionProviderType](#talos.resource.definitions.enums.BlockEncryptionProviderType)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>pretty_size</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+ {/* end messages */}
+
+ {/* end enums */}
+
+ {/* end HasExtensions */}
+
+ {/* end services */}
+
 
 
 <a name="resource/definitions/cluster/cluster.proto"></a>
@@ -1449,6 +2472,191 @@ SeccompProfileSpec represents the SeccompProfile.
 
 
  {/* end messages */}
+
+
+<a name="talos.resource.definitions.enums.BlockEncryptionKeyType"></a>
+
+### BlockEncryptionKeyType
+BlockEncryptionKeyType describes encryption key type.
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Number</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ENCRYPTION_KEY_STATIC</td>
+      <td>0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>ENCRYPTION_KEY_NODE_ID</td>
+      <td>1</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>ENCRYPTION_KEY_KMS</td>
+      <td>2</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>ENCRYPTION_KEY_TPM</td>
+      <td>3</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<a name="talos.resource.definitions.enums.BlockEncryptionProviderType"></a>
+
+### BlockEncryptionProviderType
+BlockEncryptionProviderType describes encryption provider type.
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Number</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ENCRYPTION_PROVIDER_NONE</td>
+      <td>0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>ENCRYPTION_PROVIDER_LUKS2</td>
+      <td>1</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<a name="talos.resource.definitions.enums.BlockFilesystemType"></a>
+
+### BlockFilesystemType
+BlockFilesystemType describes filesystem type.
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Number</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>FILESYSTEM_TYPE_NONE</td>
+      <td>0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>FILESYSTEM_TYPE_XFS</td>
+      <td>1</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<a name="talos.resource.definitions.enums.BlockVolumePhase"></a>
+
+### BlockVolumePhase
+BlockVolumePhase describes volume phase.
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Number</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>VOLUME_PHASE_WAITING</td>
+      <td>0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>VOLUME_PHASE_FAILED</td>
+      <td>1</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>VOLUME_PHASE_MISSING</td>
+      <td>2</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>VOLUME_PHASE_LOCATED</td>
+      <td>3</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>VOLUME_PHASE_PROVISIONED</td>
+      <td>4</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>VOLUME_PHASE_PREPARED</td>
+      <td>5</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>VOLUME_PHASE_READY</td>
+      <td>6</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>VOLUME_PHASE_CLOSED</td>
+      <td>7</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<a name="talos.resource.definitions.enums.BlockVolumeType"></a>
+
+### BlockVolumeType
+BlockVolumeType describes volume type.
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Number</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>VOLUME_TYPE_PARTITION</td>
+      <td>0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>VOLUME_TYPE_DISK</td>
+      <td>1</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>VOLUME_TYPE_TMPFS</td>
+      <td>2</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
 
 
 <a name="talos.resource.definitions.enums.KubespanPeerState"></a>
@@ -3690,6 +4898,12 @@ Metadata describes base extension metadata.
       <td></td>
       <td></td>
     </tr>
+    <tr>
+      <td>extra_info</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
   </tbody>
 </table>
 
@@ -3853,6 +5067,77 @@ MemoryModuleSpec represents a single Memory.
     </tr>
     <tr>
       <td>product_name</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.hardware.PCIDeviceSpec"></a>
+
+### PCIDeviceSpec
+PCIDeviceSpec represents a single processor.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>class</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>subclass</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>vendor</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>product</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>class_id</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>subclass_id</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>vendor_id</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>product_id</td>
       <td>[string](#string)</td>
       <td></td>
       <td></td>
@@ -4387,12 +5672,6 @@ BootstrapManifestsConfigSpec is configuration for bootstrap manifests.
       <td></td>
     </tr>
     <tr>
-      <td>flannel_cni_image</td>
-      <td>[string](#string)</td>
-      <td></td>
-      <td></td>
-    </tr>
-    <tr>
       <td>pod_security_policy_enabled</td>
       <td>[bool](#bool)</td>
       <td></td>
@@ -4408,6 +5687,18 @@ BootstrapManifestsConfigSpec is configuration for bootstrap manifests.
       <td>flannel_extra_args</td>
       <td>[string](#string)</td>
       <td>repeated</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>flannel_kube_service_host</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>flannel_kube_service_port</td>
+      <td>[string](#string)</td>
+      <td></td>
       <td></td>
     </tr>
   </tbody>
@@ -5176,6 +6467,41 @@ ManifestStatusSpec describes manifest application status.
       <td>manifests_applied</td>
       <td>[string](#string)</td>
       <td>repeated</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.k8s.NodeAnnotationSpecSpec"></a>
+
+### NodeAnnotationSpecSpec
+NodeAnnotationSpecSpec represents an annoation that's attached to a Talos node.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>key</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>value</td>
+      <td>[string](#string)</td>
+      <td></td>
       <td></td>
     </tr>
   </tbody>
@@ -6017,6 +7343,12 @@ ConfigSpec describes KubeSpan configuration..
       <td></td>
       <td></td>
     </tr>
+    <tr>
+      <td>extra_endpoints</td>
+      <td>[common.NetIPPort](#common.NetIPPort)</td>
+      <td>repeated</td>
+      <td></td>
+    </tr>
   </tbody>
 </table>
 
@@ -6615,6 +7947,12 @@ BridgeMasterSpec describes bridge settings if Kind == "bridge".
       <td></td>
       <td></td>
     </tr>
+    <tr>
+      <td>vlan</td>
+      <td>[BridgeVLANSpec](#talos.resource.definitions.network.BridgeVLANSpec)</td>
+      <td></td>
+      <td></td>
+    </tr>
   </tbody>
 </table>
 
@@ -6641,6 +7979,35 @@ BridgeSlave contains a bond's master name and slave index.
     <tr>
       <td>master_name</td>
       <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.network.BridgeVLANSpec"></a>
+
+### BridgeVLANSpec
+BridgeVLANSpec describes VLAN settings of a bridge.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>filtering_enabled</td>
+      <td>[bool](#bool)</td>
       <td></td>
       <td></td>
     </tr>
@@ -6727,6 +8094,35 @@ DHCP6OperatorSpec describes DHCP6 operator options.
 
 
 
+<a name="talos.resource.definitions.network.DNSResolveCacheSpec"></a>
+
+### DNSResolveCacheSpec
+DNSResolveCacheSpec describes DNS servers status.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>status</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
 <a name="talos.resource.definitions.network.HardwareAddrSpec"></a>
 
 ### HardwareAddrSpec
@@ -6752,6 +8148,53 @@ HardwareAddrSpec describes spec for the link.
     <tr>
       <td>hardware_addr</td>
       <td>[bytes](#bytes)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.network.HostDNSConfigSpec"></a>
+
+### HostDNSConfigSpec
+HostDNSConfigSpec describes host DNS config.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>enabled</td>
+      <td>[bool](#bool)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>listen_addresses</td>
+      <td>[common.NetIPPort](#common.NetIPPort)</td>
+      <td>repeated</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>service_host_dns_address</td>
+      <td>[common.NetIP](#common.NetIP)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>resolve_member_names</td>
+      <td>[bool](#bool)</td>
       <td></td>
       <td></td>
     </tr>
@@ -9210,6 +10653,41 @@ DevicesStatusSpec is the spec for devices status.
 
 
 
+<a name="talos.resource.definitions.runtime.DiagnosticSpec"></a>
+
+### DiagnosticSpec
+DiagnosticSpec is the spec for devices status.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>message</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>details</td>
+      <td>[string](#string)</td>
+      <td>repeated</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
 <a name="talos.resource.definitions.runtime.EventSinkConfigSpec"></a>
 
 ### EventSinkConfigSpec
@@ -9228,6 +10706,105 @@ EventSinkConfigSpec describes configuration of Talos event log streaming.
   <tbody>
     <tr>
       <td>endpoint</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.runtime.ExtensionServiceConfigFile"></a>
+
+### ExtensionServiceConfigFile
+ExtensionServiceConfigFile describes extensions service config files.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>content</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>mount_path</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.runtime.ExtensionServiceConfigSpec"></a>
+
+### ExtensionServiceConfigSpec
+ExtensionServiceConfigSpec describes status of rendered extensions service config files.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>files</td>
+      <td>[ExtensionServiceConfigFile](#talos.resource.definitions.runtime.ExtensionServiceConfigFile)</td>
+      <td>repeated</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>environment</td>
+      <td>[string](#string)</td>
+      <td>repeated</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.runtime.ExtensionServiceConfigStatusSpec"></a>
+
+### ExtensionServiceConfigStatusSpec
+ExtensionServiceConfigStatusSpec describes status of rendered extensions service config files.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>spec_version</td>
       <td>[string](#string)</td>
       <td></td>
       <td></td>
@@ -9665,6 +11242,18 @@ PlatformMetadataSpec describes platform metadata properties.
       <td></td>
       <td></td>
     </tr>
+    <tr>
+      <td>internal_dns</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>external_dns</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
   </tbody>
 </table>
 
@@ -9776,6 +11365,82 @@ UnmetCondition is a failure which prevents machine from being ready at the stage
 
 
 
+
+<a name="talos.resource.definitions.runtime.WatchdogTimerConfigSpec"></a>
+
+### WatchdogTimerConfigSpec
+WatchdogTimerConfigSpec describes configuration of watchdog timer.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>device</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>timeout</td>
+      <td>[google.protobuf.Duration](#google.protobuf.Duration)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.runtime.WatchdogTimerStatusSpec"></a>
+
+### WatchdogTimerStatusSpec
+WatchdogTimerStatusSpec describes configuration of watchdog timer.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>device</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>timeout</td>
+      <td>[google.protobuf.Duration](#google.protobuf.Duration)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>feed_interval</td>
+      <td>[google.protobuf.Duration](#google.protobuf.Duration)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
  {/* end messages */}
 
  {/* end enums */}
@@ -9810,12 +11475,6 @@ APICertsSpec describes etcd certs secrets.
   </thead>
   <tbody>
     <tr>
-      <td>ca</td>
-      <td>[common.PEMEncodedCertificateAndKey](#common.PEMEncodedCertificateAndKey)</td>
-      <td></td>
-      <td></td>
-    </tr>
-    <tr>
       <td>client</td>
       <td>[common.PEMEncodedCertificateAndKey](#common.PEMEncodedCertificateAndKey)</td>
       <td></td>
@@ -9825,6 +11484,12 @@ APICertsSpec describes etcd certs secrets.
       <td>server</td>
       <td>[common.PEMEncodedCertificateAndKey](#common.PEMEncodedCertificateAndKey)</td>
       <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>accepted_c_as</td>
+      <td>[common.PEMEncodedCertificate](#common.PEMEncodedCertificate)</td>
+      <td>repeated</td>
       <td></td>
     </tr>
   </tbody>
@@ -9974,12 +11639,6 @@ KubeletSpec describes root Kubernetes secrets.
       <td></td>
     </tr>
     <tr>
-      <td>ca</td>
-      <td>[common.PEMEncodedCertificateAndKey](#common.PEMEncodedCertificateAndKey)</td>
-      <td></td>
-      <td></td>
-    </tr>
-    <tr>
       <td>bootstrap_token_id</td>
       <td>[string](#string)</td>
       <td></td>
@@ -9989,6 +11648,12 @@ KubeletSpec describes root Kubernetes secrets.
       <td>bootstrap_token_secret</td>
       <td>[string](#string)</td>
       <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>accepted_c_as</td>
+      <td>[common.PEMEncodedCertificate](#common.PEMEncodedCertificate)</td>
+      <td>repeated</td>
       <td></td>
     </tr>
   </tbody>
@@ -10133,7 +11798,7 @@ KubernetesRootSpec describes root Kubernetes secrets.
       <td></td>
     </tr>
     <tr>
-      <td>ca</td>
+      <td>issuing_ca</td>
       <td>[common.PEMEncodedCertificateAndKey](#common.PEMEncodedCertificateAndKey)</td>
       <td></td>
       <td></td>
@@ -10177,6 +11842,12 @@ KubernetesRootSpec describes root Kubernetes secrets.
     <tr>
       <td>api_server_ips</td>
       <td>[common.NetIP](#common.NetIP)</td>
+      <td>repeated</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>accepted_c_as</td>
+      <td>[common.PEMEncodedCertificate](#common.PEMEncodedCertificate)</td>
       <td>repeated</td>
       <td></td>
     </tr>
@@ -10268,7 +11939,7 @@ OSRootSpec describes operating system CA.
   </thead>
   <tbody>
     <tr>
-      <td>ca</td>
+      <td>issuing_ca</td>
       <td>[common.PEMEncodedCertificateAndKey](#common.PEMEncodedCertificateAndKey)</td>
       <td></td>
       <td></td>
@@ -10289,6 +11960,12 @@ OSRootSpec describes operating system CA.
       <td>token</td>
       <td>[string](#string)</td>
       <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>accepted_c_as</td>
+      <td>[common.PEMEncodedCertificate](#common.PEMEncodedCertificate)</td>
+      <td>repeated</td>
       <td></td>
     </tr>
   </tbody>
@@ -10315,15 +11992,15 @@ TrustdCertsSpec describes etcd certs secrets.
   </thead>
   <tbody>
     <tr>
-      <td>ca</td>
+      <td>server</td>
       <td>[common.PEMEncodedCertificateAndKey](#common.PEMEncodedCertificateAndKey)</td>
       <td></td>
       <td></td>
     </tr>
     <tr>
-      <td>server</td>
-      <td>[common.PEMEncodedCertificateAndKey](#common.PEMEncodedCertificateAndKey)</td>
-      <td></td>
+      <td>accepted_c_as</td>
+      <td>[common.PEMEncodedCertificate](#common.PEMEncodedCertificate)</td>
+      <td>repeated</td>
       <td></td>
     </tr>
   </tbody>
@@ -10352,7 +12029,7 @@ TrustdCertsSpec describes etcd certs secrets.
 <a name="talos.resource.definitions.siderolink.ConfigSpec"></a>
 
 ### ConfigSpec
-ConfigSpec describes KubeSpan configuration..
+ConfigSpec describes Siderolink configuration.
 
 
 <table>
@@ -10368,6 +12045,112 @@ ConfigSpec describes KubeSpan configuration..
     <tr>
       <td>api_endpoint</td>
       <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>host</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>join_token</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>insecure</td>
+      <td>[bool](#bool)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>tunnel</td>
+      <td>[bool](#bool)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.siderolink.StatusSpec"></a>
+
+### StatusSpec
+StatusSpec describes Siderolink status.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>host</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>connected</td>
+      <td>[bool](#bool)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="talos.resource.definitions.siderolink.TunnelSpec"></a>
+
+### TunnelSpec
+TunnelSpec describes Siderolink GRPC Tunnel configuration.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>api_endpoint</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>link_name</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>mtu</td>
+      <td>[int64](#int64)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>node_address</td>
+      <td>[common.NetIPPort](#common.NetIPPort)</td>
       <td></td>
       <td></td>
     </tr>
@@ -13439,6 +15222,12 @@ FileInfo describes a file or directory's information
       <td></td>
       <td>Owner gid</td>
     </tr>
+    <tr>
+      <td>xattrs</td>
+      <td>[Xattr](#machine.Xattr)</td>
+      <td>repeated</td>
+      <td>Extended attributes (if present and requested)</td>
+    </tr>
   </tbody>
 </table>
 
@@ -13995,6 +15784,12 @@ ListRequest describes a request to list the contents of a directory.
       <td>repeated</td>
       <td>Types indicates what file type should be returned. If not indicated, all files will be returned.</td>
     </tr>
+    <tr>
+      <td>report_xattrs</td>
+      <td>[bool](#bool)</td>
+      <td></td>
+      <td>Report xattrs</td>
+    </tr>
   </tbody>
 </table>
 
@@ -14068,6 +15863,70 @@ ListRequest describes a request to list the contents of a directory.
     <tr>
       <td>messages</td>
       <td>[LoadAvg](#machine.LoadAvg)</td>
+      <td>repeated</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="machine.LogsContainer"></a>
+
+### LogsContainer
+LogsContainer desribes all avalaible registered log containers.
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>metadata</td>
+      <td>[common.Metadata](#common.Metadata)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>ids</td>
+      <td>[string](#string)</td>
+      <td>repeated</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<a name="machine.LogsContainersResponse"></a>
+
+### LogsContainersResponse
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>messages</td>
+      <td>[LogsContainer](#machine.LogsContainer)</td>
       <td>repeated</td>
       <td></td>
     </tr>
@@ -15721,6 +17580,12 @@ The messages message containing the requested df stats.
     </tr>
     <tr>
       <td>args</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>label</td>
       <td>[string](#string)</td>
       <td></td>
       <td></td>
@@ -17619,6 +19484,41 @@ rpc upgrade
 
 
 
+
+<a name="machine.Xattr"></a>
+
+### Xattr
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Label</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>name</td>
+      <td>[string](#string)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>data</td>
+      <td>[bytes](#bytes)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
  {/* end messages */}
 
 
@@ -18162,6 +20062,11 @@ File type.
       <td>7</td>
       <td></td>
     </tr>
+    <tr>
+      <td>STARTING</td>
+      <td>8</td>
+      <td></td>
+    </tr>
   </tbody>
 </table>
 
@@ -18296,12 +20201,6 @@ The machine service definition.
       <td></td>
     </tr>
     <tr>
-      <td>EtcdRemoveMember</td>
-      <td>[EtcdRemoveMemberRequest](#machine.EtcdRemoveMemberRequest)</td>
-      <td>[EtcdRemoveMemberResponse](#machine.EtcdRemoveMemberResponse)</td>
-      <td>EtcdRemoveMember removes a member from the etcd cluster by hostname. Please use EtcdRemoveMemberByID instead.</td>
-    </tr>
-    <tr>
       <td>EtcdRemoveMemberByID</td>
       <td>[EtcdRemoveMemberByIDRequest](#machine.EtcdRemoveMemberByIDRequest)</td>
       <td>[EtcdRemoveMemberByIDResponse](#machine.EtcdRemoveMemberByIDResponse)</td>
@@ -18395,6 +20294,12 @@ The machine service definition.
       <td>Logs</td>
       <td>[LogsRequest](#machine.LogsRequest)</td>
       <td>[.common.Data](#common.Data) stream</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>LogsContainers</td>
+      <td>[.google.protobuf.Empty](#google.protobuf.Empty)</td>
+      <td>[LogsContainersResponse](#machine.LogsContainersResponse)</td>
       <td></td>
     </tr>
     <tr>
@@ -18866,6 +20771,11 @@ DisksResponse represents the response of the `Disks` RPC.
     <tr>
       <td>SD</td>
       <td>4</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>CD</td>
+      <td>5</td>
       <td></td>
     </tr>
   </tbody>

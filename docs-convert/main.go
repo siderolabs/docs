@@ -243,6 +243,19 @@ func escapeAngleBracketPlaceholders(line string) string {
 	result := ""
 	i := 0
 	for i < len(line) {
+		// Check for HTML comment pattern <!--
+		if i+3 < len(line) && line[i:i+4] == "<!--" {
+			// Find the closing -->
+			end := strings.Index(line[i:], "-->")
+			if end != -1 {
+				// Extract comment content and convert to MDX format
+				commentContent := line[i+4 : i+end] // Extract text between <!-- and -->
+				result += "{/*" + commentContent + "*/}"
+				i = i + end + 3 // +3 for "-->"
+				continue
+			}
+		}
+
 		// Check for Hugo shortcode start pattern {{<
 		if i+2 < len(line) && line[i:i+3] == "{{<" {
 			// Find the closing >}}
@@ -266,9 +279,10 @@ func escapeAngleBracketPlaceholders(line string) string {
 				// Extract the content between < and >
 				content := line[i+1 : end]
 				// Check if it's likely a placeholder or text that should not be parsed as HTML
-				// Known HTML tags we want to preserve: a, br, Accordion, details, summary, pre, code and their closing tags
+				// Known HTML tags we want to preserve: a, br, p, Accordion, details, summary, pre, code and their closing tags
 				isKnownTag := strings.HasPrefix(content, "a ") ||
 					strings.HasPrefix(content, "br") ||
+					strings.HasPrefix(content, "p") ||
 					strings.HasPrefix(content, "Accordion") ||
 					strings.HasPrefix(content, "details") ||
 					strings.HasPrefix(content, "summary") ||
@@ -276,6 +290,7 @@ func escapeAngleBracketPlaceholders(line string) string {
 					strings.HasPrefix(content, "code") ||
 					content == "/a" ||
 					content == "/br" ||
+					content == "/p" ||
 					content == "/Accordion" ||
 					content == "/details" ||
 					content == "/summary" ||
@@ -457,6 +472,10 @@ func processCellContent(content string) string {
 	// Escape angle bracket placeholders
 	content = escapeAngleBracketPlaceholders(content)
 
+	// Collapse all whitespace (including newlines) into single spaces for MDX compatibility
+	// This prevents parsing errors with multi-line content in <td> tags
+	content = strings.Join(strings.Fields(content), " ")
+
 	return content
 }
 
@@ -561,12 +580,71 @@ func convertTableToHTML(lines []string, startIdx int) (string, int) {
 
 func main() {
 	if len(os.Args) < 3 {
-		fmt.Println("Usage: convert-docs <source_dir> <dest_dir>")
+		fmt.Println("Usage: convert-docs <source_file_or_dir> <dest_file_or_dir>")
 		os.Exit(1)
 	}
 
-	srcDir := os.Args[1]
-	dstDir := os.Args[2]
+	src := os.Args[1]
+	dst := os.Args[2]
+
+	// Check if source is a file or directory
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error accessing source: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Single file conversion
+	if !srcInfo.IsDir() {
+		if !strings.HasSuffix(src, ".md") {
+			fmt.Fprintf(os.Stderr, "Error: source file must be a .md file\n")
+			os.Exit(1)
+		}
+
+		// Skip _index.md files
+		if strings.Contains(src, "_index.md") {
+			fmt.Printf("Skipping _index.md file\n")
+			os.Exit(0)
+		}
+
+		// Determine the destination file path
+		dstPath := dst
+
+		// Check if destination is a directory or should be treated as one
+		dstInfo, err := os.Stat(dst)
+		if err == nil && dstInfo.IsDir() {
+			// Destination exists and is a directory - derive filename from source
+			srcBase := filepath.Base(src)
+			dstFilename := strings.TrimSuffix(srcBase, ".md") + ".mdx"
+			dstPath = filepath.Join(dst, dstFilename)
+		} else if err != nil && (strings.HasSuffix(dst, "/") || strings.HasSuffix(dst, "\\")) {
+			// Destination doesn't exist but ends with slash - treat as directory
+			srcBase := filepath.Base(src)
+			dstFilename := strings.TrimSuffix(srcBase, ".md") + ".mdx"
+			dstPath = filepath.Join(dst, dstFilename)
+		}
+
+		fmt.Printf("Converting single file: %s -> %s\n", src, dstPath)
+
+		// Create destination directory if it doesn't exist
+		if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil {
+			fmt.Fprintf(os.Stderr, "Error creating destination directory: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Convert the file
+		if err := convertFile(src, dstPath); err != nil {
+			fmt.Fprintf(os.Stderr, "Error converting file: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Println("Conversion complete!")
+		return
+	}
+
+	// Directory conversion (existing behavior)
+	srcDir := src
+	dstDir := dst
 
 	fmt.Printf("Converting docs from %s to %s\n", srcDir, dstDir)
 
@@ -575,7 +653,7 @@ func main() {
 	os.MkdirAll(dstDir, 0755)
 
 	// Walk through source directory
-	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

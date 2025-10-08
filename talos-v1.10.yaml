@@ -194,6 +194,7 @@ navigation:
             - "configuration/v1alpha1/config.mdx"
             - "kernel.mdx"
             - "cli.mdx"
+            - "api.mdx"
             - "configuration/extensions/extensionserviceconfig.mdx"
             - "configuration/hardware/pcidriverrebindconfig.mdx"
             - "configuration/security/trustedrootsconfig.mdx"
