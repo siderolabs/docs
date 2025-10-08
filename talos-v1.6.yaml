@@ -181,6 +181,7 @@ navigation:
             - "configuration/v1alpha1/config.mdx"
             - "kernel.mdx"
             - "cli.mdx"
+            - "api.mdx"
             - "configuration/siderolink/siderolinkconfig.mdx"
             - group: "Network"
               pages:
