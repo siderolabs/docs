@@ -1165,6 +1165,34 @@
                 ]
               },
               {
+                "group": "Reference",
+                "pages": [
+                  "talos/v1.8/reference/v1alpha1/config",
+                  "talos/v1.8/reference/kernel",
+                  "talos/v1.8/reference/cli",
+                  "talos/v1.8/reference/extensions/extensionserviceconfig",
+                  "talos/v1.8/reference/security/trustedrootsconfig",
+                  "talos/v1.8/reference/siderolink/siderolinkconfig",
+                  "talos/v1.8/reference/block/volumeconfig",
+                  {
+                    "group": "Network",
+                    "pages": [
+                      "talos/v1.8/reference/network/kubespanendpointsconfig",
+                      "talos/v1.8/reference/network/networkdefaultactionconfig",
+                      "talos/v1.8/reference/network/networkruleconfig"
+                    ]
+                  },
+                  {
+                    "group": "Runtime",
+                    "pages": [
+                      "talos/v1.8/reference/runtime/eventsinkconfig",
+                      "talos/v1.8/reference/runtime/kmsglogconfig",
+                      "talos/v1.8/reference/runtime/watchdogtimerconfig"
+                    ]
+                  }
+                ]
+              },
+              {
                 "group": "Troubleshooting and support",
                 "pages": [
                   "talos/v1.8/troubleshooting/troubleshooting",
