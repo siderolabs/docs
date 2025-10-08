@@ -96,7 +96,6 @@ navigation:
             - "advanced-networking.mdx"
             - "corporate-proxies.mdx"
             - "egress-domains.mdx"
-            - "ethernet-config.mdx"
             - "host-dns.mdx"
             - "ingress-firewall.mdx"
             - "kubespan.mdx"
@@ -153,14 +152,12 @@ navigation:
             - group: "Images & Container Runtime"
               pages:
                 - "images-container-runtime/containerd"
-                - "images-container-runtime/image-cache"
                 - "images-container-runtime/pull-through-cache"
                 - "images-container-runtime/static-pods"
             - group: "Storage & Disk Management"
               folder: "talos/v1.7/configure-your-talos-cluster"
               pages:
                 - "storage-and-disk-management/disk-encryption"
-                - "storage-and-disk-management/disk-management"
             - group: "Logging & Telemetry"
               pages:
                 - "logging-and-telemetry/logging"

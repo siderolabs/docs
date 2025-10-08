@@ -1,6 +1,6 @@
 ---
-description: 'UserVolumeConfig is a user volume configuration document. User volume is automatically allocated as a partition on the specified disk and mounted under `/var/mnt/<name>`. The partition label is automatically generated as `u-<name>`.'
-title: UserVolumeConfig
+description: 'SwapVolumeConfig is a disk swap volume configuration document. Swap volume is automatically allocated as a partition on the specified disk and activated as swap, removing a swap volume deactivates swap. The partition label is automatically generated as `s-<name>`.'
+title: SwapVolumeConfig
 ---
 
 {/*
@@ -19,36 +19,24 @@ Do not edit manually. For more information, see https://github.com/siderolabs/do
 
 ```yaml
 apiVersion: v1alpha1
-kind: UserVolumeConfig
-name: local-data # Name of the volume.
+kind: SwapVolumeConfig
+name: swap1 # Name of the volume.
 # The provisioning describes how the volume is provisioned.
 provisioning:
     # The disk selector expression.
     diskSelector:
         match: disk.transport == "nvme" # The Common Expression Language (CEL) expression to match the disk.
-    maxSize: 50GiB # The maximum size of the volume, if not specified the volume can grow to the size of the
-
-    # # The minimum size of the volume.
-    # minSize: 2.5GiB
-# The filesystem describes how the volume is formatted.
-filesystem:
-    type: xfs # Filesystem type. Default is `xfs`.
+    minSize: 3GiB # The minimum size of the volume.
+    maxSize: 4GiB # The maximum size of the volume, if not specified the volume can grow to the size of the
 # The encryption describes how the volume is encrypted.
 encryption:
     provider: luks2 # Encryption provider to use for the encryption.
     # Defines the encryption keys generation and storage method.
     keys:
         - slot: 0 # Key slot number for LUKS2 encryption.
-          # Enable TPM based disk encryption.
-          tpm: {}
-
-          # # KMS managed encryption key.
-          # kms:
-          #     endpoint: https://192.168.88.21:4443 # KMS endpoint to Seal/Unseal the key.
-        - slot: 1 # Key slot number for LUKS2 encryption.
           # Key which value is stored in the configuration file.
           static:
-            passphrase: topsecret # Defines the static passphrase value.
+            passphrase: swapsecret # Defines the static passphrase value.
 
           # # KMS managed encryption key.
           # kms:
@@ -87,12 +75,6 @@ encryption:
       <td>`provisioning`</td>
       <td><a href="#provisioning">ProvisioningSpec</a></td>
       <td>The provisioning describes how the volume is provisioned.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`filesystem`</td>
-      <td><a href="#filesystem">FilesystemSpec</a></td>
-      <td>The filesystem describes how the volume is formatted.</td>
       <td></td>
     </tr>
     <tr>
@@ -179,42 +161,6 @@ DiskSelector selects a disk for the volume.
 </table>
 
 
-
-
-
-
-
-## filesystem
-
-FilesystemSpec configures the filesystem for the volume.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`type`</td>
-      <td>FilesystemType</td>
-      <td>Filesystem type. Default is `xfs`.</td>
-      <td>`ext4`<br />`xfs`<br /></td>
-    </tr>
-    <tr>
-      <td>`projectQuotaSupport`</td>
-      <td>bool</td>
-      <td>Enables project quota support, valid only for 'xfs' filesystem.<br /><br />Note: changing this value might require a full remount of the filesystem.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
 
 
 
