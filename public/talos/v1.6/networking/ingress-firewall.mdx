@@ -235,9 +235,3 @@ table inet talos {
   }
 }
 ```
-
-The running `nftable` configuration can be inspected with `talosctl get nftableschain -o yaml`.
-
-The Ingress Firewall documents can be extracted from the machine config with the following command:
-
- `talosctl read /system/state/config.yaml | yq 'select(.kind == "NetworkDefaultActionConfig"),select(.kind == "NetworkRuleConfig" )'`

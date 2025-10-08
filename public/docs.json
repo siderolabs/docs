@@ -972,7 +972,6 @@
                   {
                     "group": "Bare Metal Platforms",
                     "pages": [
-                      "talos/v1.8/platform-specific-installations/bare-metal-platforms/bootloader",
                       "talos/v1.8/platform-specific-installations/bare-metal-platforms/equinix-metal",
                       "talos/v1.8/platform-specific-installations/bare-metal-platforms/iso",
                       "talos/v1.8/platform-specific-installations/bare-metal-platforms/matchbox",
@@ -1028,12 +1027,10 @@
                       "talos/v1.8/platform-specific-installations/single-board-computers/nanopi_r4s",
                       "talos/v1.8/platform-specific-installations/single-board-computers/jetson_nano",
                       "talos/v1.8/platform-specific-installations/single-board-computers/libretech_all_h3_cc_h5",
-                      "talos/v1.8/platform-specific-installations/single-board-computers/orangepi_5",
                       "talos/v1.8/platform-specific-installations/single-board-computers/orangepi_r1_plus_lts",
                       "talos/v1.8/platform-specific-installations/single-board-computers/pine64",
                       "talos/v1.8/platform-specific-installations/single-board-computers/rock64",
                       "talos/v1.8/platform-specific-installations/single-board-computers/rock4cplus",
-                      "talos/v1.8/platform-specific-installations/single-board-computers/rock5b",
                       "talos/v1.8/platform-specific-installations/single-board-computers/rockpi_4",
                       "talos/v1.8/platform-specific-installations/single-board-computers/rockpi_4c",
                       "talos/v1.8/platform-specific-installations/single-board-computers/rpi_generic",
@@ -1061,7 +1058,6 @@
                   "talos/v1.8/networking/advanced-networking",
                   "talos/v1.8/networking/corporate-proxies",
                   "talos/v1.8/networking/egress-domains",
-                  "talos/v1.8/networking/ethernet-config",
                   "talos/v1.8/networking/host-dns",
                   "talos/v1.8/networking/ingress-firewall",
                   "talos/v1.8/networking/kubespan",
@@ -1095,7 +1091,6 @@
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/developing-talos",
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/extension-services",
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/kernel-module",
-                      "talos/v1.8/build-and-extend-talos/custom-images-and-development/oci-base-spec",
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/overlays",
                       "talos/v1.8/build-and-extend-talos/custom-images-and-development/system-extensions"
                     ]
@@ -1130,7 +1125,6 @@
                     "group": "Images \u0026 Container Runtime",
                     "pages": [
                       "talos/v1.8/configure-your-talos-cluster/images-container-runtime/containerd",
-                      "talos/v1.8/configure-your-talos-cluster/images-container-runtime/image-cache",
                       "talos/v1.8/configure-your-talos-cluster/images-container-runtime/pull-through-cache",
                       "talos/v1.8/configure-your-talos-cluster/images-container-runtime/static-pods"
                     ]
@@ -1373,7 +1367,7 @@
                       "talos/v1.7/build-and-extend-talos/custom-images-and-development/developing-talos",
                       "talos/v1.7/build-and-extend-talos/custom-images-and-development/extension-services",
                       "talos/v1.7/build-and-extend-talos/custom-images-and-development/kernel-module",
-                      "talos/v1.7/build-and-extend-talos/custom-images-and-development/oci-base-spec",
+                      "talos/v1.7/build-and-extend-talos/custom-images-and-development/proprietary-kernel-modules",
                       "talos/v1.7/build-and-extend-talos/custom-images-and-development/overlays",
                       "talos/v1.7/build-and-extend-talos/custom-images-and-development/system-extensions"
                     ]
@@ -1382,7 +1376,6 @@
                     "group": "Cluster Operations \u0026 Maintenance",
                     "pages": [
                       "talos/v1.7/build-and-extend-talos/cluster-operations-and-maintenance/disaster-recovery",
-                      "talos/v1.7/build-and-extend-talos/cluster-operations-and-maintenance/cgroups-analysis",
                       "talos/v1.7/build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance",
                       "talos/v1.7/build-and-extend-talos/cluster-operations-and-maintenance/watchdog"
                     ]
@@ -1397,7 +1390,6 @@
                     "pages": [
                       "talos/v1.7/configure-your-talos-cluster/system-configuration/patching",
                       "talos/v1.7/configure-your-talos-cluster/system-configuration/editing-machine-configuration",
-                      "talos/v1.7/configure-your-talos-cluster/system-configuration/performance-tuning",
                       "talos/v1.7/configure-your-talos-cluster/system-configuration/time-sync",
                       "talos/v1.7/configure-your-talos-cluster/system-configuration/discovery",
                       "talos/v1.7/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
@@ -1444,7 +1436,6 @@
               {
                 "group": "Advanced guides",
                 "pages": [
-                  "talos/v1.7/advanced-guides/install-kubevirt",
                   "talos/v1.7/advanced-guides/migrating-from-kubeadm"
                 ]
               },
@@ -1608,7 +1599,6 @@
                   "talos/v1.6/networking/advanced-networking",
                   "talos/v1.6/networking/corporate-proxies",
                   "talos/v1.6/networking/egress-domains",
-                  "talos/v1.6/networking/host-dns",
                   "talos/v1.6/networking/ingress-firewall",
                   "talos/v1.6/networking/kubespan",
                   "talos/v1.6/networking/metal-network-configuration",
@@ -1622,7 +1612,6 @@
               {
                 "group": "Security",
                 "pages": [
-                  "talos/v1.6/security/ca-rotation",
                   "talos/v1.6/security/cert-management",
                   "talos/v1.6/security/certificate-authorities",
                   "talos/v1.6/security/machine-config-oauth",
@@ -1637,12 +1626,10 @@
                     "group": "Custom Images \u0026 Development",
                     "pages": [
                       "talos/v1.6/build-and-extend-talos/custom-images-and-development/building-images",
+                      "talos/v1.6/build-and-extend-talos/custom-images-and-development/proprietary-kernel-modules",
                       "talos/v1.6/build-and-extend-talos/custom-images-and-development/customizing-the-kernel",
                       "talos/v1.6/build-and-extend-talos/custom-images-and-development/developing-talos",
                       "talos/v1.6/build-and-extend-talos/custom-images-and-development/extension-services",
-                      "talos/v1.6/build-and-extend-talos/custom-images-and-development/kernel-module",
-                      "talos/v1.6/build-and-extend-talos/custom-images-and-development/oci-base-spec",
-                      "talos/v1.6/build-and-extend-talos/custom-images-and-development/overlays",
                       "talos/v1.6/build-and-extend-talos/custom-images-and-development/system-extensions"
                     ]
                   },
@@ -1650,7 +1637,6 @@
                     "group": "Cluster Operations \u0026 Maintenance",
                     "pages": [
                       "talos/v1.6/build-and-extend-talos/cluster-operations-and-maintenance/disaster-recovery",
-                      "talos/v1.6/build-and-extend-talos/cluster-operations-and-maintenance/cgroups-analysis",
                       "talos/v1.6/build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance"
                     ]
                   }
@@ -1664,8 +1650,6 @@
                     "pages": [
                       "talos/v1.6/configure-your-talos-cluster/system-configuration/patching",
                       "talos/v1.6/configure-your-talos-cluster/system-configuration/editing-machine-configuration",
-                      "talos/v1.6/configure-your-talos-cluster/system-configuration/performance-tuning",
-                      "talos/v1.6/configure-your-talos-cluster/system-configuration/time-sync",
                       "talos/v1.6/configure-your-talos-cluster/system-configuration/discovery",
                       "talos/v1.6/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
                       "talos/v1.6/configure-your-talos-cluster/system-configuration/insecure"
@@ -1711,7 +1695,6 @@
               {
                 "group": "Advanced guides",
                 "pages": [
-                  "talos/v1.6/advanced-guides/install-kubevirt",
                   "talos/v1.6/advanced-guides/migrating-from-kubeadm"
                 ]
               },

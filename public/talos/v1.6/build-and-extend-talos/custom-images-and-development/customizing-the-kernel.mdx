@@ -5,7 +5,7 @@ aliases:
   - ../guides/customizing-the-kernel
 ---
 
-import { release_branch_v1_10 } from '/snippets/custom-variables.mdx';
+import { release_branch_v1_6 } from '/snippets/custom-variables.mdx';
 
 Talos Linux configures the kernel to allow loading only cryptographically signed modules.
 The signing key is generated during the build process, it is unique to each build, and it is not available to the user.
@@ -32,7 +32,7 @@ Checkout the [`siderolabs/pkgs`](https://github.com/siderolabs/pkgs) repository:
 {`
 git clone https://github.com/siderolabs/pkgs.git
 cd pkgs
-git checkout ${release_branch_v1_10}
+git checkout ${release_branch_v1_6}
 `}
 </CodeBlock>
 

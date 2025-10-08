@@ -114,11 +114,11 @@ The endpoint being used is `10.5.0.1`, as this is the default bridge interface a
 
 <CodeBlock lang="sh">
 {`
-$ sudo --preserve-env=HOME talosctl cluster create --provisioner=qemu --install-image=ghcr.io/siderolabs/installer:${release_v1_6 } \
-  --registry-mirror docker.io=http://10.5.0.1:6000 \
-  --registry-mirror gcr.io=http://10.5.0.1:6000 \
-  --registry-mirror ghcr.io=http://10.5.0.1:6000 \
-  --registry-mirror registry.k8s.io=http://10.5.0.1:6000 \
+$ sudo --preserve-env=HOME talosctl cluster create --provisioner=qemu --install-image=ghcr.io/siderolabs/installer:${release_v1_6 } \\
+  --registry-mirror docker.io=http://10.5.0.1:6000 \\
+  --registry-mirror gcr.io=http://10.5.0.1:6000 \\
+  --registry-mirror ghcr.io=http://10.5.0.1:6000 \\
+  --registry-mirror registry.k8s.io=http://10.5.0.1:6000 \\
 validating CIDR and reserving IPs
 generating PKI and tokens
 creating state directory in "/home/user/.talos/clusters/talos-default"

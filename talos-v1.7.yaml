@@ -126,14 +126,13 @@ navigation:
                 - "custom-images-and-development/developing-talos"
                 - "custom-images-and-development/extension-services"
                 - "custom-images-and-development/kernel-module"
-                - "custom-images-and-development/oci-base-spec"
+                - "custom-images-and-development/proprietary-kernel-modules"
                 - "custom-images-and-development/overlays"
                 - "custom-images-and-development/system-extensions"
             - group: "Cluster Operations & Maintenance"
               folder: "talos/v1.7/build-and-extend-talos"
               pages:
                 - "cluster-operations-and-maintenance/disaster-recovery"
-                - "cluster-operations-and-maintenance/cgroups-analysis"
                 - "cluster-operations-and-maintenance/etcd-maintenance"
                 - "cluster-operations-and-maintenance/watchdog"
 
@@ -144,7 +143,6 @@ navigation:
               pages:
                 - "system-configuration/patching"
                 - "system-configuration/editing-machine-configuration"
-                - "system-configuration/performance-tuning"
                 - "system-configuration/time-sync"
                 - "system-configuration/discovery"
                 - "system-configuration/reproducible-machine-configuration"
@@ -174,7 +172,6 @@ navigation:
         - group: "Advanced guides"
           folder: "talos/v1.7/advanced-guides"
           pages:
-            - "install-kubevirt.mdx"
             - "migrating-from-kubeadm.mdx"
 
         - group: "Reference"

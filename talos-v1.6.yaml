@@ -91,7 +91,6 @@ navigation:
             - "advanced-networking.mdx"
             - "corporate-proxies.mdx"
             - "egress-domains.mdx"
-            - "host-dns.mdx"
             - "ingress-firewall.mdx"
             - "kubespan.mdx"
             - "metal-network-configuration.mdx"
@@ -104,7 +103,6 @@ navigation:
         - group: "Security"
           folder: "talos/v1.6/security"
           pages:
-            - "ca-rotation.mdx"
             - "cert-management.mdx"
             - "certificate-authorities.mdx"
             - "machine-config-oauth.mdx"
@@ -117,18 +115,15 @@ navigation:
             - group: "Custom Images & Development"
               pages:
                 - "custom-images-and-development/building-images"
+                - "custom-images-and-development/proprietary-kernel-modules"
                 - "custom-images-and-development/customizing-the-kernel"
                 - "custom-images-and-development/developing-talos"
                 - "custom-images-and-development/extension-services"
-                - "custom-images-and-development/kernel-module"
-                - "custom-images-and-development/oci-base-spec"
-                - "custom-images-and-development/overlays"
                 - "custom-images-and-development/system-extensions"
             - group: "Cluster Operations & Maintenance"
               folder: "talos/v1.6/build-and-extend-talos"
               pages:
                 - "cluster-operations-and-maintenance/disaster-recovery"
-                - "cluster-operations-and-maintenance/cgroups-analysis"
                 - "cluster-operations-and-maintenance/etcd-maintenance"
 
         - group: "Configure your Talos cluster"
@@ -138,8 +133,6 @@ navigation:
               pages:
                 - "system-configuration/patching"
                 - "system-configuration/editing-machine-configuration"
-                - "system-configuration/performance-tuning"
-                - "system-configuration/time-sync"
                 - "system-configuration/discovery"
                 - "system-configuration/reproducible-machine-configuration"
                 - "system-configuration/insecure"
@@ -168,7 +161,6 @@ navigation:
         - group: "Advanced guides"
           folder: "talos/v1.6/advanced-guides"
           pages:
-            - "install-kubevirt.mdx"
             - "migrating-from-kubeadm.mdx"
 
         - group: "Reference"

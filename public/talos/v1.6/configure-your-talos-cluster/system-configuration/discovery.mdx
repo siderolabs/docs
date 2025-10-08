@@ -22,8 +22,6 @@ Sidero Labs runs a public external registry service, which is enabled by default
 The Kubernetes registry service is disabled by default.
 The advantage of the external registry service is that it is not dependent on etcd, and thus can inform you of cluster membership even when Kubernetes is down.
 
-> Note: Kubernetes registry is deprecated as it is not compatible with Kubernetes 1.32 and later versions in the default configuration.
-
 ## Video Walkthrough
 
 To see a live demo of Cluster Discovery, see the video below:
@@ -61,11 +59,6 @@ Annotations:        cluster.talos.dev/node-id: Utoh3O0ZneV0kT2IUBrh7TgdouRcUW2yz
                     networking.talos.dev/self-ips: 172.20.0.2,fd83:b1f7:fcb5:2802:8c13:71ff:feaf:7c94
 ...
 ```
-
-> Note: Starting with Kubernetes 1.32, the feature gate `AuthorizeNodeWithSelectors` enables additional authorization for `Node` resource read access via `system:node:*` role.
-> This prevents Talos Kubernetes registry from functioning correctly.
-> The workaround is to disable the feature gate on the API server, but it's not recommended as it disables also other important security protections.
-> For this reason, the Kubernetes registry is deprecated and disabled by default.
 
 ### Discovery Service Registry
 
