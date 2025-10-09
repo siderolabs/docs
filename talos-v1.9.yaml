@@ -101,7 +101,6 @@ navigation:
             - "advanced-networking.mdx"
             - "corporate-proxies.mdx"
             - "egress-domains.mdx"
-            - "ethernet-config.mdx"
             - "host-dns.mdx"
             - "ingress-firewall.mdx"
             - "kubespan.mdx"

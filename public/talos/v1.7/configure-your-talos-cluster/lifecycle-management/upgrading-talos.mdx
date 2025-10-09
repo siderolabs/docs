@@ -5,12 +5,9 @@ aliases:
   - ../guides/upgrading-talos
 ---
 
-import { release_v1_7  } from '/snippets/custom-variables.mdx';
-
 OS upgrades are effected by an API call, which can be sent via the `talosctl` CLI utility.
 
 The upgrade API call passes a node the installer image to use to perform the upgrade.
-
 Each Talos version has a corresponding installer image, listed on the release page for the version, for example <a href={`https://github.com/siderolabs/talos/releases/tag/${release_v1_7 }`}>{release_v1_7 }</a>.
 
 Upgrades use an A-B image scheme in order to facilitate rollbacks.
@@ -21,7 +18,7 @@ Likewise, Talos may be manually rolled back via API (or `talosctl rollback`), wh
 Unless explicitly told to `preserve` data, an upgrade will cause the node to wipe the [EPHEMERAL](../../learn-more/architecture#file-system-partitions) partition, remove itself from the etcd cluster (if it is a controlplane node), and make itself as pristine as is possible.
 (This is the desired behavior except in specialised use cases such as single-node clusters.)
 
-**Note**: An upgrade of the Talos Linux OS will not (since v1.0) apply an upgrade to the Kubernetes version by default.
+*Note* An upgrade of the Talos Linux OS will not (since v1.0) apply an upgrade to the Kubernetes version by default.
 Kubernetes upgrades should be managed separately per [upgrading kubernetes](../../../../kubernetes-guides/advanced-guides/upgrading-kubernetes).
 
 ## Supported Upgrade Paths
@@ -39,7 +36,9 @@ For example, if upgrading from Talos 1.0 to Talos 1.2.4, the recommended upgrade
 
 ## Before Upgrade to {release_v1_7 }
 
-Talos 1.9 replaces `eudev` with `systemd-udev` as the `udevd` provider, which might lead to changes of the predictable network interface names.
+There are no specific actions to be taken before an upgrade.
+
+Please review the [release notes](../../getting-started/what's-new-in-talos) for any changes that may affect your cluster.
 
 ## Video Walkthrough
 
@@ -60,12 +59,15 @@ For instance, if your Talos node has the IP address `10.20.30.40` and you want
 to install the current version, you would enter a command such
 as:
 
-<CodeBlock lang="sh">
-{`
-  $ talosctl upgrade --nodes 10.20.30.40 \
-  --image ghcr.io/siderolabs/installer:${release_v1_7 }
-`}
-</CodeBlock>
+<CodeBlock lang="sh">{`
+talosctl upgrade --nodes 10.20.30.40 \
+  --image ghcr.io/siderolabs/installer:${release_v1_7}
+`}</CodeBlock>
+
+
+There is an option to this command: `--preserve`, which will explicitly tell Talos to keep ephemeral data intact.
+In most cases, it is correct to let Talos perform its default action of erasing the ephemeral data.
+However, for a single-node control-plane, make sure that `--preserve=true`.
 
 Rarely, an upgrade command will fail due to a process holding a file open on disk.
 In these cases, you can use the `--stage` flag.
@@ -77,16 +79,19 @@ Note that because Talos Linux reboots via the `kexec` syscall, the extra reboot 
 
 ## Machine Configuration Changes
 
-* new configuration documents:
-  * [UserVolumeConfig](../../reference/configuration/block/uservolumeconfig)
-  * [PCIDriverRebindConfig](../../reference/configuration/hardware/pcidriverrebindconfig)
-  * [EthernetConfig](../../reference/configuration/network/ethernetconfig)
-* deprecations:
-  * `.machine.install.extensions` is ignored now, see [Boot Assets](../../platform-specific-installations/boot-assets) for alternative
-  * `.machine.disks` is deprecated, use [User Volumes](../storage-and-disk-management/disk-management#user-volumes) instead
-* change in behavior:
-  * when using `systemd-boot` as a bootloader (default for new clusters created with Talos 1.10+ on UEFI platforms), the `.machine.install.extraKernelArgs` is ignored,
-    use upgrade to change kernel arguments
+New configuration documents:
+
+* [Ingress Firewall](../../networking/ingress-firewall) configuration: [NetworkRuleConfig](../../reference/configuration/network/networkruleconfig) and [NetworkDefaultActionConfig](../../reference/configuration/network/networkdefaultactionconfig).
+
+Updates in [v1alpha1 Config](../../reference/configuration/v1alpha1/config):
+
+* `.persist` option was removed
+* `.machine.nodeTaints` configures Kubernetes node taints
+* `.machine.kubelet.extraMounts` supports new fields `uidMappings` and `gidMappings`
+* `.machine.kubelet.credendtialProviderConfig` configures `kubelet` credential provider
+* `.machine.network.kubespan.harvestExtraEndpoints` to disable harvesting extra endpoints
+* `.cluster.cni.flannel` provides customization for the default Flannel CNI manifest
+* `.cluster.scheduler.config` provides custom `kube-scheduler` configuration
 
 ## Upgrade Sequence
 
@@ -98,6 +103,9 @@ It then starts to drain its existing workload.
 
 Once all of the workload Pods are drained, Talos will start shutting down its
 internal processes.
+If it is a control node, this will include etcd.
+If `preserve` is not enabled, Talos will leave etcd membership.
+(Talos ensures the etcd cluster is healthy and will remain healthy after our node leaves the etcd cluster, before allowing a control plane node to be upgraded.)
 
 Once all the processes are stopped and the services are shut down, the filesystems will be unmounted.
 This allows Talos to produce a very clean upgrade, as close as possible to a pristine system.
@@ -144,6 +152,7 @@ From the user's standpoint, however, the processes are identical.
 However, since control plane nodes run additional services, such as etcd, there are some extra steps and checks performed on them.
 For instance, Talos will refuse to upgrade a control plane node if that upgrade would cause a loss of quorum for etcd.
 If multiple control plane nodes are asked to upgrade at the same time, Talos will protect the Kubernetes cluster by ensuring only one control plane node actively upgrades at any time, via checking etcd quorum.
+If running a single-node cluster, and you want to force an upgrade despite the loss of quorum, you can set `preserve` to `true`.
 
 **Q.** Can I break my cluster by upgrading everything at once?
 

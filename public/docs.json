@@ -778,7 +778,6 @@
                   "talos/v1.9/networking/advanced-networking",
                   "talos/v1.9/networking/corporate-proxies",
                   "talos/v1.9/networking/egress-domains",
-                  "talos/v1.9/networking/ethernet-config",
                   "talos/v1.9/networking/host-dns",
                   "talos/v1.9/networking/ingress-firewall",
                   "talos/v1.9/networking/kubespan",
@@ -1341,7 +1340,6 @@
                   "talos/v1.7/networking/advanced-networking",
                   "talos/v1.7/networking/corporate-proxies",
                   "talos/v1.7/networking/egress-domains",
-                  "talos/v1.7/networking/ethernet-config",
                   "talos/v1.7/networking/host-dns",
                   "talos/v1.7/networking/ingress-firewall",
                   "talos/v1.7/networking/kubespan",
@@ -1410,7 +1408,6 @@
                     "group": "Images \u0026 Container Runtime",
                     "pages": [
                       "talos/v1.7/configure-your-talos-cluster/images-container-runtime/containerd",
-                      "talos/v1.7/configure-your-talos-cluster/images-container-runtime/image-cache",
                       "talos/v1.7/configure-your-talos-cluster/images-container-runtime/pull-through-cache",
                       "talos/v1.7/configure-your-talos-cluster/images-container-runtime/static-pods"
                     ]
@@ -1418,8 +1415,7 @@
                   {
                     "group": "Storage \u0026 Disk Management",
                     "pages": [
-                      "talos/v1.7/configure-your-talos-cluster/storage-and-disk-management/disk-encryption",
-                      "talos/v1.7/configure-your-talos-cluster/storage-and-disk-management/disk-management"
+                      "talos/v1.7/configure-your-talos-cluster/storage-and-disk-management/disk-encryption"
                     ]
                   },
                   {
@@ -1612,7 +1608,6 @@
                   "talos/v1.6/networking/advanced-networking",
                   "talos/v1.6/networking/corporate-proxies",
                   "talos/v1.6/networking/egress-domains",
-                  "talos/v1.6/networking/ethernet-config",
                   "talos/v1.6/networking/host-dns",
                   "talos/v1.6/networking/ingress-firewall",
                   "talos/v1.6/networking/kubespan",
@@ -1680,7 +1675,6 @@
                     "group": "Images \u0026 Container Runtime",
                     "pages": [
                       "talos/v1.6/configure-your-talos-cluster/images-container-runtime/containerd",
-                      "talos/v1.6/configure-your-talos-cluster/images-container-runtime/image-cache",
                       "talos/v1.6/configure-your-talos-cluster/images-container-runtime/pull-through-cache",
                       "talos/v1.6/configure-your-talos-cluster/images-container-runtime/static-pods"
                     ]
@@ -1688,8 +1682,7 @@
                   {
                     "group": "Storage \u0026 Disk Management",
                     "pages": [
-                      "talos/v1.6/configure-your-talos-cluster/storage-and-disk-management/disk-encryption",
-                      "talos/v1.6/configure-your-talos-cluster/storage-and-disk-management/disk-management"
+                      "talos/v1.6/configure-your-talos-cluster/storage-and-disk-management/disk-encryption"
                     ]
                   },
                   {
