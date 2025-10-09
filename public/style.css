@@ -12,50 +12,42 @@
 
 /* Table Styling */
 table {
+  --border-color: #e5e7eb;
+  --bg-color-even: #dedede;
+  --bg-color-hover: #f3f4f6;
+
+  &:is(.dark *) {
+    --border-color: #374151;
+    --bg-color-even: #1f2937;
+    --bg-color-hover: #374151;
+  }
+
   table-layout: auto;
   border-collapse: collapse;
   width: 100%;
   margin: 1rem 0;
-}
 
-th,
-td {
-  padding: 0.5rem 1rem;
-  text-align: left;
-}
-
-/* Default (Light Mode) Table Styling */
-td {
-  border: 1px solid #e5e7eb;
-}
-
-tbody {
-  border: 1px solid #e5e7eb;
-}
-
-tbody tr:nth-child(even) {
-  background-color: #dedede;
-}
-
-tbody tr:hover {
-  background-color: #f3f4f6;
-}
-
-/* Dark Mode Table Styling */
-@media (prefers-color-scheme: dark) {
+  th,
   td {
-    border: 1px solid #374151;
+    padding: 0.5rem 1rem;
+    text-align: left;
+  }
+
+  td {
+    border: 1px solid var(--border-color);
   }
 
   tbody {
-    border: 1px solid #374151;
-  }
+    border: 1px solid var(--border-color);
 
-  tbody tr:nth-child(even) {
-    background-color: #1f2937;
-  }
+    tr {
+      &:nth-child(even) {
+        background-color: var(--bg-color-even);
+      }
 
-  tbody tr:hover {
-    background-color: #374151;
+      &:hover {
+        background-color: var(--bg-color-hover);
+      }
+    }
   }
 }
