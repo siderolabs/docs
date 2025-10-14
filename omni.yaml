@@ -64,6 +64,7 @@ navigation:
             - "etcd-backups.mdx"
             - "restore-etcd-of-a-cluster-managed-by-cluster-templates.mdx"
             - "using-audit-log.mdx"
+            - "importing-talos-clusters.mdx"
 
         - group: "Security and Authentication"
           folder: "omni/security-and-authentication"

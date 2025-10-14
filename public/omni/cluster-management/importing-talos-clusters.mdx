@@ -1,0 +1,199 @@
+---
+title: Importing Talos Clusters
+---
+
+This guide will walk you through the steps to import an existing Talos cluster into Omni.
+
+<Info>
+    This is an experimental feature. It does not support Talos installations with custom built Linux kernel or custom built extensions.
+</Info>
+
+## Prerequisites
+
+Before you begin you will need the following:
+
+### CLI utilities
+
+You will need [`omnictl`](../getting-started/install-and-configure-omnictl) installed and configured to follow this guide.
+
+You might also benefit from having [`talosctl`](../getting-started/how-to-install-talosctl), to discover Talos nodes and monitor the state of the Talos cluster.
+
+### Network access
+
+`omnictl` needs to be able to reach your Omni instance, Image Factory (Omni uses the default [Image Factory](https://factory.talos.dev/) if not configured otherwise) and Talos nodes over the network.
+
+Also, your Omni instance needs to be able to reach the Talos nodes over the network. If your nodes are behind a firewall, in a private network, or otherwise not directly reachable, you would need to configure a load balancer to forward TCP port 50000 to reach the nodes for Talos API access.
+
+### Authorization
+
+You will need to have `os:admin` role for the Talos cluster you want to import.
+
+You will need Omni role `Operator` or above in Omni to be able to create the necessary resources.
+
+## Cluster Import
+
+`omnictl cluster import` command has several key flags that, if omitted, are automatically inferred from the connected cluster or the local environment. These flags can be seen below. Note that this list doesn't include all possible flags.
+
+```
+--nodes strings                       endpoints of all nodes to import
+--talos-version string                talos version of the cluster, if not set, will be detected from the nodes
+--kubernetes-version string           kubernetes version of the cluster, if not set, will be detected from the nodes
+--initial-talos-version string        initial talos version used on cluster creation, if not set current talos version will be used
+--initial-kubernetes-version string   initial kubernetes version used on cluster creation, if not set current kubernetes version will be used
+--talosconfig string                  The path to the Talos configuration file. Defaults to 'TALOSCONFIG' env variable if set, otherwise '$HOME/.talos/config'.
+--talos-context string                the context to be used for accessing talos. defaults to the selected context in the Talos configuration file
+--talos-endpoints strings             override default endpoints in Talos configuration file
+```
+
+To check what will happen during the import process you can run `omnictl cluster import` with the `--dry-run` flag:
+
+```shell
+$ omnictl cluster import \
+  --talosconfig admin-talosconfig \
+  --nodes 172.20.0.2,172.20.0.3,172.20.0.4,172.20.0.5,172.20.0.6,172.20.0.7,172.20.0.8,172.20.0.9 \
+  --talos-version v1.11.2 \
+  --kubernetes-version v1.33.1 \
+  --initial-talos-version v1.10.2 \
+  --initial-kubernetes-version v1.32.1 \
+  --dry-run
+importing cluster "talos-default" to Omni
+discovering Talos cluster state...
+importing cluster "talos-default" with 8 nodes (1 control planes, 7 workers)
+validating cluster status...
+checking cluster health...
+ > discovered nodes: ["172.20.0.2" "172.20.0.3" "172.20.0.4" "172.20.0.5" "172.20.0.6" "172.20.0.7" "172.20.0.8" "172.20.0.9"]
+ > waiting for etcd to be healthy: ...
+ > waiting for etcd to be healthy: OK
+ > waiting for etcd members to be consistent across nodes: ...
+ > waiting for etcd members to be consistent across nodes: OK
+ > waiting for etcd members to be control plane nodes: ...
+ > waiting for etcd members to be control plane nodes: OK
+<snip>
+ > waiting for all k8s nodes to report schedulable: OK
+saving machine config backups to "talos-default-backup-20251013-151239.zip"
+ > skipped in dry-run
+connecting the nodes to omni...
+ > skipped in dry-run
+creating cluster resources in omni...
+ > skipped in dry-run
+creating imported cluster secrets
+ > skipped in dry-run
+creating cluster
+ > skipped in dry-run
+creating machine set for control planes
+ > skipped in dry-run
+creating machine set for workers
+ > skipped in dry-run
+creating 8 machine set nodes
+ > skipped in dry-run
+creating 8 config patches
+ > skipped in dry-run
+successfully created all cluster resources in omni
+ > skipped in dry-run
+cluster "talos-default" is imported successfully but marked as 'locked' to prevent changes done by Omni
+```
+
+To perform the import use the same command without `--dry-run` flag:
+
+```shell
+$ omnictl cluster import \
+  --nodes 172.20.0.2,172.20.0.3,172.20.0.4,172.20.0.5,172.20.0.6,172.20.0.7,172.20.0.8,172.20.0.9 \
+  --talos-version v1.11.2 \
+  --kubernetes-version v1.33.1 \
+  --initial-talos-version v1.10.2 \
+  --initial-kubernetes-version v1.32.1 \
+importing cluster "talos-default" to Omni
+discovering Talos cluster state...
+importing cluster "talos-default" with 8 nodes (1 control planes, 7 workers)
+validating cluster status...
+checking cluster health...
+ > discovered nodes: ["172.20.0.2" "172.20.0.3" "172.20.0.4" "172.20.0.5" "172.20.0.6" "172.20.0.7" "172.20.0.8" "172.20.0.9"]
+ > waiting for etcd to be healthy: ...
+<snip>
+ > waiting for all k8s nodes to report schedulable: OK
+saving machine config backups to "talos-default-backup-20251013-151945.zip"
+connecting the nodes to omni...
+creating cluster resources in omni...
+creating imported cluster secrets
+creating cluster
+creating machine set for control planes
+creating machine set for workers
+creating 8 machine set nodes
+creating 8 config patches
+successfully created all cluster resources in omni
+cluster "talos-default" is imported successfully but marked as 'locked' to prevent changes done by Omni
+```
+
+This command does the following:
+1. Discover the talos cluster state using provided/discovered information and build an import context to be used during the import.
+2. Validate the cluster state to ensure it is healthy and ready to be imported.
+3. Save a backup of the current machine configurations to a zip file.
+4. Connect the Talos nodes to Omni by applying necessary configurations to the nodes.
+5. Create the necessary resources in Omni to represent the imported cluster.
+
+Note that the cluster has been imported but marked as `locked`. This is to prevent any changes being done by Omni to the imported cluster. Cluster locking is an Omni feature that prevents any changes from being applied to the Talos cluster.
+
+### Image Schematic
+With [Talos Linux Image Factory](https://factory.talos.dev/), it's possible to create a talos installer using extensions, extra kernel command line arguments as well as other settings. Such configuration is referred to as a Schematic.
+Cluster import command tries to detect if a Talos machine was configured using a boot asset from an Image Factory. If so, it will ensure that the same Schematic is used with the Image Factory Omni is connected to.
+
+If a Talos machine is not configured using an Image Factory, then the validation step will fail by reporting that the Schematic can't be found.
+However, this doesn't necessarily mean that the cluster can't be imported to Omni.
+It's still possible to continue with cluster import in such a scenario by following one option:
+ * Create a Schematic in Omni's Image Factory that matches the Talos machine configuration and use the provided image to upgrade the Talos machine.
+ * Re-run the import command with `--force` flag to skip the validations.
+
+Note that if `--force` option was used, Omni will not be able to ensure that it can successfully offer upgrades for these Talos machines while keeping their existing configuration.
+Omni will still be able to offer upgrades for these machines, but it will create and use a new Schematic to do so.
+If a Talos machine was not configured using an Image Factory asset, the validation step will fail by reporting that the Schematic can't be found.
+
+This will not affect machines configured by using a boot asset from [Talos releases](https://github.com/siderolabs/talos/releases).
+
+### Config Patches
+
+When importing a cluster into Omni, the goal is to preserve the cluster’s existing state and avoid modifying node configurations unless absolutely necessary.
+Cluster Machine config patches are used to achieve this idea.
+
+The import command uses initial talos and kubernetes versions to build the default machine config for each node in the cluster.
+These configs are then compared to the current machine config on each node to build a config patch.
+Each config patch includes the changes made to the machine config since the Talos cluster was created.
+Certain machine config [fields](https://github.com/siderolabs/omni/blob/main/client/pkg/omni/resources/omni/config_patch.go#L28-L48) are not allowed to be set on Omni managed clusters. These fields are not included in the final config patch.
+
+After a cluster is imported to Omni, the final machine config for each node is built by applying the config patch to the default machine config built using the initial talos and kubernetes versions used on cluster import.
+Redacted version of this machine config can be found under the `Config` tab of the Cluster Machine overview page in the Omni UI, while config patches can be found under `Patches` tab of the same overview page.
+
+### Unlocking the Cluster
+
+Since Omni uses its own Kubernetes apiserver endpoint, when the cluster is unlocked, Omni will update `kube-apiserver`, `kube-scheduler` and `kube-controller-manager` static pod definitions to point to the Omni-managed kubernetes apiserver endpoint.
+
+### Aborting an ongoing Import
+
+Import operation can be aborted using `cluster import abort` command. This command will delete all the resources created by Omni while importing the cluster and will also temporarily remove Omni connection from the Talos nodes.
+Unlike cluster deletion, aborting an import will not reset the machines to their initial state. Cluster will just stop being managed by Omni.
+
+Cluster has to be in `locked` state to be able to abort an import operation.
+
+To abort an ongoing import, use the command below:
+```shell
+$ omnictl cluster import abort <cluster-name>
+```
+
+During the step; Connect the Talos nodes to Omni, necessary configurations will be applied to Talos nodes to connect them to Omni.
+If the import operation is aborted, these configurations will not be removed from the nodes to revert them to their initial state.
+There are two options to bring back the Talos cluster to its previous state:
+* Using backed-up machine configs with the `talosctl apply-config` command. Note that if the cluster was unlocked and later further modified by the User, its state might not be represented correctly in the backed-up machine configs.
+* Using config patches tailored for each node to manually revert the changes made during the import step using `talosctl patch machineconfig` command. You can find a config patch snippet below, aiming to remove partial documents created during the import process.
+```yaml
+apiVersion: v1alpha1
+kind: SideroLinkConfig
+$patch: delete
+---
+apiVersion: v1alpha1
+kind: EventSinkConfig
+$patch: delete
+---
+apiVersion: v1alpha1
+kind: KmsgLogConfig
+name: omni-kmsg
+$patch: delete
+```
