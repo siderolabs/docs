@@ -48,37 +48,50 @@ To see a live demo of an upgrade of Talos Linux, see the video below:
 
 There are no specific actions to be taken after an upgrade.
 
-## `talosctl upgrade`
+## Upgrading Talos with `talosctl`
 
-To upgrade a Talos node, specify the node's IP address and the installer container image from 
-<a href="https://factory.talos.dev/">Image Factory</a>.
+To upgrade a Talos node, you’ll need two things:
 
-### Getting your Image Factory image
+1. The **IP address** of the node.
+2. An **installer image** from the Talos Image Factory.
 
-The prefered way to upgrade your talos nodes is using an updated image from the Image Factory. Though you
-can use the latest image - like `ghcr.io/siderolabs/installer:${release_v1_11}` - it is not recommended.
+### Step 1: Get Your Installer Image
 
-The image sourced from Image Factory updates Talos Linux, along with any system extensions specified.
+The recommended way to upgrade Talos is by using a custom image from the 
+<a href="https://factory.talos.dev/">Image Factory</a>. This ensures:
 
-> ### Pro tip
+- Talos Linux is updated.
+- Any updated system extensions you’ve configured are included.
+
+⚠️ **Avoid using generic images like** `ghcr.io/siderolabs/installer:${release_v1_11}` 
+— unless it best suits your situation
+
+> #### ✅ Pro Tip:
 > 
-> Saving the URL you used to install Talos will retain your configuration. Then, when it's time to upgrade,
-> replace the `&version=${release_v1_11}` section of the url with the latest version
+> If you saved the URL you used to install Talos originally, or the next time you upgrade, you can 
+> reuse it for any future upgrades. Just update the `version` portion of the URL:
+>
+> ```
+> &version=${release_v1_11} → &version=v1.11.2
+> ```
 
-The Image Factory will give you an image path in the section titled "Upgrading Talos Linux", this is what 
-you use as the `-i/--image` path
+In the Image Factory, once you have your schematic/image, look for the section titled **“Upgrading Talos 
+Linux”** — it will give you the exact image path to use.
 
-### Running `talos upgrade`
+### Step 2: Run the Upgrade Command
 
-If your Talos node has the IP address `10.20.30.40`, you would enter a command such
-as:
+Once you have the image and the node’s IP address, run:
 
 <CodeBlock lang="sh">
 {`
-  $ talosctl upgrade --nodes 10.20.30.40 \\
+  $ talosctl upgrade --nodes 10.20.30.40 \
   --image factory.talos.dev/74b14......dcff:v1.11.2
 `}
 </CodeBlock>
+
+Replace:
+- `10.20.30.40` with your node’s IP.
+- `factory.talos.dev/74b14......dcff:v1.11.2` with the image path you got from the Image Factory.
 
 ### Staging updates
 
