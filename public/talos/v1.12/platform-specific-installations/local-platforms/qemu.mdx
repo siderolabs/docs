@@ -91,9 +91,20 @@ On Linux, before the first cluster is created, `talosctl` will download the CNI 
 Once the above finishes successfully, your talosconfig (`~/.talos/config`) will be configured to point to the new cluster, and `kubeconfig` will be
 downloaded and merged into default kubectl config location (`~/.kube/config`).
 
+### Presets
+
+The `talosctl cluster create qemu` command has various presets available via the `--presets` flag to modify behavior.
+See [reference documentation](../../reference/cli#talosctl-cluster-create-qemu") for more details.
+
 ### Image factory schematic
 
 Optionally a custom [Image Factory](../../getting-started/talosctl) schematic ID can be provided via the `--schematic-id` flag.
+
+### Omni
+
+The `omni-api-endpoint` flag configures nodes to connect to an Omni instance once booted.
+Using [SideroLink](../../networking/siderolink), the local QEMU nodes can communicate with Omni as long as the endpoint is reachable.
+This enables connections to a local Omni instance, a cloud-hosted Omni instance, or a Sidero SaaS Omni instance.
 
 ## Using the Cluster
 
