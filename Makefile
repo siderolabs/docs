@@ -8,6 +8,8 @@ DOCS_GEN_IMAGE := ghcr.io/siderolabs/docs-gen:latest
 DOCS_CONVERT_IMAGE := ghcr.io/siderolabs/docs-convert:latest
 TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.11.2
 TALOS_VERSION := v1.11
+VALE_IMAGE := jdkato/vale:latest
+VALE_CONFIG ?= .vale.ini
 
 # Default target
 .PHONY: help
@@ -141,3 +143,27 @@ generate-talos-reference-local: ## Generate Talos reference docs using local Go 
 	cd docs-convert && go run main.go ../_out/docs ../public/talos/$(TALOS_VERSION)/reference/configuration/
 	@echo "Reference documentation generated in public/talos/$(TALOS_VERSION)/reference/configuration/"
 
+.PHONY: vale
+vale: ## Run Vale on a file or directory: make vale DOC=public/path/to/file.mdx
+	@if [ -z "$(DOC)" ]; then \
+		echo "Usage: make vale DOC=public/path/or/file.mdx"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(VALE_CONFIG)" ]; then \
+		echo "$(VALE_CONFIG) not found at repo root."; \
+		exit 1; \
+	fi
+	@echo "Running Vale on $(DOC)"
+	docker run --rm -v $(PWD):/work -w /work $(VALE_IMAGE) \
+		--config="$(VALE_CONFIG)" $(VALE_ARGS) "$(DOC)"
+
+.PHONY: vale-changed
+vale-changed: ## Run Vale on changed file vs HEAD
+	@files="$$(git diff --name-only --diff-filter=AM HEAD | grep -E '\.mdx?$$|\.md$$' || true)"; \
+	if [ -z "$$files" ]; then \
+		echo "No changed Markdown/MDX files."; \
+		exit 0; \
+	fi; \
+	echo "Linting changed files:" $$files; \
+	docker run --rm -v $(PWD):/work -w /work $(VALE_IMAGE) \
+		--config="$(VALE_CONFIG)" $(VALE_ARGS) $$files

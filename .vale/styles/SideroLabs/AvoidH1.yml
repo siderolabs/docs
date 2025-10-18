@@ -1,0 +1,7 @@
+extends: existence
+message: "Avoid using H1 headings. Use H2 (`##`) or lower."
+level: warning
+scope: heading.h1
+nonword: true
+tokens:
+  - '.+' 

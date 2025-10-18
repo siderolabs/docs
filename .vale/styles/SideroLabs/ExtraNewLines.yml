@@ -1,0 +1,7 @@
+extends: existence
+message: "Remove extra blank lines."
+level: warning
+scope: raw
+nonword: true
+tokens:
+  - '(?m)\n{3,}'

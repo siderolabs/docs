@@ -1,0 +1,11 @@
+extends: existence
+message: "Headings must have a blank line before and after."
+level: warning
+scope: raw
+nonword: true
+tokens:
+  # Missing blank line BEFORE a heading
+  - '(?m)(?<!\A)(?<!\r?\n\r?\n)^[ \t]*#{2,6}[ \t]+.+$'
+
+  # Missing blank line AFTER a heading
+  - '(?m)^[ \t]*#{2,6}[ \t]+.+$(?!\r?\n\r?\n)(?!\Z)'
