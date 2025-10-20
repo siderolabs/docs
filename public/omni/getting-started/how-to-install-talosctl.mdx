@@ -54,3 +54,11 @@ However, users with at least the [Operator](https://omni.siderolabs.com/referenc
 | `talosctl restart`                             |
 | `talosctl service <id> [stop\|start\|restart]` |
 | `talosctl shutdown`                            |
+
+## Sensitive resources
+
+Omni prevents viewing machine configuration which might contain sensitive PKI. To view the list of resources that cannot be viewed you can use this command:
+
+```sh
+talosctl get rds -o json | jq -s '.[] | select(.spec.sensitivity=="sensitive") | .metadata.id'
+```
