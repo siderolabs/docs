@@ -10,6 +10,7 @@ navigation:
         - group: "CNI"
           folder: "kubernetes-guides/cni"
           pages:
+            - "deploy-calico.mdx"
             - "deploying-cilium.mdx"
             - "multus.mdx"
 

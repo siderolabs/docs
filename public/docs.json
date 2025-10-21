@@ -1874,6 +1874,7 @@
           {
             "group": "CNI",
             "pages": [
+              "kubernetes-guides/cni/deploy-calico",
               "kubernetes-guides/cni/deploying-cilium",
               "kubernetes-guides/cni/multus"
             ]
