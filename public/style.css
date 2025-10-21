@@ -51,3 +51,10 @@ table {
     }
   }
 }
+
+/* Large Screen Max Width */
+@media (min-width: 1600px) {
+  .\32xl\:max-w-2xl {
+    max-width: 70%;
+  }
+}
