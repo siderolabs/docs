@@ -55,7 +55,7 @@ talosctl gen config \
 
 ### Installation using Cilium CLI
 
-> Note: It is recommended to template the cilium manifest using helm and use it as part of Talos machine config, but if you want to install Cilium using the Cilium CLI, you can follow the steps below.
+> Note: It is recommended to template the Cilium manifest using helm and use it as part of Talos machine config, but if you want to install Cilium using the Cilium CLI, you can follow the steps below.
 
 Install the [Cilium CLI](https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/#install-the-cilium-cli) following the steps here.
 
@@ -407,9 +407,112 @@ cluster:
                   - k8sServicePort=7445
 ```
 
+It's also possible to run a job with the values inside a configmap.
+This can be useful in situations where you have a lot of values configured.
+
+``` yaml
+cluster:
+  inlineManifests:
+    apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: cilium-install
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: cluster-admin
+      subjects:
+      - kind: ServiceAccount
+        name: cilium-install
+        namespace: kube-system
+      ---
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: cilium-install
+        namespace: kube-system
+      ---
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: cilium-values
+        namespace: kube-system
+      data:
+        values.yaml: |
+          <Cilium Values>
+      ---
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: cilium-install
+        namespace: kube-system
+      spec:
+        backoffLimit: 10
+        template:
+          metadata:
+            labels:
+              app: cilium-install
+          spec:
+            restartPolicy: OnFailure
+            tolerations:
+            - operator: Exists
+            - effect: NoSchedule
+              operator: Exists
+            - effect: NoExecute
+              operator: Exists
+            - effect: PreferNoSchedule
+              operator: Exists
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+              effect: NoSchedule
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+              effect: NoExecute
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+              effect: PreferNoSchedule
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                  - matchExpressions:
+                    - key: node-role.kubernetes.io/control-plane
+                      operator: Exists
+            serviceAccount: cilium-install
+            serviceAccountName: cilium-install
+            hostNetwork: true
+            containers:
+            - name: cilium-install
+              image: quay.io/cilium/cilium-cli:latest
+              env:
+              - name: KUBERNETES_SERVICE_HOST
+                valueFrom:
+                  fieldRef:
+                    apiVersion: v1
+                    fieldPath: status.podIP
+              - name: KUBERNETES_SERVICE_PORT
+                value: "6443"
+              command:
+              - cilium
+              - install
+              - -f
+              - /tmp/values.yaml
+              - --wait
+              - --wait-duration=600s
+              volumeMounts:
+              - name: config
+                mountPath: /tmp/values.yaml
+                subPath: values.yaml
+                readOnly: true
+            volumes:
+            - name: config
+              configMap:
+                name: cilium-values
+```
+
 Because there is no CNI present at installation time the kubernetes.default.svc cannot be used to install Cilium, to overcome this limitation we'll utilize the host network connection to connect back to itself with 'hostNetwork: true' in tandem with the environment variables KUBERNETES_SERVICE_PORT and KUBERNETES_SERVICE_HOST.
 
-The job runs a container to install cilium to your liking, after the job is finished Cilium can be managed/operated like usual.
+The job runs a container to install Cilium to your liking, after the job is finished Cilium can be managed/operated like usual.
 
 The above can be combined exchanged with for example Method 3 to host arbitrary configurations externally but render/run them at bootstrap time.
 
@@ -418,10 +521,10 @@ The above can be combined exchanged with for example Method 3 to host arbitrary 
 - There are some gotchas when using Talos and Cilium on the Google cloud platform when using internal load balancers.
 For more details: [GCP ILB support / support scope local routes to be configured](https://github.com/siderolabs/talos/issues/4109)
 
-- When using Talos `forwardKubeDNSToHost=true` option (which is enabled by default) in combination with cilium `bpf.masquerade=true`.
+- When using Talos `forwardKubeDNSToHost=true` option (which is enabled by default) in combination with Cilium `bpf.masquerade=true`.
 There is a known issue that causes `CoreDNS` to not work correctly.
 As a workaround, configuring `forwardKubeDNSToHost=false` resolves the issue.
-For more details see [the discusssion here](https://github.com/siderolabs/talos/pull/9200)
+For more details see [the discussion here](https://github.com/siderolabs/talos/pull/9200)
 
 ## Other things to know
 
@@ -432,6 +535,6 @@ For more details see [the discusssion here](https://github.com/siderolabs/talos/
   This is expected, you can workaround it by adding the `pod-security.kubernetes.io/enforce=privileged` [label on the namespace level](../security/pod-security).
 
 - Talos has full kernel module support for eBPF, See:
-  - [Cilium System Requirements](https://docs.cilium.io/en/stable/operations/system_requirements/)
+  - [Cilium System Requirements](https://docs.Cilium.io/en/stable/operations/system_requirements/)
   - [Talos Kernel Config AMD64](https://github.com/siderolabs/pkgs/blob/main/kernel/build/config-amd64)
   - [Talos Kernel Config ARM64](https://github.com/siderolabs/pkgs/blob/main/kernel/build/config-arm64)
