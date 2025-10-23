@@ -2,28 +2,38 @@
 title: Authentication and Authorization
 ---
 
-### Auth0
+Omni integrates with several identity providers to authenticate users securely. This page provides an overview of supported authentication methods and how they affect user and role management.
 
-#### Github
+## Auth0
 
-In order to login with GitHub you must use your primary verified email.
+Omni supports authentication via Auth0.
 
-### OIDC
+### GitHub
 
-OpenID Connect (OIDC) is an identity layer built on top of the OAuth 2.0 protocol that provides user authentication and basic profile information for web and mobile applications.
+When logging in with GitHub, you must use your primary verified email address.
 
-### SAML
+## OIDC
 
-Security Assertion Markup Language (SAML) is an open standard that allows identity providers (IdP) to pass authorization credentials to service providers (SP). Omni plays the role of service provider.
+OpenID Connect (OIDC) is an identity layer built on top of the OAuth 2.0 protocol. It provides user authentication and basic profile information for web and mobile applications. Omni can be configured to use OIDC providers to authenticate users.
 
-To enable SAML on your account please submit a ticket in [Zendesk](https://sidero.zendesk.com/). Or reach out to us in the #omni channel in [Slack](https://slack.dev.talos-systems.io/).
+## SAML
 
-SAML alters Omni user management:
+Security Assertion Markup Language (SAML) is an open standard that enables identity providers (IdPs) to pass authentication and authorization information to service providers (SPs). In this workflow, Omni acts as the service provider.
 
-* Users are automatically created on the first login into Omni:
-* the first user gets `Admin` role;
-* any subsequently created user gets `None` role.
-* `Admin` can change other users' roles.
-* Creating or deleting a user is not possible from within Omni - only within the IdP.
-* Omni gets the user attributes from the SAML assertion and adds them as labels to `Identity` resource with `saml.omni.sidero.dev/` prefix.
-* ACL can be used to adjust fine grained permissions instead of changing the user roles.
+To enable SAML for your account, please submit a ticket through [Zendesk](https://sidero.zendesk.com/) or contact us in the `#omni` channel on [Slack](https://slack.dev.talos-systems.io/).
+
+Using SAML changes how user identities are managed in Omni:
+
+* Users are created automatically on their first login to Omni.
+  * The first user created is assigned the `Admin` role.
+  * All subsequent users are assigned the `None` role.
+* An `Admin` can modify the roles of other users.
+* User creation and removal must be performed in the IdP — not in Omni.
+* Attributes from the SAML assertion are added to the user’s `Identity` resource with the prefix `saml.omni.sidero.dev/`.
+* Access Control Lists (ACLs) can be used to grant fine-grained permissions beyond roles.
+
+## Authentication for Automation
+
+In addition to interactive login, `omnictl` can also be used in automation. When using user authentication in non-interactive workflows, Omni issues short-lived credentials that expire after a limited time. User tokens can remain valid for up to eight hours, and Omni-generated user public keys currently expire after four hours. These limits are not configurable.
+
+Because of this, long-running automation or CI/CD pipelines that rely on user authentication may fail when credentials expire. To ensure uninterrupted access for automation, scripts, and other non-interactive use cases, we recommend using Omni Service Accounts instead of user authentication.
