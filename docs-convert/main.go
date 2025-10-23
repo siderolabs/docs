@@ -37,7 +37,6 @@ func convertFile(srcPath, dstPath string) error {
 	// Check if this is the v1alpha1/config file or cli file
 	isConfigFile := strings.Contains(dstPath, "v1alpha1/config.mdx") || strings.Contains(dstPath, "v1alpha1\\config.mdx")
 	isCliFile := strings.HasSuffix(dstPath, "/cli.mdx") || strings.HasSuffix(dstPath, "\\cli.mdx")
-	isWideMode := isConfigFile || isCliFile
 
 	// Process lines
 	i := 0
@@ -53,10 +52,7 @@ func convertFile(srcPath, dstPath string) error {
 				i++
 				continue
 			} else {
-				// End of frontmatter - add mode: "wide" for config and cli files
-				if isWideMode {
-					fmt.Fprintln(writer, "mode: \"wide\"")
-				}
+				// End of frontmatter
 				inFrontmatter = false
 				fmt.Fprintln(writer, line)
 				// Add auto-generated comment after frontmatter
@@ -211,26 +207,24 @@ func fixAnchorLinks(line string) string {
 		// Extract the anchor value
 		anchor := line[:end]
 
-		// Fix the anchor by taking the last segment
-		// Handle anchors ending with dot (e.g., "Config.foo.bar." -> "bar.")
-		if strings.Contains(anchor, ".") {
-			endsWithDot := strings.HasSuffix(anchor, ".")
-			if endsWithDot {
-				// Remove trailing dot temporarily
-				anchor = anchor[:len(anchor)-1]
-			}
+		// Remove trailing dot if present
+		anchor = strings.TrimSuffix(anchor, ".")
 
+		// Fix the anchor by taking the last segment
+		if strings.Contains(anchor, ".") {
 			// Find the last dot and take everything after it
 			lastDot := strings.LastIndex(anchor, ".")
 			if lastDot != -1 {
 				anchor = anchor[lastDot+1:]
 			}
-
-			// Restore trailing dot if it was there
-			if endsWithDot {
-				anchor = anchor + "."
-			}
 		}
+
+		// Convert to lowercase
+		anchor = strings.ToLower(anchor)
+
+		// URL-encode square brackets
+		anchor = strings.Replace(anchor, "[", "%5B", -1)
+		anchor = strings.Replace(anchor, "]", "%5D", -1)
 
 		result += anchor + "\""
 		line = line[end+1:]
@@ -466,7 +460,10 @@ func processCellContent(content string) string {
 	// Convert <br> to <br /> for MDX compatibility
 	content = strings.Replace(content, "<br>", "<br />", -1)
 
-	// Fix anchor links - remove prefixes (e.g., #Config.machine -> #machine)
+	// Remove [] prefix from link text and move to href (must happen before fixAnchorLinks)
+	content = cleanLinkText(content)
+
+	// Fix anchor links - remove prefixes, lowercase, URL-encode brackets
 	content = fixAnchorLinks(content)
 
 	// Escape angle bracket placeholders
@@ -477,6 +474,61 @@ func processCellContent(content string) string {
 	content = strings.Join(strings.Fields(content), " ")
 
 	return content
+}
+
+// cleanLinkText removes [] prefix from link text and moves it to href
+func cleanLinkText(line string) string {
+	result := ""
+	i := 0
+	for i < len(line) {
+		// Look for pattern: <a href="#...">[]
+		if i+9 < len(line) && line[i:i+9] == "<a href=\"" {
+			hrefStart := i + 9
+
+			// Find the closing quote of href
+			hrefEnd := strings.Index(line[hrefStart:], "\"")
+			if hrefEnd != -1 {
+				hrefEnd += hrefStart
+				href := line[hrefStart:hrefEnd]
+
+				// Find the closing > of the tag
+				tagEnd := strings.Index(line[hrefEnd:], ">")
+				if tagEnd != -1 {
+					tagEnd += hrefEnd
+
+					// Check if the text after the tag starts with []
+					textStart := tagEnd + 1
+					hasBrackets := false
+					if textStart+2 <= len(line) && line[textStart:textStart+2] == "[]" {
+						hasBrackets = true
+					}
+
+					// Build the output
+					result += "<a href=\""
+					// Remove trailing dot from href before adding brackets
+					href = strings.TrimSuffix(href, ".")
+					result += href
+					if hasBrackets && !strings.Contains(href, "[]") {
+						// Add brackets to href if text has them but href doesn't
+						result += "[]"
+					}
+					result += "\""
+					result += line[hrefEnd+1 : tagEnd+1] // attributes and >
+
+					// Skip the [] in text if present
+					if hasBrackets {
+						i = textStart + 2
+					} else {
+						i = textStart
+					}
+					continue
+				}
+			}
+		}
+		result += string(line[i])
+		i++
+	}
+	return result
 }
 
 // convertCodeBlocksToHTML converts Hugo highlight shortcodes to HTML pre/code tags

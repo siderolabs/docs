@@ -1,7 +1,6 @@
 ---
 description: Config defines the v1alpha1.Config Talos machine configuration document.
 title: MachineConfig
-mode: "wide"
 ---
 
 {/*
@@ -110,13 +109,13 @@ machine:
     <tr>
       <td>`token`</td>
       <td>string</td>
-      <td>The `token` is used by a machine to join the PKI of the cluster.<br />Using this token, a machine will create a certificate signing request (CSR), and request a certificate that will be used as its' identity. </td>
+      <td>The `token` is used by a machine to join the PKI of the cluster.<br />Using this token, a machine will create a certificate signing request (CSR), and request a certificate that will be used as its' identity.</td>
       <td></td>
     </tr>
     <tr>
       <td>`ca`</td>
       <td>PEMEncodedCertificateAndKey</td>
-      <td>The root certificate authority of the PKI.<br />It is composed of a base64 encoded `crt` and `key`. </td>
+      <td>The root certificate authority of the PKI.<br />It is composed of a base64 encoded `crt` and `key`.</td>
       <td></td>
     </tr>
     <tr>
@@ -128,127 +127,127 @@ machine:
     <tr>
       <td>`certSANs`</td>
       <td>[]string</td>
-      <td>Extra certificate subject alternative names for the machine's certificate.<br />By default, all non-loopback interface IPs are automatically added to the certificate's SANs. </td>
+      <td>Extra certificate subject alternative names for the machine's certificate.<br />By default, all non-loopback interface IPs are automatically added to the certificate's SANs.</td>
       <td></td>
     </tr>
     <tr>
       <td>`controlPlane`</td>
-      <td><a href="#controlPlane">MachineControlPlaneConfig</a></td>
-      <td>Provides machine specific control plane configuration options. </td>
+      <td><a href="#controlplane">MachineControlPlaneConfig</a></td>
+      <td>Provides machine specific control plane configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`kubelet`</td>
       <td><a href="#kubelet">KubeletConfig</a></td>
-      <td>Used to provide additional options to the kubelet. </td>
+      <td>Used to provide additional options to the kubelet.</td>
       <td></td>
     </tr>
     <tr>
       <td>`pods`</td>
       <td>[]Unstructured</td>
-      <td>Used to provide static pod definitions to be run by the kubelet directly bypassing the kube-apiserver.<br /><br />Static pods can be used to run components which should be started before the Kubernetes control plane is up.<br />Talos doesn't validate the pod definition.<br />Updates to this field can be applied without a reboot.<br /><br />See https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/. </td>
+      <td>Used to provide static pod definitions to be run by the kubelet directly bypassing the kube-apiserver.<br /><br />Static pods can be used to run components which should be started before the Kubernetes control plane is up.<br />Talos doesn't validate the pod definition.<br />Updates to this field can be applied without a reboot.<br /><br />See https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/.</td>
       <td></td>
     </tr>
     <tr>
       <td>`network`</td>
       <td><a href="#network">NetworkConfig</a></td>
-      <td>Provides machine specific network configuration options. </td>
+      <td>Provides machine specific network configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`install`</td>
       <td><a href="#install">InstallConfig</a></td>
-      <td>Used to provide instructions for installations.<br /><br />Note that this configuration section gets silently ignored by Talos images that are considered pre-installed.<br />To make sure Talos installs according to the provided configuration, Talos should be booted with ISO or PXE-booted. </td>
+      <td>Used to provide instructions for installations.<br /><br />Note that this configuration section gets silently ignored by Talos images that are considered pre-installed.<br />To make sure Talos installs according to the provided configuration, Talos should be booted with ISO or PXE-booted.</td>
       <td></td>
     </tr>
     <tr>
       <td>`files`</td>
-      <td><a href="#files.">[]MachineFile</a></td>
-      <td>Allows the addition of user specified files.<br />The value of `op` can be `create`, `overwrite`, or `append`.<br />In the case of `create`, `path` must not exist.<br />In the case of `overwrite`, and `append`, `path` must be a valid file.<br />If an `op` value of `append` is used, the existing file will be appended.<br />Note that the file contents are not required to be base64 encoded. </td>
+      <td><a href="#files%5B%5D">MachineFile</a></td>
+      <td>Allows the addition of user specified files.<br />The value of `op` can be `create`, `overwrite`, or `append`.<br />In the case of `create`, `path` must not exist.<br />In the case of `overwrite`, and `append`, `path` must be a valid file.<br />If an `op` value of `append` is used, the existing file will be appended.<br />Note that the file contents are not required to be base64 encoded.</td>
       <td></td>
     </tr>
     <tr>
       <td>`env`</td>
       <td>Env</td>
-      <td>The `env` field allows for the addition of environment variables.<br />All environment variables are set on PID 1 in addition to every service. </td>
+      <td>The `env` field allows for the addition of environment variables.<br />All environment variables are set on PID 1 in addition to every service.</td>
       <td>``GRPC_GO_LOG_VERBOSITY_LEVEL``<br />``GRPC_GO_LOG_SEVERITY_LEVEL``<br />``http_proxy``<br />``https_proxy``<br />``no_proxy``<br /></td>
     </tr>
     <tr>
       <td>`time`</td>
       <td><a href="#time">TimeConfig</a></td>
-      <td>Used to configure the machine's time settings. </td>
+      <td>Used to configure the machine's time settings.</td>
       <td></td>
     </tr>
     <tr>
       <td>`sysctls`</td>
       <td>map[string]string</td>
-      <td>Used to configure the machine's sysctls. </td>
+      <td>Used to configure the machine's sysctls.</td>
       <td></td>
     </tr>
     <tr>
       <td>`sysfs`</td>
       <td>map[string]string</td>
-      <td>Used to configure the machine's sysfs. </td>
+      <td>Used to configure the machine's sysfs.</td>
       <td></td>
     </tr>
     <tr>
       <td>`registries`</td>
       <td><a href="#registries">RegistriesConfig</a></td>
-      <td>Used to configure the machine's container image registry mirrors.<br /><br />Automatically generates matching CRI configuration for registry mirrors.<br /><br />The `mirrors` section allows to redirect requests for images to a non-default registry,<br />which might be a local registry or a caching mirror.<br /><br />The `config` section provides a way to authenticate to the registry with TLS client<br />identity, provide registry CA, or authentication information.<br />Authentication information has same meaning with the corresponding field in [`.docker/config.json`](https://docs.docker.com/engine/api/v1.41/#section/Authentication).<br /><br />See also matching configuration for [CRI containerd plugin](https://github.com/containerd/cri/blob/master/docs/registry.md). </td>
+      <td>Used to configure the machine's container image registry mirrors.<br /><br />Automatically generates matching CRI configuration for registry mirrors.<br /><br />The `mirrors` section allows to redirect requests for images to a non-default registry,<br />which might be a local registry or a caching mirror.<br /><br />The `config` section provides a way to authenticate to the registry with TLS client<br />identity, provide registry CA, or authentication information.<br />Authentication information has same meaning with the corresponding field in [`.docker/config.json`](https://docs.docker.com/engine/api/v1.41/#section/Authentication).<br /><br />See also matching configuration for [CRI containerd plugin](https://github.com/containerd/cri/blob/master/docs/registry.md).</td>
       <td></td>
     </tr>
     <tr>
       <td>`features`</td>
       <td><a href="#features">FeaturesConfig</a></td>
-      <td>Features describe individual Talos features that can be switched on or off. </td>
+      <td>Features describe individual Talos features that can be switched on or off.</td>
       <td></td>
     </tr>
     <tr>
       <td>`udev`</td>
       <td><a href="#udev">UdevConfig</a></td>
-      <td>Configures the udev system. </td>
+      <td>Configures the udev system.</td>
       <td></td>
     </tr>
     <tr>
       <td>`logging`</td>
       <td><a href="#logging">LoggingConfig</a></td>
-      <td>Configures the logging system. </td>
+      <td>Configures the logging system.</td>
       <td></td>
     </tr>
     <tr>
       <td>`kernel`</td>
       <td><a href="#kernel">KernelConfig</a></td>
-      <td>Configures the kernel. </td>
+      <td>Configures the kernel.</td>
       <td></td>
     </tr>
     <tr>
       <td>`seccompProfiles`</td>
-      <td><a href="#seccompProfiles.">[]MachineSeccompProfile</a></td>
-      <td>Configures the seccomp profiles for the machine. </td>
+      <td><a href="#seccompprofiles%5B%5D">MachineSeccompProfile</a></td>
+      <td>Configures the seccomp profiles for the machine.</td>
       <td></td>
     </tr>
     <tr>
       <td>`baseRuntimeSpecOverrides`</td>
       <td>Unstructured</td>
-      <td>Override (patch) settings in the default OCI runtime spec for CRI containers.<br /><br />It can be used to set some default container settings which are not configurable in Kubernetes,<br />for example default ulimits.<br />Note: this change applies to all newly created containers, and it requires a reboot to take effect. </td>
+      <td>Override (patch) settings in the default OCI runtime spec for CRI containers.<br /><br />It can be used to set some default container settings which are not configurable in Kubernetes,<br />for example default ulimits.<br />Note: this change applies to all newly created containers, and it requires a reboot to take effect.</td>
       <td></td>
     </tr>
     <tr>
       <td>`nodeLabels`</td>
       <td>map[string]string</td>
-      <td>Configures the node labels for the machine.<br /><br />Note: In the default Kubernetes configuration, worker nodes are restricted to set<br />labels with some prefixes (see [NodeRestriction](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction) admission plugin). </td>
+      <td>Configures the node labels for the machine.<br /><br />Note: In the default Kubernetes configuration, worker nodes are restricted to set<br />labels with some prefixes (see [NodeRestriction](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction) admission plugin).</td>
       <td></td>
     </tr>
     <tr>
       <td>`nodeAnnotations`</td>
       <td>map[string]string</td>
-      <td>Configures the node annotations for the machine. </td>
+      <td>Configures the node annotations for the machine.</td>
       <td></td>
     </tr>
     <tr>
       <td>`nodeTaints`</td>
       <td>map[string]string</td>
-      <td>Configures the node taints for the machine. Effect is optional.<br /><br />Note: In the default Kubernetes configuration, worker nodes are not allowed to<br />modify the taints (see [NodeRestriction](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction) admission plugin). </td>
+      <td>Configures the node taints for the machine. Effect is optional.<br /><br />Note: In the default Kubernetes configuration, worker nodes are not allowed to<br />modify the taints (see [NodeRestriction](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction) admission plugin).</td>
       <td></td>
     </tr>
   </tbody>
@@ -286,7 +285,7 @@ machine:
   <tbody>
     <tr>
       <td>`controllerManager`</td>
-      <td><a href="#controllerManager">MachineControllerManagerConfig</a></td>
+      <td><a href="#controllermanager">MachineControllerManagerConfig</a></td>
       <td>Controller manager machine specific configuration options.</td>
       <td></td>
     </tr>
@@ -435,37 +434,37 @@ machine:
     <tr>
       <td>`image`</td>
       <td>string</td>
-      <td>The `image` field is an optional reference to an alternative kubelet image. </td>
+      <td>The `image` field is an optional reference to an alternative kubelet image.</td>
       <td></td>
     </tr>
     <tr>
       <td>`clusterDNS`</td>
       <td>[]string</td>
-      <td>The `ClusterDNS` field is an optional reference to an alternative kubelet clusterDNS ip list. </td>
+      <td>The `ClusterDNS` field is an optional reference to an alternative kubelet clusterDNS ip list.</td>
       <td></td>
     </tr>
     <tr>
       <td>`extraArgs`</td>
       <td>map[string]string</td>
-      <td>The `extraArgs` field is used to provide additional flags to the kubelet. </td>
+      <td>The `extraArgs` field is used to provide additional flags to the kubelet.</td>
       <td></td>
     </tr>
     <tr>
       <td>`extraMounts`</td>
-      <td><a href="#extraMounts.">[]ExtraMount</a></td>
-      <td>The `extraMounts` field is used to add additional mounts to the kubelet container.<br />Note that either `bind` or `rbind` are required in the `options`. </td>
+      <td><a href="#extramounts%5B%5D">ExtraMount</a></td>
+      <td>The `extraMounts` field is used to add additional mounts to the kubelet container.<br />Note that either `bind` or `rbind` are required in the `options`.</td>
       <td></td>
     </tr>
     <tr>
       <td>`extraConfig`</td>
       <td>Unstructured</td>
-      <td>The `extraConfig` field is used to provide kubelet configuration overrides.<br /><br />Some fields are not allowed to be overridden: authentication and authorization, cgroups<br />configuration, ports, etc. </td>
+      <td>The `extraConfig` field is used to provide kubelet configuration overrides.<br /><br />Some fields are not allowed to be overridden: authentication and authorization, cgroups<br />configuration, ports, etc.</td>
       <td></td>
     </tr>
     <tr>
       <td>`credentialProviderConfig`</td>
       <td>Unstructured</td>
-      <td>The `KubeletCredentialProviderConfig` field is used to provide kubelet credential configuration. </td>
+      <td>The `KubeletCredentialProviderConfig` field is used to provide kubelet credential configuration.</td>
       <td></td>
     </tr>
     <tr>
@@ -482,8 +481,8 @@ machine:
     </tr>
     <tr>
       <td>`nodeIP`</td>
-      <td><a href="#nodeIP">KubeletNodeIPConfig</a></td>
-      <td>The `nodeIP` field is used to configure `--node-ip` flag for the kubelet.<br />This is used when a node has multiple addresses to choose from. </td>
+      <td><a href="#nodeip">KubeletNodeIPConfig</a></td>
+      <td>The `nodeIP` field is used to configure `--node-ip` flag for the kubelet.<br />This is used when a node has multiple addresses to choose from.</td>
       <td></td>
     </tr>
     <tr>
@@ -560,13 +559,13 @@ machine:
     </tr>
     <tr>
       <td>`uidMappings`</td>
-      <td><a href="#uidMappings.">[]LinuxIDMapping</a></td>
+      <td><a href="#uidmappings%5B%5D">LinuxIDMapping</a></td>
       <td>UID/GID mappings used for changing file owners w/o calling chown, fs should support it.<br /><br />Every mount point could have its own mapping.</td>
       <td></td>
     </tr>
     <tr>
       <td>`gidMappings`</td>
-      <td><a href="#gidMappings.">[]LinuxIDMapping</a></td>
+      <td><a href="#gidmappings%5B%5D">LinuxIDMapping</a></td>
       <td>UID/GID mappings used for changing file owners w/o calling chown, fs should support it.<br /><br />Every mount point could have its own mapping.</td>
       <td></td>
     </tr>
@@ -848,32 +847,32 @@ machine:
     </tr>
     <tr>
       <td>`interfaces`</td>
-      <td><a href="#interfaces.">[]Device</a></td>
-      <td>`interfaces` is used to define the network interface configuration.<br />By default all network interfaces will attempt a DHCP discovery.<br />This can be further tuned through this configuration parameter. </td>
+      <td><a href="#interfaces%5B%5D">Device</a></td>
+      <td>`interfaces` is used to define the network interface configuration.<br />By default all network interfaces will attempt a DHCP discovery.<br />This can be further tuned through this configuration parameter.</td>
       <td></td>
     </tr>
     <tr>
       <td>`nameservers`</td>
       <td>[]string</td>
-      <td>Used to statically set the nameservers for the machine.<br />Defaults to `1.1.1.1` and `8.8.8.8` </td>
+      <td>Used to statically set the nameservers for the machine.<br />Defaults to `1.1.1.1` and `8.8.8.8`</td>
       <td></td>
     </tr>
     <tr>
       <td>`searchDomains`</td>
       <td>[]string</td>
-      <td>Used to statically set arbitrary search domains. </td>
+      <td>Used to statically set arbitrary search domains.</td>
       <td></td>
     </tr>
     <tr>
       <td>`extraHostEntries`</td>
-      <td><a href="#extraHostEntries.">[]ExtraHost</a></td>
-      <td>Allows for extra entries to be added to the `/etc/hosts` file </td>
+      <td><a href="#extrahostentries%5B%5D">ExtraHost</a></td>
+      <td>Allows for extra entries to be added to the `/etc/hosts` file</td>
       <td></td>
     </tr>
     <tr>
       <td>`kubespan`</td>
       <td><a href="#kubespan">NetworkKubeSpan</a></td>
-      <td>Configures KubeSpan feature. </td>
+      <td>Configures KubeSpan feature.</td>
       <td></td>
     </tr>
     <tr>
@@ -1004,48 +1003,48 @@ machine:
     <tr>
       <td>`interface`</td>
       <td>string</td>
-      <td>The interface name.<br />Mutually exclusive with `deviceSelector`. </td>
+      <td>The interface name.<br />Mutually exclusive with `deviceSelector`.</td>
       <td></td>
     </tr>
     <tr>
       <td>`deviceSelector`</td>
-      <td><a href="#deviceSelector">NetworkDeviceSelector</a></td>
-      <td>Picks a network device using the selector.<br />Mutually exclusive with `interface`.<br />Supports partial match using wildcard syntax. </td>
+      <td><a href="#deviceselector">NetworkDeviceSelector</a></td>
+      <td>Picks a network device using the selector.<br />Mutually exclusive with `interface`.<br />Supports partial match using wildcard syntax.</td>
       <td></td>
     </tr>
     <tr>
       <td>`addresses`</td>
       <td>[]string</td>
-      <td>Assigns static IP addresses to the interface.<br />An address can be specified either in proper CIDR notation or as a standalone address (netmask of all ones is assumed). </td>
+      <td>Assigns static IP addresses to the interface.<br />An address can be specified either in proper CIDR notation or as a standalone address (netmask of all ones is assumed).</td>
       <td></td>
     </tr>
     <tr>
       <td>`routes`</td>
-      <td><a href="#routes.">[]Route</a></td>
-      <td>A list of routes associated with the interface.<br />If used in combination with DHCP, these routes will be appended to routes returned by DHCP server. </td>
+      <td><a href="#routes%5B%5D">Route</a></td>
+      <td>A list of routes associated with the interface.<br />If used in combination with DHCP, these routes will be appended to routes returned by DHCP server.</td>
       <td></td>
     </tr>
     <tr>
       <td>`bond`</td>
       <td><a href="#bond">Bond</a></td>
-      <td>Bond specific options. </td>
+      <td>Bond specific options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`bridge`</td>
       <td><a href="#bridge">Bridge</a></td>
-      <td>Bridge specific options. </td>
+      <td>Bridge specific options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`bridgePort`</td>
-      <td><a href="#bridgePort">BridgePort</a></td>
-      <td>Configure this device as a bridge port.<br />This can be used to dynamically assign network interfaces to a bridge. </td>
+      <td><a href="#bridgeport">BridgePort</a></td>
+      <td>Configure this device as a bridge port.<br />This can be used to dynamically assign network interfaces to a bridge.</td>
       <td></td>
     </tr>
     <tr>
       <td>`vlans`</td>
-      <td><a href="#vlans.">[]Vlan</a></td>
+      <td><a href="#vlans%5B%5D">Vlan</a></td>
       <td>VLAN specific options.</td>
       <td></td>
     </tr>
@@ -1058,7 +1057,7 @@ machine:
     <tr>
       <td>`dhcp`</td>
       <td>bool</td>
-      <td>Indicates if DHCP should be used to configure the interface.<br />The following DHCP options are supported:<br /><br />- `OptionClasslessStaticRoute`<br />- `OptionDomainNameServer`<br />- `OptionDNSDomainSearchList`<br />- `OptionHostName` </td>
+      <td>Indicates if DHCP should be used to configure the interface.<br />The following DHCP options are supported:<br /><br />- `OptionClasslessStaticRoute`<br />- `OptionDomainNameServer`<br />- `OptionDNSDomainSearchList`<br />- `OptionHostName`</td>
       <td></td>
     </tr>
     <tr>
@@ -1075,20 +1074,20 @@ machine:
     </tr>
     <tr>
       <td>`dhcpOptions`</td>
-      <td><a href="#dhcpOptions">DHCPOptions</a></td>
-      <td>DHCP specific options.<br />`dhcp` *must* be set to true for these to take effect. </td>
+      <td><a href="#dhcpoptions">DHCPOptions</a></td>
+      <td>DHCP specific options.<br />`dhcp` *must* be set to true for these to take effect.</td>
       <td></td>
     </tr>
     <tr>
       <td>`wireguard`</td>
       <td><a href="#wireguard">DeviceWireguardConfig</a></td>
-      <td>Wireguard specific configuration.<br />Includes things like private key, listen port, peers. </td>
+      <td>Wireguard specific configuration.<br />Includes things like private key, listen port, peers.</td>
       <td></td>
     </tr>
     <tr>
       <td>`vip`</td>
       <td><a href="#vip">DeviceVIPConfig</a></td>
-      <td>Virtual (shared) IP address configuration. </td>
+      <td>Virtual (shared) IP address configuration.</td>
       <td></td>
     </tr>
   </tbody>
@@ -1294,8 +1293,8 @@ machine:
     </tr>
     <tr>
       <td>`deviceSelectors`</td>
-      <td><a href="#deviceSelectors.">[]NetworkDeviceSelector</a></td>
-      <td>Picks a network device using the selector.<br />Mutually exclusive with `interfaces`.<br />Supports partial match using wildcard syntax. </td>
+      <td><a href="#deviceselectors%5B%5D">NetworkDeviceSelector</a></td>
+      <td>Picks a network device using the selector.<br />Mutually exclusive with `interfaces`.<br />Supports partial match using wildcard syntax.</td>
       <td></td>
     </tr>
     <tr>
@@ -1730,7 +1729,7 @@ Vlan represents vlan settings for a device.
     </tr>
     <tr>
       <td>`routes`</td>
-      <td><a href="#routes.">[]Route</a></td>
+      <td><a href="#routes%5B%5D">Route</a></td>
       <td>A list of routes associated with the VLAN.</td>
       <td></td>
     </tr>
@@ -1760,7 +1759,7 @@ Vlan represents vlan settings for a device.
     </tr>
     <tr>
       <td>`dhcpOptions`</td>
-      <td><a href="#dhcpOptions">DHCPOptions</a></td>
+      <td><a href="#dhcpoptions">DHCPOptions</a></td>
       <td>DHCP specific options.<br />`dhcp` *must* be set to true for these to take effect.</td>
       <td></td>
     </tr>
@@ -1869,7 +1868,7 @@ machine:
     </tr>
     <tr>
       <td>`equinixMetal`</td>
-      <td><a href="#equinixMetal">VIPEquinixMetalConfig</a></td>
+      <td><a href="#equinixmetal">VIPEquinixMetalConfig</a></td>
       <td>Specifies the Equinix Metal API settings to assign VIP to the node.</td>
       <td></td>
     </tr>
@@ -2130,7 +2129,7 @@ machine:
     </tr>
     <tr>
       <td>`peers`</td>
-      <td><a href="#peers.">[]DeviceWireguardPeer</a></td>
+      <td><a href="#peers%5B%5D">DeviceWireguardPeer</a></td>
       <td>Specifies a list of peer configurations to apply to a device.</td>
       <td></td>
     </tr>
@@ -2222,7 +2221,7 @@ machine:
     </tr>
     <tr>
       <td>`equinixMetal`</td>
-      <td><a href="#equinixMetal">VIPEquinixMetalConfig</a></td>
+      <td><a href="#equinixmetal">VIPEquinixMetalConfig</a></td>
       <td>Specifies the Equinix Metal API settings to assign VIP to the node.</td>
       <td></td>
     </tr>
@@ -2433,7 +2432,7 @@ KubeSpanFilters struct describes KubeSpan advanced network addresses filtering.
     <tr>
       <td>`endpoints`</td>
       <td>[]string</td>
-      <td>Filter node addresses which will be advertised as KubeSpan endpoints for peer-to-peer Wireguard connections.<br /><br />By default, all addresses are advertised, and KubeSpan cycles through all endpoints until it finds one that works.<br /><br />Default value: no filtering. </td>
+      <td>Filter node addresses which will be advertised as KubeSpan endpoints for peer-to-peer Wireguard connections.<br /><br />By default, all addresses are advertised, and KubeSpan cycles through all endpoints until it finds one that works.<br /><br />Default value: no filtering.</td>
       <td></td>
     </tr>
   </tbody>
@@ -2485,25 +2484,25 @@ machine:
     <tr>
       <td>`disk`</td>
       <td>string</td>
-      <td>The disk used for installations. </td>
+      <td>The disk used for installations.</td>
       <td></td>
     </tr>
     <tr>
       <td>`diskSelector`</td>
-      <td><a href="#diskSelector">InstallDiskSelector</a></td>
-      <td>Look up disk using disk attributes like model, size, serial and others.<br />Always has priority over `disk`. </td>
+      <td><a href="#diskselector">InstallDiskSelector</a></td>
+      <td>Look up disk using disk attributes like model, size, serial and others.<br />Always has priority over `disk`.</td>
       <td></td>
     </tr>
     <tr>
       <td>`extraKernelArgs`</td>
       <td>[]string</td>
-      <td>Allows for supplying extra kernel args via the bootloader.<br />Existing kernel args can be removed by prefixing the argument with a `-`.<br />For example `-console` removes all `console={"<"}value{">"}` arguments, whereas `-console=tty0` removes the `console=tty0` default argument.<br />If Talos is using systemd-boot as a bootloader (default for UEFI) this setting will be ignored. </td>
+      <td>Allows for supplying extra kernel args via the bootloader.<br />Existing kernel args can be removed by prefixing the argument with a `-`.<br />For example `-console` removes all `console={"<"}value{">"}` arguments, whereas `-console=tty0` removes the `console=tty0` default argument.<br />If Talos is using systemd-boot as a bootloader (default for UEFI) this setting will be ignored.</td>
       <td></td>
     </tr>
     <tr>
       <td>`image`</td>
       <td>string</td>
-      <td>Allows for supplying the image used to perform the installation.<br />Image reference for each Talos release can be found on<br />[GitHub releases page](https://github.com/siderolabs/talos/releases). </td>
+      <td>Allows for supplying the image used to perform the installation.<br />Image reference for each Talos release can be found on<br />[GitHub releases page](https://github.com/siderolabs/talos/releases).</td>
       <td></td>
     </tr>
     <tr>
@@ -2555,7 +2554,7 @@ machine:
     <tr>
       <td>`size`</td>
       <td>InstallDiskSizeMatcher</td>
-      <td>Disk size. </td>
+      <td>Disk size.</td>
       <td></td>
     </tr>
     <tr>
@@ -2603,7 +2602,7 @@ machine:
     <tr>
       <td>`busPath`</td>
       <td>string</td>
-      <td>Disk bus path. </td>
+      <td>Disk bus path.</td>
       <td></td>
     </tr>
   </tbody>
@@ -2709,7 +2708,7 @@ machine:
       <td>`servers`</td>
       <td>[]string</td>
       <td>description:</td>
-      <td><br />    Specifies time (NTP) servers to use for setting the system time.<br />    Defaults to `time.cloudflare.com`.<br /><br />   Talos can also sync to the PTP time source (e.g provided by the hypervisor),<br />    provide the path to the PTP device as "/dev/ptp0" or "/dev/ptp_kvm".<br /></td>
+      <td><br /> Specifies time (NTP) servers to use for setting the system time.<br /> Defaults to `time.cloudflare.com`.<br /><br /> Talos can also sync to the PTP time source (e.g provided by the hypervisor),<br /> provide the path to the PTP device as "/dev/ptp0" or "/dev/ptp_kvm".<br /></td>
       <td></td>
     </tr>
     <tr>
@@ -2769,13 +2768,13 @@ machine:
     <tr>
       <td>`mirrors`</td>
       <td><a href="#-">map[string]RegistryMirrorConfig</a></td>
-      <td>Specifies mirror configuration for each registry host namespace.<br />This setting allows to configure local pull-through caching registires,<br />air-gapped installations, etc.<br /><br />For example, when pulling an image with the reference `example.com:123/image:v1`,<br />the `example.com:123` key will be used to lookup the mirror configuration.<br /><br />Optionally the `*` key can be used to configure a fallback mirror.<br /><br />Registry name is the first segment of image identifier, with 'docker.io'<br />being default one. </td>
+      <td>Specifies mirror configuration for each registry host namespace.<br />This setting allows to configure local pull-through caching registires,<br />air-gapped installations, etc.<br /><br />For example, when pulling an image with the reference `example.com:123/image:v1`,<br />the `example.com:123` key will be used to lookup the mirror configuration.<br /><br />Optionally the `*` key can be used to configure a fallback mirror.<br /><br />Registry name is the first segment of image identifier, with 'docker.io'<br />being default one.</td>
       <td></td>
     </tr>
     <tr>
       <td>`config`</td>
       <td><a href="#-">map[string]RegistryConfig</a></td>
-      <td>Specifies TLS & auth configuration for HTTPS image registries.<br />Mutual TLS can be enabled with 'clientIdentity' option.<br /><br />The full hostname and port (if not using a default port 443)<br />should be used as the key.<br />The fallback key `*` can't be used for TLS configuration.<br /><br />TLS configuration can be skipped if registry has trusted<br />server certificate. </td>
+      <td>Specifies TLS & auth configuration for HTTPS image registries.<br />Mutual TLS can be enabled with 'clientIdentity' option.<br /><br />The full hostname and port (if not using a default port 443)<br />should be used as the key.<br />The fallback key `*` can't be used for TLS configuration.<br /><br />TLS configuration can be skipped if registry has trusted<br />server certificate.</td>
       <td></td>
     </tr>
   </tbody>
@@ -2876,13 +2875,13 @@ machine:
     <tr>
       <td>`tls`</td>
       <td><a href="#tls">RegistryTLSConfig</a></td>
-      <td>The TLS configuration for the registry. </td>
+      <td>The TLS configuration for the registry.</td>
       <td></td>
     </tr>
     <tr>
       <td>`auth`</td>
       <td><a href="#auth">RegistryAuthConfig</a></td>
-      <td>The auth configuration for this registry.<br />Note: changes to the registry auth will not be picked up by the CRI containerd plugin without a reboot. </td>
+      <td>The auth configuration for this registry.<br />Note: changes to the registry auth will not be picked up by the CRI containerd plugin without a reboot.</td>
       <td></td>
     </tr>
   </tbody>
@@ -2936,7 +2935,7 @@ machine:
     <tr>
       <td>`clientIdentity`</td>
       <td>PEMEncodedCertificateAndKey</td>
-      <td>Enable mutual TLS authentication with the registry.<br />Client certificate and key should be base64-encoded. </td>
+      <td>Enable mutual TLS authentication with the registry.<br />Client certificate and key should be base64-encoded.</td>
       <td></td>
     </tr>
     <tr>
@@ -3067,8 +3066,8 @@ machine:
     </tr>
     <tr>
       <td>`kubernetesTalosAPIAccess`</td>
-      <td><a href="#kubernetesTalosAPIAccess">KubernetesTalosAPIAccessConfig</a></td>
-      <td>Configure Talos API access from Kubernetes pods.<br /><br />This feature is disabled if the feature config is not specified. </td>
+      <td><a href="#kubernetestalosapiaccess">KubernetesTalosAPIAccessConfig</a></td>
+      <td>Configure Talos API access from Kubernetes pods.<br /><br />This feature is disabled if the feature config is not specified.</td>
       <td></td>
     </tr>
     <tr>
@@ -3085,19 +3084,19 @@ machine:
     </tr>
     <tr>
       <td>`kubePrism`</td>
-      <td><a href="#kubePrism">KubePrism</a></td>
+      <td><a href="#kubeprism">KubePrism</a></td>
       <td>KubePrism - local proxy/load balancer on defined port that will distribute<br />requests to all API servers in the cluster.</td>
       <td></td>
     </tr>
     <tr>
       <td>`hostDNS`</td>
-      <td><a href="#hostDNS">HostDNSConfig</a></td>
+      <td><a href="#hostdns">HostDNSConfig</a></td>
       <td>Configures host DNS caching resolver.</td>
       <td></td>
     </tr>
     <tr>
       <td>`imageCache`</td>
-      <td><a href="#imageCache">ImageCacheConfig</a></td>
+      <td><a href="#imagecache">ImageCacheConfig</a></td>
       <td>Enable Image Cache feature.</td>
       <td></td>
     </tr>
@@ -3343,7 +3342,7 @@ machine:
   <tbody>
     <tr>
       <td>`destinations`</td>
-      <td><a href="#destinations.">[]LoggingDestination</a></td>
+      <td><a href="#destinations%5B%5D">LoggingDestination</a></td>
       <td>Logging destination.</td>
       <td></td>
     </tr>
@@ -3372,7 +3371,7 @@ LoggingDestination struct configures Talos logging destination.
     <tr>
       <td>`endpoint`</td>
       <td><a href="#endpoint">Endpoint</a></td>
-      <td>Where to send logs. Supported protocols are "tcp" and "udp". </td>
+      <td>Where to send logs. Supported protocols are "tcp" and "udp".</td>
       <td></td>
     </tr>
     <tr>
@@ -3476,7 +3475,7 @@ machine:
   <tbody>
     <tr>
       <td>`modules`</td>
-      <td><a href="#modules.">[]KernelModuleConfig</a></td>
+      <td><a href="#modules%5B%5D">KernelModuleConfig</a></td>
       <td>Kernel modules to load.</td>
       <td></td>
     </tr>
@@ -3622,8 +3621,8 @@ cluster:
     </tr>
     <tr>
       <td>`controlPlane`</td>
-      <td><a href="#controlPlane">ControlPlaneConfig</a></td>
-      <td>Provides control plane specific configuration options. </td>
+      <td><a href="#controlplane">ControlPlaneConfig</a></td>
+      <td>Provides control plane specific configuration options.</td>
       <td></td>
     </tr>
     <tr>
@@ -3635,31 +3634,31 @@ cluster:
     <tr>
       <td>`network`</td>
       <td><a href="#network">ClusterNetworkConfig</a></td>
-      <td>Provides cluster specific network configuration options. </td>
+      <td>Provides cluster specific network configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`token`</td>
       <td>string</td>
-      <td>The [bootstrap token](https://kubernetes.io/docs/reference/access-authn-authz/bootstrap-tokens/) used to join the cluster. </td>
+      <td>The [bootstrap token](https://kubernetes.io/docs/reference/access-authn-authz/bootstrap-tokens/) used to join the cluster.</td>
       <td></td>
     </tr>
     <tr>
       <td>`aescbcEncryptionSecret`</td>
       <td>string</td>
-      <td>A key used for the [encryption of secret data at rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/).<br />Enables encryption with AESCBC. </td>
+      <td>A key used for the [encryption of secret data at rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/).<br />Enables encryption with AESCBC.</td>
       <td></td>
     </tr>
     <tr>
       <td>`secretboxEncryptionSecret`</td>
       <td>string</td>
-      <td>A key used for the [encryption of secret data at rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/).<br />Enables encryption with secretbox.<br />Secretbox has precedence over AESCBC. </td>
+      <td>A key used for the [encryption of secret data at rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/).<br />Enables encryption with secretbox.<br />Secretbox has precedence over AESCBC.</td>
       <td></td>
     </tr>
     <tr>
       <td>`ca`</td>
       <td>PEMEncodedCertificateAndKey</td>
-      <td>The base64 encoded root certificate authority used by Kubernetes. </td>
+      <td>The base64 encoded root certificate authority used by Kubernetes.</td>
       <td></td>
     </tr>
     <tr>
@@ -3671,91 +3670,91 @@ cluster:
     <tr>
       <td>`aggregatorCA`</td>
       <td>PEMEncodedCertificateAndKey</td>
-      <td>The base64 encoded aggregator certificate authority used by Kubernetes for front-proxy certificate generation.<br /><br />This CA can be self-signed. </td>
+      <td>The base64 encoded aggregator certificate authority used by Kubernetes for front-proxy certificate generation.<br /><br />This CA can be self-signed.</td>
       <td></td>
     </tr>
     <tr>
       <td>`serviceAccount`</td>
       <td>PEMEncodedKey</td>
-      <td>The base64 encoded private key for service account token generation. </td>
+      <td>The base64 encoded private key for service account token generation.</td>
       <td></td>
     </tr>
     <tr>
       <td>`apiServer`</td>
-      <td><a href="#apiServer">APIServerConfig</a></td>
-      <td>API server specific configuration options. </td>
+      <td><a href="#apiserver">APIServerConfig</a></td>
+      <td>API server specific configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`controllerManager`</td>
-      <td><a href="#controllerManager">ControllerManagerConfig</a></td>
-      <td>Controller manager server specific configuration options. </td>
+      <td><a href="#controllermanager">ControllerManagerConfig</a></td>
+      <td>Controller manager server specific configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`proxy`</td>
       <td><a href="#proxy">ProxyConfig</a></td>
-      <td>Kube-proxy server-specific configuration options </td>
+      <td>Kube-proxy server-specific configuration options</td>
       <td></td>
     </tr>
     <tr>
       <td>`scheduler`</td>
       <td><a href="#scheduler">SchedulerConfig</a></td>
-      <td>Scheduler server specific configuration options. </td>
+      <td>Scheduler server specific configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`discovery`</td>
       <td><a href="#discovery">ClusterDiscoveryConfig</a></td>
-      <td>Configures cluster member discovery. </td>
+      <td>Configures cluster member discovery.</td>
       <td></td>
     </tr>
     <tr>
       <td>`etcd`</td>
       <td><a href="#etcd">EtcdConfig</a></td>
-      <td>Etcd specific configuration options. </td>
+      <td>Etcd specific configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`coreDNS`</td>
-      <td><a href="#coreDNS">CoreDNS</a></td>
-      <td>Core DNS specific configuration options. </td>
+      <td><a href="#coredns">CoreDNS</a></td>
+      <td>Core DNS specific configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`externalCloudProvider`</td>
-      <td><a href="#externalCloudProvider">ExternalCloudProviderConfig</a></td>
-      <td>External cloud provider configuration. </td>
+      <td><a href="#externalcloudprovider">ExternalCloudProviderConfig</a></td>
+      <td>External cloud provider configuration.</td>
       <td></td>
     </tr>
     <tr>
       <td>`extraManifests`</td>
       <td>[]string</td>
-      <td>A list of urls that point to additional manifests.<br />These will get automatically deployed as part of the bootstrap. </td>
+      <td>A list of urls that point to additional manifests.<br />These will get automatically deployed as part of the bootstrap.</td>
       <td></td>
     </tr>
     <tr>
       <td>`extraManifestHeaders`</td>
       <td>map[string]string</td>
-      <td>A map of key value pairs that will be added while fetching the extraManifests. </td>
+      <td>A map of key value pairs that will be added while fetching the extraManifests.</td>
       <td></td>
     </tr>
     <tr>
       <td>`inlineManifests`</td>
-      <td><a href="#inlineManifests.">[]ClusterInlineManifest</a></td>
-      <td>A list of inline Kubernetes manifests.<br />These will get automatically deployed as part of the bootstrap. </td>
+      <td><a href="#inlinemanifests%5B%5D">ClusterInlineManifest</a></td>
+      <td>A list of inline Kubernetes manifests.<br />These will get automatically deployed as part of the bootstrap.</td>
       <td></td>
     </tr>
     <tr>
       <td>`adminKubeconfig`</td>
-      <td><a href="#adminKubeconfig">AdminKubeconfigConfig</a></td>
-      <td>Settings for admin kubeconfig generation.<br />Certificate lifetime can be configured. </td>
+      <td><a href="#adminkubeconfig">AdminKubeconfigConfig</a></td>
+      <td>Settings for admin kubeconfig generation.<br />Certificate lifetime can be configured.</td>
       <td></td>
     </tr>
     <tr>
       <td>`allowSchedulingOnControlPlanes`</td>
       <td>bool</td>
-      <td>Allows running workload on control-plane nodes. </td>
+      <td>Allows running workload on control-plane nodes.</td>
       <td>`true`<br />`yes`<br />`false`<br />`no`<br /></td>
     </tr>
   </tbody>
@@ -3790,7 +3789,7 @@ cluster:
     <tr>
       <td>`endpoint`</td>
       <td><a href="#endpoint">Endpoint</a></td>
-      <td>Endpoint is the canonical controlplane endpoint, which can be an IP address or a DNS hostname.<br />It is single-valued, and may optionally include a port number. </td>
+      <td>Endpoint is the canonical controlplane endpoint, which can be an IP address or a DNS hostname.<br />It is single-valued, and may optionally include a port number.</td>
       <td></td>
     </tr>
     <tr>
@@ -3890,25 +3889,25 @@ cluster:
     <tr>
       <td>`cni`</td>
       <td><a href="#cni">CNIConfig</a></td>
-      <td>The CNI used.<br />Composed of "name" and "urls".<br />The "name" key supports the following options: "flannel", "custom", and "none".<br />"flannel" uses Talos-managed Flannel CNI, and that's the default option.<br />"custom" uses custom manifests that should be provided in "urls".<br />"none" indicates that Talos will not manage any CNI installation. </td>
+      <td>The CNI used.<br />Composed of "name" and "urls".<br />The "name" key supports the following options: "flannel", "custom", and "none".<br />"flannel" uses Talos-managed Flannel CNI, and that's the default option.<br />"custom" uses custom manifests that should be provided in "urls".<br />"none" indicates that Talos will not manage any CNI installation.</td>
       <td></td>
     </tr>
     <tr>
       <td>`dnsDomain`</td>
       <td>string</td>
-      <td>The domain used by Kubernetes DNS.<br />The default is `cluster.local` </td>
+      <td>The domain used by Kubernetes DNS.<br />The default is `cluster.local`</td>
       <td></td>
     </tr>
     <tr>
       <td>`podSubnets`</td>
       <td>[]string</td>
-      <td>The pod subnet CIDR. </td>
+      <td>The pod subnet CIDR.</td>
       <td></td>
     </tr>
     <tr>
       <td>`serviceSubnets`</td>
       <td>[]string</td>
-      <td>The service subnet CIDR. </td>
+      <td>The service subnet CIDR.</td>
       <td></td>
     </tr>
   </tbody>
@@ -3987,7 +3986,7 @@ FlannelCNIConfig represents the Flannel CNI configuration options.
     <tr>
       <td>`extraArgs`</td>
       <td>[]string</td>
-      <td>Extra arguments for 'flanneld'. </td>
+      <td>Extra arguments for 'flanneld'.</td>
       <td></td>
     </tr>
   </tbody>
@@ -4088,7 +4087,7 @@ cluster:
     <tr>
       <td>`image`</td>
       <td>string</td>
-      <td>The container image used in the API server manifest. </td>
+      <td>The container image used in the API server manifest.</td>
       <td></td>
     </tr>
     <tr>
@@ -4099,7 +4098,7 @@ cluster:
     </tr>
     <tr>
       <td>`extraVolumes`</td>
-      <td><a href="#extraVolumes.">[]VolumeMountConfig</a></td>
+      <td><a href="#extravolumes%5B%5D">VolumeMountConfig</a></td>
       <td>Extra volumes to mount to the API server static pod.</td>
       <td></td>
     </tr>
@@ -4123,14 +4122,14 @@ cluster:
     </tr>
     <tr>
       <td>`admissionControl`</td>
-      <td><a href="#admissionControl.">[]AdmissionPluginConfig</a></td>
-      <td>Configure the API server admission plugins. </td>
+      <td><a href="#admissioncontrol%5B%5D">AdmissionPluginConfig</a></td>
+      <td>Configure the API server admission plugins.</td>
       <td></td>
     </tr>
     <tr>
       <td>`auditPolicy`</td>
       <td>Unstructured</td>
-      <td>Configure the API server audit policy. </td>
+      <td>Configure the API server audit policy.</td>
       <td></td>
     </tr>
     <tr>
@@ -4141,8 +4140,8 @@ cluster:
     </tr>
     <tr>
       <td>`authorizationConfig`</td>
-      <td><a href="#authorizationConfig.">[]AuthorizationConfigAuthorizerConfig</a></td>
-      <td>Configure the API server authorization config. Node and RBAC authorizers are always added irrespective of the configuration. </td>
+      <td><a href="#authorizationconfig%5B%5D">AuthorizationConfigAuthorizerConfig</a></td>
+      <td>Configure the API server authorization config. Node and RBAC authorizers are always added irrespective of the configuration.</td>
       <td></td>
     </tr>
   </tbody>
@@ -4170,19 +4169,19 @@ VolumeMountConfig struct describes extra volume mount for the static pods.
     <tr>
       <td>`hostPath`</td>
       <td>string</td>
-      <td>Path on the host. </td>
+      <td>Path on the host.</td>
       <td></td>
     </tr>
     <tr>
       <td>`mountPath`</td>
       <td>string</td>
-      <td>Path in the container. </td>
+      <td>Path in the container.</td>
       <td></td>
     </tr>
     <tr>
       <td>`readonly`</td>
       <td>bool</td>
-      <td>Mount the volume read only. </td>
+      <td>Mount the volume read only.</td>
       <td></td>
     </tr>
   </tbody>
@@ -4271,13 +4270,13 @@ ResourcesConfig represents the pod resources.
     <tr>
       <td>`requests`</td>
       <td>Unstructured</td>
-      <td>Requests configures the reserved cpu/memory resources. </td>
+      <td>Requests configures the reserved cpu/memory resources.</td>
       <td></td>
     </tr>
     <tr>
       <td>`limits`</td>
       <td>Unstructured</td>
-      <td>Limits configures the maximum cpu/memory resources a container can use. </td>
+      <td>Limits configures the maximum cpu/memory resources a container can use.</td>
       <td></td>
     </tr>
   </tbody>
@@ -4389,7 +4388,7 @@ cluster:
     <tr>
       <td>`image`</td>
       <td>string</td>
-      <td>The container image used in the controller manager manifest. </td>
+      <td>The container image used in the controller manager manifest.</td>
       <td></td>
     </tr>
     <tr>
@@ -4400,7 +4399,7 @@ cluster:
     </tr>
     <tr>
       <td>`extraVolumes`</td>
-      <td><a href="#extraVolumes.">[]VolumeMountConfig</a></td>
+      <td><a href="#extravolumes%5B%5D">VolumeMountConfig</a></td>
       <td>Extra volumes to mount to the controller manager static pod.</td>
       <td></td>
     </tr>
@@ -4441,19 +4440,19 @@ VolumeMountConfig struct describes extra volume mount for the static pods.
     <tr>
       <td>`hostPath`</td>
       <td>string</td>
-      <td>Path on the host. </td>
+      <td>Path on the host.</td>
       <td></td>
     </tr>
     <tr>
       <td>`mountPath`</td>
       <td>string</td>
-      <td>Path in the container. </td>
+      <td>Path in the container.</td>
       <td></td>
     </tr>
     <tr>
       <td>`readonly`</td>
       <td>bool</td>
-      <td>Mount the volume read only. </td>
+      <td>Mount the volume read only.</td>
       <td></td>
     </tr>
   </tbody>
@@ -4483,13 +4482,13 @@ ResourcesConfig represents the pod resources.
     <tr>
       <td>`requests`</td>
       <td>Unstructured</td>
-      <td>Requests configures the reserved cpu/memory resources. </td>
+      <td>Requests configures the reserved cpu/memory resources.</td>
       <td></td>
     </tr>
     <tr>
       <td>`limits`</td>
       <td>Unstructured</td>
-      <td>Limits configures the maximum cpu/memory resources a container can use. </td>
+      <td>Limits configures the maximum cpu/memory resources a container can use.</td>
       <td></td>
     </tr>
   </tbody>
@@ -4534,13 +4533,13 @@ cluster:
     <tr>
       <td>`disabled`</td>
       <td>bool</td>
-      <td>Disable kube-proxy deployment on cluster bootstrap. </td>
+      <td>Disable kube-proxy deployment on cluster bootstrap.</td>
       <td></td>
     </tr>
     <tr>
       <td>`image`</td>
       <td>string</td>
-      <td>The container image used in the kube-proxy manifest. </td>
+      <td>The container image used in the kube-proxy manifest.</td>
       <td></td>
     </tr>
     <tr>
@@ -4591,7 +4590,7 @@ cluster:
     <tr>
       <td>`image`</td>
       <td>string</td>
-      <td>The container image used in the scheduler manifest. </td>
+      <td>The container image used in the scheduler manifest.</td>
       <td></td>
     </tr>
     <tr>
@@ -4602,7 +4601,7 @@ cluster:
     </tr>
     <tr>
       <td>`extraVolumes`</td>
-      <td><a href="#extraVolumes.">[]VolumeMountConfig</a></td>
+      <td><a href="#extravolumes%5B%5D">VolumeMountConfig</a></td>
       <td>Extra volumes to mount to the scheduler static pod.</td>
       <td></td>
     </tr>
@@ -4649,19 +4648,19 @@ VolumeMountConfig struct describes extra volume mount for the static pods.
     <tr>
       <td>`hostPath`</td>
       <td>string</td>
-      <td>Path on the host. </td>
+      <td>Path on the host.</td>
       <td></td>
     </tr>
     <tr>
       <td>`mountPath`</td>
       <td>string</td>
-      <td>Path in the container. </td>
+      <td>Path in the container.</td>
       <td></td>
     </tr>
     <tr>
       <td>`readonly`</td>
       <td>bool</td>
-      <td>Mount the volume read only. </td>
+      <td>Mount the volume read only.</td>
       <td></td>
     </tr>
   </tbody>
@@ -4691,13 +4690,13 @@ ResourcesConfig represents the pod resources.
     <tr>
       <td>`requests`</td>
       <td>Unstructured</td>
-      <td>Requests configures the reserved cpu/memory resources. </td>
+      <td>Requests configures the reserved cpu/memory resources.</td>
       <td></td>
     </tr>
     <tr>
       <td>`limits`</td>
       <td>Unstructured</td>
-      <td>Limits configures the maximum cpu/memory resources a container can use. </td>
+      <td>Limits configures the maximum cpu/memory resources a container can use.</td>
       <td></td>
     </tr>
   </tbody>
@@ -4846,7 +4845,7 @@ RegistryServiceConfig struct configures Kubernetes discovery registry.
     <tr>
       <td>`endpoint`</td>
       <td>string</td>
-      <td>External service endpoint. </td>
+      <td>External service endpoint.</td>
       <td></td>
     </tr>
   </tbody>
@@ -4869,7 +4868,7 @@ EtcdConfig represents the etcd configuration options.
 ```yaml
 cluster:
     etcd:
-        image: gcr.io/etcd-development/etcd:v3.6.4 # The container image used to create the etcd service.
+        image: gcr.io/etcd-development/etcd:v3.6.5 # The container image used to create the etcd service.
         # The `ca` is the root certificate authority of the PKI.
         ca:
             crt: LS0tIEVYQU1QTEUgQ0VSVElGSUNBVEUgLS0t
@@ -4897,13 +4896,13 @@ cluster:
     <tr>
       <td>`image`</td>
       <td>string</td>
-      <td>The container image used to create the etcd service. </td>
+      <td>The container image used to create the etcd service.</td>
       <td></td>
     </tr>
     <tr>
       <td>`ca`</td>
       <td>PEMEncodedCertificateAndKey</td>
-      <td>The `ca` is the root certificate authority of the PKI.<br />It is composed of a base64 encoded `crt` and `key`. </td>
+      <td>The `ca` is the root certificate authority of the PKI.<br />It is composed of a base64 encoded `crt` and `key`.</td>
       <td></td>
     </tr>
     <tr>
@@ -4915,7 +4914,7 @@ cluster:
     <tr>
       <td>`advertisedSubnets`</td>
       <td>[]string</td>
-      <td>The `advertisedSubnets` field configures the networks to pick etcd advertised IP from.<br /><br />IPs can be excluded from the list by using negative match with `!`, e.g `!10.0.0.0/8`.<br />Negative subnet matches should be specified last to filter out IPs picked by positive matches.<br />If not specified, advertised IP is selected as the first routable address of the node. </td>
+      <td>The `advertisedSubnets` field configures the networks to pick etcd advertised IP from.<br /><br />IPs can be excluded from the list by using negative match with `!`, e.g `!10.0.0.0/8`.<br />Negative subnet matches should be specified last to filter out IPs picked by positive matches.<br />If not specified, advertised IP is selected as the first routable address of the node.</td>
       <td></td>
     </tr>
     <tr>
@@ -4940,7 +4939,7 @@ CoreDNS represents the CoreDNS config values.
 ```yaml
 cluster:
     coreDNS:
-        image: registry.k8s.io/coredns/coredns:v1.12.3 # The `image` field is an override to the default coredns image.
+        image: registry.k8s.io/coredns/coredns:v1.12.4 # The `image` field is an override to the default coredns image.
 ```
 
 
@@ -5009,7 +5008,7 @@ cluster:
     <tr>
       <td>`manifests`</td>
       <td>[]string</td>
-      <td>A list of urls that point to additional manifests for an external cloud provider.<br />These will get automatically deployed as part of the bootstrap. </td>
+      <td>A list of urls that point to additional manifests for an external cloud provider.<br />These will get automatically deployed as part of the bootstrap.</td>
       <td></td>
     </tr>
   </tbody>
@@ -5050,13 +5049,13 @@ cluster:
     <tr>
       <td>`name`</td>
       <td>string</td>
-      <td>Name of the manifest.<br />Name should be unique. </td>
+      <td>Name of the manifest.<br />Name should be unique.</td>
       <td></td>
     </tr>
     <tr>
       <td>`contents`</td>
       <td>string</td>
-      <td>Manifest contents as a string. </td>
+      <td>Manifest contents as a string.</td>
       <td></td>
     </tr>
   </tbody>
