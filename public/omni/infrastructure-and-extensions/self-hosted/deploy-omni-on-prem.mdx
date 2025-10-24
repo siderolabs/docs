@@ -2,6 +2,8 @@
 title: Deploy Omni on Prem
 ---
 
+import { omni_release } from '/snippets/custom-variables.mdx';
+
 This guide shows you how to deploy Omni on-prem. This guide assumes that Omni will be deployed on an Ubuntu machine. Small differences should be expected when using a different OS.
 
 For SAML integration sections, this guide assumes Azure AD will be the provider for SAML.
@@ -151,36 +153,9 @@ There are two easy ways to run Omni: docker-compose and a simple `docker run`. W
 
     #### Auth0
 
-    ```bash
-    docker run \
-      --net=host \
-      --cap-add=NET_ADMIN \
-      --device /dev/net/tun \
-      -v $PWD/etcd:/_out/etcd \
-      -v <path to TLS certificate>:/tls.crt \
-      -v <path to TLS key>:/tls.key \
-      -v $PWD/omni.asc:/omni.asc \
-      ghcr.io/siderolabs/omni:<tag> \
-        --account-id=$(uuidgen) \
-        --name=onprem-omni \
-        --cert=/tls.crt \
-        --key=/tls.key \
-        --siderolink-api-cert=/tls.crt \
-        --siderolink-api-key=/tls.key \
-        --private-key-source=file:///omni.asc \
-        --event-sink-port=8091 \
-        --bind-addr=0.0.0.0:443 \
-        --siderolink-api-bind-addr=0.0.0.0:8090 \
-        --k8s-proxy-bind-addr=0.0.0.0:8100 \
-        --advertised-api-url=https://<domain name for onprem omni>/ \
-        --siderolink-api-advertised-url=https://<domain name for onprem omni>:8090/ \
-        --siderolink-wireguard-advertised-addr=<ip address of the host running Omni>:50180 \
-        --advertised-kubernetes-proxy-url=https://<domain name for onprem omni>:8100/ \
-        --auth-auth0-enabled=true \
-        --auth-auth0-domain=<Auth0 domain> \
-        --auth-auth0-client-id=<Auth0 client ID> \
-        --initial-users=<email address>
-    ```
+    <CodeBlock lang="sh">
+      {`docker run \\\n  --net=host \\\n  --cap-add=NET_ADMIN \\\n  --device /dev/net/tun \\\n  -v $PWD/etcd:/_out/etcd \\\n  -v <path to TLS certificate>:/tls.crt \\\n  -v <path to TLS key>:/tls.key \\\n  -v $PWD/omni.asc:/omni.asc \\\n  ghcr.io/siderolabs/omni:${omni_release} \\\n    --account-id=$(uuidgen) \\\n    --name=onprem-omni \\\n    --cert=/tls.crt \\\n    --key=/tls.key \\\n    --siderolink-api-cert=/tls.crt \\\n    --siderolink-api-key=/tls.key \\\n    --private-key-source=file:///omni.asc \\\n    --event-sink-port=8091 \\\n    --bind-addr=0.0.0.0:443 \\\n    --siderolink-api-bind-addr=0.0.0.0:8090 \\\n    --k8s-proxy-bind-addr=0.0.0.0:8100 \\\n    --advertised-api-url=https://<domain name for onprem omni>/ \\\n    --siderolink-api-advertised-url=https://<domain name for onprem omni>:8090/ \\\n    --siderolink-wireguard-advertised-addr=<ip address of the host running Omni>:50180 \\\n    --advertised-kubernetes-proxy-url=https://<domain name for onprem omni>:8100/ \\\n    --auth-auth0-enabled=true \\\n    --auth-auth0-domain=<Auth0 domain> \\\n    --auth-auth0-client-id=<Auth0 client ID> \\\n    --initial-users=<email address>`}
+    </CodeBlock>
 
     **Note:** The `siderolink-wireguard-advertised-addr` **must** point to an IP, not the domain name.
 
@@ -190,34 +165,10 @@ There are two easy ways to run Omni: docker-compose and a simple `docker run`. W
 
     #### SAML
 
-    ```bash
-    docker run \
-      --net=host \
-      --cap-add=NET_ADMIN \
-      --device /dev/net/tun \
-      -v $PWD/etcd:/_out/etcd \
-      -v <path to full chain TLS certificate>:/tls.crt \
-      -v <path to TLS key>:/tls.key \
-      -v $PWD/omni.asc:/omni.asc \
-      ghcr.io/siderolabs/omni:<tag> \
-        --account-id=$(uuidgen) \
-        --name=onprem-omni \
-        --cert=/tls.crt \
-        --key=/tls.key \
-        --siderolink-api-cert=/tls.crt \
-        --siderolink-api-key=/tls.key \
-        --private-key-source=file:///omni.asc \
-        --event-sink-port=8091 \
-        --bind-addr=0.0.0.0:443 \
-        --siderolink-api-bind-addr=0.0.0.0:8090 \
-        --k8s-proxy-bind-addr=0.0.0.0:8100 \
-        --advertised-api-url=https://<domain name for onprem omni>/ \
-        --siderolink-api-advertised-url=https://<domain name for onprem omni>:8090/ \
-        --siderolink-wireguard-advertised-addr=<ip address of the host running Omni>:50180 \
-        --advertised-kubernetes-proxy-url=https://<domain name for onprem omni>:8100/ \
-        --auth-saml-enabled=true \
-        --auth-saml-url=<app federation metadata url copied during Azure AD setup>
-    ```
+    <CodeBlock lang="sh">
+    {`docker run \\\n --net=host \\\n  --cap-add=NET_ADMIN \\\n  --device /dev/net/tun \\\n  -v $PWD/etcd:/_out/etcd \\\n  -v <path to full chain TLS certificate>:/tls.crt \\\n  -v <path to TLS key>:/tls.key \\\n  -v $PWD/omni.asc:/omni.asc \\\n  ghcr.io/siderolabs/omni:${omni_release} \\\n    --account-id=$(uuidgen) \\\n    --name=onprem-omni \\\n    --cert=/tls.crt \\\n    --key=/tls.key \\\n    --siderolink-api-cert=/tls.crt \\\n    --siderolink-api-key=/tls.key \\\n    --private-key-source=file:///omni.asc \\\n    --event-sink-port=8091 \\\n    --bind-addr=0.0.0.0:443 \\\n    --siderolink-api-bind-addr=0.0.0.0:8090 \\\n    --k8s-proxy-bind-addr=0.0.0.0:8100 \\\n    --advertised-api-url=https://<domain name for onprem omni>/ \\\n    --siderolink-api-advertised-url=https://<domain name for onprem omni>:8090/ \\\n    --siderolink-wireguard-advertised-addr=<ip address of the host running Omni>:50180 \\\n    --advertised-kubernetes-proxy-url=https://<domain name for onprem omni>:8100/ \\\n    --auth-saml-enabled=true \\\n    --auth-saml-url=<app federation metadata url copied during Azure AD setup>
+    `}
+    </CodeBlock>
 
     **Note**
 
@@ -225,40 +176,11 @@ There are two easy ways to run Omni: docker-compose and a simple `docker run`. W
 
     #### OIDC
 
-    ```bash
-    docker run \
-      --net=host \
-      --cap-add=NET_ADMIN \
-      --device /dev/net/tun \
-      -v $PWD/etcd:/_out/etcd \
-      -v <path to full chain TLS certificate>:/tls.crt \
-      -v <path to TLS key>:/tls.key \
-      -v $PWD/omni.asc:/omni.asc \
-      ghcr.io/siderolabs/omni:<tag> \
-        --account-id=$(uuidgen) \
-        --name=onprem-omni \
-        --cert=/tls.crt \
-        --key=/tls.key \
-        --siderolink-api-cert=/tls.crt \
-        --siderolink-api-key=/tls.key \
-        --private-key-source=file:///omni.asc \
-        --event-sink-port=8091 \
-        --bind-addr=0.0.0.0:443 \
-        --siderolink-api-bind-addr=0.0.0.0:8090 \
-        --k8s-proxy-bind-addr=0.0.0.0:8100 \
-        --advertised-api-url=https://<domain name for onprem omni>/ \
-        --siderolink-api-advertised-url=https://<domain name for onprem omni>:8090/ \
-        --siderolink-wireguard-advertised-addr=<ip address of the host running Omni>:50180 \
-        --advertised-kubernetes-proxy-url=https://<domain name for onprem omni>:8100/ \
-        --auth-oidc-enabled \
-        --auth-oidc-provider-url <URL of the OIDC provider> \
-        --auth-oidc-client-id <id copied from the OIDC provider> \
-        --auth-oidc-client-secret <secret copied from the OIDC provider> \
-        --auth-oidc-logout-url <logout URL, optional, copied from the OIDC provider> \
-        --auth-oidc-scopes openid \
-        --auth-oidc-scopes profile \
-        --auth-oidc-scopes email
-    ```
+    <CodeBlock lang="sh">
+    {`
+    docker run \\\n  --net=host \\\n  --cap-add=NET_ADMIN \\\n  --device /dev/net/tun \\\n  -v $PWD/etcd:/_out/etcd \\\n  -v <path to full chain TLS certificate>:/tls.crt \\\n  -v <path to TLS key>:/tls.key \\\n  -v $PWD/omni.asc:/omni.asc \\\n  ghcr.io/siderolabs/omni:${omni_release} \\\n    --account-id=$(uuidgen) \\\n    --name=onprem-omni \\\n    --cert=/tls.crt \\\n    --key=/tls.key \\\n    --siderolink-api-cert=/tls.crt \\\n    --siderolink-api-key=/tls.key \\\n    --private-key-source=file:///omni.asc \\\n    --event-sink-port=8091 \\\n    --bind-addr=0.0.0.0:443 \\\n    --siderolink-api-bind-addr=0.0.0.0:8090 \\\n    --k8s-proxy-bind-addr=0.0.0.0:8100 \\\n    --advertised-api-url=https://<domain name for onprem omni>/ \\\n    --siderolink-api-advertised-url=https://<domain name for onprem omni>:8090/ \\\n    --siderolink-wireguard-advertised-addr=<ip address of the host running Omni>:50180 \\\n    --advertised-kubernetes-proxy-url=https://<domain name for onprem omni>:8100/ \\\n    --auth-oidc-enabled \\\n    --auth-oidc-provider-url <URL of the OIDC provider> \\\n    --auth-oidc-client-id <id copied from the OIDC provider> \\\n    --auth-oidc-client-secret <secret copied from the OIDC provider> \\\n    --auth-oidc-logout-url <logout URL, optional, copied from the OIDC provider> \\\n    --auth-oidc-scopes openid \\\n    --auth-oidc-scopes profile \\\n    --auth-oidc-scopes email
+    `}
+    </CodeBlock>
 
     **Note**
 
