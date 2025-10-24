@@ -143,15 +143,22 @@ spec:
 
 When you apply this `example-workload` Deployment, it successfully creates the Deployment and deploys its pods:
 
-<pre>
-$ kubectl apply -f example-workload.yaml
-deployment.apps/example-workload created
+<Tabs>
+  <Tab title="Command">
+    ```sh
+    kubectl apply -f example-workload.yaml
+    kubectl get pods
+    ```
+  </Tab>
+  <Tab title="Output">
+    ```sh
+    deployment.apps/example-workload created
 
-$ kubectl get pods
-NAME                                READY   STATUS    RESTARTS   AGE
-example-workload-6f847d64b9-jctkv   1/1     Running   0          10s
-
-</pre>
+    NAME                                READY   STATUS    RESTARTS   AGE
+    example-workload-6f847d64b9-jctkv   1/1     Running   0          10s
+    ```
+  </Tab>
+</Tabs>
 
 This is because the Deployment follows Talos’ recommended security practices, which, as shown in the Deployment configuration, include:
 
@@ -285,4 +292,64 @@ $ kubectl get ds
 
 NAME              DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
 debug-container   2         2         0       2            0           <none>          4s
+```
+
+## Troubleshooting Common PSA Error Messages
+
+Here are some typical error messages you’ll run into when a pod violates a PSA policy, along with what went wrong and how to fix it.
+
+1. **Pod denied because of restricted fields**:
+
+```output wrap
+Error from server (Forbidden): error when creating “pod.yaml”: pods “nginx” is forbidden: violates PodSecurity “baseline:latest”: privileged (container “nginx” must not set securityContext.privileged=true)
+```
+
+**What’s happening**: Your pod does not comply with the `restricted` profile. For example, the pod either allows privilege escalation or doesn’t force non-root user.
+
+**Fix**: In the pod’s spec, make sure the container is set to run as a non-root user and cannot escalate its privileges. For example:
+
+```yaml
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+```
+
+2. **Warnings for policy non-compliance**:
+
+```bash wrap
+Warning: would violate PodSecurity "restricted:latest": unrestricted capabilities (container "app" must set securityContext.capabilities.drop=["ALL"])
+```
+
+**What’s happening**: PSA allows the pod to run, but it still flags issues that break the policy, like missing capability drops in this example.
+
+**Fix**: Explicitly drop capabilities, for example:
+
+```yaml
+securityContext:
+  capabilities:
+    drop: ["ALL"]
+```
+
+3. **Pod denied due to host-level access**:
+
+```bash wrap
+Error from server (Forbidden): pods "my-pod" is forbidden: violates PodSecurity "restricted:latest": hostPath volumes (volume "data") use of hostPath volumes is not allowed
+```
+
+**What’s happening**: Your pod uses a host-level resource (e.g., a hostPath volume) or other disallowed field under the restricted profile.
+
+**Fix**: Remove or replace the hostPath (or other prohibited resource) and use a safer pattern (for example `emptyDir`, a CSI volume, etc.) in your pod spec.
+
+4. **Invalid namespace label value**:
+
+```bash wrap
+Error from server (BadRequest): admission webhook "pod-security.admission.k8s.io" denied the request: invalid label value for pod-security.kubernetes.io/enforce
+```
+
+**What’s happening**: The label value you used on the namespace is not one of the allowed options (privileged, baseline, restricted).
+
+**Fix**: Change the label to a valid value. For example:
+
+```bash
+kubectl label namespace my-ns pod-security.kubernetes.io/enforce=baseline
 ```
