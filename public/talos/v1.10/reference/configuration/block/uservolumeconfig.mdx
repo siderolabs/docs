@@ -125,7 +125,7 @@ ProvisioningSpec describes how the volume is provisioned.
   <tbody>
     <tr>
       <td>`diskSelector`</td>
-      <td><a href="#diskSelector">DiskSelector</a></td>
+      <td><a href="#diskselector">DiskSelector</a></td>
       <td>The disk selector expression.</td>
       <td></td>
     </tr>
@@ -138,13 +138,13 @@ ProvisioningSpec describes how the volume is provisioned.
     <tr>
       <td>`minSize`</td>
       <td>ByteSize</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`maxSize`</td>
       <td>ByteSize</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
   </tbody>
@@ -172,7 +172,7 @@ DiskSelector selects a disk for the volume.
     <tr>
       <td>`match`</td>
       <td>Expression</td>
-      <td>The Common Expression Language (CEL) expression to match the disk. </td>
+      <td>The Common Expression Language (CEL) expression to match the disk.</td>
       <td></td>
     </tr>
   </tbody>
@@ -265,14 +265,14 @@ encryption:
     </tr>
     <tr>
       <td>`keys`</td>
-      <td><a href="#keys.">[]EncryptionKey</a></td>
+      <td><a href="#keys%5B%5D">EncryptionKey</a></td>
       <td>Defines the encryption keys generation and storage method.</td>
       <td></td>
     </tr>
     <tr>
       <td>`cipher`</td>
       <td>string</td>
-      <td>Cipher to use for the encryption. Depends on the encryption provider. </td>
+      <td>Cipher to use for the encryption. Depends on the encryption provider.</td>
       <td>`aes-xts-plain64`<br />`xchacha12,aes-adiantum-plain64`<br />`xchacha20,aes-adiantum-plain64`<br /></td>
     </tr>
     <tr>
@@ -284,13 +284,13 @@ encryption:
     <tr>
       <td>`blockSize`</td>
       <td>uint64</td>
-      <td>Defines the encryption sector size. </td>
+      <td>Defines the encryption sector size.</td>
       <td></td>
     </tr>
     <tr>
       <td>`options`</td>
       <td>[]string</td>
-      <td>Additional --perf parameters for the LUKS2 encryption. </td>
+      <td>Additional --perf parameters for the LUKS2 encryption.</td>
       <td>`no_read_workqueue`<br />`no_write_workqueue`<br />`same_cpu_crypt`<br /></td>
     </tr>
   </tbody>
@@ -329,7 +329,7 @@ EncryptionKey represents configuration for disk encryption key.
     </tr>
     <tr>
       <td>`nodeID`</td>
-      <td><a href="#nodeID">EncryptionKeyNodeID</a></td>
+      <td><a href="#nodeid">EncryptionKeyNodeID</a></td>
       <td>Deterministically generated key from the node UUID and PartitionLabel.</td>
       <td></td>
     </tr>
