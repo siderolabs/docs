@@ -48,21 +48,52 @@ To see a live demo of an upgrade of Talos Linux, see the video below:
 
 There are no specific actions to be taken after an upgrade.
 
-## `talosctl upgrade`
+## Upgrading Talos with `talosctl`
 
-To upgrade a Talos node, specify the node's IP address and the
-installer container image for the version of Talos to upgrade to.
+To upgrade a Talos node, you’ll need two things:
 
-For instance, if your Talos node has the IP address `10.20.30.40` and you want
-to install the current version, you would enter a command such
-as:
+1. The **IP address** of the node.
+2. An **installer image** from the Talos Image Factory.
+
+### Step 1: Get Your Installer Image
+
+The recommended way to upgrade Talos is by using a custom image from the 
+<a href="https://factory.talos.dev/">Image Factory</a>. This ensures:
+
+- Talos Linux is updated.
+- Any updated system extensions you’ve configured are included.
+
+⚠️ **Avoid using generic images like** `ghcr.io/siderolabs/installer:${release_v1_11}` 
+— unless it best suits your situation
+
+> #### ✅ Pro Tip:
+> 
+> If you saved the URL you used to install Talos originally, or the next time you upgrade, you can 
+> reuse it for any future upgrades. Just update the `version` portion of the URL:
+>
+> ```
+> &version=${release_v1_11} → &version=v1.11.2
+> ```
+
+In the Image Factory, once you have your schematic/image, look for the section titled **“Upgrading Talos 
+Linux”** — it will give you the exact image path to use.
+
+### Step 2: Run the Upgrade Command
+
+Once you have the image and the node’s IP address, run:
 
 <CodeBlock lang="sh">
 {`
-  $ talosctl upgrade --nodes 10.20.30.40 \\
-  --image ghcr.io/siderolabs/installer:${release_v1_11}
+  $ talosctl upgrade --nodes 10.20.30.40 \
+  --image factory.talos.dev/74b14......dcff:v1.11.2
 `}
 </CodeBlock>
+
+Replace:
+- `10.20.30.40` with your node’s IP.
+- `factory.talos.dev/74b14......dcff:v1.11.2` with the image path you got from the Image Factory.
+
+### Staging updates
 
 Rarely, an upgrade command will fail due to a process holding a file open on disk.
 In these cases, you can use the `--stage` flag.
