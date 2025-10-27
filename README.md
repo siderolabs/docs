@@ -1,6 +1,4 @@
----
-title: "SideroLabs documentation contribution guide"
----
+# SideroLabs documentation contribution guide
 
 Welcome to the official SideroLabs documentation, we are excited that you want to contribute!
 

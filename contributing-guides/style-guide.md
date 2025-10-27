@@ -1,6 +1,4 @@
----
-title: "Documentation style guide"
----
+# Documentation style guide
 
 To ensure consistency and cohesiveness in the SideroLabs documentation, here are the rules to follow when creating new documentation:
 

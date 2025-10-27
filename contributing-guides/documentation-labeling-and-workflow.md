@@ -1,6 +1,4 @@
----
-title: "Documentation labeling and workflow"
----
+# Documentation labeling and workflow
 
 Use the `Doc_improvements` label to track questions, issues, or discussions relating to the docs on the [Talos repo](https://github.com/siderolabs/talos).
 

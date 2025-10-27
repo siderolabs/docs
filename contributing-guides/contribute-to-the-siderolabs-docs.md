@@ -1,6 +1,4 @@
----
-title: "How to contribute to the SideroLabs documentation"
----
+# How to contribute to the SideroLabs documentation
 
 This guide walks you through how to make changes to the SideroLabs documentation.
 
