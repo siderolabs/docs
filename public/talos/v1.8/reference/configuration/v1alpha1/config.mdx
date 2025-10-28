@@ -1,7 +1,6 @@
 ---
 description: Config defines the v1alpha1.Config Talos machine configuration document.
 title: MachineConfig
-mode: "wide"
 ---
 
 {/*
@@ -114,13 +113,13 @@ machine:
     <tr>
       <td>`token`</td>
       <td>string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`ca`</td>
       <td>PEMEncodedCertificateAndKey</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
@@ -132,133 +131,133 @@ machine:
     <tr>
       <td>`certSANs`</td>
       <td>[]string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`controlPlane`</td>
-      <td><a href="#controlPlane">MachineControlPlaneConfig</a></td>
-      <td>Provides machine specific control plane configuration options. </td>
+      <td><a href="#controlplane">MachineControlPlaneConfig</a></td>
+      <td>Provides machine specific control plane configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`kubelet`</td>
       <td><a href="#kubelet">KubeletConfig</a></td>
-      <td>Used to provide additional options to the kubelet. </td>
+      <td>Used to provide additional options to the kubelet.</td>
       <td></td>
     </tr>
     <tr>
       <td>`pods`</td>
       <td>[]Unstructured</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`network`</td>
       <td><a href="#network">NetworkConfig</a></td>
-      <td>Provides machine specific network configuration options. </td>
+      <td>Provides machine specific network configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`disks`</td>
-      <td><a href="#disks.">[]MachineDisk</a></td>
-      <td> </td>
+      <td><a href="#disks%5B%5D">MachineDisk</a></td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`install`</td>
       <td><a href="#install">InstallConfig</a></td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`files`</td>
-      <td><a href="#files.">[]MachineFile</a></td>
-      <td> </td>
+      <td><a href="#files%5B%5D">MachineFile</a></td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`env`</td>
       <td>Env</td>
-      <td> </td>
+      <td></td>
       <td>``GRPC_GO_LOG_VERBOSITY_LEVEL``<br />``GRPC_GO_LOG_SEVERITY_LEVEL``<br />``http_proxy``<br />``https_proxy``<br />``no_proxy``<br /></td>
     </tr>
     <tr>
       <td>`time`</td>
       <td><a href="#time">TimeConfig</a></td>
-      <td>Used to configure the machine's time settings. </td>
+      <td>Used to configure the machine's time settings.</td>
       <td></td>
     </tr>
     <tr>
       <td>`sysctls`</td>
       <td>map[string]string</td>
-      <td>Used to configure the machine's sysctls. </td>
+      <td>Used to configure the machine's sysctls.</td>
       <td></td>
     </tr>
     <tr>
       <td>`sysfs`</td>
       <td>map[string]string</td>
-      <td>Used to configure the machine's sysfs. </td>
+      <td>Used to configure the machine's sysfs.</td>
       <td></td>
     </tr>
     <tr>
       <td>`registries`</td>
       <td><a href="#registries">RegistriesConfig</a></td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`systemDiskEncryption`</td>
-      <td><a href="#systemDiskEncryption">SystemDiskEncryptionConfig</a></td>
-      <td> </td>
+      <td><a href="#systemdiskencryption">SystemDiskEncryptionConfig</a></td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`features`</td>
       <td><a href="#features">FeaturesConfig</a></td>
-      <td>Features describe individual Talos features that can be switched on or off. </td>
+      <td>Features describe individual Talos features that can be switched on or off.</td>
       <td></td>
     </tr>
     <tr>
       <td>`udev`</td>
       <td><a href="#udev">UdevConfig</a></td>
-      <td>Configures the udev system. </td>
+      <td>Configures the udev system.</td>
       <td></td>
     </tr>
     <tr>
       <td>`logging`</td>
       <td><a href="#logging">LoggingConfig</a></td>
-      <td>Configures the logging system. </td>
+      <td>Configures the logging system.</td>
       <td></td>
     </tr>
     <tr>
       <td>`kernel`</td>
       <td><a href="#kernel">KernelConfig</a></td>
-      <td>Configures the kernel. </td>
+      <td>Configures the kernel.</td>
       <td></td>
     </tr>
     <tr>
       <td>`seccompProfiles`</td>
-      <td><a href="#seccompProfiles.">[]MachineSeccompProfile</a></td>
-      <td>Configures the seccomp profiles for the machine. </td>
+      <td><a href="#seccompprofiles%5B%5D">MachineSeccompProfile</a></td>
+      <td>Configures the seccomp profiles for the machine.</td>
       <td></td>
     </tr>
     <tr>
       <td>`nodeLabels`</td>
       <td>map[string]string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`nodeAnnotations`</td>
       <td>map[string]string</td>
-      <td>Configures the node annotations for the machine. </td>
+      <td>Configures the node annotations for the machine.</td>
       <td></td>
     </tr>
     <tr>
       <td>`nodeTaints`</td>
       <td>map[string]string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
   </tbody>
@@ -296,7 +295,7 @@ machine:
   <tbody>
     <tr>
       <td>`controllerManager`</td>
-      <td><a href="#controllerManager">MachineControllerManagerConfig</a></td>
+      <td><a href="#controllermanager">MachineControllerManagerConfig</a></td>
       <td>Controller manager machine specific configuration options.</td>
       <td></td>
     </tr>
@@ -445,37 +444,37 @@ machine:
     <tr>
       <td>`image`</td>
       <td>string</td>
-      <td>The `image` field is an optional reference to an alternative kubelet image. </td>
+      <td>The `image` field is an optional reference to an alternative kubelet image.</td>
       <td></td>
     </tr>
     <tr>
       <td>`clusterDNS`</td>
       <td>[]string</td>
-      <td>The `ClusterDNS` field is an optional reference to an alternative kubelet clusterDNS ip list. </td>
+      <td>The `ClusterDNS` field is an optional reference to an alternative kubelet clusterDNS ip list.</td>
       <td></td>
     </tr>
     <tr>
       <td>`extraArgs`</td>
       <td>map[string]string</td>
-      <td>The `extraArgs` field is used to provide additional flags to the kubelet. </td>
+      <td>The `extraArgs` field is used to provide additional flags to the kubelet.</td>
       <td></td>
     </tr>
     <tr>
       <td>`extraMounts`</td>
-      <td><a href="#extraMounts.">[]ExtraMount</a></td>
-      <td> </td>
+      <td><a href="#extramounts%5B%5D">ExtraMount</a></td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`extraConfig`</td>
       <td>Unstructured</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`credentialProviderConfig`</td>
       <td>Unstructured</td>
-      <td>The `KubeletCredentialProviderConfig` field is used to provide kubelet credential configuration. </td>
+      <td>The `KubeletCredentialProviderConfig` field is used to provide kubelet credential configuration.</td>
       <td></td>
     </tr>
     <tr>
@@ -492,8 +491,8 @@ machine:
     </tr>
     <tr>
       <td>`nodeIP`</td>
-      <td><a href="#nodeIP">KubeletNodeIPConfig</a></td>
-      <td> </td>
+      <td><a href="#nodeip">KubeletNodeIPConfig</a></td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
@@ -570,13 +569,13 @@ machine:
     </tr>
     <tr>
       <td>`uidMappings`</td>
-      <td><a href="#uidMappings.">[]LinuxIDMapping</a></td>
+      <td><a href="#uidmappings%5B%5D">LinuxIDMapping</a></td>
       <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`gidMappings`</td>
-      <td><a href="#gidMappings.">[]LinuxIDMapping</a></td>
+      <td><a href="#gidmappings%5B%5D">LinuxIDMapping</a></td>
       <td></td>
       <td></td>
     </tr>
@@ -850,26 +849,26 @@ machine:
     </tr>
     <tr>
       <td>`interfaces`</td>
-      <td><a href="#interfaces.">[]Device</a></td>
-      <td> </td>
+      <td><a href="#interfaces%5B%5D">Device</a></td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`nameservers`</td>
       <td>[]string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`extraHostEntries`</td>
-      <td><a href="#extraHostEntries.">[]ExtraHost</a></td>
-      <td>Allows for extra entries to be added to the `/etc/hosts` file </td>
+      <td><a href="#extrahostentries%5B%5D">ExtraHost</a></td>
+      <td>Allows for extra entries to be added to the `/etc/hosts` file</td>
       <td></td>
     </tr>
     <tr>
       <td>`kubespan`</td>
       <td><a href="#kubespan">NetworkKubeSpan</a></td>
-      <td>Configures KubeSpan feature. </td>
+      <td>Configures KubeSpan feature.</td>
       <td></td>
     </tr>
     <tr>
@@ -996,42 +995,42 @@ machine:
     <tr>
       <td>`interface`</td>
       <td>string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`deviceSelector`</td>
-      <td><a href="#deviceSelector">NetworkDeviceSelector</a></td>
-      <td> </td>
+      <td><a href="#deviceselector">NetworkDeviceSelector</a></td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`addresses`</td>
       <td>[]string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`routes`</td>
-      <td><a href="#routes.">[]Route</a></td>
-      <td> </td>
+      <td><a href="#routes%5B%5D">Route</a></td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`bond`</td>
       <td><a href="#bond">Bond</a></td>
-      <td>Bond specific options. </td>
+      <td>Bond specific options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`bridge`</td>
       <td><a href="#bridge">Bridge</a></td>
-      <td>Bridge specific options. </td>
+      <td>Bridge specific options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`vlans`</td>
-      <td><a href="#vlans.">[]Vlan</a></td>
+      <td><a href="#vlans%5B%5D">Vlan</a></td>
       <td>VLAN specific options.</td>
       <td></td>
     </tr>
@@ -1044,7 +1043,7 @@ machine:
     <tr>
       <td>`dhcp`</td>
       <td>bool</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
@@ -1061,20 +1060,20 @@ machine:
     </tr>
     <tr>
       <td>`dhcpOptions`</td>
-      <td><a href="#dhcpOptions">DHCPOptions</a></td>
-      <td> </td>
+      <td><a href="#dhcpoptions">DHCPOptions</a></td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`wireguard`</td>
       <td><a href="#wireguard">DeviceWireguardConfig</a></td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`vip`</td>
       <td><a href="#vip">DeviceVIPConfig</a></td>
-      <td>Virtual (shared) IP address configuration. </td>
+      <td>Virtual (shared) IP address configuration.</td>
       <td></td>
     </tr>
   </tbody>
@@ -1274,8 +1273,8 @@ machine:
     </tr>
     <tr>
       <td>`deviceSelectors`</td>
-      <td><a href="#deviceSelectors.">[]NetworkDeviceSelector</a></td>
-      <td> </td>
+      <td><a href="#deviceselectors%5B%5D">NetworkDeviceSelector</a></td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
@@ -1666,7 +1665,7 @@ Vlan represents vlan settings for a device.
     </tr>
     <tr>
       <td>`routes`</td>
-      <td><a href="#routes.">[]Route</a></td>
+      <td><a href="#routes%5B%5D">Route</a></td>
       <td>A list of routes associated with the VLAN.</td>
       <td></td>
     </tr>
@@ -1696,7 +1695,7 @@ Vlan represents vlan settings for a device.
     </tr>
     <tr>
       <td>`dhcpOptions`</td>
-      <td><a href="#dhcpOptions">DHCPOptions</a></td>
+      <td><a href="#dhcpoptions">DHCPOptions</a></td>
       <td></td>
       <td></td>
     </tr>
@@ -1805,7 +1804,7 @@ machine:
     </tr>
     <tr>
       <td>`equinixMetal`</td>
-      <td><a href="#equinixMetal">VIPEquinixMetalConfig</a></td>
+      <td><a href="#equinixmetal">VIPEquinixMetalConfig</a></td>
       <td>Specifies the Equinix Metal API settings to assign VIP to the node.</td>
       <td></td>
     </tr>
@@ -2066,7 +2065,7 @@ machine:
     </tr>
     <tr>
       <td>`peers`</td>
-      <td><a href="#peers.">[]DeviceWireguardPeer</a></td>
+      <td><a href="#peers%5B%5D">DeviceWireguardPeer</a></td>
       <td>Specifies a list of peer configurations to apply to a device.</td>
       <td></td>
     </tr>
@@ -2158,7 +2157,7 @@ machine:
     </tr>
     <tr>
       <td>`equinixMetal`</td>
-      <td><a href="#equinixMetal">VIPEquinixMetalConfig</a></td>
+      <td><a href="#equinixmetal">VIPEquinixMetalConfig</a></td>
       <td>Specifies the Equinix Metal API settings to assign VIP to the node.</td>
       <td></td>
     </tr>
@@ -2369,7 +2368,7 @@ KubeSpanFilters struct describes KubeSpan advanced network addresses filtering.
     <tr>
       <td>`endpoints`</td>
       <td>[]string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
   </tbody>
@@ -2426,7 +2425,7 @@ machine:
     </tr>
     <tr>
       <td>`partitions`</td>
-      <td><a href="#partitions.">[]DiskPartition</a></td>
+      <td><a href="#partitions%5B%5D">DiskPartition</a></td>
       <td>A list of partitions to create on the disk.</td>
       <td></td>
     </tr>
@@ -2455,7 +2454,7 @@ DiskPartition represents the options for a disk partition.
     <tr>
       <td>`size`</td>
       <td>DiskSize</td>
-      <td>The size of partition: either bytes or human readable representation. If `size:` is omitted, the partition is sized to occupy the full disk. </td>
+      <td>The size of partition: either bytes or human readable representation. If `size:` is omitted, the partition is sized to occupy the full disk.</td>
       <td></td>
     </tr>
     <tr>
@@ -2515,31 +2514,31 @@ machine:
     <tr>
       <td>`disk`</td>
       <td>string</td>
-      <td>The disk used for installations. </td>
+      <td>The disk used for installations.</td>
       <td></td>
     </tr>
     <tr>
       <td>`diskSelector`</td>
-      <td><a href="#diskSelector">InstallDiskSelector</a></td>
-      <td> </td>
+      <td><a href="#diskselector">InstallDiskSelector</a></td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`extraKernelArgs`</td>
       <td>[]string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`image`</td>
       <td>string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`extensions`</td>
-      <td><a href="#extensions.">[]InstallExtensionConfig</a></td>
-      <td>Allows for supplying additional system extension images to install on top of base Talos image. </td>
+      <td><a href="#extensions%5B%5D">InstallExtensionConfig</a></td>
+      <td>Allows for supplying additional system extension images to install on top of base Talos image.</td>
       <td></td>
     </tr>
     <tr>
@@ -2591,7 +2590,7 @@ machine:
     <tr>
       <td>`size`</td>
       <td>InstallDiskSizeMatcher</td>
-      <td>Disk size. </td>
+      <td>Disk size.</td>
       <td></td>
     </tr>
     <tr>
@@ -2639,7 +2638,7 @@ machine:
     <tr>
       <td>`busPath`</td>
       <td>string</td>
-      <td>Disk bus path. </td>
+      <td>Disk bus path.</td>
       <td></td>
     </tr>
   </tbody>
@@ -2841,13 +2840,13 @@ machine:
     <tr>
       <td>`mirrors`</td>
       <td><a href="#-">map[string]RegistryMirrorConfig</a></td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`config`</td>
       <td><a href="#-">map[string]RegistryConfig</a></td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
   </tbody>
@@ -2942,13 +2941,13 @@ machine:
     <tr>
       <td>`tls`</td>
       <td><a href="#tls">RegistryTLSConfig</a></td>
-      <td>The TLS configuration for the registry. </td>
+      <td>The TLS configuration for the registry.</td>
       <td></td>
     </tr>
     <tr>
       <td>`auth`</td>
       <td><a href="#auth">RegistryAuthConfig</a></td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
   </tbody>
@@ -3002,7 +3001,7 @@ machine:
     <tr>
       <td>`clientIdentity`</td>
       <td>PEMEncodedCertificateAndKey</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
@@ -3168,19 +3167,19 @@ EncryptionConfig represents partition encryption settings.
     <tr>
       <td>`provider`</td>
       <td>string</td>
-      <td>Encryption provider to use for the encryption. </td>
+      <td>Encryption provider to use for the encryption.</td>
       <td></td>
     </tr>
     <tr>
       <td>`keys`</td>
-      <td><a href="#keys.">[]EncryptionKey</a></td>
+      <td><a href="#keys%5B%5D">EncryptionKey</a></td>
       <td>Defines the encryption keys generation and storage method.</td>
       <td></td>
     </tr>
     <tr>
       <td>`cipher`</td>
       <td>string</td>
-      <td>Cipher kind to use for the encryption. Depends on the encryption provider. </td>
+      <td>Cipher kind to use for the encryption. Depends on the encryption provider.</td>
       <td>`aes-xts-plain64`<br />`xchacha12,aes-adiantum-plain64`<br />`xchacha20,aes-adiantum-plain64`<br /></td>
     </tr>
     <tr>
@@ -3192,13 +3191,13 @@ EncryptionConfig represents partition encryption settings.
     <tr>
       <td>`blockSize`</td>
       <td>uint64</td>
-      <td>Defines the encryption sector size. </td>
+      <td>Defines the encryption sector size.</td>
       <td></td>
     </tr>
     <tr>
       <td>`options`</td>
       <td>[]string</td>
-      <td>Additional --perf parameters for the LUKS2 encryption. </td>
+      <td>Additional --perf parameters for the LUKS2 encryption.</td>
       <td>`no_read_workqueue`<br />`no_write_workqueue`<br />`same_cpu_crypt`<br /></td>
     </tr>
   </tbody>
@@ -3231,14 +3230,14 @@ EncryptionKey represents configuration for disk encryption key.
     </tr>
     <tr>
       <td>`nodeID`</td>
-      <td><a href="#nodeID">EncryptionKeyNodeID</a></td>
+      <td><a href="#nodeid">EncryptionKeyNodeID</a></td>
       <td>Deterministically generated key from the node UUID and PartitionLabel.</td>
       <td></td>
     </tr>
     <tr>
       <td>`kms`</td>
       <td><a href="#kms">EncryptionKeyKMS</a></td>
-      <td>KMS managed encryption key. </td>
+      <td>KMS managed encryption key.</td>
       <td></td>
     </tr>
     <tr>
@@ -3393,19 +3392,19 @@ EncryptionConfig represents partition encryption settings.
     <tr>
       <td>`provider`</td>
       <td>string</td>
-      <td>Encryption provider to use for the encryption. </td>
+      <td>Encryption provider to use for the encryption.</td>
       <td></td>
     </tr>
     <tr>
       <td>`keys`</td>
-      <td><a href="#keys.">[]EncryptionKey</a></td>
+      <td><a href="#keys%5B%5D">EncryptionKey</a></td>
       <td>Defines the encryption keys generation and storage method.</td>
       <td></td>
     </tr>
     <tr>
       <td>`cipher`</td>
       <td>string</td>
-      <td>Cipher kind to use for the encryption. Depends on the encryption provider. </td>
+      <td>Cipher kind to use for the encryption. Depends on the encryption provider.</td>
       <td>`aes-xts-plain64`<br />`xchacha12,aes-adiantum-plain64`<br />`xchacha20,aes-adiantum-plain64`<br /></td>
     </tr>
     <tr>
@@ -3417,13 +3416,13 @@ EncryptionConfig represents partition encryption settings.
     <tr>
       <td>`blockSize`</td>
       <td>uint64</td>
-      <td>Defines the encryption sector size. </td>
+      <td>Defines the encryption sector size.</td>
       <td></td>
     </tr>
     <tr>
       <td>`options`</td>
       <td>[]string</td>
-      <td>Additional --perf parameters for the LUKS2 encryption. </td>
+      <td>Additional --perf parameters for the LUKS2 encryption.</td>
       <td>`no_read_workqueue`<br />`no_write_workqueue`<br />`same_cpu_crypt`<br /></td>
     </tr>
   </tbody>
@@ -3456,14 +3455,14 @@ EncryptionKey represents configuration for disk encryption key.
     </tr>
     <tr>
       <td>`nodeID`</td>
-      <td><a href="#nodeID">EncryptionKeyNodeID</a></td>
+      <td><a href="#nodeid">EncryptionKeyNodeID</a></td>
       <td>Deterministically generated key from the node UUID and PartitionLabel.</td>
       <td></td>
     </tr>
     <tr>
       <td>`kms`</td>
       <td><a href="#kms">EncryptionKeyKMS</a></td>
-      <td>KMS managed encryption key. </td>
+      <td>KMS managed encryption key.</td>
       <td></td>
     </tr>
     <tr>
@@ -3647,8 +3646,8 @@ machine:
     </tr>
     <tr>
       <td>`kubernetesTalosAPIAccess`</td>
-      <td><a href="#kubernetesTalosAPIAccess">KubernetesTalosAPIAccessConfig</a></td>
-      <td> </td>
+      <td><a href="#kubernetestalosapiaccess">KubernetesTalosAPIAccessConfig</a></td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
@@ -3665,13 +3664,13 @@ machine:
     </tr>
     <tr>
       <td>`kubePrism`</td>
-      <td><a href="#kubePrism">KubePrism</a></td>
+      <td><a href="#kubeprism">KubePrism</a></td>
       <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`hostDNS`</td>
-      <td><a href="#hostDNS">HostDNSConfig</a></td>
+      <td><a href="#hostdns">HostDNSConfig</a></td>
       <td>Configures host DNS caching resolver.</td>
       <td></td>
     </tr>
@@ -3881,7 +3880,7 @@ machine:
   <tbody>
     <tr>
       <td>`destinations`</td>
-      <td><a href="#destinations.">[]LoggingDestination</a></td>
+      <td><a href="#destinations%5B%5D">LoggingDestination</a></td>
       <td>Logging destination.</td>
       <td></td>
     </tr>
@@ -3910,7 +3909,7 @@ LoggingDestination struct configures Talos logging destination.
     <tr>
       <td>`endpoint`</td>
       <td><a href="#endpoint">Endpoint</a></td>
-      <td>Where to send logs. Supported protocols are "tcp" and "udp". </td>
+      <td>Where to send logs. Supported protocols are "tcp" and "udp".</td>
       <td></td>
     </tr>
     <tr>
@@ -4014,7 +4013,7 @@ machine:
   <tbody>
     <tr>
       <td>`modules`</td>
-      <td><a href="#modules.">[]KernelModuleConfig</a></td>
+      <td><a href="#modules%5B%5D">KernelModuleConfig</a></td>
       <td>Kernel modules to load.</td>
       <td></td>
     </tr>
@@ -4160,8 +4159,8 @@ cluster:
     </tr>
     <tr>
       <td>`controlPlane`</td>
-      <td><a href="#controlPlane">ControlPlaneConfig</a></td>
-      <td>Provides control plane specific configuration options. </td>
+      <td><a href="#controlplane">ControlPlaneConfig</a></td>
+      <td>Provides control plane specific configuration options.</td>
       <td></td>
     </tr>
     <tr>
@@ -4173,31 +4172,31 @@ cluster:
     <tr>
       <td>`network`</td>
       <td><a href="#network">ClusterNetworkConfig</a></td>
-      <td>Provides cluster specific network configuration options. </td>
+      <td>Provides cluster specific network configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`token`</td>
       <td>string</td>
-      <td>The [bootstrap token](https://kubernetes.io/docs/reference/access-authn-authz/bootstrap-tokens/) used to join the cluster. </td>
+      <td>The [bootstrap token](https://kubernetes.io/docs/reference/access-authn-authz/bootstrap-tokens/) used to join the cluster.</td>
       <td></td>
     </tr>
     <tr>
       <td>`aescbcEncryptionSecret`</td>
       <td>string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`secretboxEncryptionSecret`</td>
       <td>string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`ca`</td>
       <td>PEMEncodedCertificateAndKey</td>
-      <td>The base64 encoded root certificate authority used by Kubernetes. </td>
+      <td>The base64 encoded root certificate authority used by Kubernetes.</td>
       <td></td>
     </tr>
     <tr>
@@ -4209,91 +4208,91 @@ cluster:
     <tr>
       <td>`aggregatorCA`</td>
       <td>PEMEncodedCertificateAndKey</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`serviceAccount`</td>
       <td>PEMEncodedKey</td>
-      <td>The base64 encoded private key for service account token generation. </td>
+      <td>The base64 encoded private key for service account token generation.</td>
       <td></td>
     </tr>
     <tr>
       <td>`apiServer`</td>
-      <td><a href="#apiServer">APIServerConfig</a></td>
-      <td>API server specific configuration options. </td>
+      <td><a href="#apiserver">APIServerConfig</a></td>
+      <td>API server specific configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`controllerManager`</td>
-      <td><a href="#controllerManager">ControllerManagerConfig</a></td>
-      <td>Controller manager server specific configuration options. </td>
+      <td><a href="#controllermanager">ControllerManagerConfig</a></td>
+      <td>Controller manager server specific configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`proxy`</td>
       <td><a href="#proxy">ProxyConfig</a></td>
-      <td>Kube-proxy server-specific configuration options </td>
+      <td>Kube-proxy server-specific configuration options</td>
       <td></td>
     </tr>
     <tr>
       <td>`scheduler`</td>
       <td><a href="#scheduler">SchedulerConfig</a></td>
-      <td>Scheduler server specific configuration options. </td>
+      <td>Scheduler server specific configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`discovery`</td>
       <td><a href="#discovery">ClusterDiscoveryConfig</a></td>
-      <td>Configures cluster member discovery. </td>
+      <td>Configures cluster member discovery.</td>
       <td></td>
     </tr>
     <tr>
       <td>`etcd`</td>
       <td><a href="#etcd">EtcdConfig</a></td>
-      <td>Etcd specific configuration options. </td>
+      <td>Etcd specific configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`coreDNS`</td>
-      <td><a href="#coreDNS">CoreDNS</a></td>
-      <td>Core DNS specific configuration options. </td>
+      <td><a href="#coredns">CoreDNS</a></td>
+      <td>Core DNS specific configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`externalCloudProvider`</td>
-      <td><a href="#externalCloudProvider">ExternalCloudProviderConfig</a></td>
-      <td>External cloud provider configuration. </td>
+      <td><a href="#externalcloudprovider">ExternalCloudProviderConfig</a></td>
+      <td>External cloud provider configuration.</td>
       <td></td>
     </tr>
     <tr>
       <td>`extraManifests`</td>
       <td>[]string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`extraManifestHeaders`</td>
       <td>map[string]string</td>
-      <td>A map of key value pairs that will be added while fetching the extraManifests. </td>
+      <td>A map of key value pairs that will be added while fetching the extraManifests.</td>
       <td></td>
     </tr>
     <tr>
       <td>`inlineManifests`</td>
-      <td><a href="#inlineManifests.">[]ClusterInlineManifest</a></td>
-      <td> </td>
+      <td><a href="#inlinemanifests%5B%5D">ClusterInlineManifest</a></td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`adminKubeconfig`</td>
-      <td><a href="#adminKubeconfig">AdminKubeconfigConfig</a></td>
-      <td> </td>
+      <td><a href="#adminkubeconfig">AdminKubeconfigConfig</a></td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`allowSchedulingOnControlPlanes`</td>
       <td>bool</td>
-      <td>Allows running workload on control-plane nodes. </td>
+      <td>Allows running workload on control-plane nodes.</td>
       <td>`true`<br />`yes`<br />`false`<br />`no`<br /></td>
     </tr>
   </tbody>
@@ -4328,7 +4327,7 @@ cluster:
     <tr>
       <td>`endpoint`</td>
       <td><a href="#endpoint">Endpoint</a></td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
@@ -4428,25 +4427,25 @@ cluster:
     <tr>
       <td>`cni`</td>
       <td><a href="#cni">CNIConfig</a></td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`dnsDomain`</td>
       <td>string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`podSubnets`</td>
       <td>[]string</td>
-      <td>The pod subnet CIDR. </td>
+      <td>The pod subnet CIDR.</td>
       <td></td>
     </tr>
     <tr>
       <td>`serviceSubnets`</td>
       <td>[]string</td>
-      <td>The service subnet CIDR. </td>
+      <td>The service subnet CIDR.</td>
       <td></td>
     </tr>
   </tbody>
@@ -4524,7 +4523,7 @@ FlannelCNIConfig represents the Flannel CNI configuration options.
     <tr>
       <td>`extraArgs`</td>
       <td>[]string</td>
-      <td>Extra arguments for 'flanneld'. </td>
+      <td>Extra arguments for 'flanneld'.</td>
       <td></td>
     </tr>
   </tbody>
@@ -4599,7 +4598,7 @@ cluster:
     <tr>
       <td>`image`</td>
       <td>string</td>
-      <td>The container image used in the API server manifest. </td>
+      <td>The container image used in the API server manifest.</td>
       <td></td>
     </tr>
     <tr>
@@ -4610,7 +4609,7 @@ cluster:
     </tr>
     <tr>
       <td>`extraVolumes`</td>
-      <td><a href="#extraVolumes.">[]VolumeMountConfig</a></td>
+      <td><a href="#extravolumes%5B%5D">VolumeMountConfig</a></td>
       <td>Extra volumes to mount to the API server static pod.</td>
       <td></td>
     </tr>
@@ -4634,14 +4633,14 @@ cluster:
     </tr>
     <tr>
       <td>`admissionControl`</td>
-      <td><a href="#admissionControl.">[]AdmissionPluginConfig</a></td>
-      <td>Configure the API server admission plugins. </td>
+      <td><a href="#admissioncontrol%5B%5D">AdmissionPluginConfig</a></td>
+      <td>Configure the API server admission plugins.</td>
       <td></td>
     </tr>
     <tr>
       <td>`auditPolicy`</td>
       <td>Unstructured</td>
-      <td>Configure the API server audit policy. </td>
+      <td>Configure the API server audit policy.</td>
       <td></td>
     </tr>
     <tr>
@@ -4675,19 +4674,19 @@ VolumeMountConfig struct describes extra volume mount for the static pods.
     <tr>
       <td>`hostPath`</td>
       <td>string</td>
-      <td>Path on the host. </td>
+      <td>Path on the host.</td>
       <td></td>
     </tr>
     <tr>
       <td>`mountPath`</td>
       <td>string</td>
-      <td>Path in the container. </td>
+      <td>Path in the container.</td>
       <td></td>
     </tr>
     <tr>
       <td>`readonly`</td>
       <td>bool</td>
-      <td>Mount the volume read only. </td>
+      <td>Mount the volume read only.</td>
       <td></td>
     </tr>
   </tbody>
@@ -4776,13 +4775,13 @@ ResourcesConfig represents the pod resources.
     <tr>
       <td>`requests`</td>
       <td>Unstructured</td>
-      <td>Requests configures the reserved cpu/memory resources. </td>
+      <td>Requests configures the reserved cpu/memory resources.</td>
       <td></td>
     </tr>
     <tr>
       <td>`limits`</td>
       <td>Unstructured</td>
-      <td>Limits configures the maximum cpu/memory resources a container can use. </td>
+      <td>Limits configures the maximum cpu/memory resources a container can use.</td>
       <td></td>
     </tr>
   </tbody>
@@ -4823,7 +4822,7 @@ cluster:
     <tr>
       <td>`image`</td>
       <td>string</td>
-      <td>The container image used in the controller manager manifest. </td>
+      <td>The container image used in the controller manager manifest.</td>
       <td></td>
     </tr>
     <tr>
@@ -4834,7 +4833,7 @@ cluster:
     </tr>
     <tr>
       <td>`extraVolumes`</td>
-      <td><a href="#extraVolumes.">[]VolumeMountConfig</a></td>
+      <td><a href="#extravolumes%5B%5D">VolumeMountConfig</a></td>
       <td>Extra volumes to mount to the controller manager static pod.</td>
       <td></td>
     </tr>
@@ -4875,19 +4874,19 @@ VolumeMountConfig struct describes extra volume mount for the static pods.
     <tr>
       <td>`hostPath`</td>
       <td>string</td>
-      <td>Path on the host. </td>
+      <td>Path on the host.</td>
       <td></td>
     </tr>
     <tr>
       <td>`mountPath`</td>
       <td>string</td>
-      <td>Path in the container. </td>
+      <td>Path in the container.</td>
       <td></td>
     </tr>
     <tr>
       <td>`readonly`</td>
       <td>bool</td>
-      <td>Mount the volume read only. </td>
+      <td>Mount the volume read only.</td>
       <td></td>
     </tr>
   </tbody>
@@ -4917,13 +4916,13 @@ ResourcesConfig represents the pod resources.
     <tr>
       <td>`requests`</td>
       <td>Unstructured</td>
-      <td>Requests configures the reserved cpu/memory resources. </td>
+      <td>Requests configures the reserved cpu/memory resources.</td>
       <td></td>
     </tr>
     <tr>
       <td>`limits`</td>
       <td>Unstructured</td>
-      <td>Limits configures the maximum cpu/memory resources a container can use. </td>
+      <td>Limits configures the maximum cpu/memory resources a container can use.</td>
       <td></td>
     </tr>
   </tbody>
@@ -4968,13 +4967,13 @@ cluster:
     <tr>
       <td>`disabled`</td>
       <td>bool</td>
-      <td>Disable kube-proxy deployment on cluster bootstrap. </td>
+      <td>Disable kube-proxy deployment on cluster bootstrap.</td>
       <td></td>
     </tr>
     <tr>
       <td>`image`</td>
       <td>string</td>
-      <td>The container image used in the kube-proxy manifest. </td>
+      <td>The container image used in the kube-proxy manifest.</td>
       <td></td>
     </tr>
     <tr>
@@ -5025,7 +5024,7 @@ cluster:
     <tr>
       <td>`image`</td>
       <td>string</td>
-      <td>The container image used in the scheduler manifest. </td>
+      <td>The container image used in the scheduler manifest.</td>
       <td></td>
     </tr>
     <tr>
@@ -5036,7 +5035,7 @@ cluster:
     </tr>
     <tr>
       <td>`extraVolumes`</td>
-      <td><a href="#extraVolumes.">[]VolumeMountConfig</a></td>
+      <td><a href="#extravolumes%5B%5D">VolumeMountConfig</a></td>
       <td>Extra volumes to mount to the scheduler static pod.</td>
       <td></td>
     </tr>
@@ -5083,19 +5082,19 @@ VolumeMountConfig struct describes extra volume mount for the static pods.
     <tr>
       <td>`hostPath`</td>
       <td>string</td>
-      <td>Path on the host. </td>
+      <td>Path on the host.</td>
       <td></td>
     </tr>
     <tr>
       <td>`mountPath`</td>
       <td>string</td>
-      <td>Path in the container. </td>
+      <td>Path in the container.</td>
       <td></td>
     </tr>
     <tr>
       <td>`readonly`</td>
       <td>bool</td>
-      <td>Mount the volume read only. </td>
+      <td>Mount the volume read only.</td>
       <td></td>
     </tr>
   </tbody>
@@ -5125,13 +5124,13 @@ ResourcesConfig represents the pod resources.
     <tr>
       <td>`requests`</td>
       <td>Unstructured</td>
-      <td>Requests configures the reserved cpu/memory resources. </td>
+      <td>Requests configures the reserved cpu/memory resources.</td>
       <td></td>
     </tr>
     <tr>
       <td>`limits`</td>
       <td>Unstructured</td>
-      <td>Limits configures the maximum cpu/memory resources a container can use. </td>
+      <td>Limits configures the maximum cpu/memory resources a container can use.</td>
       <td></td>
     </tr>
   </tbody>
@@ -5280,7 +5279,7 @@ RegistryServiceConfig struct configures Kubernetes discovery registry.
     <tr>
       <td>`endpoint`</td>
       <td>string</td>
-      <td>External service endpoint. </td>
+      <td>External service endpoint.</td>
       <td></td>
     </tr>
   </tbody>
@@ -5331,13 +5330,13 @@ cluster:
     <tr>
       <td>`image`</td>
       <td>string</td>
-      <td>The container image used to create the etcd service. </td>
+      <td>The container image used to create the etcd service.</td>
       <td></td>
     </tr>
     <tr>
       <td>`ca`</td>
       <td>PEMEncodedCertificateAndKey</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
@@ -5349,7 +5348,7 @@ cluster:
     <tr>
       <td>`advertisedSubnets`</td>
       <td>[]string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
@@ -5443,7 +5442,7 @@ cluster:
     <tr>
       <td>`manifests`</td>
       <td>[]string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
   </tbody>
@@ -5484,13 +5483,13 @@ cluster:
     <tr>
       <td>`name`</td>
       <td>string</td>
-      <td> </td>
+      <td></td>
       <td></td>
     </tr>
     <tr>
       <td>`contents`</td>
       <td>string</td>
-      <td>Manifest contents as a string. </td>
+      <td>Manifest contents as a string.</td>
       <td></td>
     </tr>
   </tbody>
