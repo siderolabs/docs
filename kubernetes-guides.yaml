@@ -37,7 +37,8 @@ navigation:
 
         - group: "Advanced Guides"
           folder: "kubernetes-guides/advanced-guides"
-          pages:
+          pages: 
+            - "deploy-traefik.mdx"
             - "device-plugins.mdx"
             - "inlinemanifests.mdx"
             - "kubeprism.mdx"

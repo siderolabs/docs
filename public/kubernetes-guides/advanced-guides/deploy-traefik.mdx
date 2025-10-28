@@ -1,0 +1,183 @@
+---
+title: Deploy Traefik as a Gateway API
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+This guide walks you through how to deploy [Traefik](https://traefik.io/traefik) as a Gateway API controller on a Talos-managed Kubernetes cluster using Helm.
+
+If you’d like to explore other deployment methods, see the [Traefik & Kubernetes with Gateway API documentation](https://doc.traefik.io/traefik/reference/install-configuration/providers/kubernetes/kubernetes-gateway/).
+
+Here, you will expose a simple HTTP service (whoami) through Traefik using the Gateway API.
+
+## Before you begin
+
+You will need the following:
+
+* **A running Talos cluster**: If you don’t have one yet, see the <a href={`../../talos/${version}/getting-started/getting-started`}>Getting Started</a> or <a href={`../../talos/${version}/getting-started/prodnotes`}>Production Cluster</a> guides to create a cluster.
+
+* **kubectl and helm installed locally**: Check out the [Installing Helm guide](https://helm.sh/docs/intro/install/) to learn how to install Helm.
+    
+    Verify your setup by running:
+	
+    ```bash
+	kubectl get nodes
+	helm version
+	```
+
+## Step 1: Install the Gateway API CRDs and Traefik RBAC 
+
+The Gateway API resources (like `Gateway`, `HTTPRoute`, etc.) are not built into Kubernetes by default.
+
+This step installs the required [Custom Resource Definitions (CRDs)](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) and grants Traefik the permissions it needs to manage them.
+
+```bash
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.3.0/standard-install.yaml
+kubectl apply -f https://raw.githubusercontent.com/traefik/traefik/v3.5/docs/content/reference/dynamic-configuration/kubernetes-gateway-rbac.yml
+```
+
+## Step 2: Install Traefik via Helm
+
+Next, install Traefik using the official Helm chart by doing the following:
+
+1. Create a `values.yaml` file that enables the Gateway provider:
+
+```bash
+cat << EOF > values.yaml
+providers:
+  kubernetesGateway:
+    enabled: true
+EOF
+```
+
+2. Add the Traefik Helm repository and install:
+
+```bash
+helm repo add traefik https://traefik.github.io/charts
+helm repo update
+helm upgrade --install traefik traefik/traefik \
+  -n traefik --create-namespace \
+  -f values.yaml
+```
+
+> **Note**: When you install Traefik with the kubernetesGateway provider enabled, it automatically creates a GatewayClass named traefik, so you don’t need to create one yourself.
+
+## Step 3: Create a Gateway
+
+The Gateway defines the entry point for external traffic into your Kubernetes cluster and tells Traefik which ports and protocols to listen on.
+
+Here, we will create a simple HTTP listener on port 8000;
+
+```bash
+kubectl apply -f - <<'EOF'
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: traefik-gateway
+  namespace: default
+spec:
+  gatewayClassName: traefik
+  listeners:
+    - name: web
+      protocol: HTTP
+      port: 8000
+      allowedRoutes:
+        namespaces:
+          from: Same
+EOF
+
+```
+
+## Step 4: Deploy a Sample Application
+
+Deploy a simple test application called whoami.
+
+This application returns information about each HTTP request it receives, making it easy to confirm routing behavior.
+
+```bash
+kubectl apply -f - <<'EOF'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whoami
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: whoami
+  template:
+    metadata:
+      labels:
+        app: whoami
+    spec:
+      containers:
+        - name: whoami
+          image: traefik/whoami
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: whoami
+  namespace: default
+spec:
+  selector:
+    app: whoami
+  ports:
+    - port: 80
+      targetPort: 80
+EOF
+
+```
+
+## Step 5: Create an HTTPRoute
+
+Next, map all traffic from the Gateway’s web listener to the `whoami` service using the `HTTPRoute` below.
+
+```bash
+kubectl apply -f - <<'EOF'
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: whoami-http
+  namespace: default
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      sectionName: web
+  hostnames:
+    - whoami.localhost
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: whoami
+          port: 80
+EOF
+
+```
+
+## Step 6: Test the Setup
+
+Finally, verify that Traefik is routing traffic correctly.
+
+You will forward the Traefik service locally and send an HTTP request to your `whoami` application through the Gateway.
+
+```bash
+kubectl -n traefik port-forward svc/traefik --address 127.0.0.1 18080:80
+```
+
+In another terminal:
+
+```bash
+curl -H 'Host: whoami.localhost' http://127.0.0.1:18080
+```
+
+Expected output:
+
+```bash
+Hostname: whoami-xxxxx
+IP: 127.0.0.1
+...
+```
