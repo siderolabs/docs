@@ -39,6 +39,7 @@ navigation:
           folder: "kubernetes-guides/advanced-guides"
           pages:
             - "deploy-traefik.mdx"
+            - "dynamic-resource-allocation.mdx"
             - "device-plugins.mdx"
             - "hpa.mdx"
             - "inlinemanifests.mdx"

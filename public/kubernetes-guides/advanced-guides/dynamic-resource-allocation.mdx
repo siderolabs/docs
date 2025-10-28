@@ -1,0 +1,108 @@
+---
+title: "Dynamic Resource Allocation"
+description: "Request and share node level resources among Kubernetes pods."
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+[Kubernetes Dynamic Resource Allocation](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/) (DRA) is a new way of sharing host level resources into pods.
+These resources include GPU devices, high performance networking, and other hardware that a workload may need access to.
+
+DRA is enabled by default as a beta feature in Kubernetes 1.34 and can also be enabled in Kubernetes 1.33.
+DRA replaces [devices plugins](./device-plugins.mdx) for accesing resources from workloads.
+
+## Enable DRA in the cluster
+
+Make sure the cluster has DRA enabled (Kubernetes 1.34+) or uses the following patch to enable the feature. This patch can be applied to all nodes in the cluster via `talosctl` or via Omni.
+
+```yaml
+machine:
+  kubelet:
+    extraArgs:
+      feature-gates: DynamicResourceAllocation=true
+cluster:
+  apiServer:
+    extraArgs:
+      feature-gates: DynamicResourceAllocation=true
+  controllerManager:
+    extraArgs:
+      feature-gates: DynamicResourceAllocation=true
+  scheduler:
+    extraArgs:
+      feature-gates: DynamicResourceAllocation=true
+```
+
+You should have at least one node in the cluster with NVIDIA hardware and configured via the <a href={`../../talos/${version}/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary`}>NVIDIA system extension and patch</a>
+
+## 1. Deploy the NVIDIA DRA plugin via helm
+
+Use helm to install the DRA plugin.
+
+```sh
+helm repo add nvidia https://helm.ngc.nvidia.com/nvidia
+helm repo update
+```
+
+Install the driver in the kube-system namespace or create a new namespace and label it with appropriate [Pod Security Admission](../security/pod-security).
+
+```sh
+helm install nvidia-dra-driver-gpu nvidia/nvidia-dra-driver-gpu \
+    --version="25.8.0" \
+    --namespace kube-system \
+    --set resources.gpus.enabled=false \
+    --set nvidiaDriverRoot=/usr/local/glibc/lib
+```
+
+Check the kubelet plugin pod is running.
+
+```sh
+kubectl get pods -n kube-system -l app.kubernetes.io/name=nvidia-dra-driver-gpu
+```
+
+Verify ResourceSlice objects
+
+```sh
+kubectl get resourceslices -o yaml
+```
+
+## 2. Deploy test workload
+
+Create a pod that consumes the ResourceSlice via a ResourceClaimTemplate.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dra-example-workload
+spec:
+  runtimeClassName: nvidia
+  restartPolicy: OnFailure
+  resourceClaims:
+  - name: gpu-claim
+    resourceClaimTemplateName: gpu-template
+  containers:
+  - name: cuda-container
+    image: "nvcr.io/nvidia/cloud-native/gpu-operator-validator:v25.3.4"
+    resources:
+      claims:
+      - name: gpu-claim
+---
+apiVersion: resource.k8s.io/v1beta1
+kind: ResourceClaimTemplate
+metadata:
+  name: gpu-template
+spec:
+  spec:
+    devices:
+      requests:
+      - name: gpu
+        deviceClassName: gpu.nvidia.com
+        selectors:
+        - cel:
+            expression: 'device.attributes["type"].string == "gpu"'
+```
+
+## Notes
+
+DRA is currently a beta Kubernetes feature and it is likely that it will change in the future.
+Make sure you consult your hardware vendor's documentation for up-to-date configuration and deployment guides.
