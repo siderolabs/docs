@@ -1908,6 +1908,7 @@
             "pages": [
               "kubernetes-guides/advanced-guides/deploy-traefik",
               "kubernetes-guides/advanced-guides/device-plugins",
+              "kubernetes-guides/advanced-guides/hpa",
               "kubernetes-guides/advanced-guides/inlinemanifests",
               "kubernetes-guides/advanced-guides/kubeprism",
               "kubernetes-guides/advanced-guides/kuberay",

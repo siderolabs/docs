@@ -1,0 +1,132 @@
+---
+title: "Horizontal Pod Autoscaling"
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+The Horizontal Pod Autoscaler (HPA) automatically scales Kubernetes workloads based on resource utilization or other defined metrics.
+
+HPA relies on the [Metrics Server](../monitoring-and-observability/deploy-metrics-server)to collect data from the kubelets in your cluster. It then uses these metrics to decide when and how to scale your workloads.
+
+This guide walks you through how to use HPA to scale workloads on a Talos cluster.
+
+## Before you begin
+
+You’ll need the following to use HPA in your Talos cluster:
+
+* **A running Kubernetes cluster on Talos**: If you don’t have one yet, see the <a href={`../../talos/${version}/getting-started/getting-started`}>Getting Started</a> or <a href={`../../talos/${version}/getting-started/prodnotes`}>Production Cluster</a> guides to create a cluster.
+
+* **Metrics Server deployed**: Make sure the Metrics Server is running in your cluster. See the [Deploy Metrics Server](../monitoring-and-observability/deploy-metrics-server) guide for instructions.
+
+Once everything is set up, you can move on to deploying your HPA.
+
+## Step 1: Deploy the workload
+
+Start by deploying the sample workload that you’ll use for scaling:
+
+```yaml
+kubectl apply -f https://raw.githubusercontent.com/siderolabs/example-workload/refs/heads/main/deploy/example-svc-nodeport.yaml
+```
+
+You should see this output:
+
+```bash
+deployment.apps/example-workload created
+service/example-workload created
+```
+
+## Step 2: Deploy the Horizontal Pod Autoscaler
+
+Next, create and apply the HPA configuration.
+
+If you’d like a deeper look at how HPAs work, check out the Kubernetes guide on [Horizontal Pod Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).
+
+```bash
+kubectl apply -f - <<'EOF'
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: example-workload
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: example-workload
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 20
+EOF
+```
+
+This HPA automatically scales the `example-workload` Deployment based on CPU usage.
+
+It monitors the average CPU utilization across all pods and tries to keep it around 50%.
+
+If CPU usage goes above that target, the HPA increases the number of replicas (up to 10).
+
+If it drops, it scales down (but never below 1).
+
+## Step 3: Verify the deployment
+
+Confirm that your workload and HPA are running as expected:
+
+```bash
+kubectl get deployments,pods,hpa
+```
+
+You should see both the deployment and the HPA listed with their current status.
+
+## Step 4: Verify that your HPA works as expected.
+
+You can test that your HPA is working correctly by simulating some load on the Deployment.
+
+Create and apply a temporary load generator:
+
+```bash
+kubectl apply -f - <<'EOF'
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: loader
+  namespace: default
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 60
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: loader
+          image: busybox:1.36.1-uclibc
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              i=0
+              while [ $i -lt 10000 ]; do
+                wget -q -O- http://example-workload.default.svc.cluster.local:8080 > /dev/null
+                i=$((i+1))
+              done
+EOF
+```
+
+Then, in another terminal, watch the HPA in action:
+
+```bash
+kubectl get hpa -w
+```
+
+You should see the replica count increase as the load generator starts hitting the service.
