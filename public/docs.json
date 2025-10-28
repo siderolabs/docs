@@ -1909,6 +1909,7 @@
               "kubernetes-guides/advanced-guides/device-plugins",
               "kubernetes-guides/advanced-guides/inlinemanifests",
               "kubernetes-guides/advanced-guides/kubeprism",
+              "kubernetes-guides/advanced-guides/kuberay",
               "kubernetes-guides/advanced-guides/node-labels",
               "kubernetes-guides/advanced-guides/talos-api-access-from-k8s",
               "kubernetes-guides/advanced-guides/upgrading-kubernetes"

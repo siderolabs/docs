@@ -1,0 +1,43 @@
+---
+title: "KubeRay"
+description: "Install Ray on Kubernetes."
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+[Ray](https://www.ray.io/) is a project for running machine learning jobs in a cluster of machines. [KubeRay](https://github.com/ray-project/kuberay) is an operator for installing Ray on top of Kubernetes.
+For up-to-date installation guide check with the [upstream Ray documentation](https://docs.ray.io/en/latest/cluster/kubernetes/getting-started/kuberay-operator-installation.html).
+
+## Install Ray operator with helm
+
+Create a Kubernetes cluster with [`talosctl`](../../omni/getting-started/how-to-install-talosctl) or via [Omni](../../omni/overview/what-is-omni).
+
+Deploy the operator via Helm.
+
+```sh
+helm repo add kuberay https://ray-project.github.io/kuberay-helm/
+helm repo update
+
+helm install kuberay-operator kuberay/kuberay-operator --version 1.4.2
+```
+
+Once the operator pod is running you can create a Ray cluster.
+
+```sh
+helm install raycluster kuberay/ray-cluster --version 1.4.2
+```
+
+Get the status of the cluster:
+
+```sh
+kubectl get rayclusters
+```
+
+The output should look like this.
+
+```
+NAME                 DESIRED WORKERS   AVAILABLE WORKERS   CPUS   MEMORY   GPUS   STATUS   AGE
+raycluster-kuberay   1                 1                   2      3G       0      ready    13m
+```
+
+From here you can follow the [Ray documentation to run a RayJob](https://docs.ray.io/en/latest/cluster/kubernetes/getting-started/rayjob-quick-start.html).
