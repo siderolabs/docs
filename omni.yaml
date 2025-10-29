@@ -32,6 +32,7 @@ navigation:
             - "infrastructure-providers.mdx"
             - "machine-registration.mdx"
             - "install-talos-linux-extensions.mdx"
+            - "modify-kernel-arguments.mdx"
 
         - group: "Omni Cluster Setup"
           folder: "omni/omni-cluster-setup"
