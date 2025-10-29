@@ -34,7 +34,7 @@ Talos now supports [swap](../configure-your-talos-cluster/storage-and-disk-manag
 [Disk encryption](../configure-your-talos-cluster/storage-and-disk-management/disk-encryption) for system volumes is now managed by the [`VolumeConfig`](../reference/configuration/block/volumeconfig) machine configuration document.
 Legacy configuration in `v1alpha1` (`.machine.systemDiskEncryption`) machine configuration is still supported.
 
-New per encryption key option `lockToSTATE` is added to the `VolumeConfig` document, which allows to lock the volume encryption key to the secret salt in the `STATE` volume.
+New per encryption key option `lockToState` is added to the `VolumeConfig` document, which allows to lock the volume encryption key to the secret salt in the `STATE` volume.
 So, if the `STATE` volume is wiped or replaced, the volume encryption key will not be usable anymore.
 
 ### Disk Wipe

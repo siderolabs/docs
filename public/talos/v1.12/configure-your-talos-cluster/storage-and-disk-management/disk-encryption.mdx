@@ -113,7 +113,7 @@ encryption:
     - static:
         passphrase: supersecret
       slot: 0
-      lockToSTATE: true
+      lockToState: true
 ```
 
 Take a note that key order does not play any role on which key slot is used.
@@ -132,13 +132,13 @@ Talos supports two kinds of keys:
 > it is not secure to use `static` keys for `STATE` volume.
 > Other volumes can use `static` keys as long as `STATE` partition itself is encrypted.
 
-Every key kind also supports `lockToSTATE` option, which means that the key will be locked to the contents of the `STATE` partition:
+Every key kind also supports `lockToState` option, which means that the key will be locked to the contents of the `STATE` partition:
 
 - if the `STATE` partition is wiped/replaced with new contents, locked to `STATE` volumes will not be unlockable anymore.
 - Talos Linux generates a random salt, and stores in the `STATE` partition, which will be mixed into the key derivation function.
 
-It is recommended to use `lockToSTATE` for the `EPHEMERAL` partition and user volumes, so that the data on these partitions is not accessible if the `STATE` partition is wiped or replaced.
-If you would like non-`STATE` volumes to survive `STATE` partition wipe, do not enable `lockToSTATE` option.
+It is recommended to use `lockToState` for the `EPHEMERAL` partition and user volumes, so that the data on these partitions is not accessible if the `STATE` partition is wiped or replaced.
+If you would like non-`STATE` volumes to survive `STATE` partition wipe, do not enable `lockToState` option.
 
 ### Key Rotation
 
