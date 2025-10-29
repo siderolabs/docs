@@ -38,7 +38,7 @@ To understand how a `Docs_improvement` issue moves from open to merged, check ou
 
 ## Writing and style standards
 
-Before you start writing or making any contributions, please review our [Style Guide](https://www.notion.so/siderolabs/Documentation-style-guide-24eb1211badf80ecafc2c87635329719?source=copy_link). It explains how we write, format, and structure documentation at SideroLabs.
+Before you start writing or making any contributions, please review our [Style Guide](./contributing-guides/style-guide.md). It explains how we write, format, and structure documentation at SideroLabs.
 
 Following the style guide helps keep every contribution consistent, clear, and approachable, no matter who wrote it.
 
