@@ -37,13 +37,14 @@ navigation:
 
         - group: "Advanced Guides"
           folder: "kubernetes-guides/advanced-guides"
-          pages: 
+          pages:
             - "deploy-traefik.mdx"
             - "device-plugins.mdx"
             - "hpa.mdx"
             - "inlinemanifests.mdx"
             - "kubeprism.mdx"
             - "kuberay.mdx"
+            - "kueue.mdx"
             - "node-labels.mdx"
             - "talos-api-access-from-k8s.mdx"
             - "upgrading-kubernetes.mdx"
