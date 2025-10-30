@@ -1,0 +1,41 @@
+---
+title: "Kueue"
+description: "Install Kueue on Kubernetes."
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+[Kueue](https://kueue.sigs.k8s.io) is a kubernetes-native system that manages quotas and how jobs consume them. Kueue decides when a job should wait, when a job should be admitted to start (as in pods can be created) and when a job should be preempted (as in active pods should be deleted).
+
+## 1. Install kueue via kubectl
+
+Create a Kubernetes cluster with [`talosctl`](../../omni/getting-started/how-to-install-talosctl) or via [Omni](../../omni/overview/what-is-omni).
+
+Run Kueue via the release manifest
+
+```sh
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/kueue/releases/download/v0.14.2/manifests.yaml
+```
+
+To get metrics from jobs you also need to have Prometheus installed and servicemonitor CRDs.
+
+## 2. Install Prometheus operator
+
+The [Prometheus Operator](https://prometheus-operator.dev/docs/getting-started/installation/) will scrape metrics from your jobs so you can observe their status.
+
+```bash
+LATEST=$(curl -s https://api.github.com/repos/prometheus-operator/prometheus-operator/releases/latest | jq -cr .tag_name)
+curl -sL https://github.com/prometheus-operator/prometheus-operator/releases/download/${LATEST}/bundle.yaml | kubectl create -f -
+```
+
+Instructions on how to install the Prometheus Operator via kustomize or Helm can be found in [their documentation](https://prometheus-operator.dev/docs/getting-started/installation/).
+
+## 3. Install servicemonitor CRD
+
+The final step is to add the CRD for Prometheus to scrape the jobs.
+
+```bash
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/kueue/releases/download/v0.14.2/prometheus.yaml
+```
+
+To use Kueue please refere to the [official Kueue documentation](https://kueue.sigs.k8s.io/docs/concepts/).
