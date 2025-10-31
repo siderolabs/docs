@@ -125,6 +125,8 @@ Then your endpoint would be:
 https://kube.cluster1.mydomain.com:6443
 ```
 
+> **Note**: This endpoint serves as a fallback if [KubePrism](../../../kubernetes-guides/advanced-guides/kubeprism) becomes unavailable, for example, after a reboot. It also ensures that Talos nodes can still locate and communicate with the control plane if other discovery services are not available.
+
 ## Step 4: Save Your Endpoint in a Variable
 
 Set a variable to store the endpoint you chose in Step 3.
