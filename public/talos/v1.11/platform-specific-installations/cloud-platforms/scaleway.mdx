@@ -1,15 +1,13 @@
 ---
 title: "Scaleway"
-description: "Creating a cluster via the CLI (scw) on scaleway.com."
+description: "Creating a single-instance cluster via the CLI (scw) on scaleway.com."
 aliases:
   - ../../../cloud-platforms/scaleway
 ---
 
-import { release_v1_11, version_v1_11 } from '/snippets/custom-variables.mdx';
+import { release_v1_12, version_v1_12 } from '/snippets/custom-variables.mdx';
 
-Talos is known to work on scaleway.com; however, it is currently mostly undocumented.
-
-The process to run a Talos node in Scaleway is as follows:
+The process to run a Talos cluster, on a single node in Scaleway is as follows:
 
 ## Prerequisites
 
@@ -23,11 +21,12 @@ The process to run a Talos node in Scaleway is as follows:
 
   <CodeBlock lang="sh">
     {`
-   wget "https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_11}/scaleway-amd64.raw.zst"
+   wget "https://factory.talos.dev/image/18d0321d7fb289f707a76e1deeaa5c97e62209722cbf4bc533a5d51eb666885f/v1.12.0/scaleway-amd64.raw.zst"
    `}
    </CodeBlock>
 
    > You can create your own brew on [Talos Factory](https://factory.talos.dev) if you need a custom image.
+   > A working extra kernel command line is as follow : `-console talos.platform=scaleway console=ttyS0,115200 talos.dashboard.disabled=0`
 
 2. **Decompress and convert the image**:
 
@@ -36,7 +35,7 @@ The process to run a Talos node in Scaleway is as follows:
    qemu-img convert -O qcow2 scaleway-amd64.raw scaleway-amd64.qcow2
    ```
 
-3. **Create S3 bucket** (if it doesn't exist):
+3. **Create a S3 bucket** (if it doesn't exist):
    Go to Object Storage in the Scaleway console and create a new bucket.
 
 4. **Upload to S3-compatible object storage**:
@@ -44,74 +43,101 @@ The process to run a Talos node in Scaleway is as follows:
 
 ## Snapshot Creation
 
-> Note: The following steps must be done via the CLI, as the Scaleway console does not support importing snapshots from object storage.
+1. Go to the Scaleway Web console.
 
-**Import snapshot from object storage** (repeat for each zone you need):
+2. Go to the QCOW2 object in your S3 bucket.
 
-  <CodeBlock lang="sh">
-    {`
-    scw block snapshot import-from-object-storage \\ 
-      name=talos-${release_v1_11} \\ 
-      bucket=YOUR-BUCKET \\ 
-      key=scaleway-amd64.qcow2 \\ 
-      size=10GB \\ 
-      zone=fr-par-1
-  `}
-  </CodeBlock>
+3. Click on the extra action "Import object as snapshot".
 
-  Output will be similar to:
-
-  ```text
-    ID         e14679a6-23a9-4287-be43-356c5b512a66
-    Name       scaleway-amd64.qcow2
-    Size       10 GB
-    ProjectID  5f3c2379-9596-48c6-811c-b6847fa1a31d
-    CreatedAt  now
-    UpdatedAt  now
-    Status     creating
-    Zone       fr-par-1
-    Class      sbs
-  ```
-
-  > Keep the `ID` of the snapshot for the next step.
-
-**Create image from snapshot** (optional - instances can be created directly from snapshots):
-
-  <CodeBlock lang="sh">
-    {`
-   scw instance image create \\ 
-     snapshot-id=SNAPSHOT-ID \\ 
-     arch=x86_64 \\ 
-     name=talos-${release_v1_11} \\ 
-     zone=fr-par-1
-  `}
-  </CodeBlock>
-
-  Output will be similar to:
-
-  <CodeBlock lang="txt">
-  {`
-  ID                f6999f79-c92c-4e61-9ffc-5688c27f4943
-  Name              talos-${release_v1_11}
-  Arch              x86_64
-  CreationDate      now
-  ModificationDate  now
-  ExtraVolumes      0
-  FromServer        -
-  Organization      00000000-1876-4b3f-ae96-000000000000
-  Public            false
-  RootVolume        00000000-23a9-4287-be43-000000000000
-  State             available
-  Project           00000000-9596-48c6-811c-000000000000
-  Zone              fr-par-1
-`}
-  </CodeBlock>
+4. Name the snapshot "scaleway-amd64-v1.12", and use a Local Storage snapshot type.
 
 ## Instance Deployment
 
 **Create instance** using the snapshot/image via GUI, CLI, or Infrastructure as Code tools.
 
+Open the Security Group in order to open `TCP/50000` and `TCP/6443`.
+
+The Talos disk image used to boot is 4.5GB, and is not enough for the EPHEMERAL partition.
+
+Add an extra Disk of 25GB (Local Storage) for Talos EPHEMERAL partition.
+
+The Talos OS (4.5GB) will be on `/dev/vda` and the extra disk for EPHEMERAL partition will be on `/dev/vdb`.
+
+At this point, you can debug and communicate with the instance on --insecure mode :
+```
+VM_IP=<instance_public_ip>
+talosctl -n $VM_IP version --insecure
+talosctl -n $VM_IP get disks --insecure
+talosctl -n $VM_IP get links --insecure
+```
+
+## Talos Configuration
+
+As any other Talos instance, generate the Talos machineconfig, with the following patch :
+```
+# controlplane.patch.yaml
+machine:
+    install:
+        disk: /dev/vdb
+        wipe: true
+    network:
+        interfaces:
+            - interface: eth0
+              dhcp: true
+
+cluster:
+  allowSchedulingOnControlPlanes: true
+  apiServer:
+    extraArgs:
+      "advertise-address": "0.0.0.0"
+    apiServer:
+        certSANs:
+            - 127.0.0.1
+            - <public_ip>
+```
+
+Generate the Talos config :
+```
+talosctl gen config talos-cluster https://$VM_IP:6443 --config-patch=@controlplane.patch.yaml --output-dir _out/ --with-docs=false --with-examples=false
+```
+
+
+Also add a VolumeConfig for the EPHEMERAL partition of Talos :
+```
+---
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: EPHEMERAL
+provisioning:
+  diskSelector:
+    match: disk.dev_path == '/dev/vdb'
+  minSize: 2GB
+  maxSize: 40GB
+  grow: false
+```
+
+Apply the machineconfig + the VolumeConfig on your Talos Scaleway instance.
+```
+talosctl --nodes $VM_IP apply-config --file _out/controlplane.yaml --insecure
+```
+
+At this point, you should be able to communicate with your Talos instance with the right certificates, and debug the Talos instance :
+```
+talosctl --talosconfig=./_out/talosconfig --nodes $VM_IP -e $VM_IP version
+talosctl --talosconfig=./_out/talosconfig --nodes $VM_IP -e $VM_IP dashboard
+```
+
+## Talos Cluster Bootstrap
+
+One last command to bootstrap your Talos Cluster :
+```
+talosctl --talosconfig=./_out/talosconfig -e $VM_IP -n $VM_IP bootstrap
+```
+
+You can follow the logs with the dashboard, and after couple of minutes, your first Talos standalone single instance cluster on Scaleway will be ready to use.
+
 ## Notes
 
-- The instance works correctly with Scaleway's reboot functionality
+- Because the STATE partition will be written to `/dev/vda` during the installation, the instance works correctly with Scaleway's reboot functionality
 - `talosctl reset` performs the reset operation but don't start the maintenance mode automatically
+- If you give a bigger disk (let's say 25GB) for the Talos disk image for the Scaleway Instance, unfortunately Talos won't be able to expand its volume to 25GB and still see 4.5GB which is not enough for the EPHEMERAL partition
