@@ -5,7 +5,7 @@ aliases:
   - ../../../virtualized-platforms/vmware
 ---
 
-import { release_v1_12, version_v1_12 } from '/snippets/custom-variables.mdx';
+import { release_v1_12, release_branch_v1_12 } from '/snippets/custom-variables.mdx';
 
 ## Creating a Cluster via the `govc` CLI
 
@@ -37,7 +37,7 @@ You can do this by issuing:
 
 <CodeBlock lang="sh">
   {`
-curl -fsSLO https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${version_v1_12}/talos-guides/install/virtualized-platforms/vmware/cp.patch.yaml
+curl -fsSLO https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${release_branch_v1_12}/talos-guides/install/virtualized-platforms/vmware/cp.patch.yaml
   `}
 </CodeBlock>
 
@@ -124,7 +124,7 @@ You can do this by issuing:
 
 <CodeBlock lang="sh">
   {`
-curl -fsSL "https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${version_v1_12}/talos-guides/install/virtualized-platforms/vmware/vmware.sh" | sed s/latest/${release_v1_12}/ > vmware.sh
+curl -fsSL "https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${release_branch_v1_12}/talos-guides/install/virtualized-platforms/vmware/vmware.sh" | sed s/latest/${release_v1_12}/ > vmware.sh
   `}
 </CodeBlock>
 
