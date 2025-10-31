@@ -9,6 +9,19 @@ aliases:
 
 1. Download the latest `metal-amd64.iso` from the [GitHub releases page](https://github.com/siderolabs/talos/releases).
 2. Create a `New-TalosVM` folder in one of your PS Module Path folders (`$env:PSModulePath -split ';'`) and save the [New-TalosVM.psm1](https://github.com/nebula-it/New-TalosVM/blob/main/Talos/1.0.0/Talos.psm1) there.
+3. **Create a Virtual Switch**:
+   - Open Hyper-V Manager (`Win + R`, type `virtmgmt.msc`, press **Enter**).
+   - From the **Action** menu, select **Virtual Switch Manager...**.
+   - Choose **New virtual network switch → External**, then click **Create Virtual Switch**.
+   - Name the switch **LAB**, select the network adapter you want to bind to, and click **Apply** and **OK**.
+   - Verify that the **LAB** switch appears in the list of virtual switches.
+
+4. **Allow PowerShell Script Execution**: 
+    - Open PowerShell and run:
+      ```powershell
+      Set-ExecutionPolicy Unrestricted -Scope CurrentUser
+      ```
+    - Confirm the change when prompted.
 
 ## Plan Overview
 
