@@ -191,6 +191,7 @@
                   "talos/v1.11/security/ca-rotation",
                   "talos/v1.11/security/cert-management",
                   "talos/v1.11/security/certificate-authorities",
+                  "talos/v1.11/security/iam-roles-for-service-accounts",
                   "talos/v1.11/security/machine-config-oauth",
                   "talos/v1.11/security/rbac",
                   "talos/v1.11/security/selinux",
@@ -505,6 +506,7 @@
                   "talos/v1.10/security/ca-rotation",
                   "talos/v1.10/security/cert-management",
                   "talos/v1.10/security/certificate-authorities",
+                  "talos/v1.10/security/iam-roles-for-service-accounts",
                   "talos/v1.10/security/machine-config-oauth",
                   "talos/v1.10/security/rbac",
                   "talos/v1.10/security/selinux",
@@ -797,6 +799,7 @@
                   "talos/v1.9/security/ca-rotation",
                   "talos/v1.9/security/cert-management",
                   "talos/v1.9/security/certificate-authorities",
+                  "talos/v1.9/security/iam-roles-for-service-accounts",
                   "talos/v1.9/security/machine-config-oauth",
                   "talos/v1.9/security/rbac",
                   "talos/v1.9/security/verifying-images"
@@ -1077,6 +1080,7 @@
                   "talos/v1.8/security/ca-rotation",
                   "talos/v1.8/security/cert-management",
                   "talos/v1.8/security/certificate-authorities",
+                  "talos/v1.8/security/iam-roles-for-service-accounts",
                   "talos/v1.8/security/machine-config-oauth",
                   "talos/v1.8/security/rbac",
                   "talos/v1.8/security/verifying-images"
@@ -1353,6 +1357,7 @@
                   "talos/v1.7/security/ca-rotation",
                   "talos/v1.7/security/cert-management",
                   "talos/v1.7/security/certificate-authorities",
+                  "talos/v1.7/security/iam-roles-for-service-accounts",
                   "talos/v1.7/security/machine-config-oauth",
                   "talos/v1.7/security/rbac",
                   "talos/v1.7/security/verifying-images"
@@ -1616,6 +1621,7 @@
                 "pages": [
                   "talos/v1.6/security/cert-management",
                   "talos/v1.6/security/certificate-authorities",
+                  "talos/v1.6/security/iam-roles-for-service-accounts",
                   "talos/v1.6/security/machine-config-oauth",
                   "talos/v1.6/security/rbac",
                   "talos/v1.6/security/verifying-images"
@@ -1887,6 +1893,7 @@
                   "talos/v1.12/security/ca-rotation",
                   "talos/v1.12/security/cert-management",
                   "talos/v1.12/security/certificate-authorities",
+                  "talos/v1.12/security/iam-roles-for-service-accounts",
                   "talos/v1.12/security/machine-config-oauth",
                   "talos/v1.12/security/rbac",
                   "talos/v1.12/security/selinux",

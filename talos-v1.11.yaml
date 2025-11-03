@@ -119,6 +119,7 @@ navigation:
             - "ca-rotation.mdx"
             - "cert-management.mdx"
             - "certificate-authorities.mdx"
+            - "iam-roles-for-service-accounts.mdx"
             - "machine-config-oauth.mdx"
             - "rbac.mdx"
             - "selinux.mdx"

@@ -105,6 +105,7 @@ navigation:
           pages:
             - "cert-management.mdx"
             - "certificate-authorities.mdx"
+            - "iam-roles-for-service-accounts.mdx"
             - "machine-config-oauth.mdx"
             - "rbac.mdx"
             - "verifying-images.mdx"
