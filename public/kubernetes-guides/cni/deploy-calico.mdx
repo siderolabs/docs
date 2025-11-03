@@ -55,9 +55,9 @@ Calico has a pluggable dataplane architecture that lets you choose the networkin
         apiVersion: crd.projectcalico.org/v1
         kind: FelixConfiguration
         metadata:
-        name: default
+          name: default
         spec:
-        cgroupV2Path: "/sys/fs/cgroup"
+          cgroupV2Path: "/sys/fs/cgroup"
         EOF
         ```
 
@@ -72,11 +72,11 @@ Calico has a pluggable dataplane architecture that lets you choose the networkin
         kind: ConfigMap
         apiVersion: v1
         metadata:
-        name: kubernetes-services-endpoint
-        namespace: tigera-operator
+          name: kubernetes-services-endpoint
+          namespace: tigera-operator
         data:
-        KUBERNETES_SERVICE_HOST: '<API server host>'
-        KUBERNETES_SERVICE_PORT: '<API server port>'
+          KUBERNETES_SERVICE_HOST: '<API server host>'
+          KUBERNETES_SERVICE_PORT: '<API server port>'
         ```
 
         After editing the file, apply it using:
@@ -99,22 +99,22 @@ Calico has a pluggable dataplane architecture that lets you choose the networkin
         apiVersion: operator.tigera.io/v1
         kind: Installation
         metadata:
-        name: default
+          name: default
         spec:
-        calicoNetwork:
+          calicoNetwork:
             bgp: Disabled
             linuxDataplane: BPF
-        cni:
+          cni:
             ipam:
             type: HostLocal
             type: Calico
-        kubeletVolumePluginPath: None
+          kubeletVolumePluginPath: None
         ---
         # Kubectl integration for Calico unique resources.
         apiVersion: operator.tigera.io/v1
         kind: APIServer
         metadata:
-        name: default
+          name: default
         spec: {}
         EOF
         ```
@@ -130,22 +130,22 @@ Calico has a pluggable dataplane architecture that lets you choose the networkin
         apiVersion: operator.tigera.io/v1
         kind: Installation
         metadata:
-        name: default
+          name: default
         spec:
-        calicoNetwork:
+          calicoNetwork:
             bgp: Disabled
             linuxDataplane: Nftables
-        cni:
+          cni:
             ipam:
             type: HostLocal
             type: Calico
-        kubeletVolumePluginPath: None
+          kubeletVolumePluginPath: None
         ---
         # Kubectl integration for Calico unique resources.
         apiVersion: operator.tigera.io/v1
         kind: APIServer
         metadata:
-        name: default
+          name: default
         spec: {}
         EOF
         ```
