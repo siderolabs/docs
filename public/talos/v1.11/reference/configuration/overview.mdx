@@ -20,6 +20,9 @@ kind: NetworkRuleConfig # type of document
 name: rule1 # only for named documents
 ```
 
+> **Note:** YAML treats certain characters,such as `!`, `?`, `*`, and `&`, as part of its own syntax.
+> When defining configuration values that include these characters (for example, in selectors or filters like `diskSelector` or `network.interfaces.match` in the [Machine Config](../configuration/v1alpha1/config)), wrap them in quotes (`"..."`) to ensure they are parsed correctly.
+
 This section contains the configuration reference, to learn more about Talos Linux machine configuration management, please see:
 
 * [quick guide to configuration generation](../../getting-started/getting-started#step-6%3A-generate-cluster-configuration)
