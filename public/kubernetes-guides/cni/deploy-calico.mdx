@@ -44,113 +44,87 @@ Calico has a pluggable dataplane architecture that lets you choose the networkin
 > **Note**: To learn more about the available Calico configurations, check out the [Installation reference documentation](https://docs.tigera.io/calico/latest/reference/installation/api).
 
 <Tabs>
-    <Tab title="eBPF">
+  <Tab title="NFTables">
 
-        By default, Calico uses the `/var` directory to mount cgroups. However, since this path is not writable in Talos, you need to change it to `/sys/fs/cgroup`.
+Use the following command to run Calico with NFTables backend.
 
-        Use the following command to update the cgroup mount path:
+```bash
+kubectl create -f -<<EOF
+# This section includes base Calico installation configuration.
+apiVersion: operator.tigera.io/v1
+kind: Installation
+metadata:
+  name: default
+spec:
+  calicoNetwork:
+    bgp: Disabled
+    linuxDataplane: Nftables
+    ipPools:
+    - name: default-ipv4-ippool
+      blockSize: 26
+      cidr: 10.244.0.0/16
+      encapsulation: VXLAN
+      natOutgoing: Enabled
+      nodeSelector: all()
+  kubeletVolumePluginPath: None
+---
+apiVersion: operator.tigera.io/v1
+kind: APIServer
+metadata:
+  name: default
+EOF
+```
 
-        ```bash
-        kubectl create -f -<<EOF
-        apiVersion: crd.projectcalico.org/v1
-        kind: FelixConfiguration
-        metadata:
-          name: default
-        spec:
-          cgroupV2Path: "/sys/fs/cgroup"
-        EOF
-        ```
+  </Tab>
+  <Tab title="eBPF">
 
-        > **Note**: To learn more about the available Calico configurations, check out the [Calico installation API guide ](https://docs.tigera.io/calico/latest/reference/installation/api).
 
-        In eBPF mode, Calico completely replaces the need for kube-proxy by programming all networking logic via eBPF programs. Before disabling kube-proxy, however, you need to ensure that Calico components can reach the API server. This can be done by creating a `kubernetes-services-endpoint` ConfigMap.
+By default, Calico uses the `/var` directory to mount cgroups. However, since this path is not writable in Talos Linux, you need to change it to `/sys/fs/cgroup`.
 
-        Store the following YAML template in a file (e.g., `endpoint.yaml`), and replace `<API server host>` and `<API server port>` with your Kubernetes API server host and port.
-        If [KubePrism](../advanced-guides/kubeprism) is enabled (which is the default), use `localhost` as the API server host and `7445` as the port.
+Use the following command to update the cgroup mount path:
 
-        ```yaml
-        kind: ConfigMap
-        apiVersion: v1
-        metadata:
-          name: kubernetes-services-endpoint
-          namespace: tigera-operator
-        data:
-          KUBERNETES_SERVICE_HOST: '<API server host>'
-          KUBERNETES_SERVICE_PORT: '<API server port>'
-        ```
+```bash
+kubectl create -f -<<EOF
+apiVersion: crd.projectcalico.org/v1
+kind: FelixConfiguration
+metadata:
+  name: default
+spec:
+  cgroupV2Path: "/sys/fs/cgroup"
+EOF
+```
 
-        After editing the file, apply it using:
+There are three values that we need to set for eBPF in the installation manifest
+1. `linuxDataplane` needs to be set to `BPF`.
+2. `bpfNetworkBootstrap` needs to be set to `Enabled`.
+3. kubeProxyManagement to `Enabled` so that the Tigera opreator automatically disables the kube-proxy.
 
-        ```bash
-        kubectl create -f endpoint.yaml
-        ```
 
-        You can now safely disable `kube-proxy` by using the following command:
+Next, you have to configure Calico:
 
-        ```bash
-        kubectl patch ds -n kube-system kube-proxy -p '{"spec":{"template":{"spec":{"nodeSelector":{"non-calico": "true"}}}}}'
-        ```
-
-        Next, you have to configure Calico:
-
-        ```bash
-        kubectl create -f -<<EOF
-        # This section includes base Calico installation configuration.
-        apiVersion: operator.tigera.io/v1
-        kind: Installation
-        metadata:
-          name: default
-        spec:
-          calicoNetwork:
-            bgp: Disabled
-            linuxDataplane: BPF
-          cni:
-            ipam:
-            type: HostLocal
-            type: Calico
-          kubeletVolumePluginPath: None
-        ---
-        # Kubectl integration for Calico unique resources.
-        apiVersion: operator.tigera.io/v1
-        kind: APIServer
-        metadata:
-          name: default
-        spec: {}
-        EOF
-        ```
-
-    </Tab>
-    <Tab title="NFTables" >
-
-        Use the following command to run Calico with NFTables backend.
-
-        ```bash
-        kubectl create -f -<<EOF
-        # This section includes base Calico installation configuration.
-        apiVersion: operator.tigera.io/v1
-        kind: Installation
-        metadata:
-          name: default
-        spec:
-          calicoNetwork:
-            bgp: Disabled
-            linuxDataplane: Nftables
-          cni:
-            ipam:
-            type: HostLocal
-            type: Calico
-          kubeletVolumePluginPath: None
-        ---
-        # Kubectl integration for Calico unique resources.
-        apiVersion: operator.tigera.io/v1
-        kind: APIServer
-        metadata:
-          name: default
-        spec: {}
-        EOF
-        ```
-
-    </Tab>
+```bash
+kubectl create -f -<<EOF
+apiVersion: operator.tigera.io/v1
+kind: Installation
+metadata:
+  name: default
+spec:
+  calicoNetwork:
+    bgp: Disabled
+    linuxDataplane: BPF
+    bpfNetworkBootstrap: Enabled
+    kubeProxyManagement: Enabled
+    ipPools:
+    - name: default-ipv4-ippool
+      blockSize: 26
+      cidr: 10.244.0.0/16
+      encapsulation: VXLAN
+      natOutgoing: Enabled
+      nodeSelector: all()
+  kubeletVolumePluginPath: None
+EOF
+```
+</Tab>
 </Tabs>
 
 ## Deploy Calico Whisker Network Observability Stack
