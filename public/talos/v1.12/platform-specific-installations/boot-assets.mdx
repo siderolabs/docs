@@ -62,7 +62,9 @@ And now we can upload the schematic to the Image Factory to retrieve its ID:
 <Tabs>
   <Tab title="Command">
     ```sh
-      curl -X POST --data-binary @bare-metal.yaml https://factory.talos.dev/schematics
+    curl -X POST \
+      --data-binary @bare-metal.yaml \
+      https://factory.talos.dev/schematics
     ```
   </Tab>
   <Tab title="Output">
@@ -104,14 +106,19 @@ machine:
 Once installed, the machine can be upgraded to a new version of Talos by referencing new installer image:
 
 ```shell
-talosctl upgrade --image factory.talos.dev/metal-installer/b8e8fbbe1b520989e6c52c8dc8303070cb42095997e76e812fa8892393e1d176:<new_version>
+talosctl upgrade \
+  --image \
+  factory.talos.dev/metal-installer/b8e8fbbe1b520989e6c52c8dc8303070cb42095997e76e812fa8892393e1d176:<new_version>
+
 ```
 
 Same way upgrade process can be used to transition to a new set of system extensions: generate new schematic with the new set of system extensions, and upgrade the machine to the new schematic ID:
 
 <CodeBlock lang="sh">
 {`
-talosctl upgrade --image factory.talos.dev/metal-installer/<new_schematic_id>:${release_v1_12}
+talosctl upgrade \\
+  --image \\
+  factory.talos.dev/metal-installer/<new_schematic_id>:${release_v1_12}
 `}
 </CodeBlock>
 
@@ -139,7 +146,9 @@ And now we can upload the schematic to the Image Factory to retrieve its ID:
 <Tabs>
   <Tab title="Command">
   ```sh
-  curl -X POST --data-binary @rpi_generic.yaml https://factory.talos.dev/schematics
+  curl -X POST \
+    --data-binary @rpi_generic.yaml \
+    https://factory.talos.dev/schematics
   ```
   </Tab>
   <Tab title="Output">
@@ -160,14 +169,18 @@ Now we can [download the metal arm64 image](https://factory.talos.dev/image/0db6
 Once installed, the machine can be upgraded to a new version of Talos by referencing new installer image:
 
 ```shell
-talosctl upgrade --image factory.talos.dev/metal-installer/0db665edfda21c70194e7ca660955425d16cec2aa58ff031e2abf72b7c328585:<new_version>
+talosctl upgrade \
+  --image \
+  factory.talos.dev/metal-installer/0db665edfda21c70194e7ca660955425d16cec2aa58ff031e2abf72b7c328585:<new_version>
 ```
 
 Same way upgrade process can be used to transition to a new set of system extensions: generate new schematic with the new set of system extensions, and upgrade the machine to the new schematic ID:
 
 <CodeBlock lang="sh">
 {`
-talosctl upgrade --image factory.talos.dev/metal-installer/<new_schematic_id>:${release_v1_12}
+talosctl upgrade \\
+  --image \\
+  factory.talos.dev/metal-installer/<new_schematic_id>:${release_v1_12}
 `}
 </CodeBlock>
 
@@ -191,7 +204,9 @@ And now we can upload the schematic to the Image Factory to retrieve its ID:
 <Tabs>
   <Tab title="Command">
     ```sh
-    curl -X POST --data-binary @aws.yaml https://factory.talos.dev/schematics
+    curl -X POST \
+      --data-binary @aws.yaml \
+      https://factory.talos.dev/schematics
     ```
   </Tab>
   <Tab title="Output">
@@ -207,7 +222,8 @@ Now we can download the AWS disk image from the Image Factory:
 
 <CodeBlock lang="sh">
 {`
-curl -LO https://factory.talos.dev/image/d9ff89777e246792e7642abd3220a616afb4e49822382e4213a2e528ab826fe5/${release_v1_12}/aws-amd64.raw.xz
+curl -LO \\
+  https://factory.talos.dev/image/d9ff89777e246792e7642abd3220a616afb4e49822382e4213a2e528ab826fe5/${release_v1_12}/aws-amd64.raw.xz
 `}
 </CodeBlock>
 
@@ -218,9 +234,15 @@ Once the AWS VM is created from the AMI, it can be upgraded to a different Talos
 <CodeBlock lang="sh">
 {`
 # upgrade to a new Talos version
-talosctl upgrade --image factory.talos.dev/aws-installer/d9ff89777e246792e7642abd3220a616afb4e49822382e4213a2e528ab826fe5:<new_version>
+talosctl upgrade \\
+  --image \\
+  factory.talos.dev/aws-installer/d9ff89777e246792e7642abd3220a616afb4e49822382e4213a2e528ab826fe5:<new_version>
+
 # upgrade to a new schematic
-talosctl upgrade --image factory.talos.dev/aws-installer/<new_schematic_id>:${release_v1_12}
+
+talosctl upgrade \\
+  --image \\
+  factory.talos.dev/aws-installer/<new_schematic_id>:${release_v1_12}
 `}
 </CodeBlock>
 
@@ -233,7 +255,13 @@ The generation process can be run with a simple `docker run` command:
 
 <CodeBlock lang="sh">
 {`
-docker run --rm -t -v $PWD/_out:/secureboot:ro -v $PWD/_out:/out -v /dev:/dev --privileged ghcr.io/siderolabs/imager:${release_v1_12} <image-kind> [optional: customization]
+docker run --rm -t \\
+  -v "$PWD/_out:/secureboot:ro" \\
+  -v "$PWD/_out:/out" \\
+  -v /dev:/dev \\
+  --privileged \\
+  ghcr.io/siderolabs/imager:${release_v1_12} \\
+  <image-kind> [optional: customization]
 `}
 </CodeBlock>
 
@@ -274,7 +302,9 @@ To get the official Talos Linux system extension container image reference match
 
 <CodeBlock lang="sh">
 {`
-crane export ghcr.io/siderolabs/extensions:${release_v1_12} | tar x -O image-digests | grep EXTENSION-NAME
+crane export ghcr.io/siderolabs/extensions:${release_v1_12} | \\
+  tar x -O image-digests | \\
+  grep EXTENSION-NAME
 `}
 </CodeBlock>
 
@@ -291,7 +321,8 @@ To get the official Talos overlays container image reference matching a Talos re
 
 <CodeBlock lang="sh">
 {`
-crane export ghcr.io/siderolabs/overlays:${release_v1_12} | tar x -O overlays.yaml
+crane export ghcr.io/siderolabs/overlays:${release_v1_12} | \\
+  tar x -O overlays.yaml
 `}
 </CodeBlock>
 
@@ -319,11 +350,13 @@ First, let's lookup extension images for Intel CPU microcode updates and `gvisor
 
 <Tabs>
   <Tab title="Command">
-    <CodeBlock lang="sh">
-      {`
-      crane export ghcr.io/siderolabs/extensions:${release_v1_12} | tar x -O image-digests | grep -E 'gvisor|intel-ucode'
-      `}
-    </CodeBlock>
+<CodeBlock lang="sh">
+{`
+crane export ghcr.io/siderolabs/extensions:${release_v1_12} | \\
+tar x -O image-digests | \\
+grep -E 'gvisor|intel-ucode'
+`}
+</CodeBlock>
   </Tab>
   <Tab title="Output">
     <CodeBlock lang="sh">
@@ -339,11 +372,19 @@ Now we can generate the ISO image with the following command:
 
 <Tabs>
   <Tab title="Command">
-    <CodeBlock lang="sh">
-      {`
-        docker run --rm -t -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release_v1_12} iso --system-extension-image ghcr.io/siderolabs/gvisor:20231214.0-${release_v1_12}@sha256:548b2b121611424f6b1b6cfb72a1669421ffaf2f1560911c324a546c7cee655e --system-extension-image ghcr.io/siderolabs/intel-ucode:20231114@sha256:ea564094402b12a51045173c7523f276180d16af9c38755a894cf355d72c249d --extra-kernel-arg net.ifnames=0 --extra-kernel-arg=-console --extra-kernel-arg=console=ttyS1
-        `}
-      </CodeBlock>
+<CodeBlock lang="sh">
+{`
+docker run --rm -t \\
+-v "$PWD/_out:/out" \\
+ghcr.io/siderolabs/imager:${release_v1_12} \\
+iso \\
+--system-extension-image ghcr.io/siderolabs/gvisor:20231214.0-${release_v1_12}@sha256:548b2b121611424f6b1b6cfb72a1669421ffaf2f1560911c324a546c7cee655e \\
+--system-extension-image ghcr.io/siderolabs/intel-ucode:20231114@sha256:ea564094402b12a51045173c7523f276180d16af9c38755a894cf355d72c249d \\
+--extra-kernel-arg net.ifnames=0 \\
+--extra-kernel-arg=-console \\
+--extra-kernel-arg=console=ttyS1
+`}
+</CodeBlock>
     </Tab>
   <Tab title="Output">
     <CodeBlock lang="sh">
@@ -383,10 +424,27 @@ Now the `_out/metal-amd64.iso` contains the customized Talos ISO image.
 
 If the machine is going to be booted using PXE, we can instead generate kernel and initramfs images:
 
+**Generate the kernel image**
+
 <CodeBlock lang="sh">
 {`
-docker run --rm -t -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release_v1_12} iso --output-kind kernel
-docker run --rm -t -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release_v1_12} iso --output-kind initramfs --system-extension-image ghcr.io/siderolabs/gvisor:20231214.0-${release_v1_12}@sha256:548b2b121611424f6b1b6cfb72a1669421ffaf2f1560911c324a546c7cee655e --system-extension-image ghcr.io/siderolabs/intel-ucode:20231114@sha256:ea564094402b12a51045173c7523f276180d16af9c38755a894cf355d72c249d
+docker run --rm -t \\
+  -v "$PWD/_out:/out" \\
+  ghcr.io/siderolabs/imager:${release_v1_12} \\
+  iso --output-kind kernel
+`}
+</CodeBlock>
+
+**Generate the initramfs image (with extensions)**
+
+<CodeBlock lang="sh">
+{`
+docker run --rm -t \\
+  -v "$PWD/_out:/out" \\
+  ghcr.io/siderolabs/imager:${release_v1_12} \\
+  iso --output-kind initramfs \\
+  --system-extension-image ghcr.io/siderolabs/gvisor:20231214.0-${release_v1_12}@sha256:548b2b121611424f6b1b6cfb72a1669421ffaf2f1560911c324a546c7cee655e \\
+  --system-extension-image ghcr.io/siderolabs/intel-ucode:20231114@sha256:ea564094402b12a51045173c7523f276180d16af9c38755a894cf355d72c249d
 `}
 </CodeBlock>
 
@@ -398,7 +456,13 @@ As the next step, we should generate a custom `installer` image which contains a
 
 <CodeBlock lang="sh">
 {`
-docker run --rm -t -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release_v1_12} installer --platform=metal --system-extension-image ghcr.io/siderolabs/gvisor:20231214.0-${release_v1_12}@sha256:548b2b121611424f6b1b6cfb72a1669421ffaf2f1560911c324a546c7cee655e --system-extension-image ghcr.io/siderolabs/intel-ucode:20231114@sha256:ea564094402b12a51045173c7523f276180d16af9c38755a894cf355d72c249d
+docker run --rm -t \\
+  -v "$PWD/_out:/out" \\
+  ghcr.io/siderolabs/imager:${release_v1_12} \\
+  installer \\
+  --platform=metal \\
+  --system-extension-image ghcr.io/siderolabs/gvisor:20231214.0-${release_v1_12}@sha256:548b2b121611424f6b1b6cfb72a1669421ffaf2f1560911c324a546c7cee655e \\
+  --system-extension-image ghcr.io/siderolabs/intel-ucode:20231114@sha256:ea564094402b12a51045173c7523f276180d16af9c38755a894cf355d72c249d
 `}
 </CodeBlock>
 
@@ -406,7 +470,8 @@ The `installer` container image should be pushed to the container registry:
 
 <CodeBlock lang="sh">
 {`
-crane push _out/metal-amd64-installer.tar ghcr.io/<username></username>/installer:${release_v1_12}
+crane push _out/metal-amd64-installer.tar \\
+  ghcr.io/<username></username>/installer:${release_v1_12}
 `}
 </CodeBlock>
 
@@ -423,11 +488,13 @@ First, let's lookup extension images for `iscsi-tools` in the [extensions reposi
 
 <Tabs>
   <Tab title="Command">
-    <CodeBlock lang="sh">
-      {`
-        crane export ghcr.io/siderolabs/extensions:${release_v1_12} | tar x -O image-digests | grep -E 'iscsi-tools'
-      `}
-    </CodeBlock>
+<CodeBlock lang="sh">
+{`
+crane export ghcr.io/siderolabs/extensions:${release_v1_12} | \\
+  tar x -O image-digests | \\
+  grep -E 'iscsi-tools'
+`}
+</CodeBlock>
   </Tab>
   <Tab title="Output">
     ```json
@@ -440,11 +507,13 @@ Next we'll lookup the overlay image for `rpi_generic` in the [overlays repositor
 
 <Tabs>
   <Tab title="Command">
-    <CodeBlock lang="sh">
-      {`
-        crane export ghcr.io/siderolabs/overlays:${release_v1_12} | tar x -O overlays.yaml | yq '.overlays[] | select(.name=="rpi_generic")'
-      `}
-    </CodeBlock>
+<CodeBlock lang="sh">
+{`
+crane export ghcr.io/siderolabs/overlays:${release_v1_12} | \\
+  tar x -O overlays.yaml | \\
+  yq '.overlays[] | select(.name=="rpi_generic")'
+`}
+</CodeBlock>
   </Tab>
   <Tab title="Output">
     ```json
@@ -459,11 +528,21 @@ Now we can generate the metal image with the following command:
 
 <Tabs>
   <Tab title="Command">
-    <CodeBlock lang="sh">
-    {`
-    docker run --rm -t -v $PWD/_out:/out -v /dev:/dev --privileged ghcr.io/siderolabs/imager:${release_v1_12} rpi_generic --arch arm64 --system-extension-image ghcr.io/siderolabs/iscsi-tools:v0.1.4@sha256:548b2b121611424f6b1b6cfb72a1669421ffaf2f1560911c324a546c7cee655e --overlay-image ghcr.io/siderolabs/sbc-raspberrypi:v0.1.0@sha256:849ace01b9af514d817b05a9c5963a35202e09a4807d12f8a3ea83657c76c863 --overlay-name=rpi_generic
-    `}
-    </CodeBlock>
+<CodeBlock lang="sh">
+{`
+docker run --rm -t \\
+  -v "$PWD/_out:/out" \\
+  -v /dev:/dev \\
+  --privileged \\
+  ghcr.io/siderolabs/imager:${release_v1_12} \\
+  rpi_generic \\
+  --arch arm64 \\
+  --system-extension-image ghcr.io/siderolabs/iscsi-tools:v0.1.4@sha256:548b2b121611424f6b1b6cfb72a1669421ffaf2f1560911c324a546c7cee655e \\
+  --overlay-image ghcr.io/siderolabs/sbc-raspberrypi:v0.1.0@sha256:849ace01b9af514d817b05a9c5963a35202e09a4807d12f8a3ea83657c76c863 \\
+  --overlay-name=rpi_generic
+`}
+</CodeBlock>
+
   </Tab>
   <Tab title="Output">
     <CodeBlock lang="json">
@@ -509,7 +588,14 @@ As the next step, we should generate a custom `installer` image which contains a
 
 <CodeBlock lang="sh">
 {`
-docker run --rm -t -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release_v1_12} installer --arch arm64 --system-extension-image ghcr.io/siderolabs/iscsi-tools:v0.1.4@sha256:548b2b121611424f6b1b6cfb72a1669421ffaf2f1560911c324a546c7cee655e --overlay-image ghcr.io/siderolabs/sbc-raspberrypi:v0.1.0@sha256:849ace01b9af514d817b05a9c5963a35202e09a4807d12f8a3ea83657c76c863 --overlay-name=rpi_generic
+docker run --rm -t \\
+  -v "$PWD/_out:/out" \\
+  ghcr.io/siderolabs/imager:${release_v1_12} \\
+  installer \\
+  --arch arm64 \\
+  --system-extension-image ghcr.io/siderolabs/iscsi-tools:v0.1.4@sha256:548b2b121611424f6b1b6cfb72a1669421ffaf2f1560911c324a546c7cee655e \\
+  --overlay-image ghcr.io/siderolabs/sbc-raspberrypi:v0.1.0@sha256:849ace01b9af514d817b05a9c5963a35202e09a4807d12f8a3ea83657c76c863 \\
+  --overlay-name=rpi_generic
 `}
 </CodeBlock>
 
@@ -517,7 +603,8 @@ The `installer` container image should be pushed to the container registry:
 
 <CodeBlock lang="sh">
 {`
-crane push _out/metal-arm64-installer.tar ghcr.io/<username></username>/installer:${release_v1_12}
+crane push _out/metal-arm64-installer.tar \\
+  ghcr.io/<username></username>/installer:${release_v1_12}
 `}
 </CodeBlock>
 
@@ -536,11 +623,13 @@ First, let's lookup extension images for the `gvisor` container runtime in the [
 
 <Tabs>
   <Tab title="Command">
-    <CodeBlock lang="sh">
-      {`
-      crane export ghcr.io/siderolabs/extensions:${release_v1_12} | tar x -O image-digests | grep gvisor
-      `}
-    </CodeBlock>
+<CodeBlock lang="sh">
+{`
+crane export ghcr.io/siderolabs/extensions:${release_v1_12} | \\
+  tar x -O image-digests | \\
+  grep gvisor
+`}
+</CodeBlock>
   </Tab>
   <Tab title="Output">
     <CodeBlock lang="sh">
@@ -555,7 +644,13 @@ Next, let's generate AWS disk image with that system extension:
 
 <CodeBlock lang="sh">
 {`
-docker run --rm -t -v $PWD/_out:/out -v /dev:/dev --privileged ghcr.io/siderolabs/imager:${release_v1_12} aws --system-extension-image ghcr.io/siderolabs/gvisor:20231214.0-${release_v1_12}@sha256:548b2b121611424f6b1b6cfb72a1669421ffaf2f1560911c324a546c7cee655e
+docker run --rm -t \\
+  -v "$PWD/_out:/out" \\
+  -v /dev:/dev \\
+  --privileged \\
+  ghcr.io/siderolabs/imager:${release_v1_12} \\
+  aws \\
+  --system-extension-image ghcr.io/siderolabs/gvisor:20231214.0-${release_v1_12}@sha256:548b2b121611424f6b1b6cfb72a1669421ffaf2f1560911c324a546c7cee655e
 `}
 </CodeBlock>
 
@@ -573,7 +668,9 @@ Let's use these advanced features to build a bare-metal installer using a system
 First use `crane` on a host with access to the private registry to export the extension image into a tarball.
 
 ```shell
-crane export <your-private-registry>/<your-extension>:latest <your-extension>
+crane export \
+  <your-private-registry>/<your-extension>:latest \
+  <your-extension>
 ```
 
 When can then reference the tarball in a suitable `profile.yaml` for our intended architecture and output.
@@ -606,8 +703,9 @@ To build the asset we pass `profile.yaml` to `imager` via stdin
 <CodeBlock lang="sh">
 {`
 cat profile.yaml | docker run --rm -i \\
--v $PWD/_out:/out -v $PWD/<your-extension>:/<your-extension> \\
-ghcr.io/siderolabs/imager:${release_v1_12} -
+  -v "$PWD/_out:/out" \\
+  -v "$PWD/<your-extension>:/<your-extension>" \\
+  ghcr.io/siderolabs/imager:${release_v1_12} -
 `}
 </CodeBlock>
 
@@ -642,7 +740,11 @@ Now we can generate the ISO image which embeds this machine configuration with t
   <Tab title="Command">
     <CodeBlock lang="sh">
       {`
-      docker run --rm -t -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release_v1_12} iso --embedded-config-path=/out/machine.yaml
+docker run --rm -t \\
+  -v "$PWD/_out:/out" \\
+  ghcr.io/siderolabs/imager:${release_v1_12} \\
+  iso \\
+  --embedded-config-path=/out/machine.yaml
       `}
     </CodeBlock>
   </Tab>  
