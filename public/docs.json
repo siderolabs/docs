@@ -1826,7 +1826,8 @@
               "omni/cluster-management/etcd-backups",
               "omni/cluster-management/restore-etcd-of-a-cluster-managed-by-cluster-templates",
               "omni/cluster-management/using-audit-log",
-              "omni/cluster-management/importing-talos-clusters"
+              "omni/cluster-management/importing-talos-clusters",
+              "omni/cluster-management/support-bundle"
             ]
           },
           {
