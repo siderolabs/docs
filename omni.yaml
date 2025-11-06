@@ -46,6 +46,7 @@ navigation:
                 - "registering-machines/register-an-azure-instance"
                 - "registering-machines/register-a-gcp-instance"
                 - "registering-machines/register-a-hetzner-server"
+                - "registering-machines/join-machines-to-omni"
             - "create-a-kubeconfig-for-a-service-account.mdx"
             - "create-a-machine-class.mdx"
             - "create-a-patch-for-cluster-machines.mdx"

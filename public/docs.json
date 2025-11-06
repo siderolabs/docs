@@ -1804,7 +1804,8 @@
                   "omni/omni-cluster-setup/registering-machines/how-to-register-an-aws-ec2-instance",
                   "omni/omni-cluster-setup/registering-machines/register-an-azure-instance",
                   "omni/omni-cluster-setup/registering-machines/register-a-gcp-instance",
-                  "omni/omni-cluster-setup/registering-machines/register-a-hetzner-server"
+                  "omni/omni-cluster-setup/registering-machines/register-a-hetzner-server",
+                  "omni/omni-cluster-setup/registering-machines/join-machines-to-omni"
                 ]
               },
               "omni/omni-cluster-setup/create-a-kubeconfig-for-a-service-account",
