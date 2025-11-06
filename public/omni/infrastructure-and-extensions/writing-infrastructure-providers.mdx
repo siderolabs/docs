@@ -1,0 +1,312 @@
+---
+title: How to Write an Infrastructure Provider
+---
+
+## Example Provider
+
+Reference implementation is our [KubeVirt provider](https://github.com/siderolabs/omni-infra-provider-kubevirt/).
+The easiest way is to copy it and change the code that interacts with the platform.
+
+## Overview
+
+This guide explains how Omni dynamically provisions machines through infrastructure providers and how to implement one.
+
+Lets consider we have a `MachineClass` and a `MachineSet` created:
+
+```yaml
+metadata:
+    namespace: default
+    type: MachineClasses.omni.sidero.dev
+    id: provider-small
+    version: 3
+    phase: running
+spec:
+    autoprovision:
+        providerid: <provider-id>
+        kernelargs: []
+        metavalues: []
+        providerdata: |
+            cores: 2
+            disk_size: 5
+            sockets: 1
+            memory: 4096
+            storage_selector: name == 'nvme'
+            network_bridge: vmbr0
+        grpctunnel: 0
+```
+
+```yaml
+metadata:
+    namespace: default
+    type: MachineSets.omni.sidero.dev
+    id: talos-default-1-control-planes
+    version: 8
+    phase: running
+    labels:
+        omni.sidero.dev/cluster: talos-default-1
+        omni.sidero.dev/role-controlplane:
+    finalizers:
+        - MachineSetController
+        - ClusterBootstrapStatusController
+        - MachineProvisionController
+        - MachineSetStatusController
+        - MachineSetEtcdAuditController
+        - MachineSetDestroyStatusController
+        - ControlPlaneStatusController
+spec:
+    updatestrategy: 1
+    machineallocation:
+        name: provider-small
+        machinecount: 1
+        allocationtype: 0
+```
+
+Then the following flow will outline how Omni interacts with it:
+
+1. Omni creates a `MachineRequestSet` with the same name as the `MachineSet`, aligning the desired number of machines.
+2. Another Omni controller generates individual `MachineRequest` resources to match the required count.
+   These `MachineRequest` objects are created in the `infra-provider` namespace and labeled with
+   `omni.sidero.dev/infra-provider: <provider-id>`.
+3. The provider controller detects new `MachineRequest` objects matching its ID and executes the defined `ProvisionSteps` until completion.
+4. During execution, the provider updates the `MachineRequestStatus` with the current step name.
+5. Omni waits until the provisioned VM joins.
+6. Since the machine request ID differs from the actual machine UUID (which may be provider-controlled), there are two options:
+   1. If the provider can set or retrieve the machine UUID, it should update it in `MachineRequestStatus` using `provision.Context.SetMachineUUID` method.
+      Omni then maps this status to the corresponding `Link` resource.
+   2. Alternatively, the machine request ID can be [encoded into the SideroLink join token](#v2-join-tokens), allowing immediate mapping.
+7. Once the link is mapped, Omni creates the related resources (`Machine`, `MachineStatus`, etc.), making the machine usable.
+8. The controller responsible for automatic `MachineSetNode` creation assigns the machine to a cluster.
+   From this point, the workflow is identical to that of manually added machines.
+
+## Provider Implementation Details
+
+A provider is a standalone service that must have access to the Omni API.
+It should be written in **Go** and stores its state in Omni under the namespace `infra-provider:<provider-id>`,
+meaning it does **not** require its own persistent storage.
+
+You can use the shared library for provider development:
+[github.com/siderolabs/omni/tree/main/client/pkg/infra](https://github.com/siderolabs/omni/tree/main/client/pkg/infra)
+
+When using this library, implement the `provision.Provision` interface, which defines two methods:
+
+- `ProvisionSteps()` — returns the list of provisioning steps (`provision.Step[T]`) executed when a new machine is requested.
+- `Deprovision()` — invoked when a machine should be removed.
+
+### `ProvisionSteps`
+
+Provisioning steps are defined using `provision.NewStep()`,
+where the first argument is the step name, and the second is a callback function.
+
+Each successful step runs once before moving to the next.
+If a step returns an error, it is retried only when the corresponding `MachineRequest` changes.
+
+Although steps may be blocking, keep in mind that provisioning and deprovisioning share a limited worker pool.
+The pool size can be configured via `WithConcurrency(N)` in the `infra.Run` call.
+
+For long-running or polling operations, return `provision.NewRetryInterval(time.Duration)`
+to recheck progress periodically instead of blocking.
+
+Each step callback receives:
+
+- `context.Context` — for cancellation.
+- `zap.Logger` — preconfigured with contextual fields for the current machine request.
+- `provision.Context[T]` — provides access to state and utilities needed during provisioning.
+
+#### Example: Defining Steps
+
+Suppose you have a provisioner with a client for your platform:
+
+```go
+type Provisioner struct {
+  fakeClient *platform.Client // hypothetical platform client
+}
+
+func (p *Provisioner) ProvisionSteps() []provision.Step[*resources.Machine] {
+  ...
+}
+```
+
+#### Step 1: Create the schematic
+
+A schematic is generated to facilitate the download of the installation media.
+During the image upload process to the provider, the schematic ID is referenced to construct the image download URL.
+When creating the schematic, additional customizations can be applied to the image, such as including system extensions, specifying kernel arguments, or defining other configuration parameters.
+
+```golang
+provision.NewStep("createSchematic", func(ctx context.Context, logger *zap.Logger, pctx provision.Context[*resources.Machine]) error {
+  schematic, err := pctx.GenerateSchematicID(ctx, logger,
+    provision.WithExtraKernelArgs("console=ttyS0,38400n8"),
+    provision.WithoutConnectionParams(),
+  )
+  if err != nil {
+    return err
+  }
+
+  pctx.State.TypedSpec().Value.Schematic = schematic
+  return nil
+})
+```
+
+#### Step 2: Upload the Talos image
+
+This is platform-specific.
+Talos provides images for different platforms — see the [Image Factory](https://factory.talos.dev/) for options.
+
+In this example, we generate the image factory URL using the schematic ID and Talos version,
+then compute a SHA-256 hash for deduplication when storing images.
+
+<Warning>
+  Since steps may run in parallel, use synchronization primitives (e.g. [singleflight](https://pkg.go.dev/golang.org/x/sync/singleflight))
+  to prevent race conditions when generating the same SHA-256.
+</Warning>
+
+```golang
+provision.NewStep("uploadISO", func(ctx context.Context, logger *zap.Logger, pctx provision.Context[*resources.Machine]) error {
+  url, err := url.Parse(constants.ImageFactoryBaseURL)
+  if err != nil {
+    return err
+  }
+
+  var data Data
+  if err := pctx.UnmarshalProviderData(&data); err != nil {
+    return err
+  }
+
+  url = url.JoinPath("image",
+    pctx.State.TypedSpec().Value.Schematic,
+    pctx.GetTalosVersion(),
+    fmt.Sprintf("nocloud-%s.iso", data.Architecture),
+  )
+
+  hash := sha256.New()
+  if _, err = hash.Write([]byte(url.String())); err != nil {
+    return err
+  }
+
+  imageID := hex.EncodeToString(hash.Sum(nil))
+
+  pctx.State.TypedSpec().Value.ImageID = imageID
+  pctx.State.TypedSpec().Value.DiskSize = data.DiskSize
+  pctx.State.TypedSpec().Value.Cores = data.Cores
+  pctx.State.TypedSpec().Value.Memory = data.Memory
+
+  return p.fakeClient.DownloadURL(url)
+})
+```
+
+#### Step 3: Create the machine
+
+In the last step we create the VM in the provider using the previously uploaded image.
+
+```golang
+provision.NewStep("createVM", func(ctx context.Context, logger *zap.Logger, pctx provision.Context[*resources.Machine]) error {
+  return p.fakeClient.CreateVM(&VMConfig{
+    Name:       pctx.GetRequestID(),
+    ISO:        pctx.State.TypedSpec().Value.ImageID,
+    DiskSize:   pctx.State.TypedSpec().Value.DiskSize,
+    Cores:      pctx.State.TypedSpec().Value.Cores,
+    Memory:     pctx.State.TypedSpec().Value.Memory,
+    KernelArgs: pctx.ConnectionParams.KernelArgs, // includes Omni join configs
+  })
+})
+```
+
+### `Deprovision`
+
+Deprovisioning removes created VMs and associated volumes.
+If the ISO image is shared across multiple machines, it can be retained.
+
+<Note>
+  There is currently no automatic garbage collection for unused ISO images.
+</Note>
+
+```golang
+func (p *Provisioner) Deprovision(ctx context.Context, logger *zap.Logger, res *resources.Machine, machineRequest *infra.MachineRequest) error {
+  return p.fakeClient.DeleteVM(machineRequest.Metadata().ID())
+}
+```
+
+### The Generic Type `T` in `provision.Step`
+
+`T` is the generic that should implement COSI `resource.Resource` to make it possible to store it in the state.
+It typically mirrors internal Omni resources and allows the provider to persist state between steps.
+
+For example, you can store volume names or other generated IDs during provisioning,
+then access it later in `Deprovision`.
+
+`T` is available through `pctx.State` in the `provision.Step` callbacks,
+and as the third argument in the `Deprovision` call.
+
+### Machine Connection to Omni
+
+There are two main ways a machine can connect back to Omni:
+
+#### Using a schematic with embedded kernel args
+
+Generate the schematic without additional options.
+
+<Warning>
+  If `provider.Run` includes `WithEncodeRequestIDsIntoTokens`,
+  schematic generation will fail, as creating unique join token per machine and ecoding that into schematic is
+  not allowed by the common library.
+</Warning>
+
+#### Using external join configuration
+
+Supply the join config via nocloud data or metadata service.
+`CreateSchematicID` should have the `provision.WithoutConnectionParams` option to exclude the join config.
+`KernelArgs` and machine join config are stored in `pctx.ConnectionParams`. No need to generate them.
+
+### `GenerateSchematicID` Options
+
+- `provision.WithoutConnectionParams` — excludes connection parameters from kernel args.
+  It's a good idea to use with `infra.WithEncodeRequestIDsIntoTokens`.
+- `provision.WithExtraExtensions` — adds additional extensions.
+- `provision.WithMetaValues` — injects metadata values.
+- `provision.WithExtraKernelArgs` — adds kernel arguments.
+- `provision.WithOverlay` — adds overlay configuration.
+
+### `provider.Run` Options
+
+- `infra.WithClientOptions` — customizes Omni client configuration.
+- `infra.WithImageFactoryClient` — overrides the image factory client.
+- `infra.WithConcurrency` — sets concurrency (default: 1).
+- `infra.WithOmniEndpoint` — specifies the Omni API endpoint (same as `--advertised-api-url`).
+- `infra.WithState` — uses a direct COSI state interface (advanced usage).
+- `infra.WithHealthCheckFunc` — registers a custom health check (displayed in the Omni UI).
+- `infra.WithHealthCheckInterval` — customizes health check frequency.
+- `infra.WithEncodeRequestIDsIntoTokens` — encodes machine request IDs into join tokens.
+Must be paired with provision.WithoutConnectionParams.
+
+### V2 Join Tokens
+
+Omni uses V2 tokens for machine authentication.
+These tokens contain a signed JSON payload, encoded in Base64.
+Omni verifies the signature to ensure authenticity.
+
+V2 tokens allow embedding machine request IDs directly into the join token,
+enabling immediate mapping between a machine and its `MachineRequest`.
+That's enabled by `infra.WithEncodeRequestIDsIntoTokens` option in the `provider.Run`.
+
+### `provision.Context` Reference
+
+- `GetRequestID() string` — returns the `MachineRequest` ID.
+- `GetTalosVersion() string` — returns the Talos version used for the installation media.
+- `SetMachineUUID(id string)` — records the created machine’s UUID (optional if encoding IDs in tokens).
+- `UnmarshalProviderData(dest any) error` — parses provider-specific configuration from JSON.
+- `CreateConfigPatch(ctx, name, data)` — adds configuration patches for the machine.
+- `GenerateSchematicID(ctx, logger, opts...)` — invokes the image factory to create a schematic and returns its ID.
+
+### Provider Data
+
+Provider data is a JSON-encoded field in the `MachineRequest` that contains provider-specific configuration parameters.
+When a provider starts, it registers its schema with Omni.
+Omni uses this schema to render UI forms and validate `MachineRequest` objects.
+
+### Best Practices
+
+- Avoid generating unique images per machine.
+- Use the image factory to build base images and upload them as part of the provisioning flow.
+- Prefer `provision.WithoutConnectionParams` with `infra.WithEncodeRequestIDsIntoTokens` to reduce image count and accelerate provisioning.
+- Inject connection parameters via join configs or kernel args.
+- Use `provision.NewRetryInterval()` for polling instead of blocking operations — this enables concurrency without requiring high `WithConcurrency(N)` settings.
