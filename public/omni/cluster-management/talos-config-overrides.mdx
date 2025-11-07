@@ -1,0 +1,38 @@
+---
+title: Talos Config Overrides
+---
+
+Omni tightly manages the configuration and lifecycle of Talos clusters. As a result, some fields that are normally configurable in standalone Talos installations are either forbidden or ignored when managed by Omni.  
+This ensures Omni remains the single source of truth for cluster identity, security, and connectivity.
+
+This page lists the Talos configuration options that don’t work with Omni, explains why they’re restricted, and what Omni manages instead.
+
+## Why certain Talos config fields are forbidden
+
+Omni assumes full control of critical configuration aspects such as certificates, endpoints, and secrets. Allowing users to modify these values directly could break Omni’s internal reconciliation process or expose sensitive data.  
+Forbidden fields are therefore stripped or ignored at runtime when a machine joins or syncs with Omni.
+
+## Forbidden or ignored fields
+
+Here are specific Talos configuration fields that Omni either forbids or silently overrides. These same restrictions also apply when [importing a cluster](./importing-talos-clusters).
+
+| Field | Scope | Reason / Managed By Omni |
+|-------|--------|---------------------------|
+| `cluster.clusterName` | Cluster | Cluster naming is managed automatically by Omni. Custom names are not supported to ensure consistency with the Omni control plane. |
+| `cluster.controlPlane.endpoint` | Cluster | Omni provides the cluster endpoint (VIP / external endpoint). User-defined endpoints are not allowed. |
+| `cluster.secret` | Cluster | Omni manages all cluster secrets to avoid data leakage and to maintain a secure join process. |
+| `cluster.ca` / `cluster.etcdCA` / `cluster.kubernetesCA` | Cluster | Omni generates and rotates certificates automatically. Manually defining them in Talos config is not supported. |
+| `cluster.discoveryConfig` | Cluster | Omni handles peer discovery internally. Custom discovery configuration is ignored. |
+| `cluster.sealedDiskEncryptionSecret` / `machine.sealedDiskEncryptionSecret` | Machine | Omni does not currently support user-supplied disk encryption secrets; encryption is handled internally if enabled. |
+| `cluster.vip` | Cluster | The concept of a cluster VIP does not apply since Omni exposes a managed external endpoint. |
+| `machine.install.extensions` | Machine | Omni controls Talos extensions installed on machines to maintain environment consistency. |
+| `machine.install.extraKernelArgs` | Machine | Kernel arguments that modify networking, certificates, or cluster identity are not allowed. |
+| `machine.network.acceptedCAs` | Machine | Omni manages which CAs are trusted by the machine; overriding this is not permitted. |
+
+## How Omni handles these fields
+
+If a Talos machine configuration contains any of the above fields:
+
+- Omni strips or overrides the values automatically before applying them to the node.  
+- Attempting to manually modify these fields through the Talos API or `talosctl` is ignored after the node is managed by Omni.
+- Machine configuration updates must always be made through Omni to ensure they remain in sync with the control plane.
