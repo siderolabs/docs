@@ -1,0 +1,34 @@
+---
+title: Break Glass Emergency Access
+---
+
+Omni provides a break glass mechanism that allows direct access to Talos nodes and the Kubernetes API when the Omni management plane is unavailable. This mode is intended for **emergency recovery** and bypasses normal Omni authentication and access controls.
+
+When break glass mode is enabled, Talos nodes temporarily allow direct API access on any network interface. This access grants the `os:operator` role, which provides privileges similar to those available through Omni.
+
+Once break glass credentials are used, the cluster is considered **tainted**, client certificates or operator configs now exist outside Omni’s control. While the cluster remains functional, Omni cannot revoke or reliably track this access until certificate authority (CA) rotation (or equivalent credential rotation) is performed.
+
+## How to enable Omni break glass
+
+Break glass can be enabled in two ways, depending on your Omni deployment type.
+
+### SaaS environments
+
+If you’re using the Omni SaaS platform, **contact [SideroLabs Support](https://www.siderolabs.com/support-and-services/)** to request break glass access.
+Support will enable it for your account and guide you through downloading the operator `talosconfig`.
+
+### On-Prem environments
+
+For self-hosted (on-premises) Omni installations, break glass mode must be explicitly enabled by setting a **server flag** when you start Omni.
+
+To enable this configuration on Omni you need to pass the `--enable-break-glass-configs` to Omni at run time.
+
+## Generate an operator talosconfig
+
+After enabling break glass (either via support or server flag), use the following command to generate an operator Talos configuration:
+
+```bash
+omnictl talosconfig --cluster <cluster-name> --break-glass
+```
+
+This command produces an operator-level talosconfig that bypasses Omni’s normal authentication flow, granting temporary, direct access to Talos API endpoints on managed nodes.
