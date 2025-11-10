@@ -13,12 +13,15 @@ title: Configure Keycloak for Omni
 
 <img src="./images/configure-keycloak-for-omni-omni-create.png" alt=""/>
 
-3. Find the realm metadata.
+3. Select **Realm settings** in the sidebar, and navigate to the **Endpoints > SAML 2.0 Identity Provider Metadata** Link. The link should look a lot similar to this:
 
-* In the realm settings, there is a link to the metadata needed for SAML under Endpoints.
-  * Copy the link or save the data to a file. It will be needed for the installation of Omni.
+    ```bash
+    https://<keycloak-domain>/realms/<realm>/protocol/saml/descriptor
+    ```
 
-<img src="./images/configure-keycloak-for-omni-openID.png" alt=""/>
+    * Copy the link or save its XML data to a file. You will need this for your Omni installation.
+
+<img src="./images/configure-keycloak-saml-idp.png" alt=""/>
 
 4. Create a client
 
@@ -68,7 +71,7 @@ title: Configure Keycloak for Omni
 * Add a new user (optional)
   * If Keycloak is being used as an Identity Provider, users can be created here.
 
-<img src="" alt="./images/configure-keycloak-for-omni-create-new-user.png"/>
+<img src="" alt="./images/configure-keycloak-for-omni-create-new-user.png" alt=""/>
 
 * Enter the **user information** and set the **Email verified** to **Yes**
 
