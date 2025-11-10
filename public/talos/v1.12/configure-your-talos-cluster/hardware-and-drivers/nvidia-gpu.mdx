@@ -145,3 +145,87 @@ kubectl run \
   --overrides '{"spec": {"runtimeClassName": "nvidia"}}' \
   nvidia-smi
 ```
+
+## Collecting NVIDIA GPU debug data
+
+When debugging NVIDIA GPU issues (for example, `NVRM: GPU has fallen off the bus` messages in the kernel log), NVIDIA support will often ask for the output of `nvidia-bug-report.sh`. 
+
+Talos does not allow direct shell access on the nodes, but you can still generate this report by using `kubectl debug`. To do this:
+
+1. Start a debug pod on the affected node:
+
+```bash
+# Replace ${USER} with any unique suffix if needed
+kubectl run "node-debugger-${USER}" \
+  --restart=Never \
+  --namespace kube-system \
+  --image nvcr.io/nvidia/cuda:12.8.0-base-ubuntu22.04
+```
+
+2. Then attach to it with the sysadmin debug profile:
+
+  ```bash
+  kubectl debug "node-debugger-${USER}" \
+    -it \
+    --namespace kube-system \
+    --profile sysadmin
+  ```
+
+This will drop you into a shell inside a container running on the node.
+
+3. Inside the debug container, download the NVIDIA driver bundle and extract `nvidia-bug-report.sh` by running the following commands:
+
+a. Confirm the driver version talos is using:
+
+```bash
+nvidia-smi --query-gpu=driver_version --format=csv,noheader
+```
+
+b. Set the driver version and node architecture in variables:
+
+```bash
+DRIVER_VERSION=<nvidia-driver-version>
+ARCH=<node-architecture>
+```
+Replace the placeholders `<nvidia-driver-version>` and `<node-architecture>` with your actual values:
+    - `<nvidia-driver-version>`: The nvidia driver version running on your talos nodes, which you found in step 3a.
+    - `<node-architecture>`: The architecture of the node.
+
+
+c. Download the nvidia driver bundle, and extract the bug report script:
+
+```bash
+apt-get update && apt-get install -y curl
+curl -O "https://us.download.nvidia.com/XFree86/Linux-${ARCH}/${DRIVER_VERSION}/NVIDIA-Linux-${ARCH}-${DRIVER_VERSION}.run"
+
+sh NVIDIA-Linux-${ARCH}-${DRIVER_VERSION}.run --extract-only
+cp NVIDIA-Linux-${ARCH}-${DRIVER_VERSION}/nvidia-bug-report.sh /usr/bin/
+```
+
+3. Run `nvidia-bug-report.sh`:
+
+  ```bash
+  nvidia-bug-report.sh
+  ```
+
+This will generate `nvidia-bug-report.log.gz` in the current directory.
+
+4. To copy the report of the cluster:
+
+  a. First, find the name of the debug container (if needed):
+
+    ```bash
+    kubectl get pod "node-debugger-${USER}" \
+    --namespace kube-system \
+    -o jsonpath='{.spec.containers[*].name}'
+    ```
+    
+  b. Then, from your workstation:
+
+    ```bash
+    kubectl cp \
+    "kube-system/node-debugger-${USER}:/nvidia-bug-report.log.gz" \
+    ./nvidia-bug-report.log.gz
+    ```
+
+You can now upload `nvidia-bug-report.log.gz` to NVIDIA support.
