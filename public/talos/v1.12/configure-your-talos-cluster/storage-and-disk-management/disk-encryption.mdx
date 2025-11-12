@@ -13,6 +13,12 @@ System volumes include the `STATE` and `EPHEMERAL` partitions:
 - `EPHEMERAL` may contain sensitive workload data.
 
 Data is encrypted using LUKS2, which is provided by the Linux kernel modules and `cryptsetup` utility.
+
+> **Note:** Starting with **Talos v1.12**, all encrypted volumes are consistently mapped under
+> `/dev/mapper/luks2-<volume-id>`.
+> This naming scheme applies to both system and user volumes and improves the consistency
+> of device identification, especially for raw encrypted volumes.
+
 The operating system will run additional setup steps when encryption is enabled.
 
 If the disk encryption is enabled for the `STATE` partition, the system will:
