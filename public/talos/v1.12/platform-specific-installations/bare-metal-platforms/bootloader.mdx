@@ -55,3 +55,17 @@ Partition layout for GRUB:
 
 With GRUB, kernel arguments are stored in the GRUB configuration file.
 The `.machine.install.extraKernelArgs` field in the machine configuration can be used to modify these arguments, followed by an upgrade.
+
+### Controlling Kernel Command Line Behavior
+
+Starting from Talos v1.12, you can control how GRUB determines the kernel command line
+using the `.machine.install.grubUseUKICmdline` machine configuration option.
+
+When `grubUseUKICmdline` is set to `true`, GRUB will use the kernel command line
+embedded in the Unified Kernel Image (UKI) that was generated during Talos image creation.
+This behavior makes it easier to customize kernel parameters when generating boot assets.
+
+When set to `false`, GRUB will ignore the UKI-provided kernel command line and instead
+construct its own command line based on Talos defaults and configuration (the legacy behavior).
+
+For existing installations upgrading to v1.12, this option will default to false to preserve the legacy behavior.
