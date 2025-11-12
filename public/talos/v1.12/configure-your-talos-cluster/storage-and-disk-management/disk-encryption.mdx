@@ -38,7 +38,7 @@ Talos Linux supports four encryption methods, which can be combined together for
 
 > Note: `nodeID` encryption is not designed to protect against attacks where physical access to the machine, including the drive, is available.
 > It uses the hardware characteristics of the machine in order to decrypt the data, so drives that have been removed, or recycled from a cloud environment or attached to a different virtual machine, will maintain their protection and encryption.
-> 
+>
 >
 > Note: When using KMS encryption for `STATE` partition the network configuration can't be provided via the machine configuration, as KMS requires network connectivity before `STATE` partition is unlocked.
 > Also custom CA certificates cannot be used for the KMS server, as these are stored in the `STATE` partition as well.
@@ -237,3 +237,50 @@ talosctl apply-config --insecure -n <node ip> -f config.yaml
 ```
 
 After installation is complete the node should encrypt the STATE partition.
+
+### Configuring TPM-Based Disk Encryption
+
+Talos supports TPM-based disk encryption by binding the LUKS2 key to one or more PCR (Platform Configuration Register) values.
+This allows you to control how tightly the encrypted volume is tied to the machine’s firmware and boot state.
+
+Specify PCRs using the `options.pcrs` field under the `tpm` key.
+
+#### Default Behavior
+
+If `options.pcrs` is not specified, Talos defaults to:
+
+```yaml
+pcrs: [7]
+```
+
+PCR 7 reflects the SecureBoot state and provides backward-compatible behavior with older Talos releases.
+
+#### Binding Only to Signed PCR Policies
+
+If the user explicitly sets an empty list, Talos binds only to PCR 11, which is used for signed TPM policies:
+
+```yaml
+tpm:
+  options:
+    pcrs: []
+```
+
+This ignores SecureBoot state, which is useful on hardware where PCR 7 values differ across platforms or firmware versions.
+
+#### Binding to Multiple PCRs
+
+You can bind the key to multiple PCR values for stronger protection.
+For example, to bind to both the SecureBoot state (PCR 7) and the firmware state:
+
+```yaml
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: STATE
+encryption:
+  provider: luks2
+  keys:
+    - tpm:
+        options:
+          pcrs: [0, 7]
+      slot: 0
+```
