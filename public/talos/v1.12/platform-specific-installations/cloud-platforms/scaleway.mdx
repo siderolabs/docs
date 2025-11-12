@@ -5,7 +5,7 @@ aliases:
   - ../../../cloud-platforms/scaleway
 ---
 
-import { release_v1_11, version_v1_11 } from '/snippets/custom-variables.mdx';
+import { release_v1_12, version_v1_12 } from '/snippets/custom-variables.mdx';
 
 The process to run a Talos cluster, on a single node in Scaleway is as follows:
 
@@ -21,12 +21,12 @@ The process to run a Talos cluster, on a single node in Scaleway is as follows:
 
   <CodeBlock lang="sh">
     {`
-   wget "https://factory.talos.dev/image/18d0321d7fb289f707a76e1deeaa5c97e62209722cbf4bc533a5d51eb666885f/v1.11.3/scaleway-amd64.raw.zst"
+   wget "https://factory.talos.dev/image/18d0321d7fb289f707a76e1deeaa5c97e62209722cbf4bc533a5d51eb666885f/v{ release_v1_12 }/scaleway-amd64.raw.zst"
    `}
    </CodeBlock>
 
    > You can create your own brew on [Talos Factory](https://factory.talos.dev) if you need a custom image.
-   > A working extra kernel command line is as follow : `-console talos.platform=scaleway console=ttyS0,115200 talos.dashboard.disabled=0`
+   > A working extra kernel command line arguments is as follow : `-console talos.platform=scaleway console=ttyS0,115200 talos.dashboard.disabled=0`
 
 2. **Decompress and convert the image**:
 
@@ -35,8 +35,12 @@ The process to run a Talos cluster, on a single node in Scaleway is as follows:
    qemu-img convert -O qcow2 scaleway-amd64.raw scaleway-amd64.qcow2
    ```
 
-3. **Create a S3 bucket** (if it doesn't exist):
+3. **Create an S3 bucket** (if it doesn't exist):
    Go to Object Storage in the Scaleway console and create a new bucket.
+
+<img src="./images/scaleway-create-bucket-01.png" alt="Scaleway Console Create Bucket"/>
+
+<img src="./images/scaleway-create-bucket-02.png" alt="Scaleway Console Create Bucket"/>
 
 4. **Upload to S3-compatible object storage**:
    Use the Scaleway console Object Storage interface to upload the QCOW2 file directly.
@@ -47,23 +51,21 @@ The process to run a Talos cluster, on a single node in Scaleway is as follows:
 
 2. Go to the QCOW2 object in your S3 bucket.
 
-3. Click on the extra action "Import object as snapshot".
+3. Click on the extra action *Import object as snapshot*.
 
-4. Name the snapshot "scaleway-amd64-v1.11", and use a Local Storage snapshot type.
+<img src="./images/scaleway-import-as-snapshot.png" alt="Scaleway Console Import As Snapshot"/>
+
+4. Name the snapshot *scaleway-amd64-v{ release_v1_12 }*, and use a Local Storage snapshot type.
 
 ## Instance Deployment
 
-**Create instance** using the snapshot/image via GUI, CLI, or Infrastructure as Code tools.
+1. Create instance using the snapshot/image via GUI, CLI, or Infrastructure as Code tools.
 
-Open the Security Group in order to open `TCP/50000` and `TCP/6443`.
+2. Open the Security Group in order to open `TCP/50000` and `TCP/6443`.
 
-The Talos disk image used to boot is 4.5GB, and is not enough for the EPHEMERAL partition.
+3. The Talos disk image used to boot is 4.5GB, and is not enough for the EPHEMERAL partition.
 
-Add an extra Disk of 25GB (Local Storage) for Talos EPHEMERAL partition.
-
-The Talos OS (4.5GB) will be on `/dev/vda` and the extra disk for EPHEMERAL partition will be on `/dev/vdb`.
-
-At this point, you can debug and communicate with the instance on --insecure mode :
+4. Add an extra Disk of 25GB (Local Storage) for Talos EPHEMERAL partition. The Talos OS (4.5GB) will be on `/dev/vda` and the extra disk for EPHEMERAL partition will be on `/dev/vdb`. At this point, you can debug and communicate with the instance on --insecure mode :
 ```
 VM_IP=<instance_public_ip>
 talosctl -n $VM_IP version --insecure
