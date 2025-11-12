@@ -163,6 +163,7 @@ navigation:
                 - "images-container-runtime/containerd"
                 - "images-container-runtime/image-cache"
                 - "images-container-runtime/pull-through-cache"
+                - "images-container-runtime/image-cache-registry-mirror"
                 - "images-container-runtime/static-pods"
             - group: "Storage & Disk Management"
               folder: "talos/v1.12/configure-your-talos-cluster"

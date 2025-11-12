@@ -1941,6 +1941,7 @@
                       "talos/v1.12/configure-your-talos-cluster/images-container-runtime/containerd",
                       "talos/v1.12/configure-your-talos-cluster/images-container-runtime/image-cache",
                       "talos/v1.12/configure-your-talos-cluster/images-container-runtime/pull-through-cache",
+                      "talos/v1.12/configure-your-talos-cluster/images-container-runtime/image-cache-registry-mirror",
                       "talos/v1.12/configure-your-talos-cluster/images-container-runtime/static-pods"
                     ]
                   },
