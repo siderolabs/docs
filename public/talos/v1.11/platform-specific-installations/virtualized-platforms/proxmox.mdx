@@ -95,6 +95,29 @@ Before starting, familiarise yourself with the
 [system requirements](../../getting-started/system-requirements) for Talos and assign VM
 resources accordingly.
 
+### Recommended VM Configuration
+
+For production-ready Talos deployments on Proxmox, we recommend the following "golden configuration":
+
+| Setting | Recommended Value | Notes |
+|---------|------------------|-------|
+| **BIOS** | `ovmf` (UEFI) | Modern firmware, Secure Boot support, better hardware compatibility |
+| **Machine** | `q35` | Modern PCIe-based machine type with better device support |
+| **CPU Type** | `host` | Enables advanced instruction sets (AVX-512, etc.), best performance. Alternative: `kvm64` with feature flags for Proxmox < 8.0 |
+| **CPU Cores** | 2+ (control plane), 4+ (workers) | Minimum 2 cores required |
+| **Memory** | 4GB+ (control plane), 8GB+ (workers) | Minimum 2GB required |
+| **Disk Controller** | **VirtIO SCSI** (NOT "VirtIO SCSI Single") | Single controller can cause bootstrap hangs (#11173) |
+| **Disk Format** | Raw (performance) or QCOW2 (features/snapshots) | Raw preferred for performance |
+| **Disk Cache** | Write Through (safe default) | Or None for clustered environments |
+| **Network Model** | `virtio` | Paravirtualized driver, best performance (up to 10 Gbit) |
+| **EFI Disk** | 4MB (for OVMF) | Required for UEFI firmware, stores Secure Boot keys |
+| **Ballooning** | Disabled | Talos doesn't support memory hotplug |
+| **RNG Device** | VirtIO RNG (optional) | Better entropy for security |
+
+> **Important**: When configuring the disk controller, use **VirtIO SCSI** (not "VirtIO SCSI Single").
+> Using "VirtIO SCSI Single" can cause bootstrap to hang or prevent disk discovery.
+> See [issue #11173](https://github.com/siderolabs/talos/issues/11173) for details.
+
 Create a new VM by clicking the "Create VM" button in the Proxmox UI:
 
 <img src="./images/proxmox-create-vm.png" width="500px"/>
@@ -107,33 +130,51 @@ In the OS tab, select the ISO we uploaded earlier:
 
 <img src="./images/proxmox-edit-os.png" width="500px"/>
 
-Keep the defaults set in the "System" tab.
+In the "System" tab:
+- Set **BIOS** to `ovmf` (UEFI) for modern firmware and Secure Boot support
+- Set **Machine** to `q35` for modern PCIe-based machine type
+- Add **EFI Disk** (4MB) for persistent UEFI settings and Secure Boot key storage
 
-Keep the defaults in the "Hard Disk" tab as well, only changing the size if desired.
+In the "Hard Disk" tab:
+- Set **Bus/Device** to `VirtIO SCSI` (NOT "VirtIO SCSI Single")
+- Set **Storage** to your main storage pool
+- Set **Format** to `Raw` (better performance) or `QCOW2` (features/snapshots)
+- Set **Size** to 50GB+ for control planes, 100GB+ for workers (adjust based on CSI requirements)
+- Set **Cache** to `Write Through` (safe default) or `None` for clustered environments
+- Enable **Discard** (TRIM support) if using SSD storage
+- Enable **SSD emulation** if using SSD storage
 
-In the "CPU" section, give at least 2 cores to the VM:
+> **Important**: When configuring the disk controller, use **VirtIO SCSI** (not "VirtIO SCSI Single").
+> Using "VirtIO SCSI Single" can cause bootstrap to hang or prevent disk discovery.
+> See [issue #11173](https://github.com/siderolabs/talos/issues/11173) for details.
 
-> Note: As of Talos v1.0 (which requires the x86-64-v2 microarchitecture), prior to Proxmox V8.0, booting with the
-> default Processor Type `kvm64` will not work.
-> You can enable the required CPU features after creating the VM by
-> adding the following line in the corresponding `/etc/pve/qemu-server/<vmid>.conf` file:
->
-> ```text
-> args: -cpu kvm64,+cx16,+lahf_lm,+popcnt,+sse3,+ssse3,+sse4.1,+sse4.2
-> ```
->
-> Alternatively, you can set the Processor Type to `host` if your Proxmox host supports these CPU features,
-> this however prevents using live VM migration.
+In the "CPU" section:
+- Set **Cores** to 2+ for control planes, 4+ for workers
+- Set **Sockets** to 1 (keep simple)
+- Set **Type** to `host` (best performance, enables advanced instruction sets)
+  - **Alternative for Proxmox < 8.0**: Use `kvm64` with feature flags by adding to `/etc/pve/qemu-server/<vmid>.conf`:
+    ```text
+    args: -cpu kvm64,+cx16,+lahf_lm,+popcnt,+sse3,+ssse3,+sse4.1,+sse4.2
+    ```
+  - **Note**: `host` CPU type prevents live VM migration but provides best performance
 
 <img src="./images/proxmox-edit-cpu.png" width="500px"/>
 
-Verify that the RAM is set to at least 2GB:
+In the "Memory" section:
+- Set **Memory** to 4GB+ for control planes, 8GB+ for workers (minimum 2GB required)
+- **Disable Ballooning** (can cause issues with Talos memory detection)
 
 <img src="./images/proxmox-edit-ram.png" width="500px"/>
 
-Keep the default values for networking, verifying that the VM is set to come up on the bridge interface:
+In the "Network" section:
+- Set **Model** to `virtio` (paravirtualized driver, best performance)
+- Set **Bridge** to your network bridge (e.g., `vmbr0`)
+- Verify the VM is set to come up on the bridge interface
 
 <img src="./images/proxmox-edit-nic.png" width="500px"/>
+
+> **Tip**: Enable a serial console (ttyS0) in Proxmox VM settings to see early boot logs and troubleshoot network connectivity issues.
+> This is especially helpful when debugging DHCP timing or bridge configuration problems.
 
 Finish creating the VM by clicking through the "Confirm" tab and then "Finish".
 
@@ -214,7 +255,11 @@ talosctl gen config talos-proxmox-cluster https://$CONTROL_PLANE_IP:6443 --outpu
   `}
 </CodeBlock>
 
-- In Proxmox, go to your VM --> Options and ensure that `QEMU Guest Agent` is `Enabled`
+> **Important**: Enable QEMU Guest Agent in Proxmox **only if** you built the ISO with the `siderolabs/qemu-guest-agent` extension in Image Factory.
+> If you're using a standard Talos ISO without this extension, leave QEMU Guest Agent disabled in Proxmox VM settings.
+> Enabling it without the extension will only generate log spam and won't provide any functionality.
+
+- In Proxmox, go to your VM --> Options and ensure that `QEMU Guest Agent` is `Enabled` (only if using custom ISO with extension)
 - The QEMU agent is now configured
 
 ## Create Control Plane Node
@@ -273,6 +318,34 @@ At this point we can retrieve the admin `kubeconfig` by running:
 ```bash
 talosctl kubeconfig .
 ```
+
+## Troubleshooting
+
+### Network Connectivity Issues
+
+If nodes fail to obtain IP addresses or show "network is unreachable" errors:
+
+1. **Verify bridge interface**: Ensure the bridge interface (e.g., `vmbr0`) exists and is UP before starting VMs
+   ```bash
+   ip link show vmbr0
+   ```
+
+2. **Check DHCP server**: Ensure DHCP server is running and reachable from the bridge network
+
+3. **Firewall rules**: If Proxmox VM firewall is enabled, allow DHCP traffic (UDP ports 67/68) and Talos management ports
+
+4. **VLAN configuration**: Ensure VLAN tags match between bridge configuration, VM network settings, and switch configuration
+
+5. **Serial console**: Enable serial console to view early boot logs and network initialization messages
+
+### Disk Controller Issues
+
+- **Bootstrap hangs**: If bootstrap hangs or disks aren't discovered, verify you're using **VirtIO SCSI** (not "VirtIO SCSI Single")
+- **Disk not found**: Check disk path using `talosctl get disks --insecure --nodes $CONTROL_PLANE_IP` and update `install.disk` in machine config if needed
+
+### Secure Boot
+
+For Secure Boot setup, see the [Secure Boot documentation](../../security/secure-boot).
 
 ## Cleaning Up
 
