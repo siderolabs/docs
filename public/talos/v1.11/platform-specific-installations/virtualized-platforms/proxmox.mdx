@@ -322,6 +322,20 @@ talosctl kubeconfig .
 
 ## Troubleshooting
 
+### Cluster Creation Issues
+
+If `talosctl cluster create` fails with disk controller errors:
+
+- **"virtio-scsi-single disk controller is not supported"**: This disk controller type causes Talos bootstrap to hang. Use `virtio` or `scsi` instead:
+  ```bash
+  # Wrong - will be rejected
+  talosctl cluster create --disks virtio-scsi-single:10GiB
+
+  # Correct - use virtio or scsi
+  talosctl cluster create --disks virtio:10GiB
+  talosctl cluster create --disks scsi:10GiB
+  ```
+
 ### Network Connectivity Issues
 
 If nodes fail to obtain IP addresses or show "network is unreachable" errors:
@@ -342,6 +356,7 @@ If nodes fail to obtain IP addresses or show "network is unreachable" errors:
 
 ### Disk Controller Issues
 
+- **Configuration rejected**: If you see "virtio-scsi-single disk controller is not supported", use `--disks virtio:10GiB` instead of `--disks virtio-scsi-single:10GiB`
 - **Bootstrap hangs**: If bootstrap hangs or disks aren't discovered, verify you're using **VirtIO SCSI** (not "VirtIO SCSI Single")
 - **Disk not found**: Check disk path using `talosctl get disks --insecure --nodes $CONTROL_PLANE_IP` and update `install.disk` in machine config if needed (e.g., `install.disk: /dev/vda`)
 
