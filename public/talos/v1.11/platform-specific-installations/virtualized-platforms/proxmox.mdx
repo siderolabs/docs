@@ -139,7 +139,7 @@ In the "Hard Disk" tab:
 - Set **Bus/Device** to `VirtIO SCSI` (NOT "VirtIO SCSI Single")
 - Set **Storage** to your main storage pool
 - Set **Format** to `Raw` (better performance) or `QCOW2` (features/snapshots)
-- Set **Size** to 50GB+ for control planes, 100GB+ for workers (adjust based on CSI requirements)
+- Set **Size** based on your workload requirements (adjust based on CSI and application needs)
 - Set **Cache** to `Write Through` (safe default) or `None` for clustered environments
 - Enable **Discard** (TRIM support) if using SSD storage
 - Enable **SSD emulation** if using SSD storage
@@ -175,6 +175,7 @@ In the "Network" section:
 
 > **Tip**: Enable a serial console (ttyS0) in Proxmox VM settings to see early boot logs and troubleshoot network connectivity issues.
 > This is especially helpful when debugging DHCP timing or bridge configuration problems.
+> Set **Serial port** to `ttyS0` in Proxmox and add `console=ttyS0` if you're customizing kernel args.
 
 Finish creating the VM by clicking through the "Confirm" tab and then "Finish".
 
@@ -255,12 +256,12 @@ talosctl gen config talos-proxmox-cluster https://$CONTROL_PLANE_IP:6443 --outpu
   `}
 </CodeBlock>
 
-> **Important**: Enable QEMU Guest Agent in Proxmox **only if** you built the ISO with the `siderolabs/qemu-guest-agent` extension in Image Factory.
+> **Important**: Enable QEMU Guest Agent in Proxmox **only if** you built the ISO with the `siderolabs/qemu-guest-agent` extension in **Image Factory**.
 > If you're using a standard Talos ISO without this extension, leave QEMU Guest Agent disabled in Proxmox VM settings.
 > Enabling it without the extension will only generate log spam and won't provide any functionality.
+> See: [Image Factory](../../getting-started/image-factory) for building a custom ISO with extensions.
 
-- In Proxmox, go to your VM --> Options and ensure that `QEMU Guest Agent` is `Enabled` (only if using custom ISO with extension)
-- The QEMU agent is now configured
+- If you did include the extension, go to your VM → **Options** and set **QEMU Guest Agent** to **Enabled**.
 
 ## Create Control Plane Node
 
@@ -332,7 +333,8 @@ If nodes fail to obtain IP addresses or show "network is unreachable" errors:
 
 2. **Check DHCP server**: Ensure DHCP server is running and reachable from the bridge network
 
-3. **Firewall rules**: If Proxmox VM firewall is enabled, allow DHCP traffic (UDP ports 67/68) and Talos management ports
+3. **Firewall rules**: If Proxmox VM firewall is enabled, allow DHCP traffic (UDP ports 67/68).
+   If you enforce further filtering, ensure control-plane/API connectivity per your environment's policy (see Talos networking docs).
 
 4. **VLAN configuration**: Ensure VLAN tags match between bridge configuration, VM network settings, and switch configuration
 
@@ -341,7 +343,7 @@ If nodes fail to obtain IP addresses or show "network is unreachable" errors:
 ### Disk Controller Issues
 
 - **Bootstrap hangs**: If bootstrap hangs or disks aren't discovered, verify you're using **VirtIO SCSI** (not "VirtIO SCSI Single")
-- **Disk not found**: Check disk path using `talosctl get disks --insecure --nodes $CONTROL_PLANE_IP` and update `install.disk` in machine config if needed
+- **Disk not found**: Check disk path using `talosctl get disks --insecure --nodes $CONTROL_PLANE_IP` and update `install.disk` in machine config if needed (e.g., `install.disk: /dev/vda`)
 
 ### Secure Boot
 
