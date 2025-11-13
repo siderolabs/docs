@@ -86,6 +86,7 @@ navigation:
             - "oidc-login-with-tailscale.mdx"
             - "how-to-manage-acls.mdx"
             - "omni-kms-disk-encryption.mdx"
+            - "break-glass-emergency-access.mdx"
             - "rotate-siderolink-join-token"
 
         - group: "Reference"
