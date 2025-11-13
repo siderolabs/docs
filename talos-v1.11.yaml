@@ -123,6 +123,7 @@ navigation:
             - "rbac.mdx"
             - "selinux.mdx"
             - "verifying-images.mdx"
+            - "talos-security-checklist.mdx"
 
         - group: "Build and extend Talos"
           folder: "talos/v1.11/build-and-extend-talos"

@@ -194,7 +194,8 @@
                   "talos/v1.11/security/machine-config-oauth",
                   "talos/v1.11/security/rbac",
                   "talos/v1.11/security/selinux",
-                  "talos/v1.11/security/verifying-images"
+                  "talos/v1.11/security/verifying-images",
+                  "talos/v1.11/security/talos-security-checklist"
                 ]
               },
               {
@@ -1889,7 +1890,8 @@
                   "talos/v1.12/security/machine-config-oauth",
                   "talos/v1.12/security/rbac",
                   "talos/v1.12/security/selinux",
-                  "talos/v1.12/security/verifying-images"
+                  "talos/v1.12/security/verifying-images",
+                  "talos/v1.12/security/talos-security-checklist"
                 ]
               },
               {
