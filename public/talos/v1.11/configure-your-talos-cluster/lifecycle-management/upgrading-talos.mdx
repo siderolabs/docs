@@ -63,20 +63,19 @@ The recommended way to upgrade Talos is by using a custom image from the
 - Talos Linux is updated.
 - Any updated system extensions you’ve configured are included.
 
-**Avoid using generic images like** `ghcr.io/siderolabs/installer:${release_v1_11}` 
-— unless it best suits your situation
+<Warning>**Avoid using generic images like** `ghcr.io/siderolabs/installer:${release_v1_11}` 
+— unless it best suits your situation</Warning>
 
-> #### Pro Tip:
-> 
-> If you saved the URL you used to install Talos originally, or the next time you upgrade, you can 
-> reuse it for any future upgrades. Just update the `version` portion of the URL:
->
-> ```
-> &version=${release_v1_11} → &version=v1.11.2
-> ```
+<Tip>If you saved the URL you used to install Talos originally, or the next time you upgrade, you can 
+reuse it for any future upgrades. Just update the `version` portion of the URL:
 
-In the Image Factory, once you have your schematic/image, look for the section titled **“Upgrading Talos 
-Linux”** — it will give you the exact image path to use.
+```
+&version=${release_v1_11} → &version=v1.11.2
+```
+</Tip>
+
+In the Image Factory, once you have your schematic/image, look for the section titled **Upgrading Talos 
+Linux** — it will give you the exact image path to use.
 
 ### Step 2: Run the Upgrade Command
 
@@ -84,14 +83,10 @@ Once you have the image and the node’s IP address, run:
 
 <CodeBlock lang="sh">
 {`
-  $ talosctl upgrade --nodes 10.20.30.40 \
-  --image factory.talos.dev/74b14......dcff:v1.11.2
+  $ talosctl upgrade --nodes <node-ip-address> \\
+  --image <factory-image>
 `}
 </CodeBlock>
-
-Replace:
-- `10.20.30.40` with your node’s IP.
-- `factory.talos.dev/74b14......dcff:v1.11.2` with the image path you got from the Image Factory.
 
 ### Staging updates
 
