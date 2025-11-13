@@ -183,6 +183,7 @@ navigation:
                 - "logging-and-telemetry/logging"
             - group: "Hardware & Drivers"
               pages:
+                - "hardware-and-drivers/amd-gpu"
                 - "hardware-and-drivers/nvidia-fabricmanager"
                 - "hardware-and-drivers/nvidia-gpu"
                 - "hardware-and-drivers/nvidia-gpu-proprietary"
