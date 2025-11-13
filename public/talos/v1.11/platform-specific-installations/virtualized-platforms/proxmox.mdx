@@ -97,7 +97,7 @@ resources accordingly.
 
 ### Recommended VM Configuration
 
-For production-ready Talos deployments on Proxmox, we recommend the following "golden configuration":
+Recommended settings for a VM template (golden image) used with Talos on Proxmox:
 
 | Setting | Recommended Value | Notes |
 |---------|------------------|-------|
@@ -259,7 +259,7 @@ talosctl gen config talos-proxmox-cluster https://$CONTROL_PLANE_IP:6443 --outpu
 > **Important**: Enable QEMU Guest Agent in Proxmox **only if** you built the ISO with the `siderolabs/qemu-guest-agent` extension in **Image Factory**.
 > If you're using a standard Talos ISO without this extension, leave QEMU Guest Agent disabled in Proxmox VM settings.
 > Enabling it without the extension will only generate log spam and won't provide any functionality.
-> See: [Image Factory](../../getting-started/image-factory) for building a custom ISO with extensions.
+> See: [Image Factory](../../learn-more/image-factory) for building a custom ISO with extensions.
 
 - If you did include the extension, go to your VM → **Options** and set **QEMU Guest Agent** to **Enabled**.
 
