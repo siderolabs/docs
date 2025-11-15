@@ -24,11 +24,12 @@ For manual or Windows installation, see the <a href={`../../talos/${version}/get
 ## Omni-managed clusters and permissions
 
 When managing Talos nodes through Omni, certain privileged `talosctl` commands are restricted.
-Operations such as `talosctl reset` must be performed through the Omni UI or API.
 
-Users with at least the [Operator](https://omni.siderolabs.com/reference/acls#role) role can still run the following commands:
+All `os:admin` role commands except for a select few are **not** allowed to run against the Talos machines connected to Omni.
 
-| Command                                        |
+The following [`os:admin`](../reference/acls#role) commands **are allowed** when accessing Talos machines through Omni:
+
+| Allowed commands                                        |
 | ---------------------------------------------- |
 | `talosctl etcd alarm list`                     |
 | `talosctl etcd alarm disarm`                   |
