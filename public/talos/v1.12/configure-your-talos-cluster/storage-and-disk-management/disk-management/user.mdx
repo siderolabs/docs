@@ -99,3 +99,36 @@ The `nvme0n1p2` is the partition name, and it can be obtained from the `VolumeSt
 or from the `DiscoveredVolume` resource any time later.
 
 > Note: If the `wipe disk` command fails with `blockdevice is in use by volume`, it means the user volume has not been removed from the machine configuration.
+
+## Types of User Volumes
+
+`UserVolumeConfig` includes an optional `volumeType` field that controls how a user volume is created and managed. If omitted, the system defaults to `partition`.
+
+### `volumeType: partition` (default)
+
+A standard volume backed by a dedicated partition on the underlying storage device.
+
+### `volumeType: disk`
+
+When set to `disk`, the volume is provisioned from an entire block device rather than a partition.
+
+Restrictions for `disk` volumes:
+
+* The provisioning block must not define size-related settings (`minSize`, `maxSize`, or `grow`).
+  A full device implies a fixed size.
+
+### `volumeType: directory`
+
+When set to `directory`, the system bypasses provisioning and filesystem creation. Instead, it creates a host directory at:
+
+```
+/var/mnt/<metadata.name>
+```
+
+Characteristics and limitations of `directory` volumes:
+
+* No provisioning, filesystem operations, or encryption are performed.
+* The volume is simply a directory on the host filesystem.
+* This type provides minimal overhead but does not deliver filesystem-level isolation.
+* Storage capacity is limited by the host’s EPHEMERAL partition.
+* Not suitable for workloads that require predictable or enforceable storage quotas.
