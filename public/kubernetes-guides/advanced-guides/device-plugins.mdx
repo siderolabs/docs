@@ -16,6 +16,13 @@ The device plugin is configured with a [list of devices to expose](https://githu
 In this guide, we will demonstrate how to deploy the device plugin with a configuration that exposes the `/dev/net/tun` device.
 This device is commonly used for user-space Wireguard, including Tailscale.
 
+<Note>
+The `/dev/net/tun` device example used in this guide is for demonstration purposes only.
+Talos 1.8 and above use a containerd version that is not affected by the [runc v1.2.0 issue](https://github.com/opencontainers/runc/pull/3468) which removed access to tun devices.
+This issue was [reverted in runc v1.2.4](https://github.com/opencontainers/runc/pull/4555), so the Generic Device Plugin is no longer needed specifically for tun/tap devices on modern Talos versions.
+However, this guide remains useful as an example of how to expose other host devices to Kubernetes pods using device plugins.
+</Note>
+
 ```yaml
 # generic-device-plugin.yaml
 apiVersion: apps/v1
