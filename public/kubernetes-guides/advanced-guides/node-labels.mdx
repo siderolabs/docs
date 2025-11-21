@@ -1,27 +1,40 @@
 ---
-title: "Node Labels"
-description: "How to configure and use node labels with Talos."
+title: "Node Labels and Node Taints"
+description: "How to configure and use Kubernetes node labels and taints with Talos."
 ---
 
-Talos can propagate labels from `machine.nodeLabels` to the Kubernetes Node object.
-These labels are written using the node’s kubelet identity, which is restricted by the Kubernetes [NodeRestriction admission controller](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction).
+Talos supports configuring **node labels** and **node taints**, both of which influence scheduling and workload placement in Kubernetes.
 
-With NodeRestriction in place, a kubelet is only allowed to modify a small, whitelisted set of labels, such as:
+Kubernetes restricts which labels and taints a node can modify on its own Node object.  
+These restrictions are enforced by the Kubernetes
+[NodeRestriction admission controller](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction), which is **enabled by default in Talos** and cannot be disabled.
 
-* `topology.kubernetes.io/region`
-* `topology.kubernetes.io/zone`
-* `kubernetes.io/hostname`
-* `kubernetes.io/arch`
-* `kubernetes.io/os`
-* some `node.kubernetes.io/*` labels
+NodeRestriction prevents a node (via its kubelet identity) from modifying anything outside a small, whitelisted set of fields. This ensures worker nodes cannot escalate privileges or assign sensitive labels or taints to themselves.
 
-Labels outside that set, including the conventional role labels `node-role.kubernetes.io/<role>`, are rejected by the API server when requested by the node itself.
+## nodeLabels
 
-This prevents a worker node from assigning itself a privileged role.
+Talos can propagate labels from `machine.nodeLabels` to the Kubernetes Node object.  
+These labels are written using the node’s kubelet identity and therefore must comply with NodeRestriction rules.
 
-### Apply nodeLabels
+### Allowed labels
 
-You can add labels to a node by specifying them under `machine.nodeLabels` in the machine configuration. For example:
+Only a limited set of labels may be modified by the node itself, such as:
+
+- `topology.kubernetes.io/region`
+- `topology.kubernetes.io/zone`
+- `kubernetes.io/hostname`
+- `kubernetes.io/arch`
+- `kubernetes.io/os`
+- some `node.kubernetes.io/*` labels
+
+Labels outside this set—including the conventional Kubernetes role labels  
+`node-role.kubernetes.io/<role>`—are rejected by the API server when applied by the node.
+
+This prevents worker nodes from assigning themselves privileged roles.
+
+### Apply `nodeLabels`
+
+You can add labels to a node by specifying them under `machine.nodeLabels` in the machine configuration:
 
 ```yaml
 machine:
@@ -30,7 +43,7 @@ machine:
     topology.kubernetes.io/region: "Region-1"
 ```
 
-After you patch and reboot, the nodes will have the labels applied. Verify them with
+After applying the machine config and rebooting the node, verify the labels with:
 
 ```bash
 kubectl describe node <node-name>
@@ -38,10 +51,71 @@ kubectl describe node <node-name>
 
 ### Role Labels
 
-If you need to assign role labels, for example, `node-role.kubernetes.io/worker` or `node-role.kubernetes.io/ingress`, you must set them with a cluster-admin account:
+To assign Kubernetes role labels such as:
+
+- `node-role.kubernetes.io/worker`
+- `node-role.kubernetes.io/ingress`
+- `node-role.kubernetes.io/control-plane`
+
+You must apply them using a cluster-admin Kubernetes account:
 
 ```bash
-kubectl label node <node-name> node-role.kubernetes.io/worker
+kubectl label node <node-name> node-role.kubernetes.io/worker=""
 ```
 
 Alternatively, you can use the [Talos Cloud Controller Manager](https://github.com/siderolabs/talos-cloud-controller-manager/blob/main/docs/config.md) or your own controller to translate custom domain labels into the conventional `node-role.kubernetes.io/*` form if required.
+
+## Node Taints
+
+Kubernetes taints let you prevent workloads from being scheduled on a node unless they have matching tolerations. You can learn more in the official [Taints and Tolerations documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).
+
+Due to [NodeRestriction](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction), worker nodes cannot modify taints on their Node object after they have joined the cluster.
+This includes adding, removing, or updating taints.
+
+Attempting to do so results in errors such as: `<node-name> is not allowed to modify taints`.
+
+This behaviour is expected and required for Kubernetes hardening.
+
+### Apply Taints
+
+Talos supports setting initial taints only during first node registration, using the kubelet's `registerWithTaints` configuration.
+
+These must be configured under:
+
+```yaml
+machine:
+  kubelet:
+    extraConfig:
+      registerWithTaints:
+        - key: <key>
+          value: <value>
+          effect: <effect>
+```
+
+#### Example: Add a NoSchedule taint to a worker node
+
+To add a taint to a worker node, create a patch with this example `NoSchedule` taint:
+
+```yaml
+machine:
+  kubelet:
+    extraConfig:
+      registerWithTaints:
+        - key: node.kubernetes.io/assignment
+          value: infra
+          effect: NoSchedule
+```
+
+Apply this patch to your worker node’s configuration file.
+
+The taint will be applied once, during the node’s initial registration with the Kubernetes API server. After the node has joined the cluster, updating this field will no longer have any effect.
+
+### Modify Taints After Bootstrap
+
+After a node has joined the cluster, taints must be managed using a cluster-admin identity:
+
+```bash
+kubectl taint nodes <node-name> key=value:NoSchedule
+```
+
+Worker nodes cannot modify their own taints in any way after registration, and Talos does not permit disabling the admission controller to bypass this.
