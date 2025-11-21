@@ -15,28 +15,29 @@ All traffic is HTTPS over port 443.
 
 Discovery Service:
 
-- discovery.talos.dev
+- `discovery.talos.dev`
 
 Image Factory:
 
-- factory.talos.dev
-- *.azurefd.net (Azure Front Door for serving cached assets)
+-  `factory.talos.dev`
+- `*.factory.talos.dev`
+- `*.azurefd.net` (Azure Front Door for serving cached assets)
 
 Google Container Registry / Google Artifact Registry (GCR/GAR):
 
-- gcr.io
-- storage.googleapis.com (backing blob storage for images)
-- *.pkg.dev (backing blob storage for images)
+- `gcr.io`
+- `storage.googleapis.com` (backing blob storage for images)
+- `*.pkg.dev` (backing blob storage for images)
 
 Github Container Registry (GHCR)
 
-- ghcr.io
-- *.githubusercontent.com (backing blob storage for images)
+- `ghcr.io`
+- `*.githubusercontent.com` (backing blob storage for images)
 
 Kubernetes Registry (k8s.io)
 
-- registry.k8s.io
-- *.s3.dualstack.us-east-1.amazonaws.com (backing blob storage for images)
+- `registry.k8s.io`
+- `*.s3.dualstack.us-east-1.amazonaws.com` (backing blob storage for images)
 
 > Note: In this testing, DNS and NTP servers were updated to use those services that are built-in to the FortiGate.
         These may also need to be allowed if the user cannot make use of internal services.

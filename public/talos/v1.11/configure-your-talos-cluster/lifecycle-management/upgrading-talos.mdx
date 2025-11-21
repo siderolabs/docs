@@ -66,12 +66,15 @@ The recommended way to upgrade Talos is by using a custom image from the
 <Warning>**Avoid using generic images like** `ghcr.io/siderolabs/installer:${release_v1_11}` 
 — unless it best suits your situation</Warning>
 
-<Tip>If you saved the URL you used to install Talos originally, or the next time you upgrade, you can 
+<Tip>
+
+If you saved the URL you used to install Talos originally, or the next time you upgrade, you can 
 reuse it for any future upgrades. Just update the `version` portion of the URL:
 
-```
+```bash
 &version=${release_v1_11} → &version=v1.11.2
 ```
+
 </Tip>
 
 In the Image Factory, once you have your schematic/image, look for the section titled **Upgrading Talos 
