@@ -866,7 +866,7 @@ raft_applied_index
 raft_index
 raft_term
 Ranyard
-Raspvberry
+Raspberry
 rbac
 rcu
 reachable_addresses
