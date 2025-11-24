@@ -115,13 +115,13 @@ The specified `extraTags` are added to every message sent to the destination ver
 ### Kernel logs
 
 Kernel log delivery can be enabled with the `talos.logging.kernel` kernel command line argument, which can be specified
-in the `.machine.installer.extraKernelArgs`:
+in the `.machine.installer.extraKernelArgs` (Optionally, you can specify a query in the URL to add extra arguments to each log message):
 
 ```yaml
 machine:
   install:
     extraKernelArgs:
-      - talos.logging.kernel=tcp://host:5044/
+      - talos.logging.kernel=tcp://host:5044/?extraField=value1&otherExtraField=value2
 ```
 
 Also kernel logs delivery can be configured using the [document](../../reference/configuration/runtime/kmsglogconfig) in machine configuration:
@@ -130,7 +130,7 @@ Also kernel logs delivery can be configured using the [document](../../reference
 apiVersion: v1alpha1
 kind: KmsgLogConfig
 name: remote-log
-url: tcp://host:5044/
+url: tcp://host:5044/?extraField=value1&otherExtraField=value2
 ```
 
 Kernel log destination is specified in the same way as service log endpoint.
@@ -146,7 +146,9 @@ Sample message:
   "priority":"warning",
   "seq":711,
   "talos-level":"warn", // Talos-translated `priority` into common logging level
-  "talos-time":"2021-11-26T16:53:21.3258698Z" // Talos-translated `clock` using current time
+  "talos-time":"2021-11-26T16:53:21.3258698Z" // Talos-translated `clock` using current time,
+  "extraField": "value1", // User added value from the query part of the url
+  "otherExtraField": "value2",
 }
 ```
 
