@@ -160,6 +160,7 @@ navigation:
                 - "system-configuration/discovery"
                 - "system-configuration/reproducible-machine-configuration"
                 - "system-configuration/insecure"
+                - "system-configuration/oom"
             - group: "Images & Container Runtime"
               pages:
                 - "images-container-runtime/containerd"

@@ -1,0 +1,113 @@
+---
+title: "OOM handler"
+description: "Configuring userspace out-of-memory handler."
+---
+
+Talos Linux includes a configurable userspace low-memory monitor supplementing Linux kernel built-in OOM killer.
+This controller enables early detection of heavy memory use and helps prevent machine lock-up due to out-of-memory,
+which is especially important to enhance the stability of some special cases making the control plane more prone to OOM,
+such as single-node clusters or scheduling pods on control plane nodes.
+
+While the Linux kernel is already capable of handling low-memory situations, the kernel OOM killer
+only kicks in when the kernel has completely run out of free pages to allocate for a process – at
+which point a machine is already struggling (or unresponsive), and will take a while to recover.
+
+Starting v1.12, Talos Linux includes a userspace OOM controller which is enabled by default and comes pre-configured,
+however, it is expected that different workloads and hardware
+configurations might require tuning the OOM controller to further improve robustness.
+
+The [CEL expression language](https://cel.dev/) is used for configuring the Talos OOM controller, under which
+conditions should it activate, and which cgroups should it prioritize when it does.
+
+[Configuration reference](../../reference/configuration/runtime/oomconfig) lists all supported configuration options
+and a sample configuration document that can be applied to customize OOM controller behavior.
+
+## Trigger
+
+The `triggerExpression` is a boolean condition used by the OOM controller to
+decide whether it should act.
+If the expression evaluates to `true`, the OOM controller will activate and attempt to kill processes
+in order to free up memory.
+
+[Pressure Stall Information](https://facebookmicrosites.github.io/psi/docs/overview) is the key parameter provided to the
+expression, it should be the primary indication for determining whether or not OOM killing is required.
+To find more information on the meaning of the PSI parameters, please read the linked page.
+
+These are the variables provided to this expression, also listing their types:
+
+- `memory_some_avg10` - double - `some` memory pressure value, averaged over 10 seconds
+- `memory_some_avg60` - double - `some` memory pressure value, averaged over 60 seconds
+- `memory_some_avg300` - double - `some` memory pressure value, averaged over 300 seconds
+- `memory_some_total` - double - `some` memory pressure value, absolute cumulative value
+- `memory_full_avg10` - double - `full` memory pressure value, averaged over 10 seconds
+- `memory_full_avg60` - double - `full` memory pressure value, averaged over 60 seconds
+- `memory_full_avg300` - double - `full` memory pressure value, averaged over 300 seconds
+- `memory_full_total` - double - `full` memory pressure value, absolute cumulative value
+
+`d_` prefixed variants of the aforementioned variables (such as `d_memory_some_avg10`) are also available –
+these are `double`s representing the current derivative of that value, in absolute units per second.
+
+Additionally, `time_since_trigger` variable is provided, representing the time past since the previous OOM trigger
+as the CEL `duration` type. You may use this variable to rate limit OOM triggers to ensure the monitored
+parameters have time to reflect the updated system state before new trigger decision.
+
+### Default condition in detail
+
+The default value for `triggerExpression` is:
+
+```cel
+memory_full_avg10 > 12.0 &&
+d_memory_full_avg10 > 0.0 &&
+time_since_trigger > duration("500ms")
+```
+
+This expression checks if all these are true to trigger the OOM killer:
+- The full memory pressure (averaged over 10 seconds) is over 12
+  - Processes spend more time than a threshold
+waiting for the requested memory
+- The derivative of the memory pressure (averaged over 10 seconds) is positive
+  - The system is slowing down due to memory pressure, indicated by increasing wait time
+- The last OOM kill happened no less than 500 milliseconds ago
+  - Prevent the OOM killer from being triggered repeatedly without waiting for it to have an effect on the metrics used
+
+## Cgroup ranking expression
+
+After the OOM killer is triggered, the controller will create a list of cgroups that can be killed to free up memory.
+The expression configured by the `cgroupRankingExpression` property is then used to compute an OOM score for each
+of these cgroups.
+
+The cgroup with the highest OOM score is the one that will be killed.
+
+This setting enables the user to customize the priority of killing cgroups by modifying the evaluation rules
+dependent on the cgroup class. These are the class constants passed to the expression alongside variables:
+
+- `Besteffort` - Kubernetes pods of the BestEffort QoS class
+- `Burstable` - Kubernetes pods of the Burstable QoS class
+- `Guaranteed` - Kubernetes pods of the Guaranteed QoS class
+- `Podruntime` - container runtime, usually containerd and accompanying processes
+- `System` - Talos Linux system services, such as machined, apid and udevd
+
+These constants can be used to index CEL maps or in ternary operators used to apply different
+expressions for different cgroup classes.
+
+These variables are supplied to the expression and can be used for computing OOM score:
+- `memory_max` - optional\<uint\> - if reported for the cgroup: max allowed memory usage, in bytes
+- `memory_current` - optional\<uint\> - if reported for the cgroup: current memory usage, in bytes
+- `memory_peak` - optional\<uint\> - if reported for the cgroup: peak registered memory usage, in bytes
+- `path` - string - absolute path to the cgroup being evaluated
+- `class` - int - one of the aforementioned cgroup classes, should be matched against those constants
+
+### Default formula in detail
+
+```cel
+memory_max.hasValue() ? 0.0 :
+{Besteffort: 1.0, Burstable: 0.5, Guaranteed: 0.0, Podruntime: 0.0, System: 0.0}[class] *
+double(memory_current.orValue(0u))
+```
+
+- If there is a maximum value defined, return 0 - those are processes with well-defined resource demands
+and the least likely to be killed by the OOM handler (score 0 cgroups are the last to be killed)
+- Prioritize BestEffort pods over Burstable, and ignore other classes
+  - A map is used here to look up a coefficient depending on the cgroup class
+  - `orValue` is a method of the `optional` type allowing to unwrap the option,
+  choosing a default value in case the value is not available

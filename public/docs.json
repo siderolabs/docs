@@ -1937,7 +1937,8 @@
                       "talos/v1.12/configure-your-talos-cluster/system-configuration/time-sync",
                       "talos/v1.12/configure-your-talos-cluster/system-configuration/discovery",
                       "talos/v1.12/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
-                      "talos/v1.12/configure-your-talos-cluster/system-configuration/insecure"
+                      "talos/v1.12/configure-your-talos-cluster/system-configuration/insecure",
+                      "talos/v1.12/configure-your-talos-cluster/system-configuration/oom"
                     ]
                   },
                   {
