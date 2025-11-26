@@ -2,6 +2,8 @@
 title: Deploy Omni on Prem
 ---
 
+import { omni_release } from '/snippets/custom-variables.mdx';
+
 This guide shows you how to deploy Omni on-prem. This guide assumes that Omni will be deployed on an Ubuntu machine. Small differences should be expected when using a different OS.
 
 For SAML integration sections, this guide assumes Azure AD will be the provider for SAML.
@@ -112,15 +114,10 @@ There are two easy ways to run Omni: docker-compose and a simple `docker run`. W
 
     You will need to specify some customizations for your installation. Export these variables with your information to use in the provided templates
 
-    ```
-    export OMNI_VERSION=0.41.0
-    OMNI_ACCOUNT_UUID=$(uuidgen)
-    OMNI_DOMAIN_NAME=omni.siderolabs.com
-    OMNI_WG_IP=10.10.1.100
-    OMNI_ADMIN_EMAIL=omni@siderolabs.com
-    AUTH0_CLIENT_ID=xxxyyyzzz
-    AUTH0_DOMAIN=dev-aaabbbccc.us.auth0.com
-    ```
+    <CodeBlock lang="sh">
+      {`export OMNI_VERSION=${omni_release}\nOMNI_ACCOUNT_UUID=$(uuidgen)\nOMNI_DOMAIN_NAME=omni.siderolabs.com\nOMNI_WG_IP=10.10.1.100\nOMNI_ADMIN_EMAIL=omni@siderolabs.com\nAUTH0_CLIENT_ID=xxxyyyzzz\nAUTH0_DOMAIN=dev-aaabbbccc.us.auth0.com
+      `}
+    </CodeBlock>
 
     #### Download Assets
 
