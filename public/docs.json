@@ -8,10 +8,6 @@
     "dark": "#FB326E"
   },
   "favicon": "/images/favicon.svg",
-  "banner": {
-    "content": "🎉 Join Oxide + SideroLabs at KubeCon North America 2025 in Atlanta on Nov 12 • [RSVP Free →](https://www.eventbrite.com/e/oxidesidero-at-kubecon-north-america-2025-tickets-1538869282449)",
-    "dismissible": true
-  },
   "contextual": {
     "options": [
       "copy",
@@ -2111,6 +2107,7 @@
                 "pages": [
                   "omni/infrastructure-and-extensions/self-hosted/overview",
                   "omni/infrastructure-and-extensions/self-hosted/deploy-omni-on-prem",
+                  "omni/infrastructure-and-extensions/self-hosted/install-image-factory-on-prem",
                   "omni/infrastructure-and-extensions/self-hosted/configure-keycloak-for-omni",
                   "omni/infrastructure-and-extensions/self-hosted/how-to-back-up-on-prem-omni-db",
                   "omni/infrastructure-and-extensions/self-hosted/expose-omni-with-nginx-https"
