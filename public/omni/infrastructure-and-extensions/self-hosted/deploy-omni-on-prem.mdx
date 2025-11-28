@@ -124,10 +124,10 @@ There are two easy ways to run Omni: docker-compose and a simple `docker run`. W
     To pull down the Omni deployment assets for Docker Compose, simply grab them with curl as follows.
 
     ```bash
-    curl https://raw.githubusercontent.com/siderolabs/omni/v${OMNI_VERSION}/deploy/env.template \
+    curl https://raw.githubusercontent.com/siderolabs/omni/${OMNI_VERSION}/deploy/env.template \
       | envsubst > omni.env
 
-    curl https://raw.githubusercontent.com/siderolabs/omni/v${OMNI_VERSION}/deploy/compose.yaml -o compose.yaml
+    curl https://raw.githubusercontent.com/siderolabs/omni/${OMNI_VERSION}/deploy/compose.yaml -o compose.yaml
     ```
 
     #### Verify settings
