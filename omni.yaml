@@ -31,6 +31,7 @@ navigation:
                 - "self-hosted/expose-omni-with-nginx-https"
             - "install-airgapped-omni.mdx"
             - "infrastructure-providers.mdx"
+            - "writing-infrastructure-providers.mdx"
             - "machine-registration.mdx"
             - "install-talos-linux-extensions.mdx"
             - "modify-kernel-arguments.mdx"
