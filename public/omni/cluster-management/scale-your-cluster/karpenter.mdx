@@ -1,0 +1,450 @@
+---
+title: Autoscale Your Talos Cluster on AWS with Karpenter
+---
+
+[Karpenter](https://karpenter.sh/docs/getting-started/getting-started-with-karpenter/) is a high-performance Kubernetes autoscaler that launches and terminates nodes in response to real-time workload demand.
+This guide walks you through integrating Karpenter with Talos Linux clusters running on AWS and managed through Omni.
+
+## Prerequisites
+
+Before you begin you must have:
+
+- AWS CLI configured
+- `kubectl`, `talosctl`, and `helm` installed  
+
+## Step 1: Create your Talos AMIs.
+
+You will need two AMIs: one for your control plane machines and one for your worker machines. To create each AMI:
+
+1. Click **Download Installation Media** in the Omni dashboard.
+2. Select the AWS AMI for your architecture.
+3. Add a **Machine User Label** that identifies the machine’s role. For example, for a control plane machine: `role:karpenter-controlplane-machine`.
+4. Click **Download** to generate the AMI file.
+5. Upload the AMI file to your AWS account. Follow the instructions in the [Create Your Own AMIs](../../talos/v1.11/platform-specific-installations/cloud-platforms/aws#create-your-own-amis)  guide.
+
+Repeat the process to create the worker AMI, but use a worker-specific label (e.g. `role:karpenter-worker-machine`).
+
+**Note**: The AMI’s final name in AWS will match the filename you upload to S3. You can use naming conventions to clearly distinguish between your control plane and worker AMIs.
+
+## Step 2: Create your machines using the AMIs
+
+Use the control plane AMI to create your control plane machines, and the worker AMI to create your worker machines.
+
+<Note>For high availability, we recommend creating three control plane nodes.</Note>
+
+## Step 3: Create Machine Classes
+
+[Machine classes](../omni-cluster-setup/create-a-machine-class) group machines based on specific labels.
+
+You will create two Machine Classes in this step, one for your control plane machines and one for your worker machines.
+
+To create a Machine Class:
+
+1. In the Omni dashboard, go to **Machines**.
+2. Click **Create Machine Class**.
+3. Enter a name for the Machine Class, for example `karpenter-controlplane`.
+4. Select the conditions that determine which machines belong to this class. Choose the label you added when creating the AMI (e.g. `role:karpenter-controlplane-machine`).
+5. Click Create Machine Class.
+
+Repeat the same steps to create a Machine Class for your worker machines.
+
+After completing both, you should see the appropriate machines listed under each Machine Class.
+
+## Step 4: Create a cluster
+
+Next, create a cluster using [cluster templates](../reference/cluster-templates):
+
+1. Create a file named`cluster-template.yaml` and paste the following YAML, updating the placeholders as needed:
+
+```yaml
+# cluster-template.yaml
+
+kind: Cluster
+name: <cluster-name> # Replace with your cluster name
+kubernetes:
+  version: v1.34.1 # Replace this version with your preferred version of Kubernetes
+talos:
+  version: v1.11.3 # Replace this version with your preferred version of Kubernetes
+
+---
+kind: ControlPlane
+machineClass:
+  name: <name of your control plane machine class>
+  size: <number of control plane machines>
+
+---
+kind: Workers
+machineClass:
+  name: <name of your worker machine class>
+  size: Unlimited
+```
+
+This template creates a cluster and assigns machines to the appropriate Machine Classes.
+Replace the following placeholders:
+
+- `<cluster-name>`— the name you want to give your cluster
+- `<name of your control plane machine class>`— the Machine Class for your control plane nodes.
+- `<number of control plane machines>`— how many control plane nodes your cluster should have.
+- `<name of your worker plane machine class>`— the Machine Class for your worker nodes.
+
+2. Apply the `cluster-template.yaml` to create the cluster:
+
+```bash
+omnictl cluster template sync -f cluster-template.yaml
+```
+
+3. Once your cluster is up, download and export your cluster's `kubeconfig` to interact with the cluster:
+
+    a. Select your cluster on the Omni dashboard.
+
+    b. Click **Download kubeconfig**.
+
+    c. Export the `kubeconfig`:
+
+    ```
+    export KUBECONFIG=<path to your kubeconfig>
+    ```
+
+4. Verify that all machines are running::
+
+```bash
+kubectl get nodes
+```
+
+## Step 5: Define all variables
+
+Set the environment variables you will use throughout this guide:
+
+```bash
+export CLUSTER_NAME="<cluster-name>"                # Your cluster name
+export AWS_DEFAULT_REGION="<aws-region>"            # For example: eu-west-1
+export TALOS_AMI_ID="<worker-ami-id>"               # For example: ami-0123456789abcdef0
+export SUBNET_IDS="subnet-xxxx subnet-yyyy"         # Subnets where nodes will launch
+export SECURITY_GROUP_IDS="sg-xxxx sg-yyyy"         # Security groups for worker nodes
+
+export KARPENTER_NAMESPACE="kube-system"
+export KARPENTER_VERSION="1.8.1"
+
+export CLUSTER_ENDPOINT="https://<your-endpoint>.omni.siderolabs.io"  # Your Omni API endpoint
+```
+
+**Why this matters**: Defining these variables once makes the rest of the guide copy-and-paste friendly.
+
+## Step 6: Tag subnets and security groups for Karpenter discovery
+
+Karpenter can only launch nodes into subnets and security groups that you explicitly mark for discovery.  
+You do this by adding a `karpenter.sh/discovery` tag to each resource.
+
+Run the following commands to tag your subnets and security groups:
+
+```bash
+aws ec2 create-tags \
+  --resources $SUBNET_IDS \
+  --tags Key=karpenter.sh/discovery,Value=$CLUSTER_NAME
+
+aws ec2 create-tags \
+  --resources $SECURITY_GROUP_IDS \
+  --tags Key=karpenter.sh/discovery,Value=$CLUSTER_NAME
+```
+
+## Step 7: Fix IAM permissions on the worker role
+
+Karpenter runs on a worker node and inherits the IAM role attached to that EC2 instance.  
+If the worker has no IAM instance profile (which is common when using Omni), Karpenter will fail with `AccessDenied` errors.
+
+This step ensures your worker nodes have the correct AWS permissions.
+
+### 7.1: Identify a worker machine
+
+First, retrieve your worker nodes and their IP addresses:
+
+```bash
+kubectl get nodes -o wide
+```
+
+Choose the IP address of any worker node and export it:
+
+```bash
+export WORKER_IP="<replace-with-worker-ip>"
+```
+
+Then use that IP address to look up the corresponding EC2 instance ID::
+
+```bash
+export WORKER_INSTANCE_ID=$(aws ec2 describe-instances \
+  --filters "Name=private-ip-address,Values=$WORKER_IP" \
+  --query 'Reservations[0].Instances[0].InstanceId' \
+  --output text)
+```
+
+
+### 7.2: Check whether the worker already has an IAM instance profile
+
+Run the following command to check if the worker EC2 instance already has an IAM instance profile attached:
+
+```bash
+export INSTANCE_PROFILE_ARN=$(aws ec2 describe-instances \
+  --instance-ids $WORKER_INSTANCE_ID \
+  --query 'Reservations[0].Instances[0].IamInstanceProfile.Arn' \
+  --output text)
+```
+
+If the output is:
+
+```bash
+null
+```
+
+Then the worker has NO IAM role, and you must create one. Continue to [Step 7.3](#7-3:-if-no-instance-profile-exists,-create-one).
+
+If the command returns an ARN, the worker already has an instance profile. You can skip ahead to [Step 7.4](#7-4:-if-the-worker-already-has-an-instance-profile).
+
+### 7.3: If no instance profile exists, create one
+
+First, create a new instance profile and an IAM role:
+
+```bash
+aws iam create-instance-profile \
+  --instance-profile-name talos-worker-profile
+
+aws iam create-role \
+  --role-name talos-worker-role \
+  --assume-role-policy-document file://<(cat <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": { "Service": "ec2.amazonaws.com" },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+)
+```
+
+Next, attach the role to the instance profile:
+
+```bash
+aws iam add-role-to-instance-profile \
+  --instance-profile-name talos-worker-profile \
+  --role-name talos-worker-role
+```
+
+Then, associate the instance profile with the worker EC2 instance:
+
+```bash
+aws ec2 associate-iam-instance-profile \
+  --instance-id "$WORKER_INSTANCE_ID" \
+  --iam-instance-profile Name="talos-worker-profile"
+
+```
+
+Export the values for later steps:
+
+```bash
+export INSTANCE_PROFILE_NAME="talos-worker-profile"
+export INSTANCE_ROLE_NAME="talos-worker-role"
+```
+
+### 7.4: If the worker already has an instance profile
+
+Extract the existing instance profile name:
+
+```bash
+export INSTANCE_PROFILE_NAME=$(echo $INSTANCE_PROFILE_ARN | xargs basename)
+```
+
+Extract the associated role name:
+
+```bash
+export INSTANCE_ROLE_NAME=$(aws iam get-instance-profile \
+  --instance-profile-name "$INSTANCE_PROFILE_NAME" \
+  --query 'InstanceProfile.Roles[0].RoleName' \
+  --output text)
+```
+
+### 7.5: Attach required IAM permissions
+
+Whether the IAM role is newly created or already exists, you must attach the following policies for Karpenter to function correctly:
+
+```bash
+aws iam attach-role-policy \
+  --role-name "$INSTANCE_ROLE_NAME" \
+  --policy-arn arn:aws:iam::aws:policy/IAMFullAccess
+
+aws iam attach-role-policy \
+  --role-name "$INSTANCE_ROLE_NAME" \
+  --policy-arn arn:aws:iam::aws:policy/AWSPricingReadOnlyAccess
+```
+
+## Step 8: Create Karpenter interruption queue
+
+Karpenter can respond to AWS node interruption events (such as maintenance, spot interruptions, or scheduled shutdowns).
+
+To enable this, create a simple SQS queue that Karpenter can watch. When AWS publishes an interruption event, Karpenter drains and replaces the node before it terminates.
+
+```bash
+aws sqs create-queue \
+  --queue-name "$CLUSTER_NAME" >/dev/null 2>&1 || true
+
+export KARPENTER_QUEUE_NAME="$CLUSTER_NAME"
+```
+
+## Step 9: Install Karpenter via Helm
+
+At this point, Karpenter has everything it needs, the cluster endpoint and the required IAM permissions, to provision new machines. Install it using Helm:
+
+```bash
+helm install karpenter oci://public.ecr.aws/karpenter/karpenter \
+  --namespace "$KARPENTER_NAMESPACE" \
+  --create-namespace \
+  --version "$KARPENTER_VERSION" \
+  --set settings.clusterName="$CLUSTER_NAME" \
+  --set settings.clusterEndpoint="$CLUSTER_ENDPOINT" \
+  --set settings.aws.defaultInstanceProfile="$INSTANCE_PROFILE_NAME" \
+  --set settings.aws.interruptionQueueName="$KARPENTER_QUEUE_NAME"
+```
+
+Verify that Karpenter is running:
+
+```bash
+kubectl -n kube-system get pods -l app.kubernetes.io/name=karpenter
+```
+
+## Step 10: Create an EC2NodeClass
+
+The `EC2NodeClass` tells Karpenter how to launch Talos worker machines: which AMI to use, which subnets and security groups to join, and which IAM instance profile to attach.
+
+```bash
+cat <<EOF > ec2nodeclass-talos.yaml
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: talos-workers
+spec:
+  amiFamily: Custom
+  amiSelectorTerms:
+    - id: $TALOS_AMI_ID
+  instanceProfile: $INSTANCE_PROFILE_NAME
+
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: $CLUSTER_NAME
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: $CLUSTER_NAME
+
+  tags:
+    karpenter.sh/discovery: $CLUSTER_NAME
+EOF
+
+envsubst < ec2nodeclass-talos.yaml | kubectl apply -f -
+kubectl get ec2nodeclass
+```
+
+## Step 11: Create a NodePool
+
+The `NodePool` defines what Karpenter is allowed to provision.
+This includes limits, disruption behavior, labels, and instance-type requirements.
+
+```yaml
+cat <<EOF > nodepool-talos-default.yaml
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: talos-default
+spec:
+  limits:
+    cpu: "12" # replace with your limits
+    memory: "24Gi" # replace with your limits
+
+  disruption:
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 2m
+
+  template:
+    metadata:
+      labels:
+        node.kubernetes.io/role: worker 
+
+    spec:
+      nodeClassRef:
+        group: karpenter.k8s.aws 
+        kind: EC2NodeClass
+        name: talos-workers
+
+      requirements:
+        - key: kubernetes.io/arch
+          operator: In
+          values: ["amd64"]
+
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["on-demand"]
+
+        - key: node.kubernetes.io/instance-type
+          operator: In
+          values: ["t3.large"] # replace with your preferred instance type
+EOF
+
+kubectl apply -f nodepool-talos-default.yaml
+kubectl get nodepool
+```
+
+## Step 12: Deploy a workload that triggers autoscaling
+
+Now deploy a simple workload that Karpenter can scale against:
+
+```bash
+cat <<EOF > karpenter-demo-deploy.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: karpenter-demo
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: karpenter-demo
+  template:
+    metadata:
+      labels:
+        app: karpenter-demo
+    spec:
+      containers:
+        - name: pause
+          image: registry.k8s.io/pause:3.9
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+EOF
+
+kubectl apply -f karpenter-demo-deploy.yaml
+```
+
+Check workload exists:
+
+```bash
+kubectl get deploy karpenter-demo
+```
+
+## Step 13: Trigger autoscaling
+
+Increase the number of replicas to create pending pods and trigger Karpenter to provision new nodes:
+
+```bash
+kubectl scale deploy karpenter-demo --replicas=10
+```
+
+Watch autoscaling:
+
+```bash
+kubectl get pods -o wide
+kubectl get nodeclaims
+kubectl get nodes -o wide
+```
+
+You can also watch the new machines appear in the Omni dashboard as Karpenter provisions them and they join the cluster.
