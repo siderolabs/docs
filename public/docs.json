@@ -23,6 +23,11 @@
   "thumbnails": {
     "background": "/images/og-background.png"
   },
+  "seo": {
+    "metatags": {
+      "canonical": "https://docs.siderolabs.com"
+    }
+  },
   "navbar": {
     "links": [
       {
