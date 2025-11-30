@@ -2,6 +2,10 @@ schema: "https://leaves.mintlify.com/schema/docs.json"
 theme: "willow"
 name: "Sidero Documentation"
 
+seo:
+  metatags:
+    canonical: "https://docs.siderolabs.com"
+
 colors:
   primary: "#16A34A"
   light: "#07C983"
