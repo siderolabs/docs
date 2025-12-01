@@ -437,3 +437,19 @@ sinks:
       service: >-
         {{`{{ "talos-service" }}`}}
 ```
+
+## Receiving logs
+
+If you have configure remote service logs or kernel logs on a Talos system and want to collect the logs centrally for debugging purposes you can temporarily run the netcat `nc` command to receive logs.
+
+On a Linux host run the following command:
+
+```shell
+nc -k -l 5140 | tee -a logs.txt
+```
+
+This will print the logs to standard out and also sove them to a logs.txt file.
+
+On the Talos machines make sure to configure logs to send to to your machine's IP address with a logging configuration as described above.
+
+Central logging configuration will allow you to collect logs even when the Talos API is not available (e.g. during installation).
