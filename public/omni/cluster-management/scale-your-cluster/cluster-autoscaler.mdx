@@ -1,0 +1,352 @@
+---
+title: Autoscale Your Cluster with Cluster AutoScaler
+---
+
+[Cluster Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler) automatically adjusts the number of nodes in your Kubernetes cluster based on real-time workload demand.
+
+This guide walks you through integrating Cluster Autoscaler with Talos Linux clusters managed through Omni.
+
+## Prerequisites
+
+Before you begin you must have:
+
+- `kubectl` and `talosctl` installed
+- A cloud provider supported by Cluster Autoscaler and configured to create new worker nodes
+
+To view all supported providers, see the [Cluster Autoscaler GitHub repository](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler).
+
+## Step 1: Download your Talos installation media
+
+You’ll need two Talos images: one for your control plane machines and one for your worker machines. To create each image:
+
+1. Click **Download Installation Media** in the Omni dashboard.
+2. Choose the platform that matches your environment (for example, AWS AMI, Azure, or a generic image).
+3. Add a **Machine User Label** that identifies the machine’s role. For example, for a control plane machine: `role:autoscaler-controlplane-machine`.
+4. Click **Download** to generate the image.
+
+Repeat these steps for the worker image, using a worker-specific label (e.g. `role:autoscaler-worker-machine`).
+
+> **Note**: After downloading, some platforms require you to upload the generated file to create a bootable image, for example, an [AMI in AWS](../../../talos/v1.11/platform-specific-installations/cloud-platforms/aws#create-your-own-amis), [a Managed Image in Azure](../../../talos/v1.11/platform-specific-installations/cloud-platforms/azure#create-the-image), or a [Custom Image in GCP](../../../talos/v1.11/platform-specific-installations/cloud-platforms/gcp#create-the-image).
+
+## Step 2: Create control plane machines from your images
+
+Use the control plane image to create your control plane machines.
+
+For high availability, we recommend creating at least three control plane machines.
+
+<Note>
+We do not recommend horizontally autoscaling control plane machines.
+If your control plane needs more capacity, scale vertically by using larger machine types rather than adding more control plane nodes.
+
+Adding additional nodes increases the number of etcd replicas, which can slow down write performance.
+</Note>
+
+When you're done, all of your machines should appear in the **Machines** section of the Omni dashboard.
+
+## Step 3: Create Machine Classes
+
+[Machine Classes](../../omni-cluster-setup/create-a-machine-class) group machines by labels and act as the pool description for clusters.
+
+You’ll create two Machine Classes:
+
+- one for control plane machines
+- one for worker machines
+
+### 3.1: Control plane Machine Class
+
+To create a machine class for your control plane machines:
+
+1. Create a file named `controlplane-machine-class.yaml`:
+
+```yaml
+metadata:
+  namespace: default
+  type: MachineClasses.omni.sidero.dev
+  id: cluster-autoscaler-controlplane
+spec:
+  matchlabels:
+    # Match the label you applied to your control plane AMI
+    - role = autoscaler-controlplane-machine
+```
+
+This creates a `cluster-autoscaler-controlplane` machine class with your control plane AMI label ( e.g., `role:autoscaler-controlplane-machine`).
+
+2. Apply it:
+
+```bash
+omnictl apply -f controlplane-machine-class.yaml
+```
+
+3. Verify it exists:
+
+```bash
+omnictl get machineclasses
+```
+
+### 3.2: Worker Machine Class
+
+Repeat the process for the worker machines:
+
+1. Create a file named `worker-machine-class.yaml`:
+
+```bash
+metadata:
+  namespace: default
+  type: MachineClasses.omni.sidero.dev
+  id: cluster-autoscaler-worker
+spec:
+  matchlabels:
+    # Match the label you applied to your worker AMI
+    - role = autoscaler-worker-machine
+```
+
+2. Apply it:
+
+```bash
+omnictl apply -f worker-machine-class.yaml
+```
+
+3. Verify:
+
+```bash
+omnictl get machineclasses
+```
+
+## Step 4: Create a cluster using a template
+
+Next, create a cluster that uses the Machine Classes you defined in Step 3.
+
+1. Create a file named `cluster-template.yaml` with the following content, updating each placeholder:
+
+```yaml
+# cluster-template.yaml
+kind: Cluster
+name: <cluster-name> # Replace with your cluster name
+kubernetes:
+  version: v1.34.1    # Replace with your desired Kubernetes version
+talos:
+  version: v1.11.3    # Replace with your desired Talos version
+
+---
+kind: ControlPlane
+machineClass:
+  name: <controlplane-class-name> # e.g. cluster-autoscaler-controlplane
+  size: <controlplane-count>      # e.g. 3
+
+---
+kind: Workers
+machineClass:
+  name: <worker-class-name>       # e.g. cluster-autoscaler-worker
+  size: unlimited
+```
+
+Replace:
+
+- `<cluster-name>` — your cluster name
+- `<controlplane-class-name>` — the Machine Class from Step 3.1
+- `<controlplane-count>` — number of control plane nodes (for example, 3)
+- `<worker-class-name>` — the Machine Class from Step 3.2
+
+2. Apply the template:
+
+```bash
+omnictl cluster template sync -f cluster-template.yaml
+```
+
+3. In Omni, wait for the cluster to become healthy, then download and export its `kubeconfig`. Replace `<cluster-name>` with the name of your cluster:
+
+  ```bash
+  omnictl kubeconfig -c <cluster-name>
+  ```
+
+4. Verify that all control plane nodes registered successfully:
+
+```bash
+kubectl get nodes
+```
+
+## Step 5: Create a node group that Cluster Autoscaler can scale
+
+Cluster Autoscaler does not create nodes directly.
+
+Instead, it talks to a node group managed by your infrastructure provider and asks it to increase the number of worker nodes
+
+A node group is whatever your platform uses to define scalable worker nodes:
+
+- AWS - Auto Scaling Group (ASG)
+- GCP - Managed Instance Group (MIG)
+- Azure - VM Scale Set (VMSS)
+- Cluster API - MachineDeployment
+
+To see all supported platforms, check the [cluster autoscaler GitHub repository](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler).
+
+### 5.1: Create a worker node group using your Talos worker image
+
+Using the worker image you downloaded in Step 1, create a node group with a minimum (your baseline workers) and maximum size (how far Cluster Autoscaler is allowed to scale).
+
+> **Note**: Because the image was generated in Omni with your cluster’s join metadata and worker labels, any machine launched with this image, and therefore from this node group will automatically join your cluster as a worker node.
+
+### 5.2: Verify nodes join before installing the Autoscaler
+
+Before installing Cluster Autoscaler, manually scale your node group by one instance to confirm that it automatically registers as a worker node.
+
+Check the new node:
+
+```bash
+kubectl get nodes
+```
+
+If the node joins automatically and has the correct worker labels, your node group is set up correctly.
+
+If it does not join the cluster automatically, verify that:
+
+- You used the Omni-generated worker image
+- The correct worker label was set during image generation
+- The image was not modified after download
+
+### 5.3: Ensure the node group exposes a scalable API
+
+Cluster Autoscaler must be able to modify your node group. It needs permission to:
+
+- Read the group’s current size
+- Set the desired size
+- List/describe instances
+- Inspect group metadata (labels/tags)
+
+How you grant this depends on your platform:
+
+- **Clouds (AWS/GCP/Azure)**: Attach the appropriate IAM role or credentials to your nodes or to the Cluster Autoscaler service account (IRSA, workload identity, etc.).
+
+- **Other environments**: Use a provider-specific controller that exposes a node-group interface supported by Cluster Autoscaler.
+
+Refer to the [Cluster Autoscaler GitHub repo](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler#cluster-autoscaler) for the exact credentials required for your provider.
+
+## Step 6: Download the Cluster Autoscaler via Helm
+
+You’ll use Helm to add the Cluster Autoscaler repository and install it into your cluster.
+
+### 6.1: Add the Cluster Autoscaler Helm repository
+
+Add the repository to your local Helm configuration, then update your repo index:
+
+```bash
+helm repo add autoscaler https://kubernetes.github.io/autoscaler
+helm repo update
+```
+
+### 6.2: Install the Cluster Autoscaler chart
+
+Different infrastructure providers require different configuration values when installing the Cluster Autoscaler chart.
+
+These values tell the Cluster Autoscaler:
+
+- Which node groups it should manage
+- How to discover and scale those node groups
+- What credentials or identity mechanism to use
+- And any other provider-specific settings
+
+Before you install, check the required values for your platform in the [Cluster Autoscaler Helm Chart documentation](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/charts/cluster-autoscaler#aws---using-auto-discovery-of-tagged-instance-groups).
+
+Once you know which values you need, install the chart with your provider’s configuration:
+
+```bash
+helm install cluster-autoscaler autoscaler/cluster-autoscaler \
+  -n kube-system \
+  <your provider-specific --set flags here>
+```
+
+### 6.3: Allow Cluster Autoscaler to run on your control plane nodes
+
+Control plane nodes are tainted by default, which prevents general workloads from running on them. Add a toleration so that the Cluster Autoscaler can run on the control plane:
+
+```bash
+kubectl -n kube-system patch deployment cluster-autoscaler \
+  --type='json' \
+  -p='[{"op":"add","path":"/spec/template/spec/tolerations/-","value":{"key":"node-role.kubernetes.io/control-plane","operator":"Exists","effect":"NoSchedule"}}]'
+```
+
+## Step 7: Verify Cluster Autoscaler is healthy
+
+Check that the Cluster Autoscaler deployment is running:
+
+```bash
+kubectl -n kube-system get deploy cluster-autoscaler
+kubectl -n kube-system get pods -l app=cluster-autoscaler
+```
+
+Check logs:
+
+```bash
+kubectl -n kube-system logs deploy/cluster-autoscaler
+```
+
+Look for lines that indicate:
+
+- Your cloud provider was initialized
+- Node groups were discovered
+- There are no recurring errors about credentials or API access
+
+You should see messages about registered node groups or the initial autoscaler configuration.
+
+## Step 8: Deploy a workload that triggers scale-up
+
+With the Cluster Autoscaler running, you can test it by deploying a workload that requires more resources than your current worker nodes can supply.
+
+Create a file named `autoscaler-demo-deploy.yaml`:
+
+```yaml
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autoscaler-demo
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: autoscaler-demo
+  template:
+    metadata:
+      labels:
+        app: autoscaler-demo
+    spec:
+      containers:
+      - name: app
+        image: nginx
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+EOF
+```
+
+Apply the manifest:
+
+```bash
+kubectl get deploy autoscaler-demo
+```
+
+Then scale it up:
+
+```bash
+kubectl scale deploy autoscaler-demo --replicas=10
+```
+
+Watch pods and nodes as they respond:
+
+```bash
+kubectl get pods -w
+kubectl get nodes -w
+```
+
+You should see:
+
+- Some pods starting in Pending due to insufficient resources
+- The Cluster Autoscaler detecting those Pending pods and requesting additional nodes
+- New worker nodes joining the cluster, followed by the pods transitioning to Running
+
+## On scaling down nodes
+
+When Cluster Autoscaler terminates a machine, the matching node is removed from Kubernetes, but the machine is not deleted automatically in Omni.
+
+You may still see terminated machines listed in the Omni UI and need to clean them up manually.

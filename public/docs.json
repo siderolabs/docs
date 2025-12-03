@@ -2153,7 +2153,13 @@
           {
             "group": "Cluster Management",
             "pages": [
-              "omni/cluster-management/scale-a-cluster-up-or-down",
+              {
+                "group": "Scale your cluster",
+                "pages": [
+                  "omni/cluster-management/scale-your-cluster/scale-a-cluster-up-or-down",
+                  "omni/cluster-management/scale-your-cluster/cluster-autoscaler"
+                ]
+              },
               "omni/cluster-management/create-a-hybrid-cluster",
               "omni/cluster-management/upgrading-clusters",
               "omni/cluster-management/expose-an-http-service-from-a-cluster",

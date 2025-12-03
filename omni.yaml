@@ -59,7 +59,10 @@ navigation:
         - group: "Cluster Management"
           folder: "omni/cluster-management"
           pages:
-            - "scale-a-cluster-up-or-down.mdx"
+            - group: "Scale your cluster"
+              pages:
+                - "scale-your-cluster/scale-a-cluster-up-or-down"
+                - "scale-your-cluster/cluster-autoscaler"
             - "create-a-hybrid-cluster.mdx"
             - "upgrading-clusters.mdx"
             - "expose-an-http-service-from-a-cluster.mdx"
