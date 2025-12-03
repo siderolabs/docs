@@ -51,7 +51,7 @@ integrations:
     measurementId: "G-PT2W5NT93B"
 
 redirects:
-  - source: "/talos/latest/:slug*"
-    destination: "/talos/v1.11/:slug*"
+  - source: "/talos/latest"
+    destination: "/talos/v1.11"
   - source: "/talos/latest/:slug*"
     destination: "/talos/v1.11/:slug*"
