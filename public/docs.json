@@ -50,6 +50,16 @@
       "measurementId": "G-PT2W5NT93B"
     }
   },
+  "redirects": [
+    {
+      "source": "/talos/latest/:slug*",
+      "destination": "/talos/v1.11/:slug*"
+    },
+    {
+      "source": "/talos/latest/:slug*",
+      "destination": "/talos/v1.11/:slug*"
+    }
+  ],
   "navigation": {
     "tabs": [
       {
@@ -2121,6 +2131,7 @@
               },
               "omni/infrastructure-and-extensions/install-airgapped-omni",
               "omni/infrastructure-and-extensions/infrastructure-providers",
+              "omni/infrastructure-and-extensions/writing-infrastructure-providers",
               "omni/infrastructure-and-extensions/machine-registration",
               "omni/infrastructure-and-extensions/install-talos-linux-extensions",
               "omni/infrastructure-and-extensions/modify-kernel-arguments"

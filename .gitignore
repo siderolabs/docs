@@ -1,3 +1,6 @@
 # Generated documentation files
 docs-convert/docs/
 _out/
+
+# Local Netlify folder
+.netlify
