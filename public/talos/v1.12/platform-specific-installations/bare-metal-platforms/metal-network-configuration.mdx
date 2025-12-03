@@ -7,6 +7,9 @@ import { release_v1_12 } from '/snippets/custom-variables.mdx';
 
 > Note: This is an advanced feature which requires deep understanding of Talos and Linux network configuration.
 
+> Note: It is recommended to use Talos machine configuration for network configuration, possibly embedded into the image itself,
+> to avoid the complexity of `META`-based network configuration.
+
 Talos Linux when running on a cloud platform (e.g. AWS or Azure), uses the platform-provided metadata server to provide initial network configuration to the node.
 When running on bare-metal, there is no metadata server, so there are several options to provide initial network configuration (before machine configuration is acquired):
 

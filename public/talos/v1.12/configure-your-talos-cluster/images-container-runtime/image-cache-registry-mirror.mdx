@@ -82,22 +82,40 @@ In air-gapped environments, these are unreachable.
 
 To resolve this, create a patch that redirects all image pulls to the local registry mirror at https://172.20.0.1:12000.
 
-```bash
-machine:
-  registries:
-    mirrors:
-      docker.io:
-        endpoints:
-          - https://172.20.0.1:12000 # note that it is HTTPS not HTTP
-      gcr.io:
-        endpoints:
-          - https://172.20.0.1:12000 # note that it is HTTPS not HTTP
-      ghcr.io:
-        endpoints:
-          - https://172.20.0.1:12000 # note that it is HTTPS not HTTP
-      registry.k8s.io:
-        endpoints:
-          - https://172.20.0.1:12000 # note that it is HTTPS not HTTP
+```yaml
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: docker.io
+endpoints:
+    - url: https://172.20.0.1:12000 # note that it is HTTPS not HTTP
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: gcr.io
+endpoints:
+    - url: https://172.20.0.1:12000 # note that it is HTTPS not HTTP
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: ghcr.io
+endpoints:
+    - url: https://172.20.0.1:12000 # note that it is HTTPS not HTTP
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: registry.k8s.io
+endpoints:
+    - url: https://172.20.0.1:12000 # note that it is HTTPS not HTTP
+```
+
+Also, if desired, all image pulls can be forced to go through the mirror by using `*` as the `name`:
+
+```yaml
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: "*"
+endpoints:
+    - url: https://172.20.0.1:12000 # note that it is HTTPS not HTTP
 ```
 
 Talos and Kubernetes components will now pull images directly from your served cache.

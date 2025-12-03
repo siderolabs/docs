@@ -10,7 +10,7 @@ can be customized further for a specific use case:
 
 * adding [system extensions](../build-and-extend-talos/custom-images-and-development/system-extensions)
 * updating [kernel command line arguments](../reference/kernel)
-* using custom `META` contents, e.g. for [metal network configuration](../networking/metal-network-configuration)
+* using custom `META` contents, e.g. for [metal network configuration](../platform-specific-installations/bare-metal-platforms/metal-network-configuration)
 * generating [SecureBoot](./bare-metal-platforms/secureboot) images signed with a custom key
 * generating disk images for SBC's (Single Board Computers)
 
@@ -82,7 +82,7 @@ Now we have two options to boot our bare-metal machine:
 
 * <a href={`https://factory.talos.dev/image/b8e8fbbe1b520989e6c52c8dc8303070cb42095997e76e812fa8892393e1d176/${release_v1_12}/metal-amd64.iso`}>
     using ISO image (download it and burn to a CD/DVD or USB stick)
-  </a> 
+  </a>
 
 * <a href={`https://factory.talos.dev/pxe/b8e8fbbe1b520989e6c52c8dc8303070cb42095997e76e812fa8892393e1d176/${release_v1_12}/metal-amd64`}>
     PXE booting via iPXE script
@@ -747,7 +747,7 @@ docker run --rm -t \\
   --embedded-config-path=/out/machine.yaml
       `}
     </CodeBlock>
-  </Tab>  
+  </Tab>
   <Tab title="Output">
      <CodeBlock lang="sh">
       {`

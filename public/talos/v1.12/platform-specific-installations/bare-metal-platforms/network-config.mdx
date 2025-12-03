@@ -6,9 +6,12 @@ description: "In this guide we will describe how network can be configured on ba
 import { release_v1_12 } from '/snippets/custom-variables.mdx';
 
 By default, Talos will run DHCP client on all interfaces which have a link, and that might be enough for most of the cases.
-If some advanced network configuration is required, it can be done via the [machine configuration](../../reference/configuration/overview) file.
+If some advanced network configuration is required, it can be done via the [machine configuration](../../networking/configuration/overview) file.
 
 But sometimes it is required to apply network configuration even before the machine configuration can be fetched from the network.
+In this case, the recommended way is to embed the machine configuration into the Talos image itself, as described in the [boot assets guide](../../platform-specific-installations/boot-assets).
+
+If machine configuration embedding is not possible, Talos provides several ways to configure network on bare-metal platforms before the machine configuration is fetched.
 
 ## Kernel Command Line
 
@@ -43,7 +46,7 @@ There is no such mechanism for bare-metal platforms, so Talos provides a way to 
 
 The platform network configuration is a YAML document which contains resource specifications for various network resources.
 For the `metal` platform, the [interactive dashboard](../../deploy-and-manage-workloads/interactive-dashboard) can be used to edit the platform network configuration, also the configuration can be
-created [manually](../../networking/metal-network-configuration).
+created [manually](./metal-network-configuration).
 
 The current value of the platform network configuration can be retrieved using the `MetaKeys` resource (key `0x0a`):
 

@@ -1,0 +1,146 @@
+---
+title: "Static Addressing"
+description: "Learn how to configure static addresses and routes on the link."
+---
+
+Static addressing allows you to assign fixed IP addresses to network interfaces in Talos Linux.
+Static configuration is available for physical and logical links (bridges, bonds, VLANs).
+For physical links, configuration is attached to the `LinkConfig` document, while for logical links, configuration is attached directly to the logical link document.
+
+## Configuration
+
+Addresses can be specified in the `addresses` field as a list of CIDR (Classless Inter-Domain Routing) notation strings:
+
+```yaml
+addresses:
+    - address: 192.168.1.100/24
+    - address: 2001:db8::1/64
+      routePriority: 100
+```
+
+The `routePriority` field is optional and can be used to set the priority of the implicit route associated with the address.
+
+Routes can be specified in the `routes` field as a list of route objects:
+
+```yaml
+routes:
+    - destination: 10.3.5.0/24
+      gateway: 10.3.5.1
+    - gateway: fe80::1
+```
+
+Each route object can include the following fields:
+
+* `destination`: The destination network in CIDR notation. If omitted, a default route is created.
+* `gateway`: The gateway IP address for the route. If omitted, the route is considered directly connected.
+* additional advanced fields like `metric`, `mtu` can be specified as needed.
+
+There are some typical configuration scenarios to consider:
+
+* address with a subnet and a default route via the gateway from the same subnet:
+
+  ```yaml
+  addresses:
+      - address: 192.168.1.100/24
+  routes:
+      - gateway: 192.168.1.1
+  ```
+
+  With this configuration, all addresses 192.168.1.1-192.168.1.254 are reachable directly, while all other addresses are reachable via the gateway
+  192.168.1.1.
+
+* a machine is given an address from a subnet, but the default gateway is outside of that subnet:
+
+  ```yaml
+  addresses:
+      - address: 192.168.1.100/32
+  routes:
+      - destination: 192.168.1.1
+      - gateway: 192.168.1.1
+  ```
+
+  In this example, the machine has a /32 address, so no other addresses are reachable directly.
+  A specific route to the gateway 192.168.1.1 is required to reach other networks.
+
+* a private network which doesn't have a default gateway, but needs specific routes to other networks:
+
+  ```yaml
+  addresses:
+      - address: 10.0.0.3/24
+  routes:
+      - destination: 10.1.0.0/24
+        gateway: 10.0.0.1
+  ```
+
+A complete example of static addressing configuration for a physical link:
+
+```yaml
+apiVersion: v1alpha1
+kind: LinkConfig
+name: enp0s3
+addresses:
+    - address: 192.168.1.100/24
+routes:
+    - gateway: 192.168.1.1
+```
+
+## Observing Status
+
+You can observe the status of addresses and routes using `talosctl`:
+
+```bash
+$ talosctl get addresses
+NODE         NAMESPACE   TYPE            ID                                    VERSION   ADDRESS                        LINK
+172.20.0.2   network     AddressStatus   enp0s2/172.20.0.2/24                  1         172.20.0.2/24                  enp0s2
+172.20.0.2   network     AddressStatus   enp0s2/fe80::ac48:3dff:feca:3828/64   2         fe80::ac48:3dff:feca:3828/64   enp0s2
+172.20.0.2   network     AddressStatus   lo/127.0.0.1/8                        1         127.0.0.1/8                    lo
+172.20.0.2   network     AddressStatus   lo/169.254.116.108/32                 1         169.254.116.108/32             lo
+172.20.0.2   network     AddressStatus   lo/::1/128                            1         ::1/128                        lo
+```
+
+And same for routes:
+
+```bash
+NODE         NAMESPACE   TYPE          ID                                                    VERSION   DESTINATION                     GATEWAY      LINK     METRIC
+172.20.0.2   network     RouteStatus   enp0s2/inet6//fe80::/64/256                           1         fe80::/64                                    enp0s2   256
+172.20.0.2   network     RouteStatus   inet4//172.20.0.0/24/1024                             1         172.20.0.0/24                                enp0s2   1024
+172.20.0.2   network     RouteStatus   inet4/172.20.0.1//1024                                1                                         172.20.0.1   enp0s2   1024
+172.20.0.2   network     RouteStatus   local/enp0s2/inet6//fe80::/128/0                      1         fe80::/128                                   enp0s2   0
+172.20.0.2   network     RouteStatus   local/enp0s2/inet6//fe80::ac48:3dff:feca:3828/128/0   1         fe80::ac48:3dff:feca:3828/128                enp0s2   0
+172.20.0.2   network     RouteStatus   local/enp0s2/inet6//ff00::/8/256                      1         ff00::/8                                     enp0s2   256
+172.20.0.2   network     RouteStatus   local/inet4//127.0.0.0/8/0                            1         127.0.0.0/8                                  lo       0
+172.20.0.2   network     RouteStatus   local/inet4//127.0.0.1/32/0                           1         127.0.0.1/32                                 lo       0
+172.20.0.2   network     RouteStatus   local/inet4//127.255.255.255/32/0                     1         127.255.255.255/32                           lo       0
+172.20.0.2   network     RouteStatus   local/inet4//169.254.116.108/32/0                     1         169.254.116.108/32                           lo       0
+172.20.0.2   network     RouteStatus   local/inet4//172.20.0.2/32/0                          1         172.20.0.2/32                                enp0s2   0
+172.20.0.2   network     RouteStatus   local/inet4//172.20.0.255/32/0                        1         172.20.0.255/32                              enp0s2   0
+172.20.0.2   network     RouteStatus   local/lo/inet6//::1/128/0                             1         ::1/128                                      lo       0
+```
+
+This shows all configured addresses and routes, including those automatically created for link-local addresses, managed by CNI plugins, or other system components.
+
+To see the list of addresses and routes managed by Talos, use the following:
+
+```bash
+$ talosctl get addressspecs
+NODE         NAMESPACE   TYPE          ID                      VERSION
+172.20.0.2   network     AddressSpec   enp0s2/172.20.0.2/24    2
+172.20.0.2   network     AddressSpec   lo/127.0.0.1/8          2
+172.20.0.2   network     AddressSpec   lo/169.254.116.108/32   2
+$ talosctl get routespecs
+NODE         NAMESPACE   TYPE        ID                       VERSION
+172.20.0.2   network     RouteSpec   inet4/172.20.0.1//1024   2
+```
+
+In order to see managed configuration with information about various sources (static config, DHCP, CNI, etc.) add `--namespace=networkconfig` flag:
+
+```bash
+$ talosctl get addressspecs --namespace network-config
+NODE         NAMESPACE        TYPE          ID                                  VERSION
+172.20.0.2   network-config   AddressSpec   default/lo/127.0.0.1/8              1
+172.20.0.2   network-config   AddressSpec   dhcp4/enp0s2/enp0s2/172.20.0.2/24   1
+172.20.0.2   network-config   AddressSpec   operator/lo/169.254.116.108/32      1
+$ talosctl get routespecs --namespace network-config
+NODE         NAMESPACE        TYPE        ID                                    VERSION
+172.20.0.2   network-config   RouteSpec   dhcp4/enp0s2/inet4/172.20.0.1//1024   1
+```

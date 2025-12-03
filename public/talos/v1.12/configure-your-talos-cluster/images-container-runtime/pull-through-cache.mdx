@@ -5,30 +5,23 @@ aliases:
   - ../../guides/configuring-pull-through-cache
 ---
 
-In this guide we will create a set of local caching Docker registry proxies to minimize local cluster startup time.
+Talos Linux supports configuring registry mirrors for container image pulls.
+Registry mirrors allow to use official container image references while pulling images from local caching proxies.
 
-When running Talos locally, pulling images from container registries might take a significant amount of time.
-We spin up local caching pass-through registries to cache images and configure a local Talos cluster to use those proxies.
-A similar approach might be used to run Talos in production in air-gapped environments.
-It can be also used to verify that all the images are available in local registries.
+When used with a pull-through cache, the first time an image is pulled from the registry mirror, it is fetched from the upstream registry and cached locally.
+Subsequent pulls of the same image are served from the local cache, significantly improving pull times.
 
-## Video Walkthrough
+The same concept can extended to air-gapped or partially connected environments, where a local registry mirror can be populated with required images ahead of time.
 
-To see a live demo of this writeup, see the video below:
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/PRiQJR9Q33s" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
-## Requirements
-
-The follow are requirements for creating the set of caching proxies:
-
-- Docker 18.03 or greater
-- Local cluster requirements for either [docker](../../platform-specific-installations/local-platforms/docker) or [QEMU](../../platform-specific-installations/local-platforms/qemu).
+There are many implementations of container registries that support pull-through caching, including
+[Docker Registry](https://hub.docker.com/_/registry), [Harbor](https://goharbor.io/), [Zot](https://zotregistry.io/), and others.
 
 ## Launch the Caching Docker Registry Proxies
 
-Talos pulls from `docker.io`, `registry.k8s.io`, `gcr.io`, and `ghcr.io` by default.
-If your configuration is different, you might need to modify the commands below:
+The Docker Registry is the simplest way to set up pull-through caching proxies.
+It requires to set up a separate registry container per upstream registry.
+
+For example, to set up caching proxies for Docker Hub, `registry.k8s.io`, `gcr.io`, and `ghcr.io`, run:
 
 ```bash
 docker run -d -p 5000:5000 \
@@ -41,12 +34,12 @@ docker run -d -p 5001:5000 \
     --restart always \
     --name registry-registry.k8s.io registry:2
 
-docker run -d -p 5003:5000 \
+docker run -d -p 5002:5000 \
     -e REGISTRY_PROXY_REMOTEURL=https://gcr.io \
     --restart always \
     --name registry-gcr.io registry:2
 
-docker run -d -p 5004:5000 \
+docker run -d -p 5003:5000 \
     -e REGISTRY_PROXY_REMOTEURL=https://ghcr.io \
     --restart always \
     --name registry-ghcr.io registry:2
@@ -57,73 +50,97 @@ docker run -d -p 5004:5000 \
 As a registry container can only handle a single upstream Docker registry, we launch a container per upstream, each on its own
 host port (5000, 5001, 5002, 5003 and 5004).
 
-## Using Caching Registries with `QEMU` Local Cluster
+## Configuring Talos to Use the Caching Registries
 
-With a [QEMU](../../platform-specific-installations/local-platforms/qemu) local cluster, a bridge interface is created on the host.
-As registry containers expose their ports on the host, we can use bridge IP to direct proxy requests.
+Talos Linux can be configured to redirect image pulls to the caching registries using [RegistryMirrorConfig](../../reference/configuration/cri/registrymirrorconfig) configuration document.
+The registry mirror configuration is honored by Talos Linux itself and automatically propagated to CRI runtimes (containerd).
 
-```bash
-sudo talosctl cluster create --provisioner qemu \
-    --registry-mirror docker.io=http://10.5.0.1:5000 \
-    --registry-mirror registry.k8s.io=http://10.5.0.1:5001 \
-    --registry-mirror gcr.io=http://10.5.0.1:5003 \
-    --registry-mirror ghcr.io=http://10.5.0.1:5004
-```
+The registry configuration starts with the endpoint of the image reference: the endpoint is the leftmost part of the image reference before the first `/`.
+For example, the endpoint for the image `docker.io/library/nginx:latest` is `docker.io`. If the endpoint contains the port, it must be included as well (e.g., `myregistrydomain.com:5000`).
+One exception is that images from Docker Hub can omit the endpoint, for example `library/nginx:latest` has the endpoint `docker.io`.
 
-The Talos local cluster should now start pulling via caching registries.
-This can be verified via registry logs, e.g. `docker logs -f registry-docker.io`.
-The first time cluster boots, images are pulled and cached, so next cluster boot should be much faster.
+For the endpoint, one can configure one or more mirror endpoints.
+The endpoints will be tried in order until one succeeds, and by default the last implicit endpoint is the original upstream registry.
 
-> Note: `10.5.0.1` is a bridge IP with default network (`10.5.0.0/24`), if using custom `--cidr`, value should be adjusted accordingly.
-
-## Using Caching Registries with `docker` Local Cluster
-
-With a [docker](../../platform-specific-installations/local-platforms/docker) local cluster we can use docker bridge IP, default value for that IP is `172.17.0.1`.
-On Linux, the docker bridge address can be inspected with `ip addr show docker0`.
-
-```bash
-talosctl cluster create --provisioner docker \
-    --registry-mirror docker.io=http://172.17.0.1:5000 \
-    --registry-mirror registry.k8s.io=http://172.17.0.1:5001 \
-    --registry-mirror gcr.io=http://172.17.0.1:5003 \
-    --registry-mirror ghcr.io=http://172.17.0.1:5004
-```
-
-## Machine Configuration
-
-The caching registries can be configured via machine configuration [patch](../system-configuration/patching), equivalent to the command line flags above:
+The endpoint should explicitly include the protocol (http:// or https://).
 
 ```yaml
-machine:
-  registries:
-    mirrors:
-      docker.io:
-        endpoints:
-          - http://10.5.0.1:5000
-      gcr.io:
-        endpoints:
-          - http://10.5.0.1:5003
-      ghcr.io:
-        endpoints:
-          - http://10.5.0.1:5004
-      registry.k8s.io:
-        endpoints:
-          - http://10.5.0.1:5001
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: docker.io
+endpoints:
+    - url: http://10.5.0.1:5000
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: registry.k8s.io
+endpoints:
+    - url: http://10.5.0.1:5001
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: gcr.io
+endpoints:
+    - url: http://10.5.0.1:5002
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: ghcr.io
+endpoints:
+    - url: http://10.5.0.1:5003
 ```
 
-## Cleaning Up
+In the configuration above, we configure Talos Linux to pull images from our local caching registries running on address 10.5.0.1 (adjust to your setup) on ports 5000, 5001, 5002, and 5003 respectively.
+If the image is not found in the endpoint, the pull will fall back to the original upstream registry.
 
-To cleanup, run:
+If the default fallback behavior is not desired, one can set `skipFallback: true` in the configuration to prevent falling back to the upstream registry:
 
-```bash
-docker rm -f registry-docker.io
-docker rm -f registry-registry.k8s.io
-docker rm -f registry-gcr.io
-docker rm -f registry-ghcr.io
+```yaml
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: docker.io
+endpoints:
+    - url: http://10.5.0.1:5000
+skipFallback: true
 ```
 
-> Note: Removing docker registry containers also removes the image cache.
-> So if you plan to use caching registries, keep the containers running.
+By default, the `/v2` suffix is automatically appended to the endpoint URL when interacting with OCI registry API.
+If the caching registry already includes `/v2` in its URL path, set `overridePath: true` to prevent appending `/v2` again:
+
+```yaml
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: docker.io
+endpoints:
+    - url: http://my-harbor/v2/docker.io
+      overridePath: true
+```
+
+If the registry mirror requires authentication, or specific TLS settings, those can be configured as well.
+Please note that this configuration is applied to the hostname part of the endpoint URL, not to the image reference endpoint.
+If the endpoint URL includes a port, the port must be included in the registry auth configuration name.
+
+For example, to configure authentication for a private registry running on `my-private-registry.io` use [RegistryAuthConfig](../../reference/configuration/cri/registryauthconfig):
+
+```yaml
+apiVersion: v1alpha1
+kind: RegistryAuthConfig
+name: my-private-registry.io
+username: username
+password: "****"
+```
+
+If your registry is running with self-signed TLS certificates, you can configure Talos to trust the registry by providing the CA certificate using [RegistryTLSConfig](../../reference/configuration/cri/registrytlsconfig):
+
+```yaml
+apiVersion: v1alpha1
+kind: RegistryTLSConfig
+name: my-private-registry.io
+ca: |-
+    -----BEGIN CERTIFICATE-----
+    MIID...IDAQAB
+    -----END CERTIFICATE-----
+```
 
 ## Using Harbor as a Caching Registry
 
@@ -137,35 +154,41 @@ Harbor supports configuring multiple upstream registries, so it can be used to c
 As Harbor puts a registry name in the pull image path, we need to set `overridePath: true` to prevent Talos and containerd from appending `/v2` to the path.
 
 ```yaml
-machine:
-  registries:
-    mirrors:
-      docker.io:
-        endpoints:
-          - http://harbor/v2/proxy-docker.io
-        overridePath: true
-      ghcr.io:
-        endpoints:
-          - http://harbor/v2/proxy-ghcr.io
-        overridePath: true
-      gcr.io:
-        endpoints:
-          - http://harbor/v2/proxy-gcr.io
-        overridePath: true
-      registry.k8s.io:
-        endpoints:
-          - http://harbor/v2/proxy-registry.k8s.io
-        overridePath: true
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: docker.io
+endpoints:
+    - url: http://harbor/v2/proxy-docker.io
+      overridePath: true
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: ghcr.io
+endpoints:
+    - url: http://harbor/v2/proxy-ghcr.io
+      overridePath: true
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: gcr.io
+endpoints:
+    - url: http://harbor/v2/proxy-gcr.io
+      overridePath: true
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: registry.k8s.io
+endpoints:
+    - url: http://harbor/v2/proxy-registry.k8s.io
+      overridePath: true
 ```
 
 The Harbor external endpoint (`http://harbor` in this example) can be configured with authentication or custom TLS:
 
 ```yaml
-machine:
-  registries:
-    config:
-      harbor:
-        auth:
-          username: admin
-          password: password
+apiVersion: v1alpha1
+kind: RegistryAuthConfig
+name: harbor
+username: admin
+password: password
 ```

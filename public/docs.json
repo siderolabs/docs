@@ -1801,6 +1801,7 @@
                       "talos/v1.12/platform-specific-installations/bare-metal-platforms/iso",
                       "talos/v1.12/platform-specific-installations/bare-metal-platforms/matchbox",
                       "talos/v1.12/platform-specific-installations/bare-metal-platforms/network-config",
+                      "talos/v1.12/platform-specific-installations/bare-metal-platforms/metal-network-configuration",
                       "talos/v1.12/platform-specific-installations/bare-metal-platforms/pxe",
                       "talos/v1.12/platform-specific-installations/bare-metal-platforms/secureboot"
                     ]
@@ -1882,20 +1883,43 @@
               {
                 "group": "Networking",
                 "pages": [
-                  "talos/v1.12/networking/advanced-networking",
+                  {
+                    "group": "Network Configuration",
+                    "pages": [
+                      "talos/v1.12/networking/configuration/overview",
+                      "talos/v1.12/networking/configuration/aliases",
+                      "talos/v1.12/networking/configuration/physical",
+                      "talos/v1.12/networking/configuration/static",
+                      "talos/v1.12/networking/configuration/dynamic",
+                      "talos/v1.12/networking/configuration/hostname",
+                      "talos/v1.12/networking/configuration/resolvers",
+                      "talos/v1.12/networking/configuration/time"
+                    ]
+                  },
+                  {
+                    "group": "Logical Links",
+                    "pages": [
+                      "talos/v1.12/networking/logical/vlan",
+                      "talos/v1.12/networking/logical/bond",
+                      "talos/v1.12/networking/logical/bridge"
+                    ]
+                  },
+                  {
+                    "group": "Advanced Configuration",
+                    "pages": [
+                      "talos/v1.12/networking/advanced/ethernet-config",
+                      "talos/v1.12/networking/advanced/vip",
+                      "talos/v1.12/networking/advanced/wireguard"
+                    ]
+                  },
                   "talos/v1.12/networking/corporate-proxies",
                   "talos/v1.12/networking/egress-domains",
-                  "talos/v1.12/networking/ethernet-config",
                   "talos/v1.12/networking/host-dns",
                   "talos/v1.12/networking/ingress-firewall",
                   "talos/v1.12/networking/kubespan",
-                  "talos/v1.12/networking/metal-network-configuration",
                   "talos/v1.12/networking/multihoming",
-                  "talos/v1.12/networking/device-selector",
                   "talos/v1.12/networking/predictable-interface-names",
-                  "talos/v1.12/networking/siderolink",
-                  "talos/v1.12/networking/vip",
-                  "talos/v1.12/networking/wireguard-network"
+                  "talos/v1.12/networking/siderolink"
                 ]
               },
               {

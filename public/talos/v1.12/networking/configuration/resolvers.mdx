@@ -1,0 +1,50 @@
+---
+title: "Resolvers"
+description: "Learn how to configure DNS resolvers."
+---
+
+DNS resolvers are used by Talos to resolve domain names into IP addresses.
+By default, Talos will use DNS resolvers `8.8.8.8` and `1.1.1.1`, and DNS servers might be provided via DHCP or cloud platform metadata.
+
+## Configuration
+
+To configure custom DNS resolvers, create a [ResolverConfig](../../reference/configuration/network/resolverconfig) document like this:
+
+```yaml
+apiVersion: v1alpha1
+kind: ResolverConfig
+nameservers:
+    - address: 10.0.0.1
+    - address: 2001:4860:4860::8888
+searchDomains: # optional
+    domains:
+        - example.org
+        - example.com
+    disableDefault: false
+```
+
+The `nameservers` field is a list of DNS server IP addresses that Talos will use for DNS resolution.
+
+The `searchDomains` field allows you to specify search domains that will be appended to unqualified domain names during DNS resolution, the default search domains is to use the domain part of the machine's hostname.
+The `disableDefault` field, when set to `true`, prevents Talos from using the default search domains derived from the machine's hostname.
+
+See [Host DNS](../host-dns) for more information about DNS resolution in Talos.
+
+## Observing Status
+
+Use `talosctl` to get the current resolver configuration of a node:
+
+```bash
+$ talosctl get resolvers
+NODE         NAMESPACE   TYPE             ID          VERSION   RESOLVERS        SEARCH DOMAINS
+172.20.0.2   network     ResolverStatus   resolvers   4         ["172.20.0.1"]   []
+```
+
+To see all resolver configuration sources, use the following:
+
+```bash
+$ talosctl get resolverspec --namespace=network-config
+NODE         NAMESPACE        TYPE           ID                       VERSION   LAYER      RESOLVERS               SEARCH DOMAINS
+172.20.0.2   network-config   ResolverSpec   default/resolvers        1         default    ["1.1.1.1","8.8.8.8"]
+172.20.0.2   network-config   ResolverSpec   dhcp4/enp0s2/resolvers   1         operator   ["172.20.0.1"]
+```

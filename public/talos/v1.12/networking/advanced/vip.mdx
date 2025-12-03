@@ -53,53 +53,16 @@ We then choose our shared IP to be:
 
 The shared IP setting is only valid for controlplane nodes.
 
-For the example above, each of the controlplane nodes should have the following
-Machine Config snippet:
+For the example above, patch each of the controlplane nodes with the following machine configuration snippet ([Layer2VIPConfig](../../reference/configuration/network/layer2vipconfig)):
 
 ```yaml
-machine:
-  network:
-    interfaces:
-    - interface: eth0
-      dhcp: true
-      vip:
-        ip: 192.168.0.15
+apiVersion: v1alpha1
+kind: Layer2VIPConfig
+name: 192.168.0.15
+link: enp0s2
 ```
 
-Virtual IP's can also be configured on a VLAN interface.
-
-```yaml
-machine:
-  network:
-    interfaces:
-    - interface: eth0
-      dhcp: true
-      vip:
-        ip: 192.168.0.15
-      vlans:
-        - vlanId: 100
-          dhcp: true
-          vip:
-            ip: 192.168.1.15
-```
-
-For your own environment, the interface and the DHCP setting may differ, or you may
-use static addressing (`adresses`) instead of DHCP.
-
-When using [predictable interface names](./predictable-interface-names), the interface name might not be `eth0`.
-
-If the machine has a single network interface, it can be selected using a dummy device selector:
-
-```yaml
-machine:
-  network:
-    interfaces:
-      - deviceSelector:
-          physical: true # should select any hardware network device, if you have just one, it will be selected
-        dhcp: true
-        vip:
-          ip: 192.168.0.15
-```
+Virtual IP's can also be configured on a logical link (such as a VLAN); just update the configuration accordingly.
 
 ## Caveats
 
@@ -125,7 +88,7 @@ By waiting out the election timeout before reassigning the VIP, Talos guarantees
 A VIP failover impacts only external access to the cluster, such as when you run `kubectl` against the API server.
 
 Inside the cluster, workloads continue to function normally.
-With the default configuration using [KubePrism and discovery](../../../kubernetes-guides/advanced-guides/kubeprism), pods can still reach the Kubernetes API through service discovery, so they remain unaffected by the VIP status.
+With the default configuration using [KubePrism and discovery](../../../../kubernetes-guides/advanced-guides/kubeprism), pods can still reach the Kubernetes API through service discovery, so they remain unaffected by the VIP status.
 
 For external clients, however, a failover can briefly interrupt connectivity.
 Long-lived connections, such as HTTP/2 sessions, may be broken when the VIP moves to a new node, and clients should be ready to reconnect once the failover is complete.

@@ -61,13 +61,14 @@ talosctl read /sys/class/ptp/ptp0/clock_name
 KVM virtual PTP
 ```
 
-To enable PTP sync, set the `machine.time.servers` to the PTP device name (e.g. `/dev/ptp0`):
+To enable PTP sync, set the `TimeSyncConfig` to the PTP device name (e.g. `/dev/ptp0`):
 
 ```yaml
-machine:
-  time:
-    servers:
-      - /dev/ptp0
+apiVersion: v1alpha1
+kind: TimeSyncConfig
+ptp:
+  devices:
+    - /dev/ptp0
 ```
 
 After setting the PTP device, Talos will sync the time to the PTP device instead of using the NTP server:
@@ -81,9 +82,9 @@ After setting the PTP device, Talos will sync the time to the PTP device instead
 Talos NTP sync can be disabled with the following machine configuration patch:
 
 ```yaml
-machine:
-  time:
-    disabled: true
+apiVersion: v1alpha1
+kind: TimeSyncConfig
+enabled: false
 ```
 
 When time sync is disabled, Talos assumes that time is always in sync.
@@ -91,7 +92,7 @@ When time sync is disabled, Talos assumes that time is always in sync.
 Time sync can be also configured on best-effort basis, where Talos will try to sync time for the specified period of time, but if it fails to do so, time will be configured to be in sync when the period expires:
 
 ```yaml
-machine:
-  time:
-    bootTimeout: 2m
+apiVersion: v1alpha1
+kind: TimeSyncConfig
+bootTimeout: 2m
 ```

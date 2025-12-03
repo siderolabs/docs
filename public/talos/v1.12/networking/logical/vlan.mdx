@@ -1,0 +1,34 @@
+---
+title: "VLAN"
+description: "Learn how to configure VLANs (virtual LANs)."
+---
+
+A VLAN (Virtual Local Area Network) is a logical subdivision of a physical network that allows for the segmentation of network traffic.
+VLANs are commonly used to improve network performance and security by isolating different types of traffic within the same physical network infrastructure.
+
+A VLAN can be configured on top of a physical network interface or another logical interface (like a bond).
+
+## Configuration
+
+To configure a VLAN in Talos Linux, create a [VLANConfig](../../reference/configuration/network/vlanconfig) document like:
+
+```yaml
+apiVersion: v1alpha1
+kind: VLANConfig
+name: enp0s3.2
+vlanID: 2
+vlanMode: 802.1q
+parent: enp0s3
+up: true
+addresses:
+    - address: 192.168.1.100/32
+```
+
+In this example, a VLAN with ID `2` is created on top of the physical interface `enp0s3`, and the VLAN interface is named `enp0s3.2`.
+The name of the VLAN interface can be customized as needed.
+
+The `vlanMode` field specifies the VLAN tagging protocol to use, with `802.1q` being the most common.
+The `parent` field specifies the underlying physical or logical interface on which the VLAN is created.
+
+Addresses and routes can be configured in the same document as shown in [static link configuration](./../configuration/static).
+DHCP can be enabled on the VLAN interface as shown in [dynamic link configuration](./../configuration/dynamic).

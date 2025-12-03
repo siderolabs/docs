@@ -1,0 +1,80 @@
+---
+title: "Physical Links"
+description: "Learn how to configure physical network interfaces."
+---
+
+## Configuration
+
+Physical network interfaces (links) can be configured in Talos Linux using the [LinkConfig](../../reference/configuration/network/linkconfig) configuration objects.
+
+The following properties can be configured for physical links:
+
+* MTU (`mtu`): sets the Maximum Transmission Unit for the interface (default is 1500).
+* bring the link up or down (`up`): controls whether the interface is administratively up or down.
+
+Here is an example of configuring a physical network interface with a specific MTU and bringing it up:
+
+```yaml
+apiVersion: v1alpha1
+kind: LinkConfig
+name: enp0s3
+mtu: 9000
+up: true
+```
+
+[Link aliases](./aliases) can also be used to refer to physical links in a more user-friendly way:
+
+```yaml
+apiVersion: v1alpha1
+kind: LinkAliasConfig
+name: mgmt
+selector:
+    match: mac(link.permanent_addr) == "00:1a:2b:3c:4d:5e"
+---
+apiVersion: v1alpha1
+kind: LinkConfig
+name: mgmt
+mtu: 9000
+up: true
+```
+
+For low-level control over physical link properties, such as offloading features, refer to the [Ethernet configuration](./../advanced/ethernet-config) documentation.
+
+## Observing Status
+
+Use `talosctl` to observe the status of all links:
+
+```bash
+$ talosctl get links
+NODE         NAMESPACE   TYPE         ID          VERSION   ALIAS   TYPE       KIND     HW ADDR                                           OPER STATE   LINK STATE
+172.20.0.2   network     LinkStatus   bond0       1                 ether      bond     3e:f0:5c:84:4b:5e                                 down         false
+172.20.0.2   network     LinkStatus   dummy0      1                 ether      dummy    1e:e5:74:54:52:21                                 down         false
+172.20.0.2   network     LinkStatus   enp0s2      3         net0    ether               ae:48:3d:ca:38:28                                 up           true
+172.20.0.2   network     LinkStatus   flannel.1   2                 ether      vxlan    fa:1a:43:6d:23:e1                                 unknown      true
+172.20.0.2   network     LinkStatus   ip6tnl0     1                 tunnel6    ip6tnl   00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00   down         false
+172.20.0.2   network     LinkStatus   lo          2                 loopback            00:00:00:00:00:00                                 unknown      true
+172.20.0.2   network     LinkStatus   sit0        1                 sit        sit      00:00:00:00                                       down         false
+172.20.0.2   network     LinkStatus   teql0       1                 void                                                                  down         false
+172.20.0.2   network     LinkStatus   tunl0       1                 ipip       ipip     00:00:00:00                                       down         false
+```
+
+The output shows all network links, their operational state, and other relevant information.
+
+To see the list of links managed by Talos, use the following:
+
+```bash
+$ talosctl get linkspecs
+NODE         NAMESPACE   TYPE       ID       VERSION
+172.20.0.2   network     LinkSpec   enp0s2   6
+172.20.0.2   network     LinkSpec   lo       2
+```
+
+To see the list of link configuration broken down by configuration source, add `--namespace=network-config` flag:
+
+```bash
+$ talosctl get links --namespace=networkconfig
+NODE         NAMESPACE        TYPE       ID                     VERSION
+172.20.0.2   network-config   LinkSpec   configuration/enp0s2   1
+172.20.0.2   network-config   LinkSpec   default/lo             1
+172.20.0.2   network-config   LinkSpec   dhcp4/enp0s2/enp0s2    1
+```

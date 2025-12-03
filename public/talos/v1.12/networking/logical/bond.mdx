@@ -1,0 +1,45 @@
+---
+title: "Bond"
+description: "Learn how to configure network bonding."
+---
+
+A bond (also known as link aggregation or NIC teaming) is a method of combining multiple physical network interfaces into a single logical interface to increase bandwidth and provide redundancy.
+When one of the physical interfaces in the bond fails, the traffic is automatically redistributed among the remaining interfaces, ensuring continuous network connectivity.
+
+Bond configuration should match the configuration on the connected switch to ensure proper operation.
+
+## Configuration
+
+To configure a bond in Talos Linux, create a [BondConfig](../../reference/configuration/network/bondconfig) document like:
+
+```yaml
+apiVersion: v1alpha1
+kind: BondConfig
+name: agg.0
+links:
+    - enp0s2
+    - enp0s3
+bondMode: 802.3ad
+miimon: 100
+updelay: 200
+downdelay: 200
+xmitHashPolicy: layer3+4
+lacpRate: slow
+adActorSysPrio: 65535
+resendIGMP: 1
+packetsPerSlave: 1
+up: true
+addresses:
+    - address: 1.2.3.4/24
+```
+
+This example demonstrates how to create a bond named `agg.0` using the interfaces `enp0s2` and `enp0s3` with the 802.3ad (LACP) bonding mode.
+The bond is configured with various parameters to optimize performance and reliability, such as `miimon`, `updelay`, `downdelay`, `xmitHashPolicy`, and others.
+
+Addresses and routes can be configured in the same document as shown in [static link configuration](./../configuration/static).
+DHCP can be enabled on the bond interface as shown in [dynamic link configuration](./../configuration/dynamic).
+
+The `links` field specifies the physical interfaces that are part of the bond, and [link aliases](./../configuration/aliases) can be used here as well.
+
+Bond MTU can be set using the `mtu` field.
+Bond by default inherits MAC address from the first link in the `links` list, but a custom MAC address can be set using the `hardwareAddr` field.

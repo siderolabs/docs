@@ -1,0 +1,61 @@
+---
+title: "Dynamic Addressing (DHCP)"
+description: "Learn how to configure dynamic addresses and routes on the link using DHCP."
+---
+
+Talos Linux runs by default a DHCP client on all physical network interfaces to obtain IP addresses and other network settings automatically.
+Once any explicit link configuration is applied, the default DHCP behavior is disabled, and DHCP must be explicitly enabled on the desired link(s).
+
+DHCP allows to configure addresses, routes, DNS, and NTP settings dynamically from a DHCP server.
+DHCP client can be enabled on physical and logical links (bridges, bonds, VLANs).
+
+There are two DHCP versions supported in Talos Linux: DHCPv4 and DHCPv6.
+
+## DHCPv4 Configuration
+
+To enable DHCPv4 on a physical link, create a [DHCPv4Config](../../reference/configuration/network/dhcpv4config) configuration document with the name of the link:
+
+```yaml
+apiVersion: v1alpha1
+kind: DHCPv4Config
+name: enp0s3
+```
+
+Additional settings can be configured:
+
+* `ignoreHostname: true`: ignore the hostname provided by the DHCP server.
+* `routeMetric: 512`: set the metric for routes provided by DHCP.
+* `clientIdentifier`: configures the DHCP client identifier, which can have one of the following values:
+    * `mac`: use the MAC address as the client identifier (default).
+    * `duid`: use a DUID (DHCP Unique Identifier) as the client identifier, requires `duidRaw` field to be set.
+    * `off`: disable the client identifier.
+
+## DHCPv6 Configuration
+
+To enable DHCPv6 on a physical link, create a [DHCPv6Config](../../reference/configuration/network/dhcpv6config) configuration document with the name of the link:
+
+```yaml
+apiVersion: v1alpha1
+kind: DHCPv6Config
+name: enp0s3
+```
+
+Additional settings are identical to DHCPv4.
+
+## Observing Status
+
+Use `talosctl` to get the list of all configured operators (which includes DHCP clients):
+
+```bash
+$ talosctl get operatorspecs
+NODE         NAMESPACE   TYPE           ID             VERSION
+172.20.0.2   network     OperatorSpec   dhcp4/enp0s2   1
+```
+
+To see operator configuration broken down by configuration source, add `--namespace=network-config` flag:
+
+```bash
+$ talosctl get operatorspecs --namespace=network-config
+NODE         NAMESPACE        TYPE           ID                           VERSION
+172.20.0.2   network-config   OperatorSpec   configuration/dhcp4/enp0s2   1
+```
