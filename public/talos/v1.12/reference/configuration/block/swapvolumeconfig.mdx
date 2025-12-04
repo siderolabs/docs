@@ -107,7 +107,7 @@ ProvisioningSpec describes how the volume is provisioned.
   <tbody>
     <tr>
       <td>`diskSelector`</td>
-      <td><a href="#diskSelector">DiskSelector</a></td>
+      <td><a href="#diskselector">DiskSelector</a></td>
       <td>The disk selector expression.</td>
       <td></td>
     </tr>
@@ -125,8 +125,8 @@ ProvisioningSpec describes how the volume is provisioned.
     </tr>
     <tr>
       <td>`maxSize`</td>
-      <td>ByteSize</td>
-      <td>The maximum size of the volume, if not specified the volume can grow to the size of the<br />disk.<br /><br />Size is specified in bytes, but can be expressed in human readable format, e.g. 100MB.</td>
+      <td>Size</td>
+      <td>The maximum size of the volume, if not specified the volume can grow to the size of the<br />disk.<br /><br />Size is specified in bytes or in percents. It can be expressed in human readable format, e.g. 100MB.</td>
       <td></td>
     </tr>
   </tbody>
@@ -217,7 +217,7 @@ encryption:
     </tr>
     <tr>
       <td>`keys`</td>
-      <td><a href="#keys.">[]EncryptionKey</a></td>
+      <td><a href="#keys%5B%5D">EncryptionKey</a></td>
       <td>Defines the encryption keys generation and storage method.</td>
       <td></td>
     </tr>
@@ -281,7 +281,7 @@ EncryptionKey represents configuration for disk encryption key.
     </tr>
     <tr>
       <td>`nodeID`</td>
-      <td><a href="#nodeID">EncryptionKeyNodeID</a></td>
+      <td><a href="#nodeid">EncryptionKeyNodeID</a></td>
       <td>Deterministically generated key from the node UUID and PartitionLabel.</td>
       <td></td>
     </tr>

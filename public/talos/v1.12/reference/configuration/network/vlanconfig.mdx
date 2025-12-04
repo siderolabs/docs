@@ -1,6 +1,6 @@
 ---
-description: LinkConfig is a config document to configure physical interfaces (network links).
-title: LinkConfig
+description: VLANConfig is a config document to create a VLAN (virtual LAN) over a parent link.
+title: VLANConfig
 ---
 
 {/*
@@ -19,22 +19,20 @@ Do not edit manually. For more information, see https://github.com/siderolabs/do
 
 ```yaml
 apiVersion: v1alpha1
-kind: LinkConfig
-name: enp0s2 # Name of the link (interface).
-up: true # Bring the link up or down.
-mtu: 9000 # Configure LinkMTU (Maximum Transmission Unit) for the link.
+kind: VLANConfig
+name: enp0s3.34 # Name of the VLAN link (interface) to be created.
+vlanID: 34 # VLAN ID to be used for the VLAN link.
+parent: enp0s3 # Name of the parent link (interface) on which the VLAN link will be created.
 # Configure addresses to be statically assigned to the link.
 addresses:
     - address: 192.168.1.100/24 # IP address to be assigned to the link.
-    - address: fd00::1/64 # IP address to be assigned to the link.
 # Configure routes to be statically created via the link.
 routes:
-    - destination: 10.0.0.0/8 # The route's destination as an address prefix.
-      gateway: 10.0.0.1 # The route's gateway (if empty, creates link scope route).
-    - gateway: fe80::1 # The route's gateway (if empty, creates link scope route).
+    - destination: 192.168.0.0/16 # The route's destination as an address prefix.
+      gateway: 192.168.1.1 # The route's gateway (if empty, creates link scope route).
 
-      # # The route's destination as an address prefix.
-      # destination: 10.0.0.0/8
+# # Set the VLAN mode to use.
+# vlanMode: 802.1q
 ```
 
 
@@ -51,7 +49,25 @@ routes:
     <tr>
       <td>`name`</td>
       <td>string</td>
-      <td>Name of the link (interface).</td>
+      <td>Name of the VLAN link (interface) to be created.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`vlanID`</td>
+      <td>uint16</td>
+      <td>VLAN ID to be used for the VLAN link.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`vlanMode`</td>
+      <td>VLANProtocol</td>
+      <td>Set the VLAN mode to use.<br />If not set, defaults to '802.1q'.</td>
+      <td>`802.1q`<br />`802.1ad`<br /></td>
+    </tr>
+    <tr>
+      <td>`parent`</td>
+      <td>string</td>
+      <td>Name of the parent link (interface) on which the VLAN link will be created.<br />Link aliases can be used here as well.</td>
       <td></td>
     </tr>
     <tr>

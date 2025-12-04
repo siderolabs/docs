@@ -1,7 +1,6 @@
 ---
 description: Config defines the v1alpha1.Config Talos machine configuration document.
 title: MachineConfig
-mode: "wide"
 ---
 
 {/*
@@ -76,12 +75,9 @@ machine:
     # InstallConfig represents the installation options for preparing a node.
     install:
         disk: /dev/sda # The disk used for installations.
-        # Allows for supplying extra kernel args via the bootloader.
-        extraKernelArgs:
-            - console=ttyS1
-            - panic=10
         image: ghcr.io/siderolabs/installer:latest # Allows for supplying the image used to perform the installation.
         wipe: false # Indicates if the installation disk should be wiped at installation time.
+        grubUseUKICmdline: true # Indicates if legacy GRUB bootloader should use kernel cmdline from the UKI instead of building it on the host.
 
         # # Look up disk using disk attributes like model, size, serial and others.
         # diskSelector:
@@ -133,7 +129,7 @@ machine:
     </tr>
     <tr>
       <td>`controlPlane`</td>
-      <td><a href="#controlPlane">MachineControlPlaneConfig</a></td>
+      <td><a href="#controlplane">MachineControlPlaneConfig</a></td>
       <td>Provides machine specific control plane configuration options.</td>
       <td></td>
     </tr>
@@ -163,7 +159,7 @@ machine:
     </tr>
     <tr>
       <td>`files`</td>
-      <td><a href="#files.">[]MachineFile</a></td>
+      <td><a href="#files%5B%5D">MachineFile</a></td>
       <td>Allows the addition of user specified files.<br />The value of `op` can be `create`, `overwrite`, or `append`.<br />In the case of `create`, `path` must not exist.<br />In the case of `overwrite`, and `append`, `path` must be a valid file.<br />If an `op` value of `append` is used, the existing file will be appended.<br />Note that the file contents are not required to be base64 encoded.</td>
       <td></td>
     </tr>
@@ -172,12 +168,6 @@ machine:
       <td>Env</td>
       <td>The `env` field allows for the addition of environment variables.<br />All environment variables are set on PID 1 in addition to every service.</td>
       <td>``GRPC_GO_LOG_VERBOSITY_LEVEL``<br />``GRPC_GO_LOG_SEVERITY_LEVEL``<br />``http_proxy``<br />``https_proxy``<br />``no_proxy``<br /></td>
-    </tr>
-    <tr>
-      <td>`time`</td>
-      <td><a href="#time">TimeConfig</a></td>
-      <td>Used to configure the machine's time settings.</td>
-      <td></td>
     </tr>
     <tr>
       <td>`sysctls`</td>
@@ -189,12 +179,6 @@ machine:
       <td>`sysfs`</td>
       <td>map[string]string</td>
       <td>Used to configure the machine's sysfs.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`registries`</td>
-      <td><a href="#registries">RegistriesConfig</a></td>
-      <td>Used to configure the machine's container image registry mirrors.<br /><br />Automatically generates matching CRI configuration for registry mirrors.<br /><br />The `mirrors` section allows to redirect requests for images to a non-default registry,<br />which might be a local registry or a caching mirror.<br /><br />The `config` section provides a way to authenticate to the registry with TLS client<br />identity, provide registry CA, or authentication information.<br />Authentication information has same meaning with the corresponding field in [`.docker/config.json`](https://docs.docker.com/engine/api/v1.41/#section/Authentication).<br /><br />See also matching configuration for [CRI containerd plugin](https://github.com/containerd/cri/blob/master/docs/registry.md).</td>
       <td></td>
     </tr>
     <tr>
@@ -223,7 +207,7 @@ machine:
     </tr>
     <tr>
       <td>`seccompProfiles`</td>
-      <td><a href="#seccompProfiles.">[]MachineSeccompProfile</a></td>
+      <td><a href="#seccompprofiles%5B%5D">MachineSeccompProfile</a></td>
       <td>Configures the seccomp profiles for the machine.</td>
       <td></td>
     </tr>
@@ -286,7 +270,7 @@ machine:
   <tbody>
     <tr>
       <td>`controllerManager`</td>
-      <td><a href="#controllerManager">MachineControllerManagerConfig</a></td>
+      <td><a href="#controllermanager">MachineControllerManagerConfig</a></td>
       <td>Controller manager machine specific configuration options.</td>
       <td></td>
     </tr>
@@ -372,7 +356,7 @@ KubeletConfig represents the kubelet config values.
 ```yaml
 machine:
     kubelet:
-        image: ghcr.io/siderolabs/kubelet:v1.34.1 # The `image` field is an optional reference to an alternative kubelet image.
+        image: ghcr.io/siderolabs/kubelet:v1.35.0-alpha.3 # The `image` field is an optional reference to an alternative kubelet image.
         # The `extraArgs` field is used to provide additional flags to the kubelet.
         extraArgs:
             feature-gates: ServerSideApply=true
@@ -452,7 +436,7 @@ machine:
     </tr>
     <tr>
       <td>`extraMounts`</td>
-      <td><a href="#extraMounts.">[]ExtraMount</a></td>
+      <td><a href="#extramounts%5B%5D">ExtraMount</a></td>
       <td>The `extraMounts` field is used to add additional mounts to the kubelet container.<br />Note that either `bind` or `rbind` are required in the `options`.</td>
       <td></td>
     </tr>
@@ -482,7 +466,7 @@ machine:
     </tr>
     <tr>
       <td>`nodeIP`</td>
-      <td><a href="#nodeIP">KubeletNodeIPConfig</a></td>
+      <td><a href="#nodeip">KubeletNodeIPConfig</a></td>
       <td>The `nodeIP` field is used to configure `--node-ip` flag for the kubelet.<br />This is used when a node has multiple addresses to choose from.</td>
       <td></td>
     </tr>
@@ -560,13 +544,13 @@ machine:
     </tr>
     <tr>
       <td>`uidMappings`</td>
-      <td><a href="#uidMappings.">[]LinuxIDMapping</a></td>
+      <td><a href="#uidmappings%5B%5D">LinuxIDMapping</a></td>
       <td>UID/GID mappings used for changing file owners w/o calling chown, fs should support it.<br /><br />Every mount point could have its own mapping.</td>
       <td></td>
     </tr>
     <tr>
       <td>`gidMappings`</td>
-      <td><a href="#gidMappings.">[]LinuxIDMapping</a></td>
+      <td><a href="#gidmappings%5B%5D">LinuxIDMapping</a></td>
       <td>UID/GID mappings used for changing file owners w/o calling chown, fs should support it.<br /><br />Every mount point could have its own mapping.</td>
       <td></td>
     </tr>
@@ -713,108 +697,6 @@ NetworkConfig represents the machine's networking config values.
 ```yaml
 machine:
     network:
-        # `interfaces` is used to define the network interface configuration.
-        interfaces:
-            - interface: enp0s1 # The interface name.
-              # Assigns static IP addresses to the interface.
-              addresses:
-                - 192.168.2.0/24
-              # A list of routes associated with the interface.
-              routes:
-                - network: 0.0.0.0/0 # The route's network (destination).
-                  gateway: 192.168.2.1 # The route's gateway (if empty, creates link scope route).
-                  metric: 1024 # The optional metric for the route.
-              mtu: 1500 # The interface's MTU.
-
-              # # Picks a network device using the selector.
-
-              # # select a device with bus prefix 00:*.
-              # deviceSelector:
-              #     busPath: 00:* # PCI, USB bus prefix, supports matching by wildcard.
-              # # select a device with mac address matching `*:f0:ab` and `virtio` kernel driver.
-              # deviceSelector:
-              #     hardwareAddr: '*:f0:ab' # Device hardware (MAC) address, supports matching by wildcard.
-              #     driver: virtio_net # Kernel driver, supports matching by wildcard.
-              # # select a device with bus prefix 00:*, a device with mac address matching `*:f0:ab` and `virtio` kernel driver.
-              # deviceSelector:
-              #     - busPath: 00:* # PCI, USB bus prefix, supports matching by wildcard.
-              #     - hardwareAddr: '*:f0:ab' # Device hardware (MAC) address, supports matching by wildcard.
-              #       driver: virtio_net # Kernel driver, supports matching by wildcard.
-
-              # # Bond specific options.
-              # bond:
-              #     # The interfaces that make up the bond.
-              #     interfaces:
-              #         - enp2s0
-              #         - enp2s1
-              #     # Picks a network device using the selector.
-              #     deviceSelectors:
-              #         - busPath: 00:* # PCI, USB bus prefix, supports matching by wildcard.
-              #         - hardwareAddr: '*:f0:ab' # Device hardware (MAC) address, supports matching by wildcard.
-              #           driver: virtio_net # Kernel driver, supports matching by wildcard.
-              #     mode: 802.3ad # A bond option.
-              #     lacpRate: fast # A bond option.
-
-              # # Bridge specific options.
-              # bridge:
-              #     # The interfaces that make up the bridge.
-              #     interfaces:
-              #         - enxda4042ca9a51
-              #         - enxae2a6774c259
-              #     # Enable STP on this bridge.
-              #     stp:
-              #         enabled: true # Whether Spanning Tree Protocol (STP) is enabled.
-
-              # # Configure this device as a bridge port.
-              # bridgePort:
-              #     master: br0 # The name of the bridge master interface
-
-              # # Indicates if DHCP should be used to configure the interface.
-              # dhcp: true
-
-              # # DHCP specific options.
-              # dhcpOptions:
-              #     routeMetric: 1024 # The priority of all routes received via DHCP.
-
-              # # Wireguard specific configuration.
-
-              # # wireguard server example
-              # wireguard:
-              #     privateKey: ABCDEF... # Specifies a private key configuration (base64 encoded).
-              #     listenPort: 51111 # Specifies a device's listening port.
-              #     # Specifies a list of peer configurations to apply to a device.
-              #     peers:
-              #         - publicKey: ABCDEF... # Specifies the public key of this peer.
-              #           endpoint: 192.168.1.3 # Specifies the endpoint of this peer entry.
-              #           # AllowedIPs specifies a list of allowed IP addresses in CIDR notation for this peer.
-              #           allowedIPs:
-              #             - 192.168.1.0/24
-              # # wireguard peer example
-              # wireguard:
-              #     privateKey: ABCDEF... # Specifies a private key configuration (base64 encoded).
-              #     # Specifies a list of peer configurations to apply to a device.
-              #     peers:
-              #         - publicKey: ABCDEF... # Specifies the public key of this peer.
-              #           endpoint: 192.168.1.2:51822 # Specifies the endpoint of this peer entry.
-              #           persistentKeepaliveInterval: 10s # Specifies the persistent keepalive interval for this peer.
-              #           # AllowedIPs specifies a list of allowed IP addresses in CIDR notation for this peer.
-              #           allowedIPs:
-              #             - 192.168.1.0/24
-
-              # # Virtual (shared) IP address configuration.
-
-              # # layer2 vip example
-              # vip:
-              #     ip: 172.16.199.55 # Specifies the IP address to be used.
-        # Used to statically set the nameservers for the machine.
-        nameservers:
-            - 9.8.7.6
-            - 8.7.6.5
-        # Used to statically set arbitrary search domains.
-        searchDomains:
-            - example.org
-            - example.com
-
         # # Configures KubeSpan feature.
         # kubespan:
         #     enabled: true # Enable the KubeSpan feature.
@@ -832,1451 +714,13 @@ machine:
   </thead>
   <tbody>
     <tr>
-      <td>`interfaces`</td>
-      <td><a href="#interfaces.">[]Device</a></td>
-      <td>`interfaces` is used to define the network interface configuration.<br />By default all network interfaces will attempt a DHCP discovery.<br />This can be further tuned through this configuration parameter.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`nameservers`</td>
-      <td>[]string</td>
-      <td>Used to statically set the nameservers for the machine.<br />Defaults to `1.1.1.1` and `8.8.8.8`</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`searchDomains`</td>
-      <td>[]string</td>
-      <td>Used to statically set arbitrary search domains.</td>
-      <td></td>
-    </tr>
-    <tr>
       <td>`kubespan`</td>
       <td><a href="#kubespan">NetworkKubeSpan</a></td>
       <td>Configures KubeSpan feature.</td>
       <td></td>
     </tr>
-    <tr>
-      <td>`disableSearchDomain`</td>
-      <td>bool</td>
-      <td>Disable generating a default search domain in /etc/resolv.conf<br />based on the machine hostname.<br />Defaults to `false`.</td>
-      <td>`true`<br />`yes`<br />`false`<br />`no`<br /></td>
-    </tr>
   </tbody>
 </table>
-
-
-
-#### interfaces[]
-
-Device represents a network interface.
-
-
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - interface: enp0s1 # The interface name.
-              # Assigns static IP addresses to the interface.
-              addresses:
-                - 192.168.2.0/24
-              # A list of routes associated with the interface.
-              routes:
-                - network: 0.0.0.0/0 # The route's network (destination).
-                  gateway: 192.168.2.1 # The route's gateway (if empty, creates link scope route).
-                  metric: 1024 # The optional metric for the route.
-              mtu: 1500 # The interface's MTU.
-
-              # # Picks a network device using the selector.
-
-              # # select a device with bus prefix 00:*.
-              # deviceSelector:
-              #     busPath: 00:* # PCI, USB bus prefix, supports matching by wildcard.
-              # # select a device with mac address matching `*:f0:ab` and `virtio` kernel driver.
-              # deviceSelector:
-              #     hardwareAddr: '*:f0:ab' # Device hardware (MAC) address, supports matching by wildcard.
-              #     driver: virtio_net # Kernel driver, supports matching by wildcard.
-              # # select a device with bus prefix 00:*, a device with mac address matching `*:f0:ab` and `virtio` kernel driver.
-              # deviceSelector:
-              #     - busPath: 00:* # PCI, USB bus prefix, supports matching by wildcard.
-              #     - hardwareAddr: '*:f0:ab' # Device hardware (MAC) address, supports matching by wildcard.
-              #       driver: virtio_net # Kernel driver, supports matching by wildcard.
-
-              # # Bond specific options.
-              # bond:
-              #     # The interfaces that make up the bond.
-              #     interfaces:
-              #         - enp2s0
-              #         - enp2s1
-              #     # Picks a network device using the selector.
-              #     deviceSelectors:
-              #         - busPath: 00:* # PCI, USB bus prefix, supports matching by wildcard.
-              #         - hardwareAddr: '*:f0:ab' # Device hardware (MAC) address, supports matching by wildcard.
-              #           driver: virtio_net # Kernel driver, supports matching by wildcard.
-              #     mode: 802.3ad # A bond option.
-              #     lacpRate: fast # A bond option.
-
-              # # Bridge specific options.
-              # bridge:
-              #     # The interfaces that make up the bridge.
-              #     interfaces:
-              #         - enxda4042ca9a51
-              #         - enxae2a6774c259
-              #     # Enable STP on this bridge.
-              #     stp:
-              #         enabled: true # Whether Spanning Tree Protocol (STP) is enabled.
-
-              # # Configure this device as a bridge port.
-              # bridgePort:
-              #     master: br0 # The name of the bridge master interface
-
-              # # Indicates if DHCP should be used to configure the interface.
-              # dhcp: true
-
-              # # DHCP specific options.
-              # dhcpOptions:
-              #     routeMetric: 1024 # The priority of all routes received via DHCP.
-
-              # # Wireguard specific configuration.
-
-              # # wireguard server example
-              # wireguard:
-              #     privateKey: ABCDEF... # Specifies a private key configuration (base64 encoded).
-              #     listenPort: 51111 # Specifies a device's listening port.
-              #     # Specifies a list of peer configurations to apply to a device.
-              #     peers:
-              #         - publicKey: ABCDEF... # Specifies the public key of this peer.
-              #           endpoint: 192.168.1.3 # Specifies the endpoint of this peer entry.
-              #           # AllowedIPs specifies a list of allowed IP addresses in CIDR notation for this peer.
-              #           allowedIPs:
-              #             - 192.168.1.0/24
-              # # wireguard peer example
-              # wireguard:
-              #     privateKey: ABCDEF... # Specifies a private key configuration (base64 encoded).
-              #     # Specifies a list of peer configurations to apply to a device.
-              #     peers:
-              #         - publicKey: ABCDEF... # Specifies the public key of this peer.
-              #           endpoint: 192.168.1.2:51822 # Specifies the endpoint of this peer entry.
-              #           persistentKeepaliveInterval: 10s # Specifies the persistent keepalive interval for this peer.
-              #           # AllowedIPs specifies a list of allowed IP addresses in CIDR notation for this peer.
-              #           allowedIPs:
-              #             - 192.168.1.0/24
-
-              # # Virtual (shared) IP address configuration.
-
-              # # layer2 vip example
-              # vip:
-              #     ip: 172.16.199.55 # Specifies the IP address to be used.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`interface`</td>
-      <td>string</td>
-      <td>The interface name.<br />Mutually exclusive with `deviceSelector`.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`deviceSelector`</td>
-      <td><a href="#deviceSelector">NetworkDeviceSelector</a></td>
-      <td>Picks a network device using the selector.<br />Mutually exclusive with `interface`.<br />Supports partial match using wildcard syntax.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`addresses`</td>
-      <td>[]string</td>
-      <td>Assigns static IP addresses to the interface.<br />An address can be specified either in proper CIDR notation or as a standalone address (netmask of all ones is assumed).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`routes`</td>
-      <td><a href="#routes.">[]Route</a></td>
-      <td>A list of routes associated with the interface.<br />If used in combination with DHCP, these routes will be appended to routes returned by DHCP server.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`bond`</td>
-      <td><a href="#bond">Bond</a></td>
-      <td>Bond specific options.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`bridge`</td>
-      <td><a href="#bridge">Bridge</a></td>
-      <td>Bridge specific options.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`bridgePort`</td>
-      <td><a href="#bridgePort">BridgePort</a></td>
-      <td>Configure this device as a bridge port.<br />This can be used to dynamically assign network interfaces to a bridge.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`vlans`</td>
-      <td><a href="#vlans.">[]Vlan</a></td>
-      <td>VLAN specific options.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`mtu`</td>
-      <td>int</td>
-      <td>The interface's MTU.<br />If used in combination with DHCP, this will override any MTU settings returned from DHCP server.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`dhcp`</td>
-      <td>bool</td>
-      <td>Indicates if DHCP should be used to configure the interface.<br />The following DHCP options are supported:<br /><br />- `OptionClasslessStaticRoute`<br />- `OptionDomainNameServer`<br />- `OptionDNSDomainSearchList`<br />- `OptionHostName`</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`ignore`</td>
-      <td>bool</td>
-      <td>Indicates if the interface should be ignored (skips configuration).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`dummy`</td>
-      <td>bool</td>
-      <td>Indicates if the interface is a dummy interface.<br />`dummy` is used to specify that this interface should be a virtual-only, dummy interface.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`dhcpOptions`</td>
-      <td><a href="#dhcpOptions">DHCPOptions</a></td>
-      <td>DHCP specific options.<br />`dhcp` *must* be set to true for these to take effect.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`wireguard`</td>
-      <td><a href="#wireguard">DeviceWireguardConfig</a></td>
-      <td>Wireguard specific configuration.<br />Includes things like private key, listen port, peers.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`vip`</td>
-      <td><a href="#vip">DeviceVIPConfig</a></td>
-      <td>Virtual (shared) IP address configuration.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-##### deviceSelector
-
-NetworkDeviceSelector struct describes network device selector.
-
-
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - deviceSelector:
-                busPath: 00:* # PCI, USB bus prefix, supports matching by wildcard.
-```
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - deviceSelector:
-                hardwareAddr: '*:f0:ab' # Device hardware (MAC) address, supports matching by wildcard.
-                driver: virtio_net # Kernel driver, supports matching by wildcard.
-```
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - deviceSelector:
-                - busPath: 00:* # PCI, USB bus prefix, supports matching by wildcard.
-                - hardwareAddr: '*:f0:ab' # Device hardware (MAC) address, supports matching by wildcard.
-                  driver: virtio_net # Kernel driver, supports matching by wildcard.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`busPath`</td>
-      <td>string</td>
-      <td>PCI, USB bus prefix, supports matching by wildcard.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`hardwareAddr`</td>
-      <td>string</td>
-      <td>Device hardware (MAC) address, supports matching by wildcard.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`permanentAddr`</td>
-      <td>string</td>
-      <td>Device permanent hardware address, supports matching by wildcard.<br />The permanent address doesn't change when the link is enslaved to a bond,<br />so it's recommended to use this field for bond members.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`pciID`</td>
-      <td>string</td>
-      <td>PCI ID (vendor ID, product ID), supports matching by wildcard.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`driver`</td>
-      <td>string</td>
-      <td>Kernel driver, supports matching by wildcard.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`physical`</td>
-      <td>bool</td>
-      <td>Select only physical devices.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-##### routes[]
-
-Route represents a network route.
-
-
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - routes:
-                - network: 0.0.0.0/0 # The route's network (destination).
-                  gateway: 10.5.0.1 # The route's gateway (if empty, creates link scope route).
-                - network: 10.2.0.0/16 # The route's network (destination).
-                  gateway: 10.2.0.1 # The route's gateway (if empty, creates link scope route).
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`network`</td>
-      <td>string</td>
-      <td>The route's network (destination).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`gateway`</td>
-      <td>string</td>
-      <td>The route's gateway (if empty, creates link scope route).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`source`</td>
-      <td>string</td>
-      <td>The route's source address (optional).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`metric`</td>
-      <td>uint32</td>
-      <td>The optional metric for the route.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`mtu`</td>
-      <td>uint32</td>
-      <td>The optional MTU for the route.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-##### bond
-
-Bond contains the various options for configuring a bonded interface.
-
-
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - bond:
-                # The interfaces that make up the bond.
-                interfaces:
-                    - enp2s0
-                    - enp2s1
-                mode: 802.3ad # A bond option.
-                lacpRate: fast # A bond option.
-
-                # # Picks a network device using the selector.
-
-                # # select a device with bus prefix 00:*, a device with mac address matching `*:f0:ab` and `virtio` kernel driver.
-                # deviceSelectors:
-                #     - busPath: 00:* # PCI, USB bus prefix, supports matching by wildcard.
-                #     - hardwareAddr: '*:f0:ab' # Device hardware (MAC) address, supports matching by wildcard.
-                #       driver: virtio_net # Kernel driver, supports matching by wildcard.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`interfaces`</td>
-      <td>[]string</td>
-      <td>The interfaces that make up the bond.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`deviceSelectors`</td>
-      <td><a href="#deviceSelectors.">[]NetworkDeviceSelector</a></td>
-      <td>Picks a network device using the selector.<br />Mutually exclusive with `interfaces`.<br />Supports partial match using wildcard syntax.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`arpIPTarget`</td>
-      <td>[]string</td>
-      <td>A bond option.<br />Please see the official kernel documentation.<br />Not supported at the moment.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`mode`</td>
-      <td>string</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`xmitHashPolicy`</td>
-      <td>string</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`lacpRate`</td>
-      <td>string</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`adActorSystem`</td>
-      <td>string</td>
-      <td>A bond option.<br />Please see the official kernel documentation.<br />Not supported at the moment.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`arpValidate`</td>
-      <td>string</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`arpAllTargets`</td>
-      <td>string</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`primary`</td>
-      <td>string</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`primaryReselect`</td>
-      <td>string</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`failOverMac`</td>
-      <td>string</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`adSelect`</td>
-      <td>string</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`miimon`</td>
-      <td>uint32</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`updelay`</td>
-      <td>uint32</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`downdelay`</td>
-      <td>uint32</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`arpInterval`</td>
-      <td>uint32</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`resendIgmp`</td>
-      <td>uint32</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`minLinks`</td>
-      <td>uint32</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`lpInterval`</td>
-      <td>uint32</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`packetsPerSlave`</td>
-      <td>uint32</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`numPeerNotif`</td>
-      <td>uint8</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`tlbDynamicLb`</td>
-      <td>uint8</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`allSlavesActive`</td>
-      <td>uint8</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`useCarrier`</td>
-      <td>bool</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`adActorSysPrio`</td>
-      <td>uint16</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`adUserPortKey`</td>
-      <td>uint16</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`peerNotifyDelay`</td>
-      <td>uint32</td>
-      <td>A bond option.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-###### deviceSelectors[]
-
-NetworkDeviceSelector struct describes network device selector.
-
-
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - bond:
-                deviceSelectors:
-                    busPath: 00:* # PCI, USB bus prefix, supports matching by wildcard.
-```
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - bond:
-                deviceSelectors:
-                    hardwareAddr: '*:f0:ab' # Device hardware (MAC) address, supports matching by wildcard.
-                    driver: virtio_net # Kernel driver, supports matching by wildcard.
-```
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - bond:
-                deviceSelectors:
-                    - busPath: 00:* # PCI, USB bus prefix, supports matching by wildcard.
-                    - hardwareAddr: '*:f0:ab' # Device hardware (MAC) address, supports matching by wildcard.
-                      driver: virtio_net # Kernel driver, supports matching by wildcard.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`busPath`</td>
-      <td>string</td>
-      <td>PCI, USB bus prefix, supports matching by wildcard.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`hardwareAddr`</td>
-      <td>string</td>
-      <td>Device hardware (MAC) address, supports matching by wildcard.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`permanentAddr`</td>
-      <td>string</td>
-      <td>Device permanent hardware address, supports matching by wildcard.<br />The permanent address doesn't change when the link is enslaved to a bond,<br />so it's recommended to use this field for bond members.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`pciID`</td>
-      <td>string</td>
-      <td>PCI ID (vendor ID, product ID), supports matching by wildcard.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`driver`</td>
-      <td>string</td>
-      <td>Kernel driver, supports matching by wildcard.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`physical`</td>
-      <td>bool</td>
-      <td>Select only physical devices.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-
-
-##### bridge
-
-Bridge contains the various options for configuring a bridge interface.
-
-
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - bridge:
-                # The interfaces that make up the bridge.
-                interfaces:
-                    - enxda4042ca9a51
-                    - enxae2a6774c259
-                # Enable STP on this bridge.
-                stp:
-                    enabled: true # Whether Spanning Tree Protocol (STP) is enabled.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`interfaces`</td>
-      <td>[]string</td>
-      <td>The interfaces that make up the bridge.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`stp`</td>
-      <td><a href="#stp">STP</a></td>
-      <td>Enable STP on this bridge.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`vlan`</td>
-      <td><a href="#vlan">BridgeVLAN</a></td>
-      <td>Enable VLAN-awareness on this bridge.<br />Please see the official kernel documentation.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-###### stp
-
-STP contains the various options for configuring the STP properties of a bridge interface.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`enabled`</td>
-      <td>bool</td>
-      <td>Whether Spanning Tree Protocol (STP) is enabled.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-###### vlan
-
-BridgeVLAN contains the various options for configuring the VLAN properties of a bridge interface.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`vlanFiltering`</td>
-      <td>bool</td>
-      <td>Whether VLAN filtering is enabled.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-
-
-##### bridgePort
-
-BridgePort contains settings for assigning a link to a bridge interface.
-
-
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - bridgePort:
-                master: br0 # The name of the bridge master interface
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`master`</td>
-      <td>string</td>
-      <td>The name of the bridge master interface</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-##### vlans[]
-
-Vlan represents vlan settings for a device.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`addresses`</td>
-      <td>[]string</td>
-      <td>The addresses in CIDR notation or as plain IPs to use.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`routes`</td>
-      <td><a href="#routes.">[]Route</a></td>
-      <td>A list of routes associated with the VLAN.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`dhcp`</td>
-      <td>bool</td>
-      <td>Indicates if DHCP should be used.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`vlanId`</td>
-      <td>uint16</td>
-      <td>The VLAN's ID.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`mtu`</td>
-      <td>uint32</td>
-      <td>The VLAN's MTU.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`vip`</td>
-      <td><a href="#vip">DeviceVIPConfig</a></td>
-      <td>The VLAN's virtual IP address configuration.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`dhcpOptions`</td>
-      <td><a href="#dhcpOptions">DHCPOptions</a></td>
-      <td>DHCP specific options.<br />`dhcp` *must* be set to true for these to take effect.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-###### routes[]
-
-Route represents a network route.
-
-
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - vlans:
-                - routes:
-                    - network: 0.0.0.0/0 # The route's network (destination).
-                      gateway: 10.5.0.1 # The route's gateway (if empty, creates link scope route).
-                    - network: 10.2.0.0/16 # The route's network (destination).
-                      gateway: 10.2.0.1 # The route's gateway (if empty, creates link scope route).
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`network`</td>
-      <td>string</td>
-      <td>The route's network (destination).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`gateway`</td>
-      <td>string</td>
-      <td>The route's gateway (if empty, creates link scope route).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`source`</td>
-      <td>string</td>
-      <td>The route's source address (optional).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`metric`</td>
-      <td>uint32</td>
-      <td>The optional metric for the route.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`mtu`</td>
-      <td>uint32</td>
-      <td>The optional MTU for the route.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-###### vip
-
-DeviceVIPConfig contains settings for configuring a Virtual Shared IP on an interface.
-
-
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - vlans:
-                - vip:
-                    ip: 172.16.199.55 # Specifies the IP address to be used.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`ip`</td>
-      <td>string</td>
-      <td>Specifies the IP address to be used.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`equinixMetal`</td>
-      <td><a href="#equinixMetal">VIPEquinixMetalConfig</a></td>
-      <td>Specifies the Equinix Metal API settings to assign VIP to the node.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`hcloud`</td>
-      <td><a href="#hcloud">VIPHCloudConfig</a></td>
-      <td>Specifies the Hetzner Cloud API settings to assign VIP to the node.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-###### equinixMetal
-
-VIPEquinixMetalConfig contains settings for Equinix Metal VIP management.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`apiToken`</td>
-      <td>string</td>
-      <td>Specifies the Equinix Metal API Token.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-###### hcloud
-
-VIPHCloudConfig contains settings for Hetzner Cloud VIP management.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`apiToken`</td>
-      <td>string</td>
-      <td>Specifies the Hetzner Cloud API Token.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-
-
-###### dhcpOptions
-
-DHCPOptions contains options for configuring the DHCP settings for a given interface.
-
-
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - vlans:
-                - dhcpOptions:
-                    routeMetric: 1024 # The priority of all routes received via DHCP.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`routeMetric`</td>
-      <td>uint32</td>
-      <td>The priority of all routes received via DHCP.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`ipv4`</td>
-      <td>bool</td>
-      <td>Enables DHCPv4 protocol for the interface (default is enabled).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`ipv6`</td>
-      <td>bool</td>
-      <td>Enables DHCPv6 protocol for the interface (default is disabled).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`duidv6`</td>
-      <td>string</td>
-      <td>Set client DUID (hex string).</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-
-
-##### dhcpOptions
-
-DHCPOptions contains options for configuring the DHCP settings for a given interface.
-
-
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - dhcpOptions:
-                routeMetric: 1024 # The priority of all routes received via DHCP.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`routeMetric`</td>
-      <td>uint32</td>
-      <td>The priority of all routes received via DHCP.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`ipv4`</td>
-      <td>bool</td>
-      <td>Enables DHCPv4 protocol for the interface (default is enabled).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`ipv6`</td>
-      <td>bool</td>
-      <td>Enables DHCPv6 protocol for the interface (default is disabled).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`duidv6`</td>
-      <td>string</td>
-      <td>Set client DUID (hex string).</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-##### wireguard
-
-DeviceWireguardConfig contains settings for configuring Wireguard network interface.
-
-
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - wireguard:
-                privateKey: ABCDEF... # Specifies a private key configuration (base64 encoded).
-                listenPort: 51111 # Specifies a device's listening port.
-                # Specifies a list of peer configurations to apply to a device.
-                peers:
-                    - publicKey: ABCDEF... # Specifies the public key of this peer.
-                      endpoint: 192.168.1.3 # Specifies the endpoint of this peer entry.
-                      # AllowedIPs specifies a list of allowed IP addresses in CIDR notation for this peer.
-                      allowedIPs:
-                        - 192.168.1.0/24
-```
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - wireguard:
-                privateKey: ABCDEF... # Specifies a private key configuration (base64 encoded).
-                # Specifies a list of peer configurations to apply to a device.
-                peers:
-                    - publicKey: ABCDEF... # Specifies the public key of this peer.
-                      endpoint: 192.168.1.2:51822 # Specifies the endpoint of this peer entry.
-                      persistentKeepaliveInterval: 10s # Specifies the persistent keepalive interval for this peer.
-                      # AllowedIPs specifies a list of allowed IP addresses in CIDR notation for this peer.
-                      allowedIPs:
-                        - 192.168.1.0/24
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`privateKey`</td>
-      <td>string</td>
-      <td>Specifies a private key configuration (base64 encoded).<br />Can be generated by `wg genkey`.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`listenPort`</td>
-      <td>int</td>
-      <td>Specifies a device's listening port.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`firewallMark`</td>
-      <td>int</td>
-      <td>Specifies a device's firewall mark.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`peers`</td>
-      <td><a href="#peers.">[]DeviceWireguardPeer</a></td>
-      <td>Specifies a list of peer configurations to apply to a device.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-###### peers[]
-
-DeviceWireguardPeer a WireGuard device peer configuration.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`publicKey`</td>
-      <td>string</td>
-      <td>Specifies the public key of this peer.<br />Can be extracted from private key by running `wg pubkey {"<"} private.key {">"} public.key && cat public.key`.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`endpoint`</td>
-      <td>string</td>
-      <td>Specifies the endpoint of this peer entry.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`persistentKeepaliveInterval`</td>
-      <td>Duration</td>
-      <td>Specifies the persistent keepalive interval for this peer.<br />Field format accepts any Go time.Duration format ('1h' for one hour, '10m' for ten minutes).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`allowedIPs`</td>
-      <td>[]string</td>
-      <td>AllowedIPs specifies a list of allowed IP addresses in CIDR notation for this peer.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-
-
-##### vip
-
-DeviceVIPConfig contains settings for configuring a Virtual Shared IP on an interface.
-
-
-
-```yaml
-machine:
-    network:
-        interfaces:
-            - vip:
-                ip: 172.16.199.55 # Specifies the IP address to be used.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`ip`</td>
-      <td>string</td>
-      <td>Specifies the IP address to be used.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`equinixMetal`</td>
-      <td><a href="#equinixMetal">VIPEquinixMetalConfig</a></td>
-      <td>Specifies the Equinix Metal API settings to assign VIP to the node.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`hcloud`</td>
-      <td><a href="#hcloud">VIPHCloudConfig</a></td>
-      <td>Specifies the Hetzner Cloud API settings to assign VIP to the node.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-###### equinixMetal
-
-VIPEquinixMetalConfig contains settings for Equinix Metal VIP management.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`apiToken`</td>
-      <td>string</td>
-      <td>Specifies the Equinix Metal API Token.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-###### hcloud
-
-VIPHCloudConfig contains settings for Hetzner Cloud VIP management.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`apiToken`</td>
-      <td>string</td>
-      <td>Specifies the Hetzner Cloud API Token.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-
 
 
 
@@ -2389,12 +833,9 @@ InstallConfig represents the installation options for preparing a node.
 machine:
     install:
         disk: /dev/sda # The disk used for installations.
-        # Allows for supplying extra kernel args via the bootloader.
-        extraKernelArgs:
-            - console=ttyS1
-            - panic=10
         image: ghcr.io/siderolabs/installer:latest # Allows for supplying the image used to perform the installation.
         wipe: false # Indicates if the installation disk should be wiped at installation time.
+        grubUseUKICmdline: true # Indicates if legacy GRUB bootloader should use kernel cmdline from the UKI instead of building it on the host.
 
         # # Look up disk using disk attributes like model, size, serial and others.
         # diskSelector:
@@ -2422,14 +863,8 @@ machine:
     </tr>
     <tr>
       <td>`diskSelector`</td>
-      <td><a href="#diskSelector">InstallDiskSelector</a></td>
+      <td><a href="#diskselector">InstallDiskSelector</a></td>
       <td>Look up disk using disk attributes like model, size, serial and others.<br />Always has priority over `disk`.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`extraKernelArgs`</td>
-      <td>[]string</td>
-      <td>Allows for supplying extra kernel args via the bootloader.<br />Existing kernel args can be removed by prefixing the argument with a `-`.<br />For example `-console` removes all `console={"<"}value{">"}` arguments, whereas `-console=tty0` removes the `console=tty0` default argument.<br />If Talos is using systemd-boot as a bootloader (default for UEFI) this setting will be ignored.</td>
       <td></td>
     </tr>
     <tr>
@@ -2448,6 +883,12 @@ machine:
       <td>`legacyBIOSSupport`</td>
       <td>bool</td>
       <td>Indicates if MBR partition should be marked as bootable (active).<br />Should be enabled only for the systems with legacy BIOS that doesn't support GPT partitioning scheme.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`grubUseUKICmdline`</td>
+      <td>bool</td>
+      <td>Indicates if legacy GRUB bootloader should use kernel cmdline from the UKI instead of building it on the host.<br />This changes the way cmdline is managed with GRUB bootloader to be more consistent with UKI/systemd-boot.</td>
       <td></td>
     </tr>
   </tbody>
@@ -2604,354 +1045,6 @@ machine:
 
 
 
-### time
-
-TimeConfig represents the options for configuring time on a machine.
-
-
-
-```yaml
-machine:
-    time:
-        disabled: false # Indicates if the time service is disabled for the machine.
-        # description: |
-        servers:
-            - time.cloudflare.com
-        bootTimeout: 2m0s # Specifies the timeout when the node time is considered to be in sync unlocking the boot sequence.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`disabled`</td>
-      <td>bool</td>
-      <td>Indicates if the time service is disabled for the machine.<br />Defaults to `false`.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`servers`</td>
-      <td>[]string</td>
-      <td>description:</td>
-      <td><br /> Specifies time (NTP) servers to use for setting the system time.<br /> Defaults to `time.cloudflare.com`.<br /><br /> Talos can also sync to the PTP time source (e.g provided by the hypervisor),<br /> provide the path to the PTP device as "/dev/ptp0" or "/dev/ptp_kvm".<br /></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`bootTimeout`</td>
-      <td>Duration</td>
-      <td>Specifies the timeout when the node time is considered to be in sync unlocking the boot sequence.<br />NTP sync will be still running in the background.<br />Defaults to "infinity" (waiting forever for time sync)</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-### registries
-
-RegistriesConfig represents the image pull options.
-
-
-
-```yaml
-machine:
-    registries:
-        # Specifies mirror configuration for each registry host namespace.
-        mirrors:
-            docker.io:
-                # List of endpoints (URLs) for registry mirrors to use.
-                endpoints:
-                    - https://registry.local
-        # Specifies TLS & auth configuration for HTTPS image registries.
-        config:
-            registry.local:
-                # The TLS configuration for the registry.
-                tls:
-                    # Enable mutual TLS authentication with the registry.
-                    clientIdentity:
-                        crt: LS0tIEVYQU1QTEUgQ0VSVElGSUNBVEUgLS0t
-                        key: LS0tIEVYQU1QTEUgS0VZIC0tLQ==
-                # The auth configuration for this registry.
-                auth:
-                    username: username # Optional registry authentication.
-                    password: password # Optional registry authentication.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`mirrors`</td>
-      <td><a href="#-">map[string]RegistryMirrorConfig</a></td>
-      <td>Specifies mirror configuration for each registry host namespace.<br />This setting allows to configure local pull-through caching registires,<br />air-gapped installations, etc.<br /><br />For example, when pulling an image with the reference `example.com:123/image:v1`,<br />the `example.com:123` key will be used to lookup the mirror configuration.<br /><br />Optionally the `*` key can be used to configure a fallback mirror.<br /><br />Registry name is the first segment of image identifier, with 'docker.io'<br />being default one.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`config`</td>
-      <td><a href="#-">map[string]RegistryConfig</a></td>
-      <td>Specifies TLS & auth configuration for HTTPS image registries.<br />Mutual TLS can be enabled with 'clientIdentity' option.<br /><br />The full hostname and port (if not using a default port 443)<br />should be used as the key.<br />The fallback key `*` can't be used for TLS configuration.<br /><br />TLS configuration can be skipped if registry has trusted<br />server certificate.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-#### mirrors.*
-
-RegistryMirrorConfig represents mirror configuration for a registry.
-
-
-
-```yaml
-machine:
-    registries:
-        mirrors:
-            ghcr.io:
-                # List of endpoints (URLs) for registry mirrors to use.
-                endpoints:
-                    - https://registry.insecure
-                    - https://ghcr.io/v2/
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`endpoints`</td>
-      <td>[]string</td>
-      <td>List of endpoints (URLs) for registry mirrors to use.<br />Endpoint configures HTTP/HTTPS access mode, host name,<br />port and path (if path is not set, it defaults to `/v2`).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`overridePath`</td>
-      <td>bool</td>
-      <td>Use the exact path specified for the endpoint (don't append /v2/).<br />This setting is often required for setting up multiple mirrors<br />on a single instance of a registry.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`skipFallback`</td>
-      <td>bool</td>
-      <td>Skip fallback to the upstream endpoint, for example the mirror configuration<br />for `docker.io` will not fallback to `registry-1.docker.io`.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-#### config.*
-
-RegistryConfig specifies auth & TLS config per registry.
-
-
-
-```yaml
-machine:
-    registries:
-        config:
-            registry.insecure:
-                # The TLS configuration for the registry.
-                tls:
-                    insecureSkipVerify: true # Skip TLS server certificate verification (not recommended).
-
-                    # # Enable mutual TLS authentication with the registry.
-                    # clientIdentity:
-                    #     crt: LS0tIEVYQU1QTEUgQ0VSVElGSUNBVEUgLS0t
-                    #     key: LS0tIEVYQU1QTEUgS0VZIC0tLQ==
-
-                # # The auth configuration for this registry.
-                # auth:
-                #     username: username # Optional registry authentication.
-                #     password: password # Optional registry authentication.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`tls`</td>
-      <td><a href="#tls">RegistryTLSConfig</a></td>
-      <td>The TLS configuration for the registry.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`auth`</td>
-      <td><a href="#auth">RegistryAuthConfig</a></td>
-      <td>The auth configuration for this registry.<br />Note: changes to the registry auth will not be picked up by the CRI containerd plugin without a reboot.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-##### tls
-
-RegistryTLSConfig specifies TLS config for HTTPS registries.
-
-
-
-```yaml
-machine:
-    registries:
-        config:
-            example.com:
-                tls:
-                    # Enable mutual TLS authentication with the registry.
-                    clientIdentity:
-                        crt: LS0tIEVYQU1QTEUgQ0VSVElGSUNBVEUgLS0t
-                        key: LS0tIEVYQU1QTEUgS0VZIC0tLQ==
-```
-
-```yaml
-machine:
-    registries:
-        config:
-            example.com:
-                tls:
-                    insecureSkipVerify: true # Skip TLS server certificate verification (not recommended).
-
-                    # # Enable mutual TLS authentication with the registry.
-                    # clientIdentity:
-                    #     crt: LS0tIEVYQU1QTEUgQ0VSVElGSUNBVEUgLS0t
-                    #     key: LS0tIEVYQU1QTEUgS0VZIC0tLQ==
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`clientIdentity`</td>
-      <td>PEMEncodedCertificateAndKey</td>
-      <td>Enable mutual TLS authentication with the registry.<br />Client certificate and key should be base64-encoded.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`ca`</td>
-      <td>Base64Bytes</td>
-      <td>CA registry certificate to add the list of trusted certificates.<br />Certificate should be base64-encoded.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`insecureSkipVerify`</td>
-      <td>bool</td>
-      <td>Skip TLS server certificate verification (not recommended).</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-##### auth
-
-RegistryAuthConfig specifies authentication configuration for a registry.
-
-
-
-```yaml
-machine:
-    registries:
-        config:
-            example.com:
-                auth:
-                    username: username # Optional registry authentication.
-                    password: password # Optional registry authentication.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`username`</td>
-      <td>string</td>
-      <td>Optional registry authentication.<br />The meaning of each field is the same with the corresponding field in [`.docker/config.json`](https://docs.docker.com/engine/api/v1.41/#section/Authentication).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`password`</td>
-      <td>string</td>
-      <td>Optional registry authentication.<br />The meaning of each field is the same with the corresponding field in [`.docker/config.json`](https://docs.docker.com/engine/api/v1.41/#section/Authentication).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`auth`</td>
-      <td>string</td>
-      <td>Optional registry authentication.<br />The meaning of each field is the same with the corresponding field in [`.docker/config.json`](https://docs.docker.com/engine/api/v1.41/#section/Authentication).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`identityToken`</td>
-      <td>string</td>
-      <td>Optional registry authentication.<br />The meaning of each field is the same with the corresponding field in [`.docker/config.json`](https://docs.docker.com/engine/api/v1.41/#section/Authentication).</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-
-
-
-
 ### features
 
 FeaturesConfig describes individual Talos features that can be switched on or off.
@@ -2961,7 +1054,7 @@ FeaturesConfig describes individual Talos features that can be switched on or of
 ```yaml
 machine:
     features:
-        rbac: true # Enable role-based access control (RBAC).
+        diskQuotaSupport: true # Enable XFS project quota support for EPHEMERAL partition and user disks.
 
         # # Configure Talos API access from Kubernetes pods.
         # kubernetesTalosAPIAccess:
@@ -2986,21 +1079,9 @@ machine:
   </thead>
   <tbody>
     <tr>
-      <td>`rbac`</td>
-      <td>bool</td>
-      <td>Enable role-based access control (RBAC).</td>
-      <td></td>
-    </tr>
-    <tr>
       <td>`kubernetesTalosAPIAccess`</td>
-      <td><a href="#kubernetesTalosAPIAccess">KubernetesTalosAPIAccessConfig</a></td>
+      <td><a href="#kubernetestalosapiaccess">KubernetesTalosAPIAccessConfig</a></td>
       <td>Configure Talos API access from Kubernetes pods.<br /><br />This feature is disabled if the feature config is not specified.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`apidCheckExtKeyUsage`</td>
-      <td>bool</td>
-      <td>Enable checks for extended key usage of client certificates in apid.</td>
       <td></td>
     </tr>
     <tr>
@@ -3011,19 +1092,19 @@ machine:
     </tr>
     <tr>
       <td>`kubePrism`</td>
-      <td><a href="#kubePrism">KubePrism</a></td>
+      <td><a href="#kubeprism">KubePrism</a></td>
       <td>KubePrism - local proxy/load balancer on defined port that will distribute<br />requests to all API servers in the cluster.</td>
       <td></td>
     </tr>
     <tr>
       <td>`hostDNS`</td>
-      <td><a href="#hostDNS">HostDNSConfig</a></td>
+      <td><a href="#hostdns">HostDNSConfig</a></td>
       <td>Configures host DNS caching resolver.</td>
       <td></td>
     </tr>
     <tr>
       <td>`imageCache`</td>
-      <td><a href="#imageCache">ImageCacheConfig</a></td>
+      <td><a href="#imagecache">ImageCacheConfig</a></td>
       <td>Enable Image Cache feature.</td>
       <td></td>
     </tr>
@@ -3269,7 +1350,7 @@ machine:
   <tbody>
     <tr>
       <td>`destinations`</td>
-      <td><a href="#destinations.">[]LoggingDestination</a></td>
+      <td><a href="#destinations%5B%5D">LoggingDestination</a></td>
       <td>Logging destination.</td>
       <td></td>
     </tr>
@@ -3402,7 +1483,7 @@ machine:
   <tbody>
     <tr>
       <td>`modules`</td>
-      <td><a href="#modules.">[]KernelModuleConfig</a></td>
+      <td><a href="#modules%5B%5D">KernelModuleConfig</a></td>
       <td>Kernel modules to load.</td>
       <td></td>
     </tr>
@@ -3548,7 +1629,7 @@ cluster:
     </tr>
     <tr>
       <td>`controlPlane`</td>
-      <td><a href="#controlPlane">ControlPlaneConfig</a></td>
+      <td><a href="#controlplane">ControlPlaneConfig</a></td>
       <td>Provides control plane specific configuration options.</td>
       <td></td>
     </tr>
@@ -3608,13 +1689,13 @@ cluster:
     </tr>
     <tr>
       <td>`apiServer`</td>
-      <td><a href="#apiServer">APIServerConfig</a></td>
+      <td><a href="#apiserver">APIServerConfig</a></td>
       <td>API server specific configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`controllerManager`</td>
-      <td><a href="#controllerManager">ControllerManagerConfig</a></td>
+      <td><a href="#controllermanager">ControllerManagerConfig</a></td>
       <td>Controller manager server specific configuration options.</td>
       <td></td>
     </tr>
@@ -3644,13 +1725,13 @@ cluster:
     </tr>
     <tr>
       <td>`coreDNS`</td>
-      <td><a href="#coreDNS">CoreDNS</a></td>
+      <td><a href="#coredns">CoreDNS</a></td>
       <td>Core DNS specific configuration options.</td>
       <td></td>
     </tr>
     <tr>
       <td>`externalCloudProvider`</td>
-      <td><a href="#externalCloudProvider">ExternalCloudProviderConfig</a></td>
+      <td><a href="#externalcloudprovider">ExternalCloudProviderConfig</a></td>
       <td>External cloud provider configuration.</td>
       <td></td>
     </tr>
@@ -3668,13 +1749,13 @@ cluster:
     </tr>
     <tr>
       <td>`inlineManifests`</td>
-      <td><a href="#inlineManifests.">[]ClusterInlineManifest</a></td>
+      <td><a href="#inlinemanifests%5B%5D">ClusterInlineManifest</a></td>
       <td>A list of inline Kubernetes manifests.<br />These will get automatically deployed as part of the bootstrap.</td>
       <td></td>
     </tr>
     <tr>
       <td>`adminKubeconfig`</td>
-      <td><a href="#adminKubeconfig">AdminKubeconfigConfig</a></td>
+      <td><a href="#adminkubeconfig">AdminKubeconfigConfig</a></td>
       <td>Settings for admin kubeconfig generation.<br />Certificate lifetime can be configured.</td>
       <td></td>
     </tr>
@@ -3936,7 +2017,7 @@ APIServerConfig represents the kube apiserver configuration options.
 ```yaml
 cluster:
     apiServer:
-        image: registry.k8s.io/kube-apiserver:v1.34.1 # The container image used in the API server manifest.
+        image: registry.k8s.io/kube-apiserver:v1.35.0-alpha.3 # The container image used in the API server manifest.
         # Extra arguments to supply to the API server.
         extraArgs:
             feature-gates: ServerSideApply=true
@@ -4025,7 +2106,7 @@ cluster:
     </tr>
     <tr>
       <td>`extraVolumes`</td>
-      <td><a href="#extraVolumes.">[]VolumeMountConfig</a></td>
+      <td><a href="#extravolumes%5B%5D">VolumeMountConfig</a></td>
       <td>Extra volumes to mount to the API server static pod.</td>
       <td></td>
     </tr>
@@ -4042,14 +2123,8 @@ cluster:
       <td></td>
     </tr>
     <tr>
-      <td>`disablePodSecurityPolicy`</td>
-      <td>bool</td>
-      <td>Disable PodSecurityPolicy in the API server and default manifests.</td>
-      <td></td>
-    </tr>
-    <tr>
       <td>`admissionControl`</td>
-      <td><a href="#admissionControl.">[]AdmissionPluginConfig</a></td>
+      <td><a href="#admissioncontrol%5B%5D">AdmissionPluginConfig</a></td>
       <td>Configure the API server admission plugins.</td>
       <td></td>
     </tr>
@@ -4067,7 +2142,7 @@ cluster:
     </tr>
     <tr>
       <td>`authorizationConfig`</td>
-      <td><a href="#authorizationConfig.">[]AuthorizationConfigAuthorizerConfig</a></td>
+      <td><a href="#authorizationconfig%5B%5D">AuthorizationConfigAuthorizerConfig</a></td>
       <td>Configure the API server authorization config. Node and RBAC authorizers are always added irrespective of the configuration.</td>
       <td></td>
     </tr>
@@ -4295,7 +2370,7 @@ ControllerManagerConfig represents the kube controller manager configuration opt
 ```yaml
 cluster:
     controllerManager:
-        image: registry.k8s.io/kube-controller-manager:v1.34.1 # The container image used in the controller manager manifest.
+        image: registry.k8s.io/kube-controller-manager:v1.35.0-alpha.3 # The container image used in the controller manager manifest.
         # Extra arguments to supply to the controller manager.
         extraArgs:
             feature-gates: ServerSideApply=true
@@ -4326,7 +2401,7 @@ cluster:
     </tr>
     <tr>
       <td>`extraVolumes`</td>
-      <td><a href="#extraVolumes.">[]VolumeMountConfig</a></td>
+      <td><a href="#extravolumes%5B%5D">VolumeMountConfig</a></td>
       <td>Extra volumes to mount to the controller manager static pod.</td>
       <td></td>
     </tr>
@@ -4436,7 +2511,7 @@ ProxyConfig represents the kube proxy configuration options.
 ```yaml
 cluster:
     proxy:
-        image: registry.k8s.io/kube-proxy:v1.34.1 # The container image used in the kube-proxy manifest.
+        image: registry.k8s.io/kube-proxy:v1.35.0-alpha.3 # The container image used in the kube-proxy manifest.
         mode: ipvs # proxy mode of kube-proxy.
         # Extra arguments to supply to kube-proxy.
         extraArgs:
@@ -4497,7 +2572,7 @@ SchedulerConfig represents the kube scheduler configuration options.
 ```yaml
 cluster:
     scheduler:
-        image: registry.k8s.io/kube-scheduler:v1.34.1 # The container image used in the scheduler manifest.
+        image: registry.k8s.io/kube-scheduler:v1.35.0-alpha.3 # The container image used in the scheduler manifest.
         # Extra arguments to supply to the scheduler.
         extraArgs:
             feature-gates: AllBeta=true
@@ -4528,7 +2603,7 @@ cluster:
     </tr>
     <tr>
       <td>`extraVolumes`</td>
-      <td><a href="#extraVolumes.">[]VolumeMountConfig</a></td>
+      <td><a href="#extravolumes%5B%5D">VolumeMountConfig</a></td>
       <td>Extra volumes to mount to the scheduler static pod.</td>
       <td></td>
     </tr>
@@ -4795,7 +2870,7 @@ EtcdConfig represents the etcd configuration options.
 ```yaml
 cluster:
     etcd:
-        image: gcr.io/etcd-development/etcd:v3.6.5 # The container image used to create the etcd service.
+        image: registry.k8s.io/etcd:v3.6.6 # The container image used to create the etcd service.
         # The `ca` is the root certificate authority of the PKI.
         ca:
             crt: LS0tIEVYQU1QTEUgQ0VSVElGSUNBVEUgLS0t
@@ -4866,7 +2941,7 @@ CoreDNS represents the CoreDNS config values.
 ```yaml
 cluster:
     coreDNS:
-        image: registry.k8s.io/coredns/coredns:v1.12.4 # The `image` field is an override to the default coredns image.
+        image: registry.k8s.io/coredns/coredns:v1.13.1 # The `image` field is an override to the default coredns image.
 ```
 
 
@@ -5023,12 +3098,3 @@ cluster:
     </tr>
   </tbody>
 </table>
-
-
-
-
-
-
-
-
-
