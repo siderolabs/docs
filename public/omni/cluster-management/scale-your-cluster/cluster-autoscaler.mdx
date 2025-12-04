@@ -345,6 +345,36 @@ You should see:
 - The Cluster Autoscaler detecting those Pending pods and requesting additional nodes
 - New worker nodes joining the cluster, followed by the pods transitioning to Running
 
+## Cleanup
+
+Delete the resources created in this guide:
+
+1. Remove the demo Deployment you used to trigger scale-up:
+
+```bash
+kubectl scale deploy autoscaler-demo --replicas=0
+kubectl delete deploy autoscaler-demo
+```
+
+2. Uninstall Cluster Autoscaler (optional):
+
+```bash
+helm uninstall cluster-autoscaler -n kube-system
+```
+
+3. Scale down or delete your node group. The exact steps depend on your provider. For example, on AWS you might run:
+
+```bash
+aws autoscaling update-auto-scaling-group \
+  --auto-scaling-group-name "<your-asg-name>" \
+  --min-size 0 \
+  --desired-capacity 0
+```
+
+4. (If desired) Remove control plane machines. Only do this if you're cleaning up the entire cluster, not just stopping autoscaling.
+
+6. Remove provider-side IAM / identity permissions (if you created them).
+
 ## On scaling down nodes
 
 When Cluster Autoscaler terminates a machine, the matching node is removed from Kubernetes, but the machine is not deleted automatically in Omni.
