@@ -39,7 +39,7 @@ sampleInterval: 100ms # How often should the trigger expression be evaluated.
     <tr>
       <td>`triggerExpression`</td>
       <td>Expression</td>
-      <td>This expression defines when to trigger OOM action.<br /><br />The expression must evaluate to a boolean value.<br />If the expression returns true, then OOM ranking and killing will be handled.<br /><br />This expression receives the following parameters:<br />- memory_{some,full}_{avg10,avg60,avg300,total} - double, representing PSI values<br />- time_since_trigger - duration since the last OOM handler trigger event</td>
+      <td>This expression defines when to trigger OOM action.<br /><br />The expression must evaluate to a boolean value.<br />If the expression returns true, then OOM ranking and killing will be handled.<br /><br />This expression receives the following parameters:<br />- `memory_{some,full}_{avg10,avg60,avg300,total}` - double, representing PSI values<br />- time_since_trigger - duration since the last OOM handler trigger event</td>
       <td></td>
     </tr>
     <tr>
@@ -56,8 +56,3 @@ sampleInterval: 100ms # How often should the trigger expression be evaluated.
     </tr>
   </tbody>
 </table>
-
-
-
-
-

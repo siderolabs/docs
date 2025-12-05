@@ -74,7 +74,42 @@ Note that because Talos Linux reboots via the `kexec` syscall, the extra reboot 
 
 ## Machine Configuration Changes
 
-TBD
+* [VolumeConfig](../../reference/configuration/block/volumeconfig) now supports encryption configuration for system volumes.
+* [VolumeConfig](../../reference/configuration/block/volumeconfig), [UserVolumeConfig](../../reference/configuration/block/uservolumeconfig) encryption configuration for TPM now supports specifying PCRs to lock the encryption key to.
+* volume configuration in `.provisioning.maxSize` now supports relative sizes using `%` suffix.
+* [UserVolumeConfig](../../reference/configuration/block/uservolumeconfig) now supports `volumeType` field with `partition` (default), `disk` and `directory` values.
+* new registry-related configuration documents: [RegistryMirrorConfig](../../reference/configuration/cri/registrymirrorconfig),
+  [RegistryAuthConfig](../../reference/configuration/cri/registryauthconfig),
+  and [RegistryTLSConfig](../../reference/configuration/cri/registrytlsconfig).
+* new network configuration documents:
+  * [BondConfig](../../reference/configuration/network/bondconfig)
+  * [BridgeConfig](../../reference/configuration/network/bridgeconfig)
+  * [DHCPv4Config](../../reference/configuration/network/dhcpv4config)
+  * [DHCPv6Config](../../reference/configuration/network/dhcpv6config)
+  * [DummyLinkConfig](../../reference/configuration/network/dummylinkconfig)
+  * [HCloudVIPConfig](../../reference/configuration/network/hcloudvipconfig)
+  * [HostnameConfig](../../reference/configuration/network/hostnameconfig)
+  * [Layer2VIPConfig](../../reference/configuration/network/layer2vipconfig)
+  * [LinkConfig](../../reference/configuration/network/linkconfig)
+  * [LinkAliasConfig](../../reference/configuration/network/linkaliasconfig)
+  * [ResolverConfig](../../reference/configuration/network/resolverconfig)
+  * [StaticHostConfig](../../reference/configuration/network/statichostconfig)
+  * [TimeSyncConfig](../../reference/configuration/network/timesyncconfig)
+  * [VLANConfig](../../reference/configuration/network/vlanconfig)
+  * [WireguardConfig](../../reference/configuration/network/wireguardconfig)
+* [EthernetConfig](../../reference/configuration/network/ethernetconfig) now supports `wakeOnLAN` configuration.
+* new document [OOMConfig](../../reference/configuration/runtime/oomconfig) to configure OOM handler.
+* deprecated, but still supported fields in `valpha1` config:
+  * `.machine.time` (use `TimeSyncConfig` instead)
+  * `.machine.registries` (use `RegistryMirrorConfig`, `RegistryAuthConfig`, and `RegistryTLSConfig` instead)
+  * `.machine.network.hostname` (use `HostnameConfig` instead)
+  * `.machine.network.interfaces` (use `LinkConfig`, `VLANConfig`, `BondConfig`, `BridgeConfig`, etc. instead)
+  * `.machine.network.nameservers`, `.machine.network.searchDomains`, `.machine.network.disableSearchDomain` (use `ResolverConfig` instead)
+  * `.machine.network.extraHostEntries` (use `StaticHostConfig` instead)
+  * `.machine.install.extraKernelArgs` (use Image Factory instead)
+* new `v1alpha` config fields:
+  * `.machine.install.grubUseUKICmdline` to unify kernel args behavior for legacy GRUB bootloader with systemd-boot.
+
 
 ## Upgrade Sequence
 
