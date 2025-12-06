@@ -1,0 +1,93 @@
+---
+title: Use SAML groups information in Kubernetes
+---
+
+
+The procedure below describes how you can reuse SAML group information in Kubernetes for authorization.
+
+Omni can extract SAML group information. For each group it will create a label on the identity in Omni.
+
+Suppose you have your groups information in the SAML attribute "membership".
+Start the Omni container with the following flags.
+
+
+| Flag                                                 | Description                                                                                                          |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `--auth-saml-enabled`                                | Enable SAML authentication.                                                                                          |
+| `--auth-saml-url`                                    | The URL to the IdP metadata file.                                                                                    |
+| `--auth-saml-label-rules='{"membership": "groups"}'` | This extracts the `membership` attribute from the SAML assertion into the label `saml.omni.sidero.dev/groups/groups` |
+
+For example:
+
+```bash
+--auth-saml-enabled=true
+--auth-saml-url=https://{your-saml-idp}/metadata/idp.xml
+--auth-saml-label-rules='{"membership": "groups"}'
+```
+
+```
+--auth-saml-label-rules='{"membership" : "groups" }'
+```
+
+This will extract value from the SAML attribute `memberhip` into the Omni user's identity resource label with the 
+prefix `saml.omni.sidero.dev/groups`
+Restart Omni, and log in using SAML. If you navigate to <b>Settings > Users</b>, you will now see your groups in a label.
+If your SAML attribute memberships contains the values `group1` and `group2` you will see the following two labels (the interface omits the prefix `saml.omni.sidero.dev`)
+
+```yaml
+groups/group1
+groups/group2
+```
+
+You can now create an ACL that will create an impersonation in Kubernetes using this group information:
+
+```yaml
+
+metadata:
+  namespace: default
+  type: AccessPolicies.omni.sidero.dev
+  id: access-policy
+spec:
+  usergroups:
+    group1:
+      users:
+      - labelselectors:
+          - "saml.omni.sidero.dev/groups/group1=" --< Do not forget the `=` sign postfix
+  clustergroups:
+    staging:
+      clusters:
+        - match: staging-*
+    production:
+      clusters:
+        - match: prod-*
+  rules:
+    - users:
+        - groups/group1
+      clusters:
+        - group/staging
+        - group/production
+      kubernetes:
+        impersonate:
+          groups:
+            - group1
+```
+
+The impersonate rule will make sure that you will have the right group assigned in kubernetes. 
+You can then use that information in a RoleBinding:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: group1-access
+  namespace: group1
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin <--- or any other ClusterRole of course.
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: group1
+```
+

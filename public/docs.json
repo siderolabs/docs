@@ -2269,7 +2269,8 @@
                   "omni/security-and-authentication/using-saml-with-omni/configure-unifi-identity-enterprise-for-omni",
                   "omni/security-and-authentication/using-saml-with-omni/configure-workspace-one-access-for-omni",
                   "omni/security-and-authentication/using-saml-with-omni/how-to-configure-entraid-for-omni",
-                  "omni/security-and-authentication/using-saml-with-omni/configure-oracle-cloud-for-omni"
+                  "omni/security-and-authentication/using-saml-with-omni/configure-oracle-cloud-for-omni",
+                  "omni/security-and-authentication/using-saml-with-omni/use-saml-groups-in-kubernetes"
                 ]
               },
               "omni/security-and-authentication/authentication-and-authorization",
