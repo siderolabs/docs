@@ -14,10 +14,17 @@ The current infrastructure providers are:
 
 * [Bare metal provider](https://github.com/siderolabs/omni-infra-provider-bare-metal)
 * [KubeVirt provider](https://github.com/siderolabs/omni-infra-provider-kubevirt)
+* [libvirt provider](https://github.com/siderolabs/omni-infra-provider-libvirt)
+* [vSphere provider](https://github.com/siderolabs/omni-infra-provider-vsphere)
+* [Proxmox provider](https://github.com/siderolabs/omni-infra-provider-proxmox)
 
-If you would like to build your own provider or request a provider to be created please [join our community slack workspace](https://slack.dev.talos-systems.io/) or open an [issue on github](https://github.com/siderolabs/omni/issues).
+Including third-party infrastructure providers such as:
 
-### Architecture
+* [Oxide provider](https://github.com/oxidecomputer/omni-infra-provider-oxide)
+
+If you would like to [build your own provider](./writing-infrastructure-providers) or request a provider to be created please [join our community slack workspace](https://slack.dev.talos-systems.io/) or open an [issue on github](https://github.com/siderolabs/omni/issues).
+
+## Architecture
 
 Each Omni account (or instance) can have multiple providers connected to it. Each infrastructure provider deployment is intended to manage static or dynamic machines (e.g. bare metal, AWS EC2 instances) in a single location (e.g. dc1, us-east-2).  Clusters can be created with a mix of infrastructure from manually provisioned, dynamic, or static machines.
 
@@ -29,13 +36,13 @@ If you want to run multiple providers connected to on-prem VM providers (e.g. VM
 
 If you want to run machines in multiple regions or accounts in a public cloud provider you would run one provider to create machines in each region/account. It does not matter where you run the public cloud providers, so long as they can reach the public cloud APIs and your Omni instance.
 
-### Static providers
+## Static providers
 
 Static resource providers manage existing bare metal servers in an environment. Static providers differ from dynamic providers in that they do not create machines, but they manage power management, PXE booting, and OS provisioning.
 
 When a static machine is not actively being used in a cluster it is turned off to reduce power consumption and heat in a data center. For more information please see the documentation on [how to configure a bare metal provider](../omni-cluster-setup/setting-up-the-bare-metal-infrastructure-provider).
 
-### Dynamic providers
+## Dynamic providers
 
 Dynamic providers create and destroy machines as needed. These are created using other VM platforms such as AWS, VMware and OpenStack. They can also use other infrastructure management solutions such as [Forman](https://theforeman.org/) or [RackN](http://rackn.com/rebar/) which have their own APIs and can provision machines out of a pool of resources.
 
