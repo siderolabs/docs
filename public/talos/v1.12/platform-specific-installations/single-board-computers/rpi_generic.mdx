@@ -321,6 +321,27 @@ dtoverlay=vc4-kms-v3d,noaudio # <== Add this line
 ...
 ```
 
+### Controlling the fan
+
+With an overlay, you are able to controlling the fan using either GPIO or PWM.  An example of fan, is the official [Raspberry Pi 4 Case Fan](https://www.raspberrypi.com/products/raspberry-pi-4-case-fan/).
+
+To configure the fan, you either use `gpio-fan` or `pwm-gpio-fan`.  Using PWM gives you the option of having four steps of fan speed.  Both have extra options that is linked to below.
+
+```ini
+...
+dtoverlay=gpio-fan,gpiopin=14 # <== Defaults to GPIO 12
+# or
+dtoverlay=pwm-gpio-fan # <== Defaults to GPIO 18
+...
+```
+
+**NOTE!** GPIO 14 is instructed by the official case fan.  But, when using GPIO 14, you must make sure that you either disable UART (`enable_uart=1`), or alternatively change the pin to e.g. GPIO 4 which is one step away.  [_Pin layout_](https://pinout.xyz).
+
+#### Documentation
+
+- [`gpio-fan`](https://github.com/raspberrypi/linux/blob/957fc9f9724b3b973a7842d5abbd382b7e3f5e2d/arch/arm/boot/dts/overlays/README#L1524)
+- [`pwm-gpio-fan`](https://github.com/raspberrypi/linux/blob/957fc9f9724b3b973a7842d5abbd382b7e3f5e2d/arch/arm/boot/dts/overlays/README#L4189)
+
 ## Troubleshooting
 
 The following table can be used to troubleshoot booting issues:
