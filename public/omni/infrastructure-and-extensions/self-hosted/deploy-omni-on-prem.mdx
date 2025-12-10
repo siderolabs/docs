@@ -114,6 +114,8 @@ There are two easy ways to run Omni: docker-compose and a simple `docker run`. W
 
     You will need to specify some customizations for your installation. Export these variables with your information to use in the provided templates
 
+  <Info>If you are running multiple Omni instances connected to a shared etcd backend you will need to set the `accountUUID` to a unique value. If you are not using shared backend storage then this option does not need to be unique.</Info>
+
     <CodeBlock lang="sh">
       {`export OMNI_VERSION=${omni_release}\nOMNI_ACCOUNT_UUID=$(uuidgen)\nOMNI_DOMAIN_NAME=omni.siderolabs.com\nOMNI_WG_IP=10.10.1.100\nOMNI_ADMIN_EMAIL=omni@siderolabs.com\nAUTH0_CLIENT_ID=xxxyyyzzz\nAUTH0_DOMAIN=dev-aaabbbccc.us.auth0.com
       `}
@@ -141,6 +143,7 @@ There are two easy ways to run Omni: docker-compose and a simple `docker run`. W
     ```
     docker compose --env-file omni.env up -d
     ```
+
   </Tab>
 
   <Tab title="Docker Run" >
