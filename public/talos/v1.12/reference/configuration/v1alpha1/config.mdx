@@ -697,6 +697,13 @@ NetworkConfig represents the machine's networking config values.
 ```yaml
 machine:
     network:
+        nameservers:
+            - 9.8.7.6
+            - 8.7.6.5
+        searchDomains:
+            - example.org
+            - example.com
+
         # # Configures KubeSpan feature.
         # kubespan:
         #     enabled: true # Enable the KubeSpan feature.

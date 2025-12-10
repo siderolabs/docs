@@ -34,6 +34,11 @@ func convertFile(srcPath, dstPath string) error {
 		return err
 	}
 
+	// Trim excessive trailing blank lines (keep at most 1)
+	for len(lines) > 0 && strings.TrimSpace(lines[len(lines)-1]) == "" {
+		lines = lines[:len(lines)-1]
+	}
+
 	// Check if this is the v1alpha1/config file or cli file
 	isConfigFile := strings.Contains(dstPath, "v1alpha1/config.mdx") || strings.Contains(dstPath, "v1alpha1\\config.mdx")
 	isCliFile := strings.HasSuffix(dstPath, "/cli.mdx") || strings.HasSuffix(dstPath, "\\cli.mdx")
@@ -273,15 +278,28 @@ func escapeAngleBracketPlaceholders(line string) string {
 				// Extract the content between < and >
 				content := line[i+1 : end]
 				// Check if it's likely a placeholder or text that should not be parsed as HTML
-				// Known HTML tags we want to preserve: a, br, p, Accordion, details, summary, pre, code and their closing tags
+				// Known HTML tags we want to preserve: a, br, p, Accordion, details, summary, pre, code, td, th, tr, table, thead, tbody and their closing tags
 				isKnownTag := strings.HasPrefix(content, "a ") ||
+					content == "a" ||
 					strings.HasPrefix(content, "br") ||
-					strings.HasPrefix(content, "p") ||
+					content == "p" ||
+					strings.HasPrefix(content, "p ") ||
 					strings.HasPrefix(content, "Accordion") ||
 					strings.HasPrefix(content, "details") ||
 					strings.HasPrefix(content, "summary") ||
 					strings.HasPrefix(content, "pre") ||
+					content == "pre" ||
 					strings.HasPrefix(content, "code") ||
+					content == "code" ||
+					strings.HasPrefix(content, "td") ||
+					content == "td" ||
+					strings.HasPrefix(content, "th") ||
+					content == "th" ||
+					strings.HasPrefix(content, "tr") ||
+					content == "tr" ||
+					strings.HasPrefix(content, "table") ||
+					strings.HasPrefix(content, "thead") ||
+					strings.HasPrefix(content, "tbody") ||
 					content == "/a" ||
 					content == "/br" ||
 					content == "/p" ||
@@ -289,11 +307,22 @@ func escapeAngleBracketPlaceholders(line string) string {
 					content == "/details" ||
 					content == "/summary" ||
 					content == "/pre" ||
-					content == "/code"
+					content == "/code" ||
+					content == "/td" ||
+					content == "/th" ||
+					content == "/tr" ||
+					content == "/table" ||
+					content == "/thead" ||
+					content == "/tbody"
 
 				// If it's not a known HTML tag, escape using JSX expressions
 				if !isKnownTag {
 					result += `{"<"}` + content + `{">"}`
+					i = end + 1
+					continue
+				} else {
+					// For known HTML tags, copy the entire tag at once
+					result += line[i : end+1]
 					i = end + 1
 					continue
 				}
@@ -469,11 +498,86 @@ func processCellContent(content string) string {
 	// Escape angle bracket placeholders
 	content = escapeAngleBracketPlaceholders(content)
 
+	// Wrap technical patterns in backticks for code formatting
+	content = wrapTechnicalPatternsInBackticks(content)
+
 	// Collapse all whitespace (including newlines) into single spaces for MDX compatibility
 	// This prevents parsing errors with multi-line content in <td> tags
 	content = strings.Join(strings.Fields(content), " ")
 
 	return content
+}
+
+// wrapTechnicalPatternsInBackticks wraps patterns like memory_{some,full}_{avg10,avg60,avg300} in backticks
+func wrapTechnicalPatternsInBackticks(content string) string {
+	// Pattern: word characters, underscores, with {option1,option2,...} expansions
+	// Examples: memory_{some,full}_{avg10,avg60,avg300,total}
+	// Look for: starts with letter/underscore, contains {, }, commas, and underscores
+
+	result := ""
+	i := 0
+	for i < len(content) {
+		// Skip if already in backticks
+		if i > 0 && content[i-1] == '`' {
+			result += string(content[i])
+			i++
+			continue
+		}
+
+		// Check if we're at the start of a potential pattern
+		// Pattern should start with a letter or underscore
+		if (content[i] >= 'a' && content[i] <= 'z') ||
+		   (content[i] >= 'A' && content[i] <= 'Z') ||
+		   content[i] == '_' {
+
+			// Look ahead to see if this contains the technical pattern markers
+			start := i
+			hasUnderscore := false
+			hasBraces := false
+			hasComma := false
+
+			// Scan ahead to find the end of this potential pattern
+			end := i
+			for end < len(content) {
+				ch := content[end]
+
+				// Pattern continues with alphanumeric, underscore, braces, comma
+				if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
+				   (ch >= '0' && ch <= '9') || ch == '_' ||
+				   ch == '{' || ch == '}' || ch == ',' {
+
+					if ch == '_' {
+						hasUnderscore = true
+					}
+					if ch == '{' || ch == '}' {
+						hasBraces = true
+					}
+					if ch == ',' {
+						hasComma = true
+					}
+					end++
+				} else {
+					break
+				}
+			}
+
+			// If we found a pattern with underscores, braces, and commas, wrap it
+			if end > start && hasUnderscore && hasBraces && hasComma {
+				pattern := content[start:end]
+				// Make sure it's not already wrapped in backticks
+				if start == 0 || content[start-1] != '`' {
+					result += "`" + pattern + "`"
+					i = end
+					continue
+				}
+			}
+		}
+
+		result += string(content[i])
+		i++
+	}
+
+	return result
 }
 
 // cleanLinkText removes [] prefix from link text and moves it to href
@@ -700,9 +804,30 @@ func main() {
 
 	fmt.Printf("Converting docs from %s to %s\n", srcDir, dstDir)
 
-	// Remove and recreate destination directory
-	os.RemoveAll(dstDir)
-	os.MkdirAll(dstDir, 0755)
+	// Files to preserve during conversion (don't delete these)
+	preserveFiles := map[string]bool{
+		"overview.mdx": true,
+	}
+
+	// Instead of removing entire directory, selectively remove only generated files
+	// This preserves manually created files like overview.mdx
+	if _, err := os.Stat(dstDir); err == nil {
+		// Directory exists, remove only .mdx files that aren't in preserve list
+		filepath.Walk(dstDir, func(path string, info os.FileInfo, err error) error {
+			if err != nil || info.IsDir() {
+				return nil
+			}
+
+			filename := filepath.Base(path)
+			if !preserveFiles[filename] && strings.HasSuffix(path, ".mdx") {
+				os.Remove(path)
+			}
+			return nil
+		})
+	} else {
+		// Directory doesn't exist, create it
+		os.MkdirAll(dstDir, 0755)
+	}
 
 	// Walk through source directory
 	err = filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {

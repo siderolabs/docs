@@ -253,7 +253,7 @@ talosctl cluster create docker [flags]
       --config-patch-workers stringArray         patch generated machineconfigs (applied to 'worker' type)
       --cpus-controlplanes string                the share of CPUs as fraction for each control plane/VM (default "2.0")
       --cpus-workers string                      the share of CPUs as fraction for each worker/VM (default "2.0")
-  -p, --exposed-ports string                     comma-separated list of ports/protocols to expose on init node. Ex -p {"<"}hostPort{">"}:{"<"}containerPort{">"}/<protocol (tcp or udp)>
+  -p, --exposed-ports string                     comma-separated list of ports/protocols to expose on init node. Ex -p {"<"}hostPort{">"}:{"<"}containerPort{">"}/{"<"}protocol (tcp or udp){">"}
   -h, --help                                     help for docker
       --host-ip string                           Host IP to forward exposed ports to (default "0.0.0.0")
       --image string                             the talos image to run (default "ghcr.io/siderolabs/talos:v1.12.0-beta.1")
@@ -649,7 +649,7 @@ talosctl config merge {"<"}from{">"} [flags]
 Generate a new client configuration file
 
 ```
-talosctl config new [<path>] [flags]
+talosctl config new [{"<"}path{">"}] [flags]
 ```
 
 ### Options
@@ -1340,7 +1340,7 @@ talosctl etcd remove-member {"<"}member ID{">"} [flags]
 Stream snapshot of the etcd node to the path.
 
 ```
-talosctl etcd snapshot <path> [flags]
+talosctl etcd snapshot {"<"}path{">"} [flags]
 ```
 
 ### Options
@@ -2692,7 +2692,7 @@ talosctl processes [flags]
 Read a file on the machine
 
 ```
-talosctl read <path> [flags]
+talosctl read {"<"}path{">"} [flags]
 ```
 
 ### Options
@@ -3289,4 +3289,3 @@ A CLI for out-of-band management of Kubernetes nodes created by Talos
 * [talosctl validate](#talosctl-validate)	 - Validate config
 * [talosctl version](#talosctl-version)	 - Prints the version
 * [talosctl wipe](#talosctl-wipe)	 - Wipe block device or volumes
-
