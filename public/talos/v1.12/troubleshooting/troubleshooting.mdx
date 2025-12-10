@@ -53,7 +53,7 @@ The client will automatically retry on other endpoints if there are unavailable 
 
 Worker nodes should not be used as the endpoint, as they are not able to forward request to other nodes.
 
-The [VIP](../networking/vip) should never be used as Talos API endpoint.
+The [VIP](../networking/advanced/vip) should never be used as Talos API endpoint.
 
 ### TCP Loadbalancer
 
@@ -399,7 +399,7 @@ As mentioned above, this can be achieved by a number of strategies, including:
 
 - an external load balancer
 - DNS records
-- Talos-builtin shared IP ([VIP](../networking/vip))
+- Talos-builtin shared IP ([VIP](../networking/advanced/vip))
 - BGP peering of a shared IP (such as with [kube-vip](https://kube-vip.io))
 
 Using a DNS name here is a good idea, since it allows any other option, while offering

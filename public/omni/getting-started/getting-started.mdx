@@ -2,7 +2,7 @@
 title: Getting Started with Omni
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { version } from '/snippets/custom-variables.mdx';
 
 This guide walks you through creating a high-availability Kubernetes cluster managed by [Omni](https://www.siderolabs.com/omni/) using [Talos Linux](https://talos.dev).  
 While the example uses UTM/QEMU for local virtualization, the same process applies to bare metal machines, cloud instances, or edge devices.
@@ -41,8 +41,7 @@ You must have the following to create a cluster with Omni:
   brew install siderolabs/tap/sidero-tools
   ```
 
-  For manual and Windows installation, refer to the <a href="../../talos/${latest}/getting-started/talosctl#alternative-installation-methods">alternate installation methods</a> in the Talos documentation.
-
+  For manual and Windows installation, refer to the <a href={`../../talos/${version}/getting-started/talosctl#alternative-install`}>alternate installation methods</a> in the Talos documentation.
 
 - `talosconfig` **and** `omniconfig` **files**: Download the `talosconfig` and `omniconfig` configuration files from your Omni dashboard.
 
@@ -219,7 +218,7 @@ From here, you can explore what else Omni can do, such as:
 * [etcd backup and restores](../cluster-management/etcd-backups)
 * [Omni cluster upgrades](../cluster-management/upgrading-clusters)
 * [Expose an HTTP sevice from a cluster](../cluster-management/expose-an-http-service-from-a-cluster)
-* [Scale your clusters up or down](../cluster-management/scale-a-cluster-up-or-down)
+* [Scale your clusters up or down](../cluster-management/scale-your-cluster/scale-a-cluster-up-or-down)
 * [Machine classes](../omni-cluster-setup/create-a-machine-class)
 * [Cluster templates](../reference/cluster-templates)
 * [Infrastructure providers](../infrastructure-and-extensions/infrastructure-providers)
