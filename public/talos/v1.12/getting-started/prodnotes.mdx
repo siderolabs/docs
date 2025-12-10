@@ -23,7 +23,7 @@ Follow the steps below to build a production-grade Talos cluster that is highly 
 
 ## Step 1: Prepare Your Infrastructure
 
-To create your production cluster infrastructure :
+To create your production cluster infrastructure:
 
 1. Boot your machines using the Talos ISO image
 1. Ensure network access on your nodes.
@@ -70,7 +70,7 @@ You can include as many IP addresses as needed:
    If your control plane nodes IP addresses are `192.168.0.2`, `192.168.0.3`, `192.168.0.4`, your command would be:
 
     ```bash
-    CONTROL_PLANE_IP= ("192.168.0.2" "192.168.0.3" "192.168.0.4")
+    CONTROL_PLANE_IP=("192.168.0.2" "192.168.0.3" "192.168.0.4")
     ```
 
 1. If you have worker nodes, store their IP addresses in a Bash array.
@@ -87,7 +87,7 @@ You've set up multiple control planes for high availability, but they only provi
 
 Here are two common ways to configure this:
 
-- **Dedicated load balancer**: Set a dedicated load balancer that route to your control plane nodes.
+- **Dedicated load balancer**: Set a dedicated load balancer that routes to your control plane nodes.
 - **DNS records**: Create multiple DNS records that point to all your control plane nodes
 
 With these, you can pass in one IP address or DNS name during setup that route to all your control plane nodes.
@@ -200,7 +200,7 @@ Replace `<node-ip-address>` with the IP address of the node you want to inspect:
 
 1. **Verify Configuration Files:** Open your `worker.yaml` and `controlplane.yaml` configuration files in your preferred editor.
 Check that the values match your worker and control plane node's network and disk settings.
-If the values don't match, you'll need to update your machine configuration..
+If the values don't match, you'll need to update your machine configuration.
 
     **Note**: Refer to the [Talos CLI reference](../reference/cli) for additional commands to gather more information about your nodes and cluster.
 
@@ -223,7 +223,7 @@ Follow these steps to patch your machine configuration:
 
 1. Copy and paste this YAML block of code and add the correct hardware values to each patch file.
 
-    For example, for `controlplane-patch-1` use the network interface and disk information you gathered from your control plane nodes :
+    For example, for `controlplane-patch-1` use the network interface and disk information you gathered from your control plane nodes:
 
     ```yaml
     # controlplane-patch-1 file

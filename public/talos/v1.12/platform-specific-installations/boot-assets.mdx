@@ -227,7 +227,7 @@ curl -LO \\
 `}
 </CodeBlock>
 
-Now the `aws-amd64.raw.xz` file contains the customized Talos AWS disk image which can be uploaded as an AMI to the [AWS](./cloud-platforms/aws).
+Now the `aws-amd64.raw.xz` file contains the customized Talos AWS disk image which can be uploaded as an AMI to [AWS](./cloud-platforms/aws).
 
 Once the AWS VM is created from the AMI, it can be upgraded to a different Talos version or a different schematic using `talosctl upgrade`:
 
@@ -654,7 +654,7 @@ docker run --rm -t \\
 `}
 </CodeBlock>
 
-Now the `_out/aws-amd64.raw.xz` contains the customized Talos AWS disk image which can be uploaded as an AMI to the [AWS](./cloud-platforms/aws).
+Now the `_out/aws-amd64.raw.xz` contains the customized Talos AWS disk image which can be uploaded as an AMI to [AWS](./cloud-platforms/aws).
 
 If the AWS machine is later going to be upgraded to a new version of Talos (or a new set of system extensions), generate a customized `installer` image following the steps above, and upgrade Talos to that `installer` image.
 Make sure to use `--platform=aws` argument to the `imager` to generate AWS-specific installer.

@@ -60,7 +60,7 @@ You must have the following to create a cluster with Omni:
 
 ## Step 1: Download Installation Media
 
-Omni is a Bring Your Own Machine platform. You only need to boot a machine from an Talos image configured to connect to your Omni instance.
+Omni is a Bring Your Own Machine platform. You only need to boot a machine from a Talos image configured to connect to your Omni instance.
 
 You can download this Omni image from either the Omni UI or the CLI:
 
@@ -135,7 +135,7 @@ docker run --rm --network host \
   --extra-kernel-args "$(omnictl jointoken kernel-args)"
 ```
 
-This runs the SideroLabs Booter utility, which provisions PXE-booted machines using your Omni join
+This runs the SideroLabs Booter utility, which provisions PXE-booted machines using your Omni join token.
 </Tab>
 </Tabs>
 
@@ -155,7 +155,7 @@ Now that your machines are visible in Omni, you can create your cluster by follo
 
 4. Under the **Available Machines** section, select at least one machine as a control plane by clicking **CP**.
     
-  <Note>For high availability, use an odd number of control plane nodes  We suggest using 3 nodes.</Note>
+  <Note>For high availability, use an odd number of control plane nodes. We suggest using 3 nodes.</Note>
 
     ![Control Plane button](./images/getting-started-control-plane.jpeg)
 
@@ -217,7 +217,7 @@ From here, you can explore what else Omni can do, such as:
 
 * [etcd backup and restores](../cluster-management/etcd-backups)
 * [Omni cluster upgrades](../cluster-management/upgrading-clusters)
-* [Expose an HTTP sevice from a cluster](../cluster-management/expose-an-http-service-from-a-cluster)
+* [Expose an HTTP service from a cluster](../cluster-management/expose-an-http-service-from-a-cluster)
 * [Scale your clusters up or down](../cluster-management/scale-your-cluster/scale-a-cluster-up-or-down)
 * [Machine classes](../omni-cluster-setup/create-a-machine-class)
 * [Cluster templates](../reference/cluster-templates)

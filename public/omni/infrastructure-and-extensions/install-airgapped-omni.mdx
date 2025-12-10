@@ -95,7 +95,7 @@ Save this file to the certs directory in our package.
 
 #### Create the app.ini File
 
-Gitea uses a configuration file named **app.ini** which we can use to pre-configure with the necessary information to run Gitea and bypass the intitial startup page. When we start the container, we will mount this file as a volume using Docker.
+Gitea uses a configuration file named **app.ini** which we can use to pre-configure with the necessary information to run Gitea and bypass the initial startup page. When we start the container, we will mount this file as a volume using Docker.
 
 Create the **app.ini** file
 
@@ -132,7 +132,7 @@ USER=root
 PASSWD=
 
 [security]
-INSTALL_LOCK=true # This is the value which tells Gitea not to run the intitial configuration wizard on start up
+INSTALL_LOCK=true # This is the value which tells Gitea not to run the initial configuration wizard on start up
 ```
 
 > **NOTE:** If running this in a production environment, you will also want to configure the database settings for a production database. This configuration will use an internal sqlite database in the container.
@@ -191,7 +191,7 @@ docker save -o image-tarfile.tar \
   images
 ```
 
-Here is an an example of the command used for the images in this tutorial:
+Here is an example of the command used for the images in this tutorial:
 
 ```bash
 docker save -o registry/all_images.tar \
@@ -449,4 +449,4 @@ Specifics on patching machines can be found here:
 
 ### Closure
 
-With Omni, Gitea, and Keycloak set up, you are ready to start managing and installing Talos clusters on your network! The suite of applications installed in this tutorial is an example of how an airgapped environment can be set up to make the most out of the Kubernetes clusters on your network. Other container registries or authentication providers may also be used with a similar setup, but this suite was chosen to give you starting point and an example of what your environment could look like.
+With Omni, Gitea, and Keycloak set up, you are ready to start managing and installing Talos clusters on your network! The suite of applications installed in this tutorial is an example of how an airgapped environment can be set up to make the most out of the Kubernetes clusters on your network. Other container registries or authentication providers may also be used with a similar setup, but this suite was chosen to give you a starting point and an example of what your environment could look like.

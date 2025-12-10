@@ -29,7 +29,7 @@ If you're looking to set up a cluster with multiple control plane nodes, see [Pr
 To create a Kubernetes cluster with Talos, you’ll need to:
 
 - **Install talosctl**: `talosctl` is the CLI tool used to interact with the Talos API.
-Since Talos Linux does not have SSH access, `talosctl` is the  primary tool for managing and configuring your Talos machines
+Since Talos Linux does not have SSH access, `talosctl` is the primary tool for managing and configuring your Talos machines
 
     You can install `talosctl` on macOS or Linux by running:
 
@@ -214,7 +214,7 @@ Run the following command to check the health of your nodes:
 talosctl --nodes $CONTROL_PLANE_IP --talosconfig=./talosconfig health
 ```
 
-## Step 11: Verify Node Registration
+## Step 12: Verify Node Registration
 
 Confirm that your nodes are registered in Kubernetes:
 
