@@ -62,7 +62,7 @@ Starting with Talos 1.12 you can get a list of images needed to seed the image f
 Get a list of Talos base images needed for the image factory with:
 
 ```shell
-talosctl image source-bundle v1.11.5 > images.txt
+talosctl image talos-bundle v1.11.5 > images.txt
 ```
 
 This will give you a list of all images and extensions needed to build Talos 1.11.5.
@@ -101,6 +101,33 @@ for SOURCE_IMAGE in $(cat images.txt)
       $IMAGE_WITH_NEW_REG
 done
 ```
+
+If you don't have an existing container registry or you _only_ want to download the container images you can download them to a folder with the command:
+
+```bash
+cat images.txt \
+  talosctl images cache-create \
+    --layout flat \
+    --image-cache-path ./image-cache \
+    --images=-
+```
+
+You will then be able to move the `image-cache` folder to an air gapped machine and serve the images on a read only, temporary container registry with:
+
+```bash
+IP=$(hostname -I | awk '{print $1}')
+
+talosctl image cache-cert-gen \
+  --advertised-address $IP
+
+talosctl image cache-serve \
+  --address $IP:5000 \
+  --image-cache-path ./image-cache \
+  --tls-cert-file tls.crt \
+  --tls-key-file tls.key
+```
+
+The image registry should be on your local machine IP address port 5000 with self-signed certificates. You can use this to copy the images to an internal, permanent container registry.
 
 ### Sign Container Images
 
