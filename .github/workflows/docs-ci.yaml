@@ -1,0 +1,41 @@
+name: Docs CI
+
+on:
+  pull_request:
+    paths:
+      - "public/**"
+      - "omni/**"
+      - "talos/**"
+      - "**/*.md"
+      - "**/*.mdx"
+      - "Makefile"
+  push:
+    branches:
+      - main
+
+jobs:
+  docs-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Check broken links
+        run: make broken-links
+
+      - name: Run Vale on changed files
+        run: make vale-changed
+        continue-on-error: true
+        
+      - name: Generate docs.json (must be committed)
+        run: |
+          make docs.json
+
+          # Fail if running the generator changes tracked files
+          git diff --exit-code
