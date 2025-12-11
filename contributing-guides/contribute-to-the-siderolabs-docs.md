@@ -88,7 +88,11 @@ To update an existing file:
     make broken-links
     ```
 
+4. Verify that your new document follows the SideroLabs documentation style guide by running:
 
+    ```bash
+    make vale DOC=<link-to-the-doc-addition>
+    ```
 
 ### Add a New Page
 
@@ -127,7 +131,11 @@ To add a new page to the docs:
     make broken-links
     ```
 
+6. Verify that your new document follows the [SideroLabs documentation style guide](./style-guide.md) by running:
 
+    ```bash
+    make vale DOC=<link-to-the-doc-addition>
+    ```
 
 ## Step 4: Commit and Push
 
