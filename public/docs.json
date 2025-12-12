@@ -2249,7 +2249,8 @@
                   "omni/security-and-authentication/using-saml-with-omni/auto-assign-roles-to-saml-users",
                   "omni/security-and-authentication/using-saml-with-omni/configure-unifi-identity-enterprise-for-omni",
                   "omni/security-and-authentication/using-saml-with-omni/configure-workspace-one-access-for-omni",
-                  "omni/security-and-authentication/using-saml-with-omni/how-to-configure-entraid-for-omni"
+                  "omni/security-and-authentication/using-saml-with-omni/how-to-configure-entraid-for-omni",
+                  "omni/security-and-authentication/using-saml-with-omni/configure-oracle-cloud-for-omni"
                 ]
               },
               "omni/security-and-authentication/authentication-and-authorization",
