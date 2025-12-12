@@ -1,0 +1,151 @@
+---
+title: Omni Deployment Options
+---
+
+Omni can be deployed in several different environments depending on your operational requirements. This guide explains how Omni behaves in each environment and what level of availability each option provides.
+
+Omni is a single container service that relies on other services such as Image Factory, a container registry, and authentication. When we reference Omni in this document we are referring to a complete stack of services.
+
+## Hosted Omni
+
+The hosted Omni service is the simplest and most reliable way to use Omni. The platform is maintained by SideroLabs and provides a fully managed environment with built-in recovery and upgrades. You do not need to manage infrastructure.
+
+For users without strict self-hosting or air-gap requirements, hosted Omni offers the best overall experience.
+
+## Self-Hosted
+
+Self-hosting Omni provides more control over data locality and infrastructure but introduces additional operational responsibilities.
+
+Omni is not part of the Kubernetes control plane, and temporary unavailability does not affect how your clusters run. They continue operating normally, and Talos machines reconnect when it becomes available again. This behavior is important when deciding whether high availability is necessary.
+
+Kubernetes clusters deployed on Talos use technologies such as [KubePrism](../../../kubernetes-guides/advanced-guides/kubeprism) and a [discovery service](../../../talos/v1.11//configure-your-talos-cluster/system-configuration/discovery) to make sure the cluster and workloads can run without highly available, external management such as Omni.
+
+Omni *is* the authentication mechanism for external access to Talos and Kubernetes. All external user (e.g., `kubectl`) and service (e.g., Infrastructure Providers) communication goes through Omni. If Omni is unavailable for extended periods of time, external communication will not work until Omni is recovered. Omni also offers an emergency “break glass” configuration to access Talos machines and Kubernetes clusters when Omni is not available.
+
+These are the recommended deployment models for self-hosting Omni:
+
+* A single VM deployment
+* Kubernetes deployment
+* External etcd
+* Highly available
+
+### Single VM deployment
+
+Running Omni as a Docker Compose application on a single virtual machine is the preferred on-premises setup. It is simple to operate, dependable, and fully supported.
+
+In this setup, Omni keeps its state in an embedded etcd database. Because everything is stored locally on the VM, backing up and recovering the system is straightforward, VM snapshots are usually enough. Non-critical information such as metrics and machine logs are stored in a local SQLite database on disk.
+
+One of the strengths of this model is that downtime has no effect on Kubernetes clusters. Your clusters continue running even if Omni goes offline, and Talos simply reconnects and resumes management once the VM is back.
+
+For most self-hosted environments, with the ability to live migrate VMs this should provide about 99.9% uptime. Backups and restores can happen at a VM layer like traditional VMs.
+
+### Kubernetes deployment
+
+Some environments require faster recovery, such as those with strict SLAs or compliance requirements. In these cases, Omni can be deployed inside a Kubernetes cluster, where health checks and automatic rescheduling allow the application to recover quickly from failures.
+
+Omni should never be hosted in a Kubernetes cluster that it manages itself. Doing so creates a circular dependency that would be difficult, or impossible, to recover from.
+
+Instead, Omni can be deployed on a Kubernetes cluster running on Talos that is not managed by Omni. This pattern is supported, and examples are available in the [contrib repository](https://github.com/siderolabs/contrib/tree/main/examples/omni-on-talos).
+
+Running Omni on Kubernetes can make operations more standardized and troubleshooting easier, and it can enable faster recovery. However, it is not required and typically does not provide significantly higher availability than a single-VM deployment.
+
+The Sidero Omni SaaS runs multiple Omni instances on Kubernetes backed by external etcd storage. This architecture allows instances to be created quickly, migrated for maintenance, and recovered efficiently. If you do not need to run multiple Omni instances, a single-VM deployment is often the more appropriate choice.
+
+### External etcd
+
+Omni can connect to an external etcd database, which is the recommended configuration for production environments. The etcd datastore can be deployed and managed using your organization’s existing database practices, providing Omni with a highly available and scalable backend for larger deployments.
+
+A single external etcd cluster can also be shared across multiple Omni instances. Each Omni instance is assigned a unique `accountUUID`, which is used as the key for isolating and storing its data.
+
+Omni has been tested with up to 5,000 connected nodes per instance. For multi-Omni deployments, careful planning around etcd scaling and data compaction is required to ensure reliable performance
+
+### Highly available
+
+Running Omni in a highly available (HA) mode requires careful planning. Whether Omni is deployed on virtual machines or in Kubernetes does not change the overall architecture, but an external, highly available etcd cluster is required to ensure all core components remain available.
+
+To eliminate single points of failure, supporting services must also be deployed in HA configurations. This includes the container registry, Image Factory, and authentication systems.
+
+<Note>You can run only one Omni instance at a time.</Note>
+
+A fully highly available deployment is complex and requires a minimum of 12 servers to ensure redundancy across all components, including:
+
+* Omni (1)
+* Etcd (3)
+* Image factory (2)
+* Container registry (2)
+* Vault API (2)
+* Vault storage (2)
+* Authentication
+
+<Note>Most users do not require this level of availability due to the design of Omni and Kubernetes communication.</Note>
+
+For environments with stricter availability requirements, Omni should be backed by a highly available etcd cluster and deployed across separate failure domains. The underlying network infrastructure must also support UDP traffic, as SideroLink connections rely on [WireGuard](../../../talos/v1.11/networking/wireguard-network).
+
+Secrets management should be handled by an external system such as [HashiCorp Vault](https://www.hashicorp.com/en/products/vault). Vault itself must be deployed in a highly available configuration to avoid becoming a single point of failure, typically requiring multiple API servers and redundant backing storage.
+
+While it is possible to design highly available architectures for individual components, we generally recommend prioritizing simplicity and fast recovery over maximum availability. Simpler designs are easier to operate, upgrade, and troubleshoot, which is often more valuable than eliminating every possible point of failure.
+
+## Compare deployment models
+
+The following table provides a comparison of the recommended deployment models:
+
+<table>
+  <tr>
+   <td><strong>Deployment model</strong></td>
+   <td><strong>Best for</strong></td>
+   <td><strong>Complexity</strong></td>
+   <td><strong>Notes</strong></td>
+  </tr>
+  <tr>
+   <td><strong>Hosted Omni</strong></td>
+   <td>Most users; no infra to manage</td>
+   <td>None</td>
+   <td>Fully managed and resilient</td>
+  </tr>
+  <tr>
+   <td><strong>Single VM</strong></td>
+   <td>Most self-hosted environments</td>
+   <td>Low</td>
+   <td>
+      * Simple and dependable
+      * Uses embedded etcd
+      * VM snapshots make backup/recovery easy
+      * Recommended default for on-prem
+    </td>
+  </tr>
+  <tr>
+   <td><strong>Kubernetes (Non-Omni-managed)</strong></td>
+   <td>Environments requiring faster recovery or standardized platform operations</td>
+   <td>Medium</td>
+   <td>
+      * Must run on a Kubernetes cluster <em>not</em> managed by Omni;
+      * can reschedule pods automatically
+    </td>
+  </tr>
+  <tr>
+   <td><strong>Single Omni with external etcd</strong></td>
+   <td>Larger installations needing more durable storage</td>
+   <td>Medium–high</td>
+   <td>
+      * Omni backed by an external etcd
+      * Better availability of the etcd
+      * External etcd can be shared across multiple Omni instances
+    </td>
+  </tr>
+  <tr>
+   <td><strong>Omni HA</strong></td>
+   <td>Strict uptime requirements (≈99.99%) and mature ops teams</td>
+   <td>Very high</td>
+   <td>
+      * Requires HA etcd, HA registry, HA Image Factory, HA auth and secret storage
+      * ~12 servers minimum
+      * complex and not required for most users
+    </td>
+  </tr>
+</table>
+
+## Choose a deployment strategy
+
+Hosted Omni provides the most seamless experience. For on-premises environments, a single VM is nearly always sufficient and is the simplest model to operate. Kubernetes-based HA should be used only when an organization already maintains production-grade Kubernetes and external etcd, or when policy mandates higher availability.
+
+Regardless of the chosen model, ensure that Omni data is backed up regularly.

@@ -2168,6 +2168,7 @@
                 "group": "Self Hosted",
                 "pages": [
                   "omni/infrastructure-and-extensions/self-hosted/overview",
+                  "omni/infrastructure-and-extensions/self-hosted/omni-deployment-options",
                   "omni/infrastructure-and-extensions/self-hosted/deploy-omni-on-prem",
                   "omni/infrastructure-and-extensions/self-hosted/install-image-factory-on-prem",
                   "omni/infrastructure-and-extensions/self-hosted/configure-keycloak-for-omni",

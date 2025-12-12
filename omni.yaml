@@ -24,6 +24,7 @@ navigation:
             - group: "Self Hosted"
               pages:
                 - "self-hosted/overview"
+                - "self-hosted/omni-deployment-options"
                 - "self-hosted/deploy-omni-on-prem"
                 - "self-hosted/install-image-factory-on-prem"
                 - "self-hosted/configure-keycloak-for-omni"
