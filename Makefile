@@ -11,6 +11,11 @@ TALOS_VERSION := v1.11
 VALE_IMAGE := jdkato/vale:latest
 VALE_CONFIG ?= .vale.ini
 
+DOCKER_TTY := -it
+ifeq ($(CI),true)
+  DOCKER_TTY :=
+endif
+
 # Default target
 .PHONY: help
 help: ## Show this help message
@@ -33,11 +38,11 @@ preview: docs-preview ## Alias for docs-preview
 
 .PHONY: broken-links
 broken-links: ## Run broken links check
-	docker run --rm -it \
-		--name $(CONTAINER_NAME) \
-		-p $(PORT):$(PORT) \
-		-v $(PWD):/docs \
-		$(MINT_IMAGE) broken-links
+	docker run --rm $(DOCKER_TTY) \
+	  --name $(CONTAINER_NAME) \
+	  -p $(PORT):$(PORT) \
+	  -v $(PWD)/public:/docs \
+	  $(MINT_IMAGE) broken-links
 
 docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multiple config files
 	docker pull $(DOCS_GEN_IMAGE)
