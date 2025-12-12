@@ -73,6 +73,7 @@ navigation:
             - "using-audit-log.mdx"
             - "importing-talos-clusters.mdx"
             - "talos-config-overrides.mdx"
+            - "override-ntp-servers.mdx"
             - "support-bundle.mdx"
 
         - group: "Security and Authentication"
