@@ -2228,6 +2228,7 @@
               "omni/cluster-management/using-audit-log",
               "omni/cluster-management/importing-talos-clusters",
               "omni/cluster-management/talos-config-overrides",
+              "omni/cluster-management/override-ntp-servers",
               "omni/cluster-management/support-bundle"
             ]
           },
