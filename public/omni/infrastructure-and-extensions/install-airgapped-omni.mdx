@@ -126,10 +126,6 @@ LOCAL_ROOT_URL=https://localhost:3000/
 [database]
 PATH=/data/gitea/gitea.db
 DB_TYPE=sqlite3
-HOST=localhost:3306
-NAME=gitea
-USER=root
-PASSWD=
 
 [security]
 INSTALL_LOCK=true # This is the value which tells Gitea not to run the initial configuration wizard on start up
@@ -143,26 +139,28 @@ Next we will gather all the images needed installing Gitea, Keycloak, Omni, **an
 
 I'll be using the following images for the tutorial:
 
-Gitea
+* Gitea
+  * `docker.io/gitea/gitea:1.19.3`
+* Keycloak
+  * `quay.io/keycloak/keycloak:21.1.1`
+* Omni
+  * `ghcr.io/siderolabs/omni:v0.31.0`
+  * `ghcr.io/siderolabs/imager:v1.4.5`
+    * pull this image to match the version of Talos you would like to use.
+* Talos
+  * `ghcr.io/siderolabs/flannel:v0.21.4`
+  * `ghcr.io/siderolabs/install-cni:v1.4.0-1-g9b07505`
+  * `docker.io/coredns/coredns:1.10.1`
+  * `gcr.io/etcd-development/etcd:v3.5.9`
+  * `registry.k8s.io/kube-apiserver:v1.27.2`
+  * `registry.k8s.io/kube-controller-manager:v1.27.2`
+  * `registry.k8s.io/kube-scheduler:v1.27.2`
+  * `registry.k8s.io/kube-proxy:v1.27.2`
+  * `ghcr.io/siderolabs/kubelet:v1.27.2`
+  * `ghcr.io/siderolabs/installer:v1.4.5`
+  * `registry.k8s.io/pause:3.6`
 
-* `docker.io/gitea/gitea:1.19.3` Keycloak
-* `quay.io/keycloak/keycloak:21.1.1` Omni
-* `ghcr.io/siderolabs/omni:v0.31.0`
-* `ghcr.io/siderolabs/imager:v1.4.5`
-  * pull this image to match the version of Talos you would like to use. Talos
-* `ghcr.io/siderolabs/flannel:v0.21.4`
-* `ghcr.io/siderolabs/install-cni:v1.4.0-1-g9b07505`
-* `docker.io/coredns/coredns:1.10.1`
-* `gcr.io/etcd-development/etcd:v3.5.9`
-* `registry.k8s.io/kube-apiserver:v1.27.2`
-* `registry.k8s.io/kube-controller-manager:v1.27.2`
-* `registry.k8s.io/kube-scheduler:v1.27.2`
-* `registry.k8s.io/kube-proxy:v1.27.2`
-* `ghcr.io/siderolabs/kubelet:v1.27.2`
-* `ghcr.io/siderolabs/installer:v1.4.5`
-* `registry.k8s.io/pause:3.6`
-
-> **NOTE**: The Talos images needed may be found using the command `talosctl images`. If you do not have `talosctl` installed, you may find the instructions on how to install it [here](https://omni.siderolabs.com/docs/how-to-guides/how-to-install-talosctl/).
+> **NOTE**: The Talos images needed may be found using the command `talosctl image default`. If you do not have `talosctl` installed, you may find the instructions on how to install it [here](https://omni.siderolabs.com/docs/how-to-guides/how-to-install-talosctl/).
 
 **Package the images**
 
