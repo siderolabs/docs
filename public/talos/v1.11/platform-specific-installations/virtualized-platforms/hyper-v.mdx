@@ -23,6 +23,18 @@ aliases:
       ```
     - Confirm the change when prompted.
     
+<Note>
+  **SecureBoot and Hyper-V**
+
+  Hyper-V provides a virtual UEFI firmware for virtual machines. SecureBoot is enforced by this firmware, not by Talos.
+
+  On Hyper-V, SecureBoot is restricted to predefined vendor templates and does not support enrolling custom SecureBoot keys.
+
+  Because of this limitation, Talos SecureBoot images are not supported on Hyper-V.
+
+  When running Talos on Hyper-V, ensure SecureBoot is disabled for the virtual machine.
+</Note>
+   
 ## Plan Overview
 
 We will create a basic 3-node cluster with one control-plane node and two worker nodes.
