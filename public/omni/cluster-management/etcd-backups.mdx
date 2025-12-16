@@ -24,6 +24,22 @@ The output above indicates that the backup store is set to use the `s3` store.
 However, the s3 configuration itself has not yet been added, so the` CONFIGURATION ERROR` field shows `not initialized`.
 The rest of the fields show as empty because no backups have been created yet.
 
+### S3-compatible providers
+
+Omni uses the AWS S3 API for storing etcd backups. Providers that advertise S3 compatibility may work when configured with a custom `endpoint`, but Omni does not maintain an exhaustive compatibility list.
+
+Compatibility with non-AWS providers is best effort and depends on how closely the provider matches AWS S3 behavior. Changes in client SDK behavior may affect third-party providers over time.
+
+If you use a non-AWS S3 provider:
+
+* Test backup and restore workflows before relying on them in production.
+
+* Some providers may require additional configuration, such as a `region` value or provider-specific credentials.
+
+* Ensure the endpoint and credentials are valid and accessible from Omni.
+
+During configuration, Omni validates access by attempting to list objects in the bucket. If validation fails, the configuration is not applied.
+
 ### S3 configuration
 
 To use S3 as the backup storage, you will first need to configure the S3 credentials for Omni to use.
