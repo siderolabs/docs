@@ -34,9 +34,7 @@ preview: docs-preview ## Alias for docs-preview
 .PHONY: broken-links
 broken-links: ## Run broken links check
 	docker run --rm -it \
-		--name $(CONTAINER_NAME) \
-		-p $(PORT):$(PORT) \
-		-v $(PWD):/docs \
+		-v $(PWD)/public:/docs \
 		$(MINT_IMAGE) broken-links
 
 docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multiple config files
