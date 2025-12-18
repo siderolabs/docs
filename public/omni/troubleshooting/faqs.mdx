@@ -1,0 +1,34 @@
+---
+title: "FAQs"
+weight: 999
+description: "Frequently Asked Questions about Omni."
+---
+
+## What do you need to self-host Omni?
+
+Omni relies on what we call the "Sidero Stack" which consists of the following components:
+
+* Container registry
+* Image Factory
+* Omni
+
+There are also some supporting components you will need that aren't Sidero specific such as:
+
+* Authentication
+* TLS certificates
+* Storage for logs and backups
+
+## Is Omni open source?
+
+Omni is licensed under the [Busines Source License 1.1](https://github.com/siderolabs/omni/blob/main/LICENSE) which is not an open source license. Omni is a "source available" license which allows you to run Omni in non-production environments without a business agreement with Sidero Labs.
+
+## Can Omni be run air gapped?
+
+Yes, Omni and the rest of the Sidero Stack can be run without internet access.
+To do so you will need to run each component within your environment.
+
+Please see documents:
+
+* [Deploy Image Factory on-prem](../infrastructure-and-extensions/self-hosted/deploy-image-factory-on-prem)
+* [Deploy Omni on-prem](../infrastructure-and-extensions/self-hosted/deploy-omni-on-prem)
+

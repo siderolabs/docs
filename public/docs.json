@@ -2174,7 +2174,7 @@
                   "omni/infrastructure-and-extensions/self-hosted/overview",
                   "omni/infrastructure-and-extensions/self-hosted/omni-deployment-options",
                   "omni/infrastructure-and-extensions/self-hosted/deploy-omni-on-prem",
-                  "omni/infrastructure-and-extensions/self-hosted/install-image-factory-on-prem",
+                  "omni/infrastructure-and-extensions/self-hosted/deploy-image-factory-on-prem",
                   "omni/infrastructure-and-extensions/self-hosted/configure-keycloak-for-omni",
                   "omni/infrastructure-and-extensions/self-hosted/how-to-back-up-on-prem-omni-db",
                   "omni/infrastructure-and-extensions/self-hosted/expose-omni-with-nginx-https",
@@ -2268,6 +2268,13 @@
               "omni/reference/cli",
               "omni/reference/cluster-templates",
               "omni/reference/generating-omnictl-cli-reference"
+            ]
+          },
+          {
+            "group": "Troubleshooting and Support",
+            "pages": [
+              "omni/troubleshooting/troubleshooting",
+              "omni/troubleshooting/faqs"
             ]
           }
         ]

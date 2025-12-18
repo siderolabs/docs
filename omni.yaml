@@ -26,7 +26,7 @@ navigation:
                 - "self-hosted/overview"
                 - "self-hosted/omni-deployment-options"
                 - "self-hosted/deploy-omni-on-prem"
-                - "self-hosted/install-image-factory-on-prem"
+                - "self-hosted/deploy-image-factory-on-prem"
                 - "self-hosted/configure-keycloak-for-omni"
                 - "self-hosted/how-to-back-up-on-prem-omni-db"
                 - "self-hosted/expose-omni-with-nginx-https"
@@ -105,3 +105,9 @@ navigation:
             - "cli.mdx"
             - "cluster-templates.mdx"
             - "generating-omnictl-cli-reference.mdx"
+
+        - group: Troubleshooting and Support
+          folder: omni/troubleshooting
+          pages:
+            - "troubleshooting.mdx"
+            - "faqs.mdx"
