@@ -484,7 +484,8 @@
                       "talos/v1.11/platform-specific-installations/virtualized-platforms/proxmox",
                       "talos/v1.11/platform-specific-installations/virtualized-platforms/vagrant-libvirt",
                       "talos/v1.11/platform-specific-installations/virtualized-platforms/vmware",
-                      "talos/v1.11/platform-specific-installations/virtualized-platforms/xen"
+                      "talos/v1.11/platform-specific-installations/virtualized-platforms/xen",
+                      "talos/v1.11/platform-specific-installations/virtualized-platforms/xenorchestra-xcpng"
                     ]
                   },
                   {
