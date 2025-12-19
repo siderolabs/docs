@@ -2,6 +2,8 @@
 title: Autoscale Your Cluster with Cluster AutoScaler
 ---
 
+import { version } from '/snippets/custom-variables.mdx';
+
 [Cluster Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler) automatically adjusts the number of nodes in your Kubernetes cluster based on real-time workload demand.
 
 This guide walks you through integrating Cluster Autoscaler with Talos Linux clusters managed through Omni.
@@ -26,7 +28,7 @@ You’ll need two Talos images: one for your control plane machines and one for 
 
 Repeat these steps for the worker image, using a worker-specific label (e.g. `role:autoscaler-worker-machine`).
 
-> **Note**: After downloading, some platforms require you to upload the generated file to create a bootable image, for example, an [AMI in AWS](../../../talos/v1.11/platform-specific-installations/cloud-platforms/aws#create-your-own-amis), [a Managed Image in Azure](../../../talos/v1.11/platform-specific-installations/cloud-platforms/azure#create-the-image), or a [Custom Image in GCP](../../../talos/v1.11/platform-specific-installations/cloud-platforms/gcp#create-the-image).
+> **Note**: After downloading, some platforms require you to upload the generated file to create a bootable image, for example, an <a href={`../../../talos/${version}/platform-specific-installations/cloud-platforms/aws#create-your-own-amis`}>AMI in AWS</a>, <a href={`../../../talos/${version}/platform-specific-installations/cloud-platforms/azure#create-the-image`}>a Managed Image in Azure </a>, or a <a href={`../../../talos/${version}/platform-specific-installations/cloud-platforms/gcp#create-the-image`}>Custom Image in GCP</a>.
 
 ## Step 2: Create control plane machines from your images
 
@@ -125,7 +127,7 @@ name: <cluster-name> # Replace with your cluster name
 kubernetes:
   version: v1.34.1    # Replace with your desired Kubernetes version
 talos:
-  version: v1.11.3    # Replace with your desired Talos version
+  version: v1.11.3   # Replace with your desired Talos version
 
 ---
 kind: ControlPlane

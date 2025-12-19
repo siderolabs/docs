@@ -2,6 +2,8 @@
 title: Omni Deployment Options
 ---
 
+import { version } from '/snippets/custom-variables.mdx';
+
 Omni can be deployed in several different environments depending on your operational requirements. This guide explains how Omni behaves in each environment and what level of availability each option provides.
 
 Omni is a single container service that relies on other services such as Image Factory, a container registry, and authentication. When we reference Omni in this document we are referring to a complete stack of services.
@@ -18,7 +20,7 @@ Self-hosting Omni provides more control over data locality and infrastructure bu
 
 Omni is not part of the Kubernetes control plane, and temporary unavailability does not affect how your clusters run. They continue operating normally, and Talos machines reconnect when it becomes available again. This behavior is important when deciding whether high availability is necessary.
 
-Kubernetes clusters deployed on Talos use technologies such as [KubePrism](../../../kubernetes-guides/advanced-guides/kubeprism) and a [discovery service](../../../talos/v1.11//configure-your-talos-cluster/system-configuration/discovery) to make sure the cluster and workloads can run without highly available, external management such as Omni.
+Kubernetes clusters deployed on Talos use technologies such as [KubePrism](../../../kubernetes-guides/advanced-guides/kubeprism) and a <a href={`../../../talos/${version}/configure-your-talos-cluster/system-configuration/discovery`}> discovery service</a> to make sure the cluster and workloads can run without highly available, external management such as Omni.
 
 Omni *is* the authentication mechanism for external access to Talos and Kubernetes. All external user (e.g., `kubectl`) and service (e.g., Infrastructure Providers) communication goes through Omni. If Omni is unavailable for extended periods of time, external communication will not work until Omni is recovered. Omni also offers an emergency “break glass” configuration to access Talos machines and Kubernetes clusters when Omni is not available.
 
@@ -79,7 +81,7 @@ A fully highly available deployment is complex and requires a minimum of 12 serv
 
 <Note>Most users do not require this level of availability due to the design of Omni and Kubernetes communication.</Note>
 
-For environments with stricter availability requirements, Omni should be backed by a highly available etcd cluster and deployed across separate failure domains. The underlying network infrastructure must also support UDP traffic, as SideroLink connections rely on [WireGuard](../../../talos/v1.11/networking/wireguard-network).
+For environments with stricter availability requirements, Omni should be backed by a highly available etcd cluster and deployed across separate failure domains. The underlying network infrastructure must also support UDP traffic, as SideroLink connections rely on <a href={`../../../talos/${version}/networking/advanced/wireguard`}> WireGuard</a>.
 
 Secrets management should be handled by an external system such as [HashiCorp Vault](https://www.hashicorp.com/en/products/vault). Vault itself must be deployed in a highly available configuration to avoid becoming a single point of failure, typically requiring multiple API servers and redundant backing storage.
 

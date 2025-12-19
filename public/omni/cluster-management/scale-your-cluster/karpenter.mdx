@@ -2,6 +2,8 @@
 title: Autoscale Your Talos Cluster on AWS with Karpenter
 ---
 
+import { version } from '/snippets/custom-variables.mdx';
+
 [Karpenter](https://karpenter.sh/docs/getting-started/getting-started-with-karpenter/) is a high-performance Kubernetes autoscaler that launches and terminates nodes in response to real-time workload demand.
 This guide walks you through integrating Karpenter with Talos Linux clusters running on AWS and managed through Omni.
 
@@ -20,7 +22,7 @@ You will need two AMIs: one for your control plane machines and one for your wor
 2. Select the AWS AMI for your architecture.
 3. Add a **Machine User Label** that identifies the machine’s role. For example, for a control plane machine: `role:karpenter-controlplane-machine`.
 4. Click **Download** to generate the AMI file.
-5. Upload the AMI file to your AWS account. Follow the instructions in the [Create Your Own AMIs](../../../talos/v1.11/platform-specific-installations/cloud-platforms/aws#create-your-own-amis) guide.
+5. Upload the AMI file to your AWS account. Follow the instructions in the <a href={`../../../talos/${version}/platform-specific-installations/cloud-platforms/aws#create-your-own-amis`}>Create Your Own AMIs</a>guide.
 
 Repeat the process to create the worker AMI, but use a worker-specific label (e.g. `role:karpenter-worker-machine`).
 

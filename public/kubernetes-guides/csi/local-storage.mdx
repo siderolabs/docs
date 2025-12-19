@@ -3,12 +3,14 @@ title: "Local Storage"
 description: "Using local storage for Kubernetes workloads."
 ---
 
+import { version } from '/snippets/custom-variables.mdx';
+
 Using local storage for Kubernetes workloads implies that the pod will be bound to the node where the local storage is available.
 Local storage is not replicated, so in case of a machine failure contents of the local storage will be lost.
 
 ## User Volumes
 
-The simplest way to use local storage is to use [user volumes](../../talos/v1.11/configure-your-talos-cluster/storage-and-disk-management/disk-management/user).
+The simplest way to use local storage is to use <a href= {`../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/disk-management/user`}>user volume</a>.
 
 Once the user volume is created, it is automatically mounted under `/var/mnt/u-<user-volume-name>` path on the node.
 
