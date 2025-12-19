@@ -250,71 +250,10 @@ The VM will start and automatically apply the Talos configuration via cloud-init
 
 #### Alternative with Terraform
 
-The [Terraform provider for Xen Orchestra](https://registry.terraform.io/providers/vatesfr/xenorchestra/latest) can be used as an alternative to the Xen Orchestra Web UI, enabling declarative and automated infrastructure management. An example is provided below:
+The [Terraform provider for Xen Orchestra](https://registry.terraform.io/providers/vatesfr/xenorchestra/latest) can be used as an alternative to the Web UI, enabling declarative and automated infrastructure management. 
 
-```hcl main.tf icon="file-heart" expandable
-terraform {
-  required_providers {
-    xenorchestra = {
-      source = "vatesfr/xenorchestra"
-    }
-  }
-}
+An example is provided in the contrib repository: [Xen Orchestra Terraform examples](https://github.com/siderolabs/contrib/tree/main/examples/terraform/xenorchestra).
 
-locals {
-  xoa_token = "<user_token>"
-  xoa_url   = "<xoa_address>"
-  tpl_talos_id = "<talos_template_id>"
-  pool_name = "<pool_name_label>"
-  sr_name = "<shared_storage_name_label>"
-  network_name = "<network_name_label>"
-
-  size_1GB = 1024 * 1024 * 1024
-}
-
-# Configure the Xen Orchestra Provider
-provider "xenorchestra" {
-  token = local.xoa_token
-  # Must be ws or wss
-  url = "ws://${local.xoa_url}"
-}
-
-data "xenorchestra_pool" "pool" {
-  name_label = local.pool_name
-}
-
-data "xenorchestra_sr" "shared_storage" {
-  name_label = local.sr_name
-}
-
-data "xenorchestra_network" "net" {
-  name_label = local.network_name
-  pool_id    = data.xenorchestra_pool.pool.id
-}
-
-resource "xenorchestra_vm" "cp" {
-  memory_max           = 4 * local.size_1GB
-  cpus                 = 2
-  cloud_config         = file("${path.module}/controlplane.yaml")
-
-  name_label           = "demo-talos-cp"
-  name_description     = "Talos CP created with Terraform"
-  template             = local.tpl_talos_id
-
-  hvm_boot_firmware = "uefi"
-  secure_boot = false
-
-  network {
-    network_id = data.xenorchestra_network.net.id
-  }
-
-  disk {
-    sr_id      = data.xenorchestra_sr.shared_storage.id
-    name_label = "Talos OS disk"
-    size = 20 * local.size_1GB
-  }
-}
-```
 
 ### Step 3: Create the worker node
 
