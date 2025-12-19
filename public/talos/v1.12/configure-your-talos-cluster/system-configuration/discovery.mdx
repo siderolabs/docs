@@ -48,7 +48,16 @@ cluster:
 
 Disabling all registries effectively disables member discovery.
 
-> Note: An enabled discovery service is required for [KubeSpan](../../networking/kubespan) to function correctly.
+<Note>
+Talos can operate normally with discovery disabled, and this does not affect day-to-day cluster operation.
+
+However, disabling discovery removes visibility into cluster membership and peer endpoints, which can make troubleshooting more difficult.
+
+In air-gapped or otherwise restricted environments, outbound access to the public discovery service (`https://discovery.talos.dev`) is often unavailable.
+In these cases, discovery can be safely disabled or replaced with a privately operated discovery service.
+
+An enabled discovery service is required for [KubeSpan](../../networking/kubespan) to function correctly.
+</Note>
 
 ### Kubernetes Registry
 
