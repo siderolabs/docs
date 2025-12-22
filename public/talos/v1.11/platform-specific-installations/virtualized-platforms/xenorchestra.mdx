@@ -1,13 +1,17 @@
 ---
-title: "Xen Orchestra / XCP-ng"
+title: "Xen Orchestra"
 description: "Creating Talos Kubernetes cluster using Xen Orchestra."
 aliases: 
-  - ../../../virtualized-platforms/xenorchestra-xcpng
+  - ../../../virtualized-platforms/xenorchestra
 ---
 
 import { release_v1_11 } from '/snippets/custom-variables.mdx';
 
-In this guide, we will create a Kubernetes cluster using XCP-ng and Xen Orchestra.
+In this guide, we will create a Kubernetes cluster using Xen Orchestra.
+
+<Info>
+  This guide does not cover XCP-ng without Xen Orchestra installed, or XO Lite, even though some of the steps may be similar.
+</Info>
 
 ## Installation
 
@@ -29,7 +33,7 @@ For manual installation and other platforms, see the [talosctl installation guid
 
 ### Download the RAW disk image
 
-To install Talos in Xen Orchestra, you will need the RAW image from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory). To work with XCP-ng the image needs to be built for the Nocloud platform with the system extension `siderolabs/xen-guest-agent`. See this <a href={`https://factory.talos.dev/?arch=amd64&board=undefined&cmdline-set=true&extensions=-&extensions=siderolabs%2Fxen-guest-agent&platform=nocloud&target=cloud&version=${release_v1_11}`}>example Talos image</a> you can use.
+To install Talos in Xen Orchestra, you will need the RAW image from [Image Factory](../boot-assets/#image-factory). To work with XCP-ng the image needs to be built for the Nocloud platform with the system extension `siderolabs/xen-guest-agent`. See this <a href={`https://factory.talos.dev/?arch=amd64&board=undefined&cmdline-set=true&extensions=-&extensions=siderolabs%2Fxen-guest-agent&platform=nocloud&target=cloud&version=${release_v1_11}`}>example Talos image</a> you can use.
 
 For example version {release_v1_11} for `linux`, download and extract the image:
 

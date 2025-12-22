@@ -43,7 +43,7 @@ navigation:
                 - "virtualized-platforms/vagrant-libvirt"
                 - "virtualized-platforms/vmware"
                 - "virtualized-platforms/xen"
-                - "virtualized-platforms/xenorchestra-xcpng"
+                - "virtualized-platforms/xenorchestra"
             - group: "Cloud Platforms"
               pages:
                 - "cloud-platforms/akamai"
