@@ -380,6 +380,7 @@
                       "talos/v1.12/reference/configuration/network/hcloudvipconfig",
                       "talos/v1.12/reference/configuration/network/hostnameconfig",
                       "talos/v1.12/reference/configuration/network/kubespanendpointsconfig",
+                      "talos/v1.12/reference/configuration/network/layer2vipconfig",
                       "talos/v1.12/reference/configuration/network/linkaliasconfig",
                       "talos/v1.12/reference/configuration/network/linkconfig",
                       "talos/v1.12/reference/configuration/network/networkdefaultactionconfig",

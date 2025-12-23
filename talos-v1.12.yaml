@@ -252,6 +252,7 @@ navigation:
                 - "configuration/network/hcloudvipconfig.mdx"
                 - "configuration/network/hostnameconfig.mdx"
                 - "configuration/network/kubespanendpointsconfig.mdx"
+                - "configuration/network/layer2vipconfig.mdx"
                 - "configuration/network/linkaliasconfig.mdx"
                 - "configuration/network/linkconfig.mdx"
                 - "configuration/network/networkdefaultactionconfig.mdx"
