@@ -2315,6 +2315,7 @@
               "kubernetes-guides/advanced-guides/deploy-traefik",
               "kubernetes-guides/advanced-guides/dynamic-resource-allocation",
               "kubernetes-guides/advanced-guides/device-plugins",
+              "kubernetes-guides/advanced-guides/gcp-workload-identity",
               "kubernetes-guides/advanced-guides/hpa",
               "kubernetes-guides/advanced-guides/inlinemanifests",
               "kubernetes-guides/advanced-guides/kubeprism",

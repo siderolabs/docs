@@ -41,6 +41,7 @@ navigation:
             - "deploy-traefik.mdx"
             - "dynamic-resource-allocation.mdx"
             - "device-plugins.mdx"
+            - "gcp-workload-identity.mdx"
             - "hpa.mdx"
             - "inlinemanifests.mdx"
             - "kubeprism.mdx"
