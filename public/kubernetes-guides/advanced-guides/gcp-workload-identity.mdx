@@ -1,0 +1,253 @@
+---
+title: "GCP Workload Identity Federation"
+description: "Guide on how to configure Google Cloud Workload Identity Federation on Talos Linux"
+---
+
+This guide provides a step-by-step walkthrough for configuring Google Cloud Workload Identity Federation on a Talos Kubernetes cluster. 
+It covers setting up the necessary GCP infrastructure (buckets, pools, providers), patching the Talos API server with RSA keys for OIDC compatibility, and binding Kubernetes Service Accounts to Google Service Accounts for secure authentication.
+
+## Environment Setup
+
+We'll make use of the following environment variables throughout the setup.
+Edit the variables below with your correct information.
+
+```bash
+export PROJECT_ID="GoogleProjectId"
+export BUCKET_NAME="StorageBucketName"
+export POOL_NAME="WorkloadIdentityPool"
+export PROVIDER_NAME="WorkloadIdentityProvider"
+export REGION="us-east1"
+```
+
+## GCP Infrastructure
+
+### Create the OIDC Storage Bucket
+
+GCP needs a way to fetch the public keys from your cluster to verify signatures. 
+We use a public GCS bucket to host these keys.
+
+```bash
+gcloud storage buckets create gs://${BUCKET_NAME} --project=${PROJECT_ID} --location=${REGION}
+
+# Make it public (Read-only)
+gcloud storage buckets add-iam-policy-binding gs://${BUCKET_NAME} \
+  --member="allUsers" \
+  --role="roles/storage.objectViewer"
+```
+
+### Create the Workload Identity Pool
+
+Create a Workload Identity Pool to manage and trust external identities for authentication.
+
+```bash
+gcloud iam workload-identity-pools create ${POOL_NAME} \
+  --project=${PROJECT_ID} \
+  --location="global" \
+  --display-name="Talos Workload Identity Pool"
+```
+
+### Create the OIDC Provider
+
+Create an OIDC provider that trusts tokens from the specified issuer, enabling secure external authentication to Google Cloud.
+
+```bash
+gcloud iam workload-identity-pools providers create-oidc ${PROVIDER_NAME} \
+  --project=${PROJECT_ID} \
+  --location="global" \
+  --workload-identity-pool=${POOL_NAME} \
+  --issuer-uri="https://storage.googleapis.com/${BUCKET_NAME}" \
+  --attribute-mapping="google.subject=assertion.sub,attribute.sub=assertion.sub"
+```
+
+## Talos Configuration
+
+### RSA Key
+
+Now we will patch the Talos Kubernetes cluster api-server to use this OIDC provider as api-audiences alongside the default API server audience. 
+Talos by default generates ECDSA keys for Kubernetes service account verification which don’t work with Google’s IAM Workload Identity Pool OIDC provider. 
+Instead, we need to generate an RSA key and replace the default service account signing key
+
+```bash
+RSA_KEY_ENCODED=$(openssl genrsa 4096 2> /dev/null | base64 -w 0)
+```
+
+### Retrieve OIDC Provider URL
+
+Retrieve the URL of the OIDC provider for configuring external authentication.
+
+```bash
+OIDC_PROVIDER_URL=$(gcloud iam workload-identity-pools providers list --location="global" --workload-identity-pool="${POOL_NAME}" --filter="name:${PROVIDER_NAME}" --format json | jq -r '.[0].name')
+```
+
+### Generate a Talos patch
+
+Create a patch file to configure the Talos cluster with the RSA key and OIDC settings for Google Workload Identity authentication.
+
+```bash
+cat <<EOF > oidc-patch.yaml
+cluster:
+  serviceAccount:
+    # Replace the default ECDSA key with your RSA key
+    key: "${RSA_KEY_ENCODED}"
+  apiServer:
+    extraArgs:
+      # This must match the GCS bucket URL exactly
+      service-account-issuer: "https://storage.googleapis.com/${BUCKET_NAME}"
+      # GCP WIF expects this audience; you can also add "sts.googleapis.com"
+      api-audiences: "iam.googleapis.com/${OIDC_PROVIDER_URL},https://storage.googleapis.com/${BUCKET_NAME},sts.googleapis.com,https://kubernetes.default.svc.cluster.local"
+      # Where the public keys will be found (logically)
+      service-account-jwks-uri: "https://storage.googleapis.com/${BUCKET_NAME}/keys.json"
+      # How long tokens are valid (optional, but good for security)
+      service-account-max-token-expiration: 24h
+EOF
+```
+
+### Apply OIDC Patch to Control Plane Node
+
+Retrieve a Control Plane node’s IP and apply the OIDC patch to configure the cluster for Workload Identity authentication
+
+```bash
+CONTROL_PLANE_NODE_ADDRESS=$(kubectl --kubeconfig kubeconfig get nodes --output json | jq -r '.items[] | select(.metadata.labels."node-role.kubernetes.io/control-plane" == "").status.addresses[] | select(.type == "InternalIP").address' | head -1)
+
+talosctl patch machineconfig --talosconfig talosconfig --patch @oidc-patch.yaml --nodes ${CONTROL_PLANE_NODE_ADDRESS}
+```
+
+### Retrieve Kubernetes OIDC Configuration
+
+Download the cluster’s keys.json and discovery.json files, which contain the OIDC public keys and discovery metadata needed for external authentication.
+
+```bash
+kubectl --kubeconfig kubeconfig get --raw /openid/v1/jwks > keys.json
+kubectl --kubeconfig kubeconfig get --raw /.well-known/openid-configuration > discovery.json
+```
+
+### Upload to GCS
+
+Upload the cluster’s OIDC `keys.json` and `discovery.json` to the storage bucket, making them publicly accessible for authentication verification.
+
+```bash
+gcloud storage cp keys.json gs://${BUCKET_NAME}/keys.json
+gcloud storage cp discovery.json gs://${BUCKET_NAME}/.well-known/openid-configuration
+
+### Verify if a JSON file containing an issuer field that matches your bucket URL.
+curl https://storage.googleapis.com/$BUCKET_NAME/.well-known/openid-configuration
+```
+
+## Identity Binding & Permissions
+
+### Create the Google Service Account (GSA)
+
+Create a Google Service Account that external identities can impersonate via Workload Identity for accessing Google Cloud resources.
+
+```bash
+GSA_NAME="talos-workload-sa"
+gcloud iam service-accounts create ${GSA_NAME} --project=${PROJECT_ID}
+```
+
+### Get the Workload Identity Pool Name
+
+Retrieve the full resource name of the Workload Identity Pool for configuring identity bindings.
+
+```bash
+WORKLOAD_IDENTITY_POOL_URL=$(gcloud iam workload-identity-pools list --location="global" --filter="name:${POOL_NAME}" --format json | jq -r '.[].name')
+```
+
+### Grant Permissions to the GSA
+
+Assign the necessary roles to the Google Service Account, including access to project resources and the ability to be impersonated via Workload Identity.
+
+```bash
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+    --member="serviceAccount:${GSA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --role="roles/storage.admin"
+
+gcloud iam service-accounts add-iam-policy-binding "${GSA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --role="roles/iam.workloadIdentityUser" \
+    --member="principalSet://iam.googleapis.com/${WORKLOAD_IDENTITY_POOL_URL}/attribute.sub/system:serviceaccount:default:workload-identity"
+```
+<Note> Ensure the member string matches your specific Kubernetes configuration. The format is `system:serviceaccount:<NAMESPACE>:<KSA_NAME>`. In this example, we use the default namespace and the workload-identity service account.</Note>
+
+### Generate the Workload Identity Config File
+
+Create a local configuration file that maps the Kubernetes service account to the Google Service Account for authentication.
+
+```bash
+gcloud iam workload-identity-pools create-cred-config \
+    ${OIDC_PROVIDER_URL} \
+    --service-account="${GSA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --credential-source-file="/var/run/secrets/tokens/gcp-ksa/token" \
+    --output-file=sts-creds.json
+```
+## Deployment & Verification
+
+### Deploy Credential ConfigMap
+
+Create a ConfigMap to store the credential configuration file, enabling the Pod's Google SDK to perform the token exchange.
+
+```bash
+kubectl --kubeconfig kubeconfig create configmap workload-identity-config --from-file=google-application-credentials.json=sts-creds.json -n default
+```
+
+### Create a Kubernetes Service Account
+
+Create the Kubernetes Service Account that will be bound to the Google Service Account to authorize the workload.
+
+```bash
+kubectl --kubeconfig kubeconfig create serviceaccount workload-identity --namespace default
+```
+
+### Deploy Test Pod
+
+Deploy a Pod that projects the Service Account token and credential configuration to verify the identity federation.
+
+```bash
+kubectl --kubeconfig kubeconfig apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: workload-identity-test
+  namespace: default
+spec:
+  serviceAccountName: workload-identity
+  containers:
+  - image: google/cloud-sdk:slim
+    name: workload-identity-test
+    command:
+    - bin/sh
+    - -c
+    - sleep infinity
+    env:
+    - name: CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE
+      value: /var/run/secrets/tokens/gcp-ksa/google-application-credentials.json
+    - name: CLOUDSDK_CORE_PROJECT
+      value: "${PROJECT_ID}"
+    volumeMounts:
+      - name: gcp-ksa
+        mountPath: /var/run/secrets/tokens/gcp-ksa
+        readOnly: true
+  volumes:
+  - name: gcp-ksa
+    projected:
+      sources:
+      # The Token itself
+      - serviceAccountToken:
+          path: token
+          audience: "//iam.googleapis.com/${OIDC_PROVIDER_URL}"
+          expirationSeconds: 3600
+      # The Config that tells the Google SDK how to exchange the token
+      - configMap:
+          name: workload-identity-config
+          optional: false
+          items:
+          - key: "google-application-credentials.json"
+            path: "google-application-credentials.json"
+EOF
+```
+
+### Verify Access
+
+Execute a command inside the running Pod to list the storage bucket contents, confirming that the Workload Identity authentication is functioning correctly.
+
+```bash
+kubectl exec -it workload-identity-test -- gcloud storage ls gs://${BUCKET_NAME}
+```
