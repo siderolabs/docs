@@ -82,6 +82,7 @@ NODE         NAMESPACE   TYPE          ID      VERSION   TOTAL SIZE   STORED PAG
 ```
 
 Removing a `ZswapConfig` document will disable zswap on the system.
+Please note that zswap requires swap to be enabled on the system to function properly.
 
 ## Kubernetes and Swap
 
@@ -134,3 +135,23 @@ NAME                                              SwapCurrent   SwapPeak   SwapH
 
 If `SwapMax` is set to `0 B`, it means that swap is not enabled for this cgroup (container/pod).
 Current swap and zswap usage can be seen in the `SwapCurrent` and `ZswapCurrent` columns, respectively.
+
+## Swap Tuning
+
+Swap can benefit some workloads by evicting inactive memory pages, keeping more RAM available for caches and buffers.
+
+These settings influence swap usage and behavior:
+
+```yaml
+machine:
+  sysctls:
+    vm.swappiness: 130
+    vm.page-cluster: 0
+```
+
+* `vm.swappiness`: controls how aggressively the kernel moves pages from RAM to swap.
+  Higher values increase swapping. The default is `60`.
+  Setting `130` makes the kernel more willing to use swap (assuming the swap device is fast, e.g., NVMe).
+* `vm.page-cluster`: controls the swap read-ahead size (pages per I/O).
+  The default value `3` reads up to `8` pages at once.
+  Setting `0` disables read-ahead for swap pages, which can reduce unnecessary I/O on non-rotational devices.
