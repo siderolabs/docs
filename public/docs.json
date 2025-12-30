@@ -385,6 +385,7 @@
                       "talos/v1.12/reference/configuration/network/linkconfig",
                       "talos/v1.12/reference/configuration/network/networkdefaultactionconfig",
                       "talos/v1.12/reference/configuration/network/networkruleconfig",
+                      "talos/v1.12/reference/configuration/network/resolverconfig",
                       "talos/v1.12/reference/configuration/network/statichostconfig",
                       "talos/v1.12/reference/configuration/network/timesyncconfig",
                       "talos/v1.12/reference/configuration/network/vlanconfig",
