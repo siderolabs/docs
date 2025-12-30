@@ -257,6 +257,7 @@ navigation:
                 - "configuration/network/linkconfig.mdx"
                 - "configuration/network/networkdefaultactionconfig.mdx"
                 - "configuration/network/networkruleconfig.mdx"
+                - "configuration/network/resolverconfig.mdx"
                 - "configuration/network/statichostconfig.mdx"
                 - "configuration/network/timesyncconfig.mdx"
                 - "configuration/network/vlanconfig.mdx"
