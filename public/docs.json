@@ -53,11 +53,11 @@
   "redirects": [
     {
       "source": "/talos/latest",
-      "destination": "/talos/v1.11"
+      "destination": "/talos/v1.12"
     },
     {
       "source": "/talos/latest/:slug*",
-      "destination": "/talos/v1.11/:slug*"
+      "destination": "/talos/v1.12/:slug*"
     }
   ],
   "navigation": {
