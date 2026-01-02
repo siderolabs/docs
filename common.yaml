@@ -43,7 +43,7 @@ footer:
   global:
     anchors:
       - anchor: "Community"
-        href: "https://slack.dev.talos-systems.io/"
+        href: "https://taloscommunity.slack.com/"
         icon: "slack"
 
 integrations:
