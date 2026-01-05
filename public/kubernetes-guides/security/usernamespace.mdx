@@ -16,7 +16,7 @@ To enable User Namespaces in Talos, you need to add the following configuration 
 cluster:
   apiServer:
     extraArgs:
-      feature-gates: UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true
+      feature-gates: UserNamespacesSupport=true
 machine:
   sysctls:
     user.max_user_namespaces: "11255"
@@ -24,7 +24,6 @@ machine:
     extraConfig:
       featureGates:
         UserNamespacesSupport: true
-        UserNamespacesPodSecurityStandards: true
 ```
 
 After applying the configuration, refer to the [official documentation](https://kubernetes.io/docs/tasks/configure-pod-container/user-namespaces/) to configure workloads to use User Namespaces.
