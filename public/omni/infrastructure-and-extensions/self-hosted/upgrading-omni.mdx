@@ -1,0 +1,48 @@
+---
+title: Upgrading Omni
+---
+
+This guide outlines the supported policies and procedures for upgrading your on-prem Omni installation.
+
+## Upgrade policy
+
+To ensure data integrity, please adhere to the following upgrade policies:
+
+* **Sequential upgrades only**: Only one-by-one minor version upgrades are supported. For example, upgrading from **v1.3** to **v1.4** is supported.
+* **No skipping**: Skipping versions (e.g., v1.3 to v1.5) is **not** supported. While it might technically work, it is not tested.
+* **No downgrades**: Downgrading Omni (e.g., v1.4 to v1.3) is **not** supported. Database migrations applied during an upgrade are generally not revertible.
+  Attempting to downgrade will likely result in a failure to start due to the database version being newer than expected, or cause other unexpected behavior.
+
+<Warning>
+  **Note on pre-releases**: Use alpha and beta releases at your own risk. These versions are for testing purposes only and can break your installation.
+</Warning>
+
+## Preparation
+
+Before performing any upgrade, you **must** read the release notes for the specific version you are targeting.
+These notes contain critical information regarding breaking changes, new required flags, and configuration updates.
+
+* **Release Notes**: [GitHub Releases](https://github.com/siderolabs/omni/releases)
+* **Changelog**: [CHANGELOG.md](https://github.com/siderolabs/omni/blob/main/CHANGELOG.md)
+
+### Example: Checking for breaking changes
+
+It is vital to check the **Urgent Upgrade Notes** in the release log for new requirements.
+
+For example, when upgrading from v1.3 to v1.4, a new mandatory flag (`--sqlite-storage-path`) was introduced. There is no default value for this flag.
+If a user attempted to upgrade without reading the release notes and adding this flag, Omni would fail to start.
+
+## Applying the upgrade
+
+### Update Omni image
+
+After completing all preparation steps and ensuring your configuration matches the requirements of the new version, the upgrade is performed by updating the container image version.
+
+To apply the upgrade, change the Omni image tag in your deployment manifest (such as `compose.yaml` or your `docker run` script) to the new version string.
+A full list of available versions can be found on the **[Omni container packages page](https://github.com/siderolabs/omni/pkgs/container/omni)**.
+
+### Update omnictl
+
+It is heavily recommended to also update `omnictl` to match the version of your Omni server.
+
+Refer to the **[Install and configure omnictl](../../getting-started/install-and-configure-omnictl)** guide for instructions on how to update the CLI tool.

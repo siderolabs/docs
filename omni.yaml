@@ -30,6 +30,7 @@ navigation:
                 - "self-hosted/configure-keycloak-for-omni"
                 - "self-hosted/how-to-back-up-on-prem-omni-db"
                 - "self-hosted/expose-omni-with-nginx-https"
+                - "self-hosted/upgrading-omni"
             - "install-airgapped-omni.mdx"
             - "infrastructure-providers.mdx"
             - "writing-infrastructure-providers.mdx"
