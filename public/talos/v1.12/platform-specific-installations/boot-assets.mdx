@@ -742,6 +742,7 @@ Now we can generate the ISO image which embeds this machine configuration with t
       {`
 docker run --rm -t \\
   -v "$PWD/_out:/out" \\
+  --privileged \\
   ghcr.io/siderolabs/imager:${release_v1_12} \\
   iso \\
   --embedded-config-path=/out/machine.yaml
