@@ -91,6 +91,7 @@ navigation:
                 - "using-saml-with-omni/configure-unifi-identity-enterprise-for-omni"
                 - "using-saml-with-omni/configure-workspace-one-access-for-omni"
                 - "using-saml-with-omni/how-to-configure-entraid-for-omni"
+                - "using-saml-with-omni/configure-oracle-cloud-for-omni"
             - "authentication-and-authorization.mdx"
             - "oidc-login-with-tailscale.mdx"
             - "how-to-manage-acls.mdx"
