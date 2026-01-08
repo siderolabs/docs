@@ -191,7 +191,7 @@ docker run -p 8080:8080 -d \
   --name image-factory \
   -v $PWD/signing-key.key:/signing-key.key:ro \
   -v $PWD/cosign.pub:/cosign.pub:ro \
-  ghcr.io/siderolabs/image-factory \
+  ghcr.io/siderolabs/image-factory:v0.9.0 \
     -image-registry $INTERNAL_REG \
     -installer-internal-repository $INTERNAL_REG/siderolabs \
     -installer-internal-repository $INTERNAL_REG/siderolabs \
