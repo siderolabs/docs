@@ -24,6 +24,37 @@ The node will now expect secure communication using certificates stored in a tal
 **Note**: The `--insecure` flag is used in a different context by the `talosctl image cache-create` command.
 This command is not used for interacting with the Talos node, but for allowing access to insecure image registries that do not support TLS.
 
+## Validating the Node Identity in `--insecure` Mode
+
+When using `--insecure`, `talosctl` cannot automatically verify the identity of the remote node.
+However, Talos still provides a way to manually confirm that you are communicating with the intended machine.
+
+### Certificate fingerprint
+
+When a Talos node boots into maintenance mode, it generates a temporary, self-signed TLS certificate.
+The certificate fingerprint is printed directly to the machine’s console logs during boot.
+
+You can view this fingerprint via:
+
+* Physical console access
+* VM console
+* Serial console
+* IPMI or other out-of-band management interfaces
+
+### Using the fingerprint with `talosctl`
+
+Once you have obtained the fingerprint from the console, you can explicitly pass it to talosctl:
+
+```bash
+talosctl apply-config
+--insecure
+--cert-fingerprint <fingerprint>
+--nodes <node_ip>
+--file machine.yaml
+```
+
+This allows you to confirm that the configuration is being applied to the intended node, even though full authentication has not yet been established.
+
 ## In Omni-Managed Clusters
 
 The `--insecure` flag works differently when you're using Omni to manage Talos clusters.
