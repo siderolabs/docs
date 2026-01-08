@@ -8,32 +8,37 @@ The Image Factory is a critical component of [Omni](../../overview/what-is-omni)
 
 ## Prerequisites
 
-* Container registry (with Talos images)
 * Machine to run Image Factory
+* Container registry (with Talos images)
 * Image cache signing key
 * Image cache storage (optional)
 
-The official Sidero Labs registry has all of the required Talos installation containers, extensions, and tools.
-If you want to run image factory connected to the upstream container registry you can do it with:
+### Container Registry
+
+If you already have a container registry available you can export your registry to an environment variable.
+
+```shell
+INTERNAL_REG=<my-registry.com>
+```
+
+If you don't have a container registry available to push images to you can temporarily run one with the `zot` container.
+
+<Note>This example doesn't have persistent storage.</Note>
+
+```bash
+docker run -d -p 5000:5000 --name zot \
+  ghcr.io/project-zot/zot:latest
+
+INTERNAL_REG=127.0.0.1:5000
+```
+
+### Image Cache Signing Key
 
 ```shell
 openssl ecparam -name prime256v1 -genkey -noout -out signing-key.key
-
-docker run -p 8080:8080 -d \
-  --name image-factory \
-  -v $PWD/signing-key.key:/signing-key.key:ro \
-  ghcr.io/siderolabs/image-factory \
-    -cache-signing-key-path /signing-key.key
 ```
 
-<Warning>If your system has SELinux enabled you will need to mount the signing key with the :Z option so the image factory has access to the file.</Warning>
-
-This will run the image factory on your machine on port 8080 and pull container images from Sidero Labs ghcr.io registry. It will also validate image signatures using [`cosign`](https://edu.chainguard.dev/open-source/sigstore/cosign/an-introduction-to-cosign/) to validate pulled images.
-
-This will not allow you to create or publish custom system extensions.
-To do that you will need to run your own container registry with the necessary images.
-
-### Image Cache
+### Image Cache Storage
 
 There are a variety of image cache locations to store built images. Without an image cache each asset will be built when requested which can consume a high amount of CPU on the image factory machine.
 
@@ -44,7 +49,30 @@ Some supported cache storage options include:
 
 Please view the `--help` output for cache options.
 
-## Run Image Factory with Custom Container Registry
+## Image Factory with the upstream container registry
+
+The official Sidero Labs registry has all of the required Talos installation containers, extensions, and tools.
+If you want to run image factory connected to the upstream container registry you can do it with:
+
+### Run Image Factory
+
+```shell
+docker run -p 8080:8080 -d \
+  --name image-factory \
+  -v $PWD/signing-key.key:/signing-key.key:ro \
+  ghcr.io/siderolabs/image-factory:v0.9.0 \
+    -cache-signing-key-path /signing-key.key \
+    -schematic-service-repository $INTERNAL_REG/siderolabs/image-factory/schematic
+```
+
+<Warning>If your system has SELinux enabled you will need to mount the signing key with the :Z option so the image factory has access to the file.</Warning>
+
+This will run the image factory on your machine on port 8080 and pull container images from Sidero Labs ghcr.io registry. It will also validate image signatures using [`cosign`](https://edu.chainguard.dev/open-source/sigstore/cosign/an-introduction-to-cosign/) to validate pulled images.
+
+This will not allow you to create or publish custom system extensions.
+To do that you will need to run your own container registry with the necessary images.
+
+## Image Factory with Custom Container Registry
 
 Running the image factory in an air airgapped environment has more requirements than running in a connected mode. In addition to the requirements above you will also need.
 
@@ -68,26 +96,6 @@ talosctl image talos-bundle v1.11.5 > images.txt
 This will give you a list of all images and extensions needed to build Talos 1.11.5.
 You will need to repeat this command for each version of Talos you want to download images for.
 If you don't need specific extensions you can delete them from the images.txt file.
-
-### Serve Container Images
-
-If you already have a container registry available you can use the images.txt file to directly download and upload them to your container registry.
-Export your registry to an environment variable.
-
-```shell
-INTERNAL_REG=<my-registry.com>
-```
-
-If you don't have a container registry available to push images to you can temporarily run one with the `zot` container.
-
-<Note>This example doesn't have persistent storage.</Note>
-
-```bash
-docker run -d -p 5000:5000 --name zot \
-  ghcr.io/project-zot/zot:latest
-
-INTERNAL_REG=127.0.0.1:5000
-```
 
 Replace the registry in each image with your registry or use `localhost:5000` if running a registry locally, and push the images.
 
@@ -194,7 +202,7 @@ docker run -p 8080:8080 -d \
     -cache-cdn-enabled=false \
     -cache-s3-enabled=false
 ```
-
+## Insecure
 If your image factory does not have certificates or does not have certificates trusted by the image factory you should add the following flags.
 
 ```bash
@@ -206,6 +214,8 @@ If your image factory does not have certificates or does not have certificates t
 If you are running on a server with SELinux enabled and enforcing then volumes mounted into the container will not be available unless you append `:Z` to the volume mounts.
 
 If you have an internal, private certificate authority you will need to mount that into the Image Factory image so it can trust the registry certificate. Mount it into the container by adding `-v /etc/pki/ca-trust/source/anchors:/etc/ssl/certs:ro` to the Image Factory commands.
+
+## Generating Images
 
 To generate some image types (e.g. ISO) you will need to mount `/dev` into the image factory container and allow privileged operations.
 Add these flags to your docker command.
