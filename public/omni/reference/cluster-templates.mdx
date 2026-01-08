@@ -2,13 +2,13 @@
 title: Cluster Templates
 ---
 
-Cluster templates are parsed, validated, and converted to Omni resources, which are then created or updated via the Omni API. Omni guarantees backward compatibility for cluster templates, so the same template can be used with any future version of Omni.
+Omni parses, validates, and converts cluster templates into Omni resources. It then creates or updates these resources via the Omni API. Omni guarantees backward compatibility for cluster templates, so you can use the same template with any future version of Omni.
 
-All referenced files in machine configuration patches should be stored relative to the current working directory.
+Store all referenced files in machine configuration patches relative to the current working directory.
 
-### Structure
+## Structure
 
-The Cluster Template is a YAML file consisting of multiple documents, with each document having a `kind` field that specifies the type of the document. Some documents might also have a `name` field that specifies the name (ID) of the document.
+A cluster template is a YAML file consisting of multiple documents. Each document contains a `kind` field that specifies the document type. Some documents also include a `name` field that specifies the document ID.
 
 ```yaml
 kind: Cluster
@@ -20,7 +20,7 @@ kubernetes:
 talos:
   version: v1.3.2
 features:
-  diskencryption: true
+  diskEncryption: true
 patches:
   - name: kubespan-enabled
     inline:
@@ -30,6 +30,8 @@ patches:
             enabled: true
 systemExtensions:
   - siderolabs/hello-world-service
+kernelArgs:
+  - talos.dashboard.disabled=1
 ---
 kind: ControlPlane
 machines:
@@ -79,17 +81,20 @@ kind: Machine
 name: 1f721dee-6dbb-4e71-9832-226d73da3841
 install:
   disk: /dev/vda
+kernelArgs:
+  - net.ifnames=0
+  - talos.dashboard.disabled=1
 ```
 
-Each cluster template should have exactly one document of `kind: Cluster`, `kind: ControlPlane`, and any number of `kind: Workers` with different `name`s.
+Each cluster template must have exactly one document of `kind: Cluster`, `kind: ControlPlane`, and any number of `kind: Workers` with different `name`s. Either a `ControlPlane` or `Workers` document must reference every `Machine` document.
 
-Every `Machine` document must be referenced by either a `ControlPlane` or `Workers` document.
+## Document types
 
-### Document Types
+The following sections describe the specific document kinds available in a cluster template and their configurations.
 
-#### `Cluster`
+### `Cluster`
 
-The `Cluster` document specifies the cluster configuration, labels, defines the cluster name and base component versions.
+The `Cluster` document specifies the cluster configuration and labels. It defines the cluster name and base component versions.
 
 ```yaml
 kind: Cluster
@@ -111,30 +116,31 @@ patches:
   - file: patches/example-patch.yaml
 systemExtensions:
   - siderolabs/hello-world-service
+kernelArgs:
+  - talos.dashboard.disabled=1
 ```
 
-| Field                                   | Type               | Description                                                                                                                                                                                                             |
-| --------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `kind`                                  | string             | `Cluster`                                                                                                                                                                                                               |
-| `name`                                  | string             | Cluster name: only letters, digits and `-` and `_` are allowed. The cluster name is used as a key by all other documents, so if the cluster name changes, a new cluster will be created.                                |
-| `labels`                                | map\[string]string | Labels to be applied to the cluster.                                                                                                                                                                                    |
-| `annotations`                           | map\[string]string | Annotations to be applied to the cluster.                                                                                                                                                                               |
-| `kubernetes.version`                    | string             | Kubernetes version to use, `vA.B.C`.                                                                                                                                                                                    |
-| `talos.version`                         | string             | Talos version to use, `vA.B.C`.                                                                                                                                                                                         |
-| `features.enableWorkloadProxy`          | boolean            | Whether to enable the workload proxy feature. Defaults to `false`.                                                                                                                                                      |
-| `features.useEmbeddedDiscoveryService`  | boolean            | Whether to use the embedded discovery service that runs inside the Omni instance instead of the public one (`discovery.talos.dev`). Defaults to `false`. It is only valid if the Omni instance has the feature enabled. |
-| `features.diskEncryption`               | boolean            | Whether to enable disk encryption. Defaults to `false`.                                                                                                                                                                 |
-| `features.backupConfiguration.interval` | string             | Cluster etcd backup interval. Must be a valid [Go duration](https://pkg.go.dev/time#ParseDuration). Zero `0` disables automatic backups.                                                                                |
-| `patches`                               | array              | List of [patches](#patches) to apply to the cluster.                                                                                                                                                |
-| `systemExtensions`                      | array              | The list of system extensions to be installed on every machine in the cluster.                                                                                                                                          |
+| Field                                   | Type                     | Description                                                                                                                                                                                                                 |
+|:----------------------------------------|:-------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `kind`                                  | string                   | `Cluster`                                                                                                                                                                                                                   |
+| `name`                                  | string                   | Cluster name: only letters, digits and `-` and `_` are allowed.<br/>The cluster name is used as a key by all other documents, so if the cluster name changes, Omni creates a new cluster.                                   |
+| `labels`                                | map[string]string        | Labels to be applied to the cluster.                                                                                                                                                                                        |
+| `annotations`                           | map[string]string        | Annotations to be applied to the cluster.                                                                                                                                                                                   |
+| `kubernetes.version`                    | string                   | Kubernetes version to use, `vA.B.C`.                                                                                                                                                                                        |
+| `talos.version`                         | string                   | Talos version to use, `vA.B.C`.                                                                                                                                                                                             |
+| `features.enableWorkloadProxy`          | boolean                  | Whether to enable the workload proxy feature.<br/>Defaults to `false`.                                                                                                                                                      |
+| `features.useEmbeddedDiscoveryService`  | boolean                  | Whether to use the embedded discovery service that runs inside the Omni instance instead of the public one (`discovery.talos.dev`).<br/>Defaults to `false`. It is only valid if the Omni instance has the feature enabled. |
+| `features.diskEncryption`               | boolean                  | Whether to enable disk encryption.<br/>Defaults to `false`.                                                                                                                                                                 |
+| `features.backupConfiguration.interval` | string                   | Cluster etcd backup interval. Must be a valid [Go duration](https://pkg.go.dev/time#ParseDuration). Zero `0` disables automatic backups.                                                                                    |
+| `patches`                               | array[[Patch](#patches)] | List of patches to apply to the cluster.                                                                                                                                                                                    |
+| `systemExtensions`                      | array[string]            | The list of system extensions to be installed on every machine in the cluster.                                                                                                                                              |
+| `kernelArgs`                            | array[string]            | The list of [kernel args](#kernelArgs) to be set on each machine in this cluster.                                                                                                                                           |
 
-#### `ControlPlane`
+### `ControlPlane`
 
-The `ControlPlane` document specifies the control plane configuration, defines the number of control plane nodes, and the list of machines to use.
+The `ControlPlane` document specifies the control plane configuration. It defines the number of control plane nodes and the list of machines to use. Because control plane machines run an `etcd` cluster, use a number of machines that can achieve a stable quorum (e.g., 1, 3, 5).
 
-As control plane machines run an `etcd` cluster, it is recommended to use a number of machines for the control plane that can achieve a stable quorum (e.g., 1, 3, 5, etc.). Changing the set of machines in the control plane will trigger a rolling scale-up/scale-down of the control plane.
-
-The control plane should have at least a single machine, but it is recommended to use at least 3 machines for the control plane for high-availability.
+Changing the set of machines in the control plane triggers a rolling scale-up or scale-down. Configure the control plane with at least a single machine. For high availability, SideroLabs recommends using at least 3 machines.
 
 ```yaml
 kind: ControlPlane
@@ -152,19 +158,22 @@ systemExtensions:
   - siderolabs/hello-world-service
 ```
 
-| Field              | Type                                              | Description                                                                                  |
-| ------------------ | ------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `kind`             | string                                            | `ControlPlane`                                                                               |
-| `labels`           | map\[string]string                                | Labels to be applied to the control plane machine set.                                       |
-| `annotations`      | map\[string]string                                | Annotations to be applied to the control plane machine set.                                  |
-| `machines`         | array                                             | List of machine IDs to use for control plane nodes (mutually exclusive with `machineClass`). |
-| `patches`          | array                                             | List of [patches](#patches) to apply to the machine set.                 |
-| `machineClass`     | [MachineClass](#machineclass) | Machine Class configuration (mutually exclusive with `machines`).                            |
-| `systemExtensions` | array                                             | The list of system extensions to be installed on every machine in the machine set.           |
+| Field                       | Type                          | Description                                                                                  |
+|:----------------------------|:------------------------------|:---------------------------------------------------------------------------------------------|
+| `kind`                      | string                        | `ControlPlane`                                                                               |
+| `labels`                    | map[string]string             | Labels to be applied to the control plane machine set.                                       |
+| `annotations`               | map[string]string             | Annotations to be applied to the control plane machine set.                                  |
+| `machines`                  | array[string]                 | List of machine IDs to use for control plane nodes (mutually exclusive with `machineClass`). |
+| `bootstrapSpec.clusterUUID` | string                        | UUID of the cluster to restore from (required when restoring a cluster).                     |
+| `bootstrapSpec.snapshot`    | string                        | Snapshot file name to restore from (required when restoring a cluster).                      |
+| `patches`                   | array[[Patch](#patches)]      | List of patches to apply to the machine set.                                                 |
+| `machineClass`              | [MachineClass](#machineclass) | Machine Class configuration (mutually exclusive with `machines`).                            |
+| `systemExtensions`          | array[string]                 | The list of system extensions to be installed on every machine in the machine set.           |
+| `kernelArgs`                | array[string]                 | The list of [kernel args](#kernelArgs) to be set on each machine in this machine set.        |
 
-#### `Workers`
+### `Workers`
 
-The `Workers` document specifies the worker configuration, defines the number of worker nodes, and the list of machines to use.
+The `Workers` document specifies the worker configuration. It defines the number of worker nodes and the list of machines to use.
 
 ```yaml
 kind: Workers
@@ -188,22 +197,23 @@ systemExtensions:
   - siderolabs/hello-world-service
 ```
 
-| Field              | Type                                                  | Description                                                                                                                                                |
-| ------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `kind`             | string                                                | `Workers`                                                                                                                                                  |
-| `name`             | string                                                | Worker machine set name: only letters, digits and `-` and `_` are allowed. Defaults to `workers` when omitted. Must be unique and not be `control-planes`. |
-| `labels`           | map\[string]string                                    | Labels to be applied to the worker machine set.                                                                                                            |
-| `annotations`      | map\[string]string                                    | Annotations to be applied to the worker machine set.                                                                                                       |
-| `machines`         | array                                                 | List of machine IDs to use as worker nodes in the machine set (mutually exclusive with `machineClass`).                                                    |
-| `patches`          | array                                                 | List of [patches](#patches) to apply to the machine set.                                                                               |
-| `machineClass`     | [MachineClass](#machineclass)     | Machine Class configuration (mutually exclusive with `machines`).                                                                                          |
-| `updateStrategy`   | [UpdateStrategy](#updatestrategy) | Update strategy for the machine set. Defaults to `type: Rolling` with `maxParallelism: 1`.                                                                 |
-| `deleteStrategy`   | [UpdateStrategy](#updatestrategy) | Delete strategy for the machine set. Defaults to `type: Unset`.                                                                                            |
-| `systemExtensions` | array                                                 | The list of system extensions to be installed on every machine in the machine set.                                                                         |
+| Field              | Type                              | Description                                                                                                                                                    |
+|:-------------------|:----------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `kind`             | string                            | `Workers`                                                                                                                                                      |
+| `name`             | string                            | Worker machine set name: only letters, digits and `-` and `_` are allowed. Defaults to `workers` when omitted.<br/>Must be unique and not be `control-planes`. |
+| `labels`           | map[string]string                 | Labels to be applied to the worker machine set.                                                                                                                |
+| `annotations`      | map[string]string                 | Annotations to be applied to the worker machine set.                                                                                                           |
+| `machines`         | array[string]                     | List of machine IDs to use as worker nodes in the machine set (mutually exclusive with `machineClass`).                                                        |
+| `patches`          | array[[Patch](#patches)]          | List of patches to apply to the machine set.                                                                                                                   |
+| `machineClass`     | [MachineClass](#machineclass)     | Machine Class configuration (mutually exclusive with `machines`).                                                                                              |
+| `updateStrategy`   | [UpdateStrategy](#updatestrategy) | Update strategy for the machine set. Defaults to `type: Rolling` with `maxParallelism: 1`.                                                                     |
+| `deleteStrategy`   | [UpdateStrategy](#updatestrategy) | Delete strategy for the machine set. Defaults to `type: Unset`.                                                                                                |
+| `systemExtensions` | array[string]                     | The list of system extensions to be installed on every machine in the machine set.                                                                             |
+| `kernelArgs`       | array[string]                     | The list of [kernel args](#kernelArgs) to be set on each machine in this machine set.                                                                          |
 
-#### `MachineClass`
+### `MachineClass`
 
-The `MachineClass` section of the [Control Plane](#controlplane) or the [Workers](#workers) defines the rule for picking the machines in the machine set.
+The `MachineClass` section of `ControlPlane` or `Workers` defines the rule for picking the machines in the machine set.
 
 ```yaml
 kind: Workers
@@ -213,18 +223,18 @@ machineClass:
   size: 2
 ```
 
-| Field  | Type   | Description                                                 |
-| ------ | ------ | ----------------------------------------------------------- |
-| `name` | string | Name of the machine class to use.                           |
-| `size` | number | Number of machines to pick from the matching machine class. |
+| Field  | Type             | Description                                                                                              |
+|:-------|:-----------------|:---------------------------------------------------------------------------------------------------------|
+| `name` | string           | Name of the machine class to use.                                                                        |
+| `size` | number \| string | Number of machines to pick from the matching machine class, or a keyword (`unlimited`, `infinity`, `∞`). |
 
 <Info>
-`size` field supports keyword `unlimited|infinity` which makes the machine set pick all available machines from the specified machine class. {}
+The `size` field supports keyword `unlimited|infinity`, which makes the machine set pick all available machines from the specified machine class.
 </Info>
 
-#### `UpdateStrategy`
+### `UpdateStrategy`
 
-The `UpdateStrategy` section of the [Workers](#workers) defines the update and/or the delete strategy for the machine set.
+The `UpdateStrategy` section of `Workers` defines the update or delete strategy for the machine set.
 
 ```yaml
 kind: Workers
@@ -239,13 +249,13 @@ deleteStrategy:
 ```
 
 | Field                    | Type   | Description                                                                                                                                                                                    |
-| ------------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`                   | string | Strategy type. Can be `Rolling` or `Unset`. Defaults to `Rolling` for `updateStrategy` and `Unset` for the `deleteStrategy`. When `Unset`, all updates and/or deletes will be applied at once. |
+|:-------------------------|:-------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `type`                   | string | Strategy type. Can be `Rolling` or `Unset`. Defaults to `Rolling` for `updateStrategy` and `Unset` for the `deleteStrategy`.<br/>When `Unset`, all updates and/or deletes are applied at once. |
 | `rolling.maxParallelism` | number | Maximum number of machines to update and/or delete in parallel. Only used when the `type` is `Rolling`. Defaults to `1`.                                                                       |
 
-#### `Machine`
+### `Machine`
 
-The `Machine` document specifies the install disk and machine-specific configuration patches. They are optional, but every `Machine` document must be referenced by either a `ControlPlane` or `Workers` document.
+The `Machine` document specifies the install disk and machine-specific configuration patches. They are optional, but either a `ControlPlane` or `Workers` document must reference every `Machine` document.
 
 ```yaml
 kind: Machine
@@ -263,26 +273,30 @@ systemExtensions:
   - siderolabs/hello-world-service
 ```
 
-| Field              | Type               | Description                                                                                            |
-| ------------------ | ------------------ | ------------------------------------------------------------------------------------------------------ |
-| `kind`             | string             | `Machine`                                                                                              |
-| `name`             | string             | Machine ID.                                                                                            |
-| `labels`           | map\[string]string | Labels to be applied to the machine set node.                                                          |
-| `annotations`      | map\[string]string | Annotations to be applied to the machine set node.                                                     |
-| `locked`           | string             | Whether the machine should be marked as locked. Can be `true` only if the machine is used as a worker. |
-| `install.disk`     | string             | Disk to install Talos on. Matters only for Talos running from ISO or iPXE.                             |
-| `patches`          | array              | List of [patches](#patches) to apply to the machine.                               |
-| `systemExtensions` | array              | The list of system extensions to be installed on the machine.                                          |
+| Field              | Type                     | Description                                                                                            |
+|:-------------------|:-------------------------|:-------------------------------------------------------------------------------------------------------|
+| `kind`             | string                   | `Machine`                                                                                              |
+| `name`             | string                   | Machine ID.                                                                                            |
+| `labels`           | map[string]string        | Labels to be applied to the machine set node.                                                          |
+| `annotations`      | map[string]string        | Annotations to be applied to the machine set node.                                                     |
+| `locked`           | boolean                  | Whether the machine should be marked as locked. Can be `true` only if the machine is used as a worker. |
+| `install.disk`     | string                   | Disk to install Talos on. Matters only for Talos running from ISO or iPXE.                             |
+| `patches`          | array[[Patch](#patches)] | List of patches to apply to the machine.                                                               |
+| `systemExtensions` | array[string]            | The list of system extensions to be installed on the machine.                                          |
+| `kernelArgs`       | array[string]            | The list of [kernel args](#kernelArgs) to be set on this machine.                                      |
 
 <Warning>
-When Talos is not installed and the install disk is not specified, Omni will try to pick the install disk automatically. It will find the smallest disk which is larger than 5GB. {}
+When Talos is not installed and you do not specify the install disk, Omni tries to pick the install disk automatically.
+It finds the smallest disk larger than 5GB.
 </Warning>
 
-### Common Fields
+## Common fields
 
-#### `patches`
+The following configuration fields are shared across multiple document types.
 
-The `patches` field is a list of [machine configuration patches](https://www.talos.dev/latest/talos-guides/configuration/patching/) to apply to a cluster, a machine set, or an individual machine. Config patches modify the configuration before it is applied to each machine in the cluster. Changing configuration patches modifies the machine configuration which gets automatically applied to the machine.
+### `patches`
+
+The `patches` field lists [machine configuration patches](https://www.talos.dev/latest/talos-guides/configuration/patching/) to apply to a cluster, a machine set, or an individual machine. Config patches modify the configuration before it is applied to each machine in the cluster. Changing configuration patches modifies the machine configuration, which gets automatically applied to the machine.
 
 ```yaml
 patches:
@@ -304,13 +318,27 @@ patches:
           MY_ENV_VAR: my-value
 ```
 
-| Field         | Type               | Description                                                                                                                                                          |
-| ------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `file`        | string             | Path to the patch file. Path is relative to the current working directory when executing `omnictl`. File should contain Talos machine configuration strategic patch. |
-| `name`        | string             | Name of the patch. Required for `inline` patches when `idOverride` is not set, optional for `file` patches (default name will be based on the file path).            |
-| `idOverride`  | string             | Override the config patch ID, so it won't be generated from the `name` or `file`.                                                                                    |
-| `labels`      | map\[string]string | Labels to be applied to the config patch.                                                                                                                            |
-| `annotations` | map\[string]string | Annotations to be applied to the config patch.                                                                                                                       |
-| `inline`      | object             | Inline patch containing Talos machine configuration strategic patch.                                                                                                 |
+| Field         | Type              | Description                                                                                                                                                              |
+|:--------------|:------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `file`        | string            | Path to the patch file.<br/>Path is relative to the current working directory when executing `omnictl`. File should contain Talos machine configuration strategic patch. |
+| `name`        | string            | Name of the patch.<br/>Required for `inline` patches when `idOverride` is not set, optional for `file` patches (default name will be based on the file path).            |
+| `idOverride`  | string            | Override the config patch ID, so it won't be generated from the `name` or `file`.                                                                                        |
+| `labels`      | map[string]string | Labels to be applied to the config patch.                                                                                                                                |
+| `annotations` | map[string]string | Annotations to be applied to the config patch.                                                                                                                           |
+| `inline`      | object            | Inline patch containing Talos machine configuration strategic patch.                                                                                                     |
 
-A configuration patch may be either `inline` or `file` based. Inline patches are useful for small changes, file-based patches are useful for more complex changes, or changes shared across multiple clusters.
+A configuration patch may be either `inline` or `file` based. Inline patches are useful for small changes, while file-based patches are useful for more complex changes or changes shared across multiple clusters.
+
+### `kernelArgs`
+
+You can define kernel args at the cluster, machine set, or individual machine level. Management of kernel args by cluster templates is opt-in: the templates manage them ONLY IF you specify them and they are not `null`. Otherwise, their lifecycle remains outside of cluster template management.
+
+When defined at multiple levels, the lowest/most specific level takes precedence. For example, a kernel arg defined at the machine level overrides the same kernel arg defined at the cluster or machine set level.
+
+These args are only supported for "static" machines. If a machine is created from a machine class, kernel args management is not supported. This means setting them in a `ControlPlane` or `Workers` document that uses `machineClass`, or in a `Cluster` document that contains machine sets based on `machineClass`, will result in an error.
+
+```yaml
+kernelArgs:
+  - talos.dashboard.disabled=1
+  - net.ifnames=0
+```
