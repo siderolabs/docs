@@ -34,6 +34,9 @@ INTERNAL_REG=127.0.0.1:5000
 
 ### Image Cache Signing Key
 
+You need to create a Cache Signing Key to sign cached Talos image artifacts, ensuring they haven’t been tampered with before being served.
+
+
 ```shell
 openssl ecparam -name prime256v1 -genkey -noout -out signing-key.key
 ```
