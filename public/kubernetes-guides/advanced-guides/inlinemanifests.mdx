@@ -124,16 +124,11 @@ Here’s a quick overview of the key differences between `inlineManifests` and `
 
 ## How Talos Handles Manifest Resources
 
-Talos continuously reconciles manifests on every boot, on every failure to apply, and on every change to the manifests in the machine config.
+Talos reconciles manifests on every boot, on every failure to apply, and on every change to the manifests in the machine config.
 When processing your `inlineManifests` and `extraManifests`, Talos follows a conservative, additive-only approach.
 
-Here's what that means in practice:
+This means that Talos automatically only creates new resources.
+Once created Talos never edits or deletes resources even if they are modified or removed from the machine configuration.
 
-* **Creates missing resources**: If a resource defined in your manifests doesn't exist in the cluster, Talos will create it.
-
-* **Preserves existing resources**: Resources that already exist in the cluster are left completely unchanged, regardless of any differences between the current state and the manifest definition.
-
-* **Never deletes resources**: Talos will not remove resources from the cluster, even if they're no longer present in your manifest configuration.
-
-If you need to reapply or update these manifests after the cluster has been created, use the [Kubernetes upgrade](./upgrading-kubernetes) process.
-Specify the same Kubernetes version that’s currently running in your cluster to ensure that only the manifests are reapplied, without performing a version upgrade.
+If you need to prune unwanted resources or update the resources, use the [Kubernetes upgrade](./upgrading-kubernetes) process.
+Specify the same Kubernetes version that’s currently running in your cluster to skip performing a kubernetes version upgrade and only synchronize manifests.
