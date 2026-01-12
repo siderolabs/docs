@@ -1,0 +1,140 @@
+---
+title: AMD GPU Support (ROCm)
+---
+
+Talos supports AMD GPUs by loading the standard Linux `amdgpu` driver at boot.
+
+To make those GPUs available to Kubernetes workloads, you can deploy the ROCm GPU Operator.
+
+This guide shows how to enable AMD GPU support on your Talos nodes, apply any tuning your hardware might need, and install ROCm inside your cluster.
+
+## Before You Begin
+
+You’ll need:
+
+- A Talos Linux cluster running v1.11 or later.
+
+- At least one node with an AMD GPU.
+
+- Basic familiarity with editing and applying Talos machine configuration.
+
+- The following Talos system extensions:
+
+    - siderolabs/amdgpu
+
+    - siderolabs/amd-ucode
+
+Most common AMD GPUs require only the standard `amdgpu` driver included with Talos.
+
+Some newer GPUs may require additional tuning, which we’ll cover later in this guide.
+
+## Enable AMD GPU support
+
+Enable AMD GPU firmware and driver support by patching your worker node configuration with these system extensions configuration below:
+
+```yaml
+machine:
+  type: worker
+
+customization:
+  systemExtensions:
+    officialExtensions:
+      - siderolabs/amdgpu
+      - siderolabs/amd-ucode
+```
+
+Once you have applied your configurations and the node reboots, the kernel will load the AMDGPU modules and make the GPU available to the operating system
+
+
+## Optional: GPU tuning
+
+Some hardware may require additional kernel arguments or memory tuning, particularly newly released or high-performance GPUs.
+
+Example configuration for an AMD AI 395+ (Strix Halo) system:
+
+```yaml
+customization:
+  extraKernelArgs:
+    - amd_iommu=off
+    - amdgpu.gttsize=131072
+    - ttm.pages_limit=33554432
+  systemExtensions:
+    officialExtensions:
+      - siderolabs/amdgpu
+      - siderolabs/amd-ucode
+```
+
+What these parameters do:
+
+- `amd_iommu=off`: Disables AMD IOMMU initialization. Useful when passthrough or PCI initialization causes issues.
+- `amdgpu.gttsize`: Increases the GPU GTT memory size for workloads that allocate large buffers
+- `ttm.pages_limit`: Raises the TTM memory limit for large model workloads.
+
+## Deploy the ROCm GPU Operator
+
+With GPU support enabled at the OS level, you can deploy the ROCm GPU Operator to surface GPU resources to Kubernetes workloads.
+
+Add the ROCm Helm repository:
+
+```bash
+helm repo add rocm https://rocm.github.io/gpu-operator
+helm repo update
+```
+
+Install the operator:
+
+```bash
+helm install rocm-gpu-operator rocm/gpu-operator -n kube-system
+```
+
+Check operator status:
+
+```bash
+kubectl get pods -n kube-system | grep gpu
+```
+
+Inspect your node to confirm GPU resources. Replace the `<node-name>` placeholder with the name of your node:
+
+```bash
+kubectl describe node <node-name> | grep -i gpu
+```
+
+## Troubleshooting
+
+Issues can show up at different layers depending on your hardware, kernel version, or virtualization platform. The following sections outline the most common problems and how to diagnose them.
+
+### GPU not detected
+
+If the GPU does not appear:
+
+1. Confirm that systems extensions are installed:
+
+```bash
+talosctl get extensions --nodes <node-ip>
+```
+
+2. Review kernel logs:
+
+```bash
+talosctl logs -k --nodes <node-ip>
+```
+
+3. Check PCI visibility:
+
+```bash
+talosctl get devices.pci --nodes <node-ip>
+```
+
+## ROCm operator issues
+
+If the operator fails to initialize, inspect logs:
+
+```bash
+kubectl logs -n kube-system deployment/rocm-gpu-operator
+```
+
+Confirm that:
+
+- System extensions are active
+- The GPU is visible in Talos.
+- GPU firmware matches ROCm expectations

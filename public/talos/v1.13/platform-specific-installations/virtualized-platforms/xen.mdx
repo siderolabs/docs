@@ -1,0 +1,13 @@
+---
+title: "Xen"
+aliases: 
+  - ../../../virtualized-platforms/xen
+---
+
+Talos is known to work on Xen.
+We don't yet have a documented guide specific to Xen; however, you can follow the [General Getting Started Guide](../../getting-started/getting-started).
+If you run into any issues, our [slack community](https://taloscommunity.slack.com/) can probably help!
+If you are not already a member, you can request access [here](https://inviter.co/sidero-labs-community).
+
+> Note: For Secure Boot, you can force setup mode with `varstore-sb-state <VM_UUID> setup` or `xe vm-set-uefi-mode mode=setup uuid=<VM_UUID>`.
+> Don't forget to re-enable Secure Boot after the first boot.

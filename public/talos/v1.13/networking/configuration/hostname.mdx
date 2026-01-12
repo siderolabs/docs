@@ -1,0 +1,58 @@
+---
+title: "Hostname"
+description: "Learn how to configure the hostname for your Talos nodes."
+---
+
+By default, the Talos Linux generates a default stable hostname for each machine based on machine ID like `talos-2ld-dvw`.
+This default hostname can be overridden by DHCP-provided hostname, platform (cloud) metadata, or manually configured hostname.
+
+## Configuration
+
+The default configuration document for the hostname looks like this ([HostnameConfig](../../reference/configuration/network/hostnameconfig)):
+
+```yaml
+apiVersion: v1alpha1
+kind: HostnameConfig
+auto: stable
+```
+
+The `auto` field can have the following values:
+
+* `stable`: generates a stable hostname based on machine ID (default).
+* `off`: disables automatic hostname generation, resulting in Talos waiting for another source (DHCP, cloud metadata, manual configuration) to set the hostname.
+
+To manually set a specific hostname, create a `HostnameConfig` document with the desired hostname:
+
+```yaml
+apiVersion: v1alpha1
+kind: HostnameConfig
+hostname: my-custom-hostname
+```
+
+When patching default machine config to set a custom hostname, use the following patch (auto hostname should be disabled):
+
+```yaml
+apiVersion: v1alpha1
+kind: HostnameConfig
+hostname: my-custom-hostname
+auto: off
+```
+
+## Observing Status
+
+Use `talosctl` to get the current hostname of a node:
+
+```bash
+$ talosctl get hostname
+NODE         NAMESPACE   TYPE             ID         VERSION   HOSTNAME                       DOMAINNAME
+172.20.0.2   network     HostnameStatus   hostname   3         talos-default-controlplane-1
+```
+
+To see all hostname configuration sources, use the following:
+
+```bash
+$ talosctl get hostnamespec --namespace=network-config
+NODE         NAMESPACE        TYPE           ID                      VERSION
+172.20.0.2   network-config   HostnameSpec   default/hostname        1
+172.20.0.2   network-config   HostnameSpec   dhcp4/enp0s2/hostname   1
+```

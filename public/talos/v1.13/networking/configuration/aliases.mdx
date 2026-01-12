@@ -1,0 +1,86 @@
+---
+title: "Link Aliases"
+description: "Learn how to provide alternative names for network interfaces."
+---
+
+Talos Linux by default names physical network interfaces based on [predictable interface naming conventions](../predictable-interface-names) (e.g., `ens3`, `enp0s31f6`, etc.).
+In some scenarios, it might be desirable to provide alternative, more user-friendly names for network interfaces.
+This can be achieved using [LinkAliasConfig](../../reference/configuration/network/linkaliasconfig) configuration documents.
+
+Note:
+
+* only physical links can be aliased (logical links like bridges, bonds, or VLANs are given user-defined names directly);
+* link alias configuration document should match exactly one physical link, otherwise the configuration will not be applied;
+* link alias can be used interchangeably with physical link names in all networking configuration sections (links, routes, addresses, etc.).
+
+The link alias is built using a CEL expression running on the specfication of a `LinkStatus` resource:
+
+```yaml
+# talosctl get linkstatus enp0s2 -o yaml
+...
+spec:
+    altNames:
+        - enxb6dce1a4a634
+    index: 8
+    type: ether
+    linkIndex: 0
+    flags: UP,BROADCAST,RUNNING,MULTICAST,LOWER_UP
+    hardwareAddr: b6:dc:e1:a4:a6:34
+    permanentAddr: b6:dc:e1:a4:a6:34
+    broadcastAddr: ff:ff:ff:ff:ff:ff
+    mtu: 1500
+    queueDisc: pfifo_fast
+    operationalState: up
+    kind: ""
+    slaveKind: ""
+    busPath: "0000:00:02.0"
+    driver: virtio_net
+    driverVersion: 1.0.0
+    productID: "0x1000"
+    vendorID: "0x1af4"
+    product: Virtio network device
+    vendor: Red Hat, Inc.
+    linkState: true
+    speedMbit: 4294967295
+    port: Other
+    duplex: Unknown
+```
+
+The following example creates a link alias `net0` for the only physical network interface found on the system:
+
+```yaml
+apiVersion: v1alpha1
+kind: LinkAliasConfig
+name: net0
+selector:
+    match: true # as there is a single link only, we can match it this way
+```
+
+The following example creates a link alias `mgmt` for the network interface with a specific MAC address:
+
+```yaml
+apiVersion: v1alpha1
+kind: LinkAliasConfig
+name: mgmt
+selector:
+    match: mac(link.permanent_addr) == "00:1a:2b:3c:4d:5e"
+```
+
+The aliases can be observed in the `LinkStatus` resources:
+
+```bash
+$ talosctl get links
+NODE         NAMESPACE   TYPE         ID          VERSION   ALIAS   TYPE       KIND     HW ADDR                                           OPER STATE   LINK STATE
+172.20.0.2   network     LinkStatus   enp0s2      4         net0    ether               b6:dc:e1:a4:a6:34                                 up           true
+...
+```
+
+In the above example, the physical interface `enp0s2` has been aliased to `net0`, which can now be used in all networking configuration sections.
+
+To see all aliases produced from the machine configuration, use the following:
+
+```bash
+$ talosctl get linkaliasspec
+NODE         NAMESPACE   TYPE            ID       VERSION   ALIAS
+172.20.0.2   network     LinkAliasSpec   enp0s2   1         net0
+```

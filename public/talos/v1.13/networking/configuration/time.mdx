@@ -1,0 +1,39 @@
+---
+title: "Time Servers"
+description: "Learn how to configure time servers (NTP sync)."
+---
+
+Talos Linux defaults to using `time.cloudflare.com` as the NTP server for time synchronization.
+
+## Configuration
+
+To customize the NTP servers used by Talos, create a [TimeSyncConfig](../../reference/configuration/network/timesyncconfig) document like:
+
+```yaml
+apiVersion: v1alpha1
+kind: TimeSyncConfig
+ntp:
+    servers:
+        - 0.pool.ntp.org
+        - 1.pool.ntp.org
+```
+
+See [Time Sync](../../configure-your-talos-cluster/system-configuration/time-sync) for more details about time synchronization in Talos Linux.
+
+## Observing Status
+
+Use `talosctl` to get the current time synchronization configuration of a node:
+
+```bash
+$ talosctl get timeservers
+NODE         NAMESPACE   TYPE               ID            VERSION   TIMESERVERS
+172.20.0.2   network     TimeServerStatus   timeservers   1         ["time.cloudflare.com"]
+```
+
+To see all time server configuration sources, use the following:
+
+```bash
+$ talosctl get timeserverspec --namespace=network-config
+NODE         NAMESPACE        TYPE             ID                    VERSION
+172.20.0.2   network-config   TimeServerSpec   default/timeservers   1
+```

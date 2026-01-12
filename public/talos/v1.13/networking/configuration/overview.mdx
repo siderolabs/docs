@@ -1,0 +1,33 @@
+---
+title: "Overview"
+description: "Learn how to configure networking with Talos Linux."
+---
+
+Talos Linux is API-centric, so it is critial to establish network connectivity to be able to manage and operate Talos nodes.
+Some network configuration is required to establish basic connectivity, while more advanced configuration can be applied to optimize networking for specific use-cases.
+
+There are a few key concepts to understand when configuring networking with Talos Linux:
+
+- **Interfaces (Links)**: Talos allows configuring multiple network interfaces per node. Each interface can be configured with static IPs, DHCP, or other methods.
+- **Addresses**: IP addresses (both IPv4 and IPv6) can be assigned to interfaces. Talos supports both static and dynamic addressing.
+- **Routes**: Custom routes can be defined to control traffic flow within the cluster and to external networks.
+- **DNS**: Talos supports configuring DNS servers and search domains to ensure proper name resolution.
+- **NTP**: Talos allows configuring NTP servers to ensure accurate time synchronization across nodes.
+- **Advanced Networking**: Talos supports advanced networking features such as Wireguard for secure VPN connections, and SideroLink for out-of-band management.
+- **Bridging and Bonding**: Talos supports network bridging and bonding for high availability and load balancing.
+
+There are cases when there is no need to configure networking at all:
+
+* By default, if no network configuration is provided, Talos will attempt to use DHCP on the primary interface to obtain an IP address and other network settings.
+  This is often sufficient for basic connectivity in many environments.
+* In cloud environments, Talos can leverage cloud-init or similar mechanisms to automatically configure networking based on the cloud provider's metadata service.
+
+The hardest network configuration scenario involves setting up a Talos machine in an isolated environment without DHCP or any external network services which requires
+fully manual configuration of interfaces, addresses, routes, DNS, and NTP.
+In this case, a configuration source which doesn't rely on network connectivity is required, such as an embedded configuration, or cloud-init user-data bundled with the Talos image.
+
+Talos Linux supports network configuration coming from multiple sources, and it is recommended to use the machine configuration as the primary source of truth for networking settings.
+But other configuration sources can be used to override or supplement the machine configuration as needed: kernel arguments, cloud-specific data sources, dashboard metal network settings, etc.
+
+> Note: Default Talos Linux behavior to run DHCP on any physical link is disabled automatically when any link is configured explicitly in the machine configuration.
+> In order to keep DHCP running, it must be explicitly enabled on the desired link(s).

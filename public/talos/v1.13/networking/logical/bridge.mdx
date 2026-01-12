@@ -1,0 +1,36 @@
+---
+title: "Bridge"
+description: "Learn how to configure network bridges."
+---
+
+A network bridge is a logical network device that connects multiple network interfaces together, allowing them to communicate as if they were on the same physical network segment.
+Bridges are commonly used in virtualization and containerization scenarios to allow virtual machines or containers to access the external network through the host machine's network interfaces.
+
+## Configuration
+
+To configure a bridge in Talos Linux, create a [BridgeConfig](../../reference/configuration/network/bridgeconfig) document like:
+
+```yaml
+apiVersion: v1alpha1
+kind: BridgeConfig
+name: bridge.1
+links:
+    - eno1
+    - eno5
+stp:
+    enabled: true
+vlan:
+    filtering: false
+up: true
+addresses:
+    - address: 1.2.3.5/32
+```
+
+In this example, a bridge named `bridge.1` is created using the physical interfaces `eno1` and `eno5`.
+The Spanning Tree Protocol (STP) is enabled to prevent network loops, and VLAN filtering is disabled.
+The bridge is also assigned a static IP address of `1.2.3.5/32`.
+
+The `links` field specifies the physical or logical interfaces that are part of the bridge, and [link aliases](./../configuration/aliases) can be used here as well.
+
+Addresses and routes can be configured in the same document as shown in [static link configuration](./../configuration/static).
+DHCP can be enabled on the bridge interface as shown in [dynamic link configuration](./../configuration/dynamic).

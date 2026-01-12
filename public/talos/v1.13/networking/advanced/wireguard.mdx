@@ -1,0 +1,43 @@
+---
+title: "Wireguard"
+description: "Learn how to configure Wireguard link."
+aliases:
+  - ../../../guides/configuring-wireguard-network
+---
+
+See this official Wireguard [quick start tutorial](https://www.wireguard.com/quickstart/) to understand the basic concepts.
+
+For each machine, generate a public/private key pair:
+
+```bash
+wg genkey | tee privatekey | wg pubkey > publickey
+```
+
+Wireguard network requires a set of overlay addresses that will be used by Wireguard interfaces on each machine ([WireguardConfig](../../reference/configuration/network/wireguardconfig)).
+For example, you can use the `10.0.0.0/24` network for overlay addresses (if this network does not conflict with your existing networks).
+
+```yaml
+apiVersion: v1alpha1
+kind: WireguardConfig
+name: wg.int
+privateKey: GA1E1VB+g41Dl0+UH2TMW9C5953y+moVg6JIIqkJbmw= # private key of this machine
+listenPort: 5042 # optional
+peers:
+    - publicKey: 735jkJdcVDninU5PzLJ/S+bfN6Q3QOk6svWrVLMJQAk= # public key of another machine
+      allowedIPs:
+        - 10.0.0.2/32 # overlay address of another machine
+      endpoint: 192.168.1.2:5042 # endpoint to connect to, only one of the peers needs to specify this
+    - publicKey: uvdlJNva1X8/OCOZM+0gGT4Yu9x20odd3AWbbQUF7nM= # public key of yet another machine
+      allowedIPs:
+        - 10.0.0.3/32 # overlay address of yet another machine
+up: true
+addresses:
+    - address: 10.0.0.1/32 # overlay address of this machine
+```
+
+This configuration creates a Wireguard interface named `wg.int` with the overlay address `10.0.0.1/32`, if applied on all machines,
+the machines will be able to communicate with each other over the Wireguard network using the overlay addresses.
+
+If you want to route specific networks over the Wireguard interface, you need to set up routing accordingly.
+
+See [KubeSpan](./../kubespan) for a way to make Talos Linux set up Wireguard overlay mesh network automatically across the cluster.

@@ -1,0 +1,121 @@
+---
+title: "Use Image Cache as a Registry Mirror"
+description: "Serve a Talos image cache over HTTPS and use it as a registry mirror in air-gapped or restricted environments."
+---
+
+Talos can bundle container images into an image cache and use it locally on each node.
+In air-gapped or restricted environments, you can also serve this cache over HTTPS and configure Talos to use it as a registry mirror.
+
+To serve the image cache over HTTPS:
+
+## Step 1. Create the image cache
+
+First, build a list of images and create the cache. This example builds a minimal Talos image cache. To learn how to create an image cache, see the [Image cache documentation](./image-cache)
+
+```bash
+talosctl images default | \
+  talosctl images cache-create \
+    --images=- \
+    --image-cache-path=/tmp/cache \
+    --layout=flat
+```
+
+## Step 2. Generate Required Certificates
+
+You can generate the certificates using the following command:
+
+```bash
+talosctl image cache-cert-gen --advertise-address=172.20.0.1 \
+  --tls-ca-file=/tmp/ca.crt \
+  --tls-cert-file=/tmp/tls.crt \
+  --tls-key-file=/tmp/tls.key
+```
+
+This produces:
+
+- `/tmp/ca.crt` – CA certificate
+
+- `/tmp/tls.crt` – server certificate
+
+- `/tmp/tls.key` – private key
+
+These are required for serving the cache over HTTPS.
+
+## Step 3. Start the Image Cache Registry
+
+`cache-serve` starts a lightweight, read-only registry that serves images from the cache directory.
+
+```bash
+talosctl image cache-serve \
+  --image-cache-path=/tmp/cache \
+  --address=172.20.0.1:12000 \
+  --tls-cert-file=/tmp/tls.crt \
+  --tls-key-file=/tmp/tls.key
+```
+
+## Step 4. Patch Talos to Trust the Registry CA
+
+Talos requires HTTPS to pull installer images.
+
+In air-gapped setups, images are hosted in an internal OCI registry using a self-signed or private TLS certificate.
+
+Because Talos does not trust this certificate by default, it will fail with: `x509: certificate signed by unknown authority`.
+
+To resolve this, apply a patch that adds your registry’s CA certificate to Talos’s trusted roots. This allows Talos to securely pull images from the private registry.
+
+> **Important**: Replace the placeholder below with the full text of your `/tmp/ca.crt file`, including the `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----` lines.
+
+```bash
+apiVersion: v1alpha1
+kind: TrustedRootsConfig
+name: image-cache-ca
+certificates: |
+  # Paste the full contents of /tmp/ca.crt here
+  # including the BEGIN CERTIFICATE and END CERTIFICATE lines
+```
+
+## Step 5. Configure Registry Mirrors
+
+Talos and Kubernetes components normally pull images from public registries such as `docker.io`, `ghcr.io`, and `registry.k8s.io`.
+
+In air-gapped environments, these are unreachable.
+
+To resolve this, create a patch that redirects all image pulls to the local registry mirror at https://172.20.0.1:12000.
+
+```yaml
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: docker.io
+endpoints:
+    - url: https://172.20.0.1:12000 # note that it is HTTPS not HTTP
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: gcr.io
+endpoints:
+    - url: https://172.20.0.1:12000 # note that it is HTTPS not HTTP
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: ghcr.io
+endpoints:
+    - url: https://172.20.0.1:12000 # note that it is HTTPS not HTTP
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: registry.k8s.io
+endpoints:
+    - url: https://172.20.0.1:12000 # note that it is HTTPS not HTTP
+```
+
+Also, if desired, all image pulls can be forced to go through the mirror by using `*` as the `name`:
+
+```yaml
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: "*"
+endpoints:
+    - url: https://172.20.0.1:12000 # note that it is HTTPS not HTTP
+```
+
+Talos and Kubernetes components will now pull images directly from your served cache.

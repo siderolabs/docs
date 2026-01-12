@@ -1,0 +1,158 @@
+---
+title: Talos Security Checklist
+description: A practical checklist for securing Talos Linux clusters.
+---
+
+Talos is designed to be secure by default, no SSH, no interactive shell, an API-driven OS, and an immutable filesystem.
+
+Still, there are several additional steps you can take to strengthen the security posture of your cluster.
+
+This checklist highlights the key areas to review and configure when running Talos in production environments.
+
+## Protect secrets and sensitive information
+
+Talos stores certificates, keys, and other sensitive configuration data inside the machine configuration. To keep this material secure, make sure you:
+
+- Encrypt secrets stored in your Talos machine config.
+
+- Limit who has access to machine configuration files, as they contain cluster CA keys and API credentials.
+
+For more details, see:
+
+- [Certificate Authority Rotation](../security/ca-rotation)
+- [Generating a Secrets Bundle](../getting-started/prodnotes#step-5%3A-generate-secrets-bundle)
+- [Talos Certificate Management](../security/cert-management)
+- [`talosctl rotate ca` Reference](../reference/cli#talosctl-rotate-ca)
+
+## Enable disk encryption
+
+Encrypting disks helps ensure that sensitive data cannot be accessed if the underlying hardware is lost or compromised. In Talos, you can enable several layers of disk protection:
+
+- **TPM-backed disk encryption**: Uses the node’s TPM to automatically unlock encrypted volumes during boot.
+
+- **SecureBoot + TPM for verified boot paths**: Confirms that the kernel and operating system haven’t been tampered with before the system starts.
+
+- **Encrypted user volumes**: Protects data stored on node-local disks used by workloads.
+
+You can configure disk encryption manually or manage it centrally through Omni.
+
+For more details, see [Disk Encryption](../configure-your-talos-cluster/storage-and-disk-management/disk-encryption).
+
+## Keep Talos machines up to date
+
+Talos has a small and predictable upgrade surface, and staying current is one of the most effective ways to keep your cluster secure.
+
+Talos follows a regular release cycle: minor releases are published three times per year, patch releases are issued as needed, and security/CVE fixes are delivered according to our SLA for addressing critical vulnerabilities.
+
+Each release may include:
+
+- Kernel security patches
+
+- Container runtime updates
+
+- Enhancements to the Talos API
+
+- CVE and security fixes across the operating system
+
+To stay secure and up to date, make sure you upgrade regularly. You can upgrade individual nodes with:
+
+```bash
+talosctl upgrade --nodes <ip>
+```
+
+See [Upgrading Talos Linux](../configure-your-talos-cluster/lifecycle-management/upgrading-talos) for more information.
+
+## Enforce pod security controls
+
+Talos secures the operating system, but Kubernetes is responsible for enforcing how your pods behave at runtime. To strengthen workload security, make sure you:
+
+- Enable Pod Security Admission (PSA) with at least baseline protections enabled.
+
+- Apply network policies to control which pods can communicate with each other.
+
+- Restrict privileged workloads, including host namespaces, privileged mode, and hostPath mounts.
+
+- Use read-only root filesystems whenever possible to reduce the risk of tampering.
+
+See [Pod Security](../../../kubernetes-guides/security/pod-security) for more information.
+
+## Review network and firewall configuration
+
+Talos exposes only the minimal set of API-server–controlled ports, but you can further reduce your attack surface by tightening network boundaries. Consider using:
+
+- The Talos ingress firewall to restrict traffic directly at the OS layer,
+
+- Cloud or platform-level firewalls such as security groups or VPC rules,
+
+See [Ingress Firewall](../networking/ingress-firewall) for more information.
+
+## Use secureBoot + verified boot
+
+When your hardware supports it:
+
+- Enable SecureBoot
+
+- Use TPM-backed key storage
+
+This ensures that the kernel, the initramfs, and the OS image have not been modified.
+
+SecureBoot is especially recommended for bare-metal deployments. Refer to the [Secureboot documentation](../platform-specific-installations/bare-metal-platforms/secureboot) for more information.
+
+## Limit API access
+
+The Talos API is the only interface for managing the OS, which means that open or poorly controlled access effectively grants the ability to reconfigure, reboot, wipe, or even replace a node.
+
+To protect your Talos API:
+
+- Limit access to your `talosconfig`, since it contains the credentials required to communicate with the cluster.
+
+- Rotate Talos certificates whenever team members change or access needs to be revoked.
+
+- Avoid embedding Talos API credentials in automation unless you can properly scope and restrict their permissions.
+
+- Prefer short-lived credentials to reduce long-term exposure.
+
+For more detailed guidance on securing Talos API access, see:
+
+- [Certificate Authority Rotation](../security/ca-rotation)
+- [Generating a Secrets Bundle](../getting-started/prodnotes#step-5%3A-generate-secrets-bundle)
+- [Talos Certificate Management](../security/cert-management)
+- [`talosctl rotate ca` Reference](../reference/cli#talosctl-rotate-ca)
+
+## Enable cluster backups and recovery planning
+
+A secure system is one you can recover confidently, which makes backups and disaster-recovery planning an essential part of your security posture. To build real operational resilience, make sure you:
+
+- Create etcd snapshots to capture the state of your cluster. Check out [Talos Backup](https://github.com/siderolabs/talos-backup) to automate taking and storing snapshots of your cluster.
+
+- Store snapshots off-cluster so recovery is possible even if the entire environment is lost.
+
+- Test your disaster-recovery process regularly to ensure it works when you need it most.
+
+- Document the recovery steps so your whole team knows exactly what to do during an incident.
+
+For detailed guidance on recovery and backup workflows, see:
+
+- [Disaster Recovery](../build-and-extend-talos/cluster-operations-and-maintenance/disaster-recovery)
+- [etcd Maintenance](../build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance)
+- [Create Etcd Backups](../../../omni/cluster-management/etcd-backups)
+
+## Monitor and audit
+
+Monitoring and auditing allow you to catch issues early and understand the overall health and behavior of your cluster. With Talos and the wider ecosystem of Kubernetes-native observability tools, you can keep track of:
+
+- Audit logs
+
+- Network flows
+
+- Cluster events
+
+- Changes to Talos nodes (via events / dmesg / API logs)
+
+For setup instructions and deeper guidance, see the following documentation:
+
+- [Audit Logs](../../../omni/cluster-management/using-audit-log)
+- [Logging](../configure-your-talos-cluster/logging-and-telemetry/logging)
+- [Deploy Metrics Server](../../../kubernetes-guides/monitoring-and-observability/deploy-metrics-server)
+
+Additionally, integrate with tools like [Prometheus](https://prometheus.io/) and [Grafana](https://grafana.com/) for observability.
