@@ -1,0 +1,60 @@
+---
+title: Omni with Terraform
+---
+
+Omni is a control plane designed to manage cluster and machine lifecycle and state over time. As part of that design, Omni maintains its own authoritative state and continuously reconciles resources based on that state.
+
+This document describes Omni’s state and reconciliation model, explains how it differs from Terraform’s execution model, and outlines the recommended approach for managing Omni.
+
+## Understanding how Omni works
+
+Omni is not a stateless API or a simple provisioning tool. It is a long-running control plane that continuously reconciles the desired state of clusters and machines over time.
+
+Internally, Omni stores its authoritative state in etcd. This state represents the current and desired configuration of clusters, machines, and related resources, and Omni’s controllers are responsible for continuously driving the system toward that desired state. Changes are applied incrementally and reconciled over time, not executed as one-off operations.
+
+If this sounds familiar, it’s because Omni behaves much more like Kubernetes than like a traditional infrastructure provisioning tool. The Kubernetes API server also stores state in etcd, exposes a declarative, stateful API, and relies on controllers to reconcile that state continuously.
+
+This similarity is intentional.
+
+## How Terraform’s model differs
+
+Terraform operates under a very different set of assumptions. It relies on an external state file, typically stored locally or in a remote backend, which represents Terraform’s understanding of the world. Terraform expects that it is the primary owner of that state and that changes to managed resources flow through its plan and apply cycle.
+
+This model works well when Terraform is the single system responsible for creating and updating resources. It begins to break down when another control plane is also managing the same resources and maintaining its own source of truth.
+
+If Terraform were used to manage Omni resources directly, there would be two independent systems attempting to reconcile state:
+
+* Omni, using its internal etcd-backed state and controllers
+* Terraform, using its state file and execution model
+
+When those states drift, which is difficult to avoid in practice, Terraform may attempt to “correct” changes that Omni has intentionally made, or Omni may overwrite changes Terraform believes it owns. Over time, these competing reconciliation loops can lead to instability and hard-to-debug failures.
+
+This is the same fundamental reason Terraform is generally not recommended for long-term management of Kubernetes resources.
+
+## Omni as a Kubernetes-style API
+
+A useful way to think about Omni is to treat it as you would the Kubernetes API itself. You don’t typically manage Kubernetes objects by continuously applying Terraform plans against the cluster. Instead, you interact with a declarative API, allow controllers to reconcile state, and store desired configuration in version control.
+
+Omni is designed to fit that same pattern. It exposes an API, maintains its own state, and continuously reconciles that state over time. Trying to manage it with Terraform introduces an extra layer of state management that works against this design rather than with it.
+
+## The recommended approach: GitOps or CI/CD
+
+Rather than using Terraform, we recommend managing Omni in a GitOps-style workflow. In this model, desired configuration lives in Git, changes are reviewed through standard development workflows, and a stateless  controller applies the desired configuration to Omni.
+
+This approach keeps state ownership clear: Omni remains the single source of truth for cluster and machine state, while Git serves as the auditable record of intent. There is no competing external state file attempting to reassert control.
+
+At the time of writing, Omni does not ship with an official GitOps controller, but customers have built their own tooling to apply manifests. One complication with traditional GitOps controllers is 2-way sync and resource deletion. It may not be safe to allow your controller to delete resources from Omni and may be difficult to sync UI changes back to YAML files.
+
+An alternative approach is an apply-only, CI/CD workflow. This still uses YAML files in git with standard developer workflows for PR reviews. Once the desired changes are added into the main branch a CI/CD runner can run `omnictl cluster template sync` to send the manifests to the Omni API. 
+
+This is a much simpler approach, doesn’t have a remote state file, and avoids the need for custom development. It doesn’t continually reconcile the YAML files with the live state or delete resources if files have been removed.
+
+## Where Terraform still fits
+
+None of this means Terraform has no role in an Omni-based environment. Terraform remains a strong choice for provisioning the underlying infrastructure that Omni runs on or manages, such as virtual machines, networking, load balancers, and cloud-provider resources.
+
+Once that infrastructure exists, responsibility should be handed off to Omni to manage cluster lifecycle and ongoing reconciliation. Terraform and Omni work best when their responsibilities are clearly separated, rather than overlapping.
+
+There may also be a need to manage external infrastructure resources as part of Omni resource management. For example, you may be submitting a cluster template to Omni that requires an external secrets resource, or load balancer. In this case it would be difficult to create some resources with terraform and others via Omni.
+
+Unfortunately, this problem exists with many infrastructure tools, even Kubernetes, and there isn’t a clear solution. Some teams have moved to Kubernetes-native infrastructure provisioning tools like [Crossplane](https://www.crossplane.io/) and others have used terraform to "shell out" to local CLI tools

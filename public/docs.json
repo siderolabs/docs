@@ -2226,6 +2226,7 @@
               },
               "omni/cluster-management/create-a-hybrid-cluster",
               "omni/cluster-management/upgrading-clusters",
+              "omni/cluster-management/omni-terraform",
               "omni/cluster-management/expose-an-http-service-from-a-cluster",
               "omni/cluster-management/export-a-cluster-template-from-a-cluster-created-in-the-ui",
               "omni/cluster-management/etcd-backups",
