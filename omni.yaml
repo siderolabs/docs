@@ -97,7 +97,8 @@ navigation:
             - "how-to-manage-acls.mdx"
             - "omni-kms-disk-encryption.mdx"
             - "break-glass-emergency-access.mdx"
-            - "rotate-siderolink-join-token"
+            - "rotate-siderolink-join-token.mdx"
+            - "security-model.mdx"
 
         - group: "Reference"
           folder: "omni/reference"

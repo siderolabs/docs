@@ -2259,7 +2259,8 @@
               "omni/security-and-authentication/how-to-manage-acls",
               "omni/security-and-authentication/omni-kms-disk-encryption",
               "omni/security-and-authentication/break-glass-emergency-access",
-              "omni/security-and-authentication/rotate-siderolink-join-token"
+              "omni/security-and-authentication/rotate-siderolink-join-token",
+              "omni/security-and-authentication/security-model"
             ]
           },
           {
