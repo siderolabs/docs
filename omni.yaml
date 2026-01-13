@@ -68,6 +68,7 @@ navigation:
                 - "scale-your-cluster/karpenter"
             - "create-a-hybrid-cluster.mdx"
             - "upgrading-clusters.mdx"
+            - "omni-terraform.mdx"
             - "expose-an-http-service-from-a-cluster.mdx"
             - "export-a-cluster-template-from-a-cluster-created-in-the-ui.mdx"
             - "etcd-backups.mdx"
