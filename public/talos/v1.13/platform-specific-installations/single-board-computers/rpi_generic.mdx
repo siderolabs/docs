@@ -199,7 +199,7 @@ Now we can generate the metal image with the following command:
 
 <CodeBlock lang="sh">
   {`
-$ docker run --rm -t -v $PWD/_out:/out -v /dev:/dev --privileged ghcr.io/siderolabs/imager:${release_v1_13} rpi_generic \
+$ docker run --rm -t -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release_v1_13} rpi_generic \
   --arch arm64 \
   --overlay-image ghcr.io/siderolabs/sbc-raspberrypi:v0.1.0@sha256:849ace01b9af514d817b05a9c5963a35202e09a4807d12f8a3ea83657c76c863 \
   --overlay-name=rpi_generic \

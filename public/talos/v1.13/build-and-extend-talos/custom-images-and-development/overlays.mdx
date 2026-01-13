@@ -94,7 +94,7 @@ export USERNAME=octocat
 export BOARD=nanopi-r5s
 export TAG=664638a
 
-docker run --rm -t -v ./_out:/out -v /dev:/dev --privileged ghcr.io/siderolabs/imager:${TALOS_VERSION} \
+docker run --rm -t -v ./_out:/out ghcr.io/siderolabs/imager:${TALOS_VERSION} \
     "${BOARD}" --arch arm64 \
     --base-installer-image="ghcr.io/siderolabs/installer-base:${TALOS_VERSION}" \
     --overlay-name="${BOARD}" \

@@ -66,7 +66,7 @@ The initial platform network configuration for the `metal` platform can be also 
 <CodeBlock lang="sh">
 {`
 docker run --rm -i ghcr.io/siderolabs/imager:${release_v1_13} iso --arch amd64 --tar-to-stdout --meta 0x0a='{...}' | tar xz
-docker run --rm -i --privileged ghcr.io/siderolabs/imager:${release_v1_13} image --platform metal --arch amd64 --tar-to-stdout --meta 0x0a='{...}' | tar xz
+docker run --rm -i ghcr.io/siderolabs/imager:${release_v1_13} image --platform metal --arch amd64 --tar-to-stdout --meta 0x0a='{...}' | tar xz
 `}
 </CodeBlock>
 

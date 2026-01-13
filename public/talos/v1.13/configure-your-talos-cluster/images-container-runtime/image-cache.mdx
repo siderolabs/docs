@@ -52,7 +52,7 @@ The ISO image can built with the [imager](../../platform-specific-installations/
 <CodeBlock lang="sh">
 {`
 mkdir -p _out/
-docker run --rm -t -v $PWD/_out:/secureboot:ro -v $PWD/_out:/out -v $PWD/image-cache.oci:/image-cache.oci:ro -v /dev:/dev --privileged ghcr.io/siderolabs/imager:${release_v1_13} iso --image-cache /image-cache.oci
+docker run --rm -t -v $PWD/_out:/secureboot:ro -v $PWD/_out:/out -v $PWD/image-cache.oci:/image-cache.oci:ro ghcr.io/siderolabs/imager:${release_v1_13} iso --image-cache /image-cache.oci
 `}
 </CodeBlock>
 
@@ -76,7 +76,7 @@ The disk image can be built with the [imager](../../platform-specific-installati
 <CodeBlock lang="sh">
 {`
 mkdir -p _out/
-docker run --rm -t -v $PWD/_out:/secureboot:ro -v $PWD/_out:/out -v $PWD/image-cache.oci:/image-cache.oci:ro -v /dev:/dev --privileged ghcr.io/siderolabs/imager:${release_v1_13} metal --image-cache /image-cache.oci
+docker run --rm -t -v $PWD/_out:/secureboot:ro -v $PWD/_out:/out -v $PWD/image-cache.oci:/image-cache.oci:ro ghcr.io/siderolabs/imager:${release_v1_13} metal --image-cache /image-cache.oci
 `}
 </CodeBlock>
 
