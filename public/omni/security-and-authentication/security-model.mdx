@@ -1,0 +1,117 @@
+---
+title: Omni, Talos, and Kubernetes Security
+---
+
+This document explains how users are authenticated, how permissions are assigned, and how access is enforced across Omni-managed resources, including Talos Linux nodes and Kubernetes clusters.
+
+When clusters and machines are managed by Omni, Omni becomes the central point of access for all the resources it controls. This includes access to Talos, Kubernetes, and Omni-specific resources.
+
+Access to Omni, Talos, and Kubernetes is provided through certificates that are managed by Omni. Other sensitive data, such as Talos disk encryption keys, are also managed by Omni. However, Kubernetes resources like Secrets are managed within Kubernetes itself.
+
+This document focuses specifically on how users and services access each API, rather than on encryption mechanisms or system hardening.
+
+Omni’s security model is intentionally layered, with each layer building on the previous one. This approach enables fine-grained access control across multi-cluster and multi-user environments.
+
+## High-level model
+
+Access in Omni flows through four conceptual layers:
+
+* **Authentication (AuthN)** – establishes who a user is.
+* **Authorization (AuthZ)** – define the user’s permissions.
+* **Access Control Lists (ACLs)** –  authorization scope and overrides.
+* **Talos Linux RBAC** - enforces what a user can do with the Talos API.
+* **Kubernetes RBAC** –  enforces what a user can do with the Kubernetes API.
+
+Understanding Omni security is easiest when these layers are considered together rather than in isolation.
+
+## Authentication
+
+Authentication defines how a user’s identity is established in Omni. Omni supports multiple identity providers, including Auth0, GitHub, OIDC-compatible providers, and SAML-based identity providers.
+
+Beyond verifying identity, authentication also controls how users are created in Omni and which role they are assigned on first login. This behavior varies depending on the authentication method in use.
+
+With SAML, users (referred to as principals) are authenticated with Omni acting as a Service Provider (SP). Omni redirects the authentication request to an Identity Provider (IdP), such as Auth0. After the user signs in with the IdP, they are redirected back to Omni with a signed assertion, which Omni verifies to confirm their identity.
+
+With OIDC, a user accesses Omni as a Relying Party and is redirected to an OpenID Provider (OP), such as Google. After authentication, the OP returns identity claims to Omni, which are then verified with the provider.
+
+In both cases, user identities are managed outside of Omni. Omni is responsible only for authorization, controlling access to resources, machines, and clusters.
+
+### Authorization (AuthZ)
+
+Users are created when they first authenticate with Omni. Accounts have roles such as `Reader`, `Operator`, and `Admin` that define what they can do with the Omni API. This applies to the web interface and `omnictl` client. Their account role is assigned or adjusted by an Omni administrator.
+
+The first user created in the Omni instance is assigned the `Admin` role, while all subsequent users are assigned the None role by default. Role changes are managed in Omni, but user creation and removal must be handled in the identity provider.
+
+When users authenticate to Omni they are provided a temporary, 4-hour token to use for API interactions. These tokens are automatically managed by the web interface and `omnictl` client, but they are separate and a user who wants to use the web interface and CLI will need to authenticate twice for different tokens.
+
+If users are added to Omni and then removed from the identity provider they will no longer be able to log in, but they need to be manually deleted from Omni to clean up orphaned resources. A user who has already logged in and has a valid token will need to be removed from the Omni users to immediately revoke their access.
+
+Attributes provided in the SAML assertion are attached to the user’s Identity resource using the `saml.omni.sidero.dev/` prefix. These attributes can later be referenced for access control decisions.
+
+For details on supported authentication methods and how authentication works, see the [Authentication and Authorization documentation](../security-and-authentication/authentication-and-authorization).
+
+## Account roles
+
+Account roles define a user’s default level of access across an entire Omni account. They apply globally and are evaluated before any cluster-specific access policies.
+
+Omni provides the following account roles:
+
+### None
+
+The `None` role is the most restrictive. It is commonly used as a safe default, especially in SAML-based setups.
+
+Users with this role have no access to Omni-managed resources and can only see limited public information, such as the Omni version, account name, and authentication requirements.
+
+### Reader
+
+The `Reader` role provides read-only access and is typically used for audit, observability, or support scenarios. Users with this role can view clusters, machines, and other resources, but cannot modify them.
+
+### Operator
+
+The `Operator` role is designed for day-to-day cluster operations.
+
+Users with this role can modify clusters and machines and perform most operational tasks.
+
+However, they cannot manage users, service accounts, or infrastructure providers.
+
+### Admin
+
+The `Admin` role provides full account-level access and should be restricted to trusted administrators.
+
+Users with this role can view and manage users, service accounts, infrastructure providers, and other resources that affect overall account operation.
+
+## Access control lists (ACLs)
+
+While account roles apply globally, ACLs provide scoped, cluster-specific access control. They allow administrators to grant or restrict permissions for individual clusters without changing a user’s account role.
+
+ACLs are commonly used to grant elevated access to a staging or development cluster while keeping production access restricted. They can also be used to give users with the None role meaningful access to specific clusters.
+
+Only users with the `Admin` role can create or modify ACLs.
+
+Configuration details and examples are covered in the [Manage Access Policies (ACLs) documentation](../security-and-authentication/how-to-manage-acls).
+
+## Omni authorization and Kubernetes RBAC
+
+Omni roles and ACLs control access to Omni-managed resources. Kubernetes RBAC controls what users can do inside the Kubernetes cluster itself.
+
+ACLs act as the bridge between these two systems. When a user accesses a cluster through Omni, Kubernetes group memberships defined in the ACL are applied through impersonation. Kubernetes RBAC then evaluates those group memberships to determine in-cluster permissions.
+
+Users who have the Omni role `Operator` or higher are automatically assigned the Kubernetes `system:masters` group in addition to any groups specified in ACLs. This effectively grants cluster-admin access unless additional restrictions are applied.
+
+Because of this behavior, ACLs should be used carefully in environments where strict least-privilege access is required.
+
+## Default behavior without ACLs
+
+When ACLs are not configured, users with write permissions in Omni are granted Kubernetes admin-level access by default. This behavior is intentional and keeps the default experience simple, but it may not be appropriate for shared or multi-tenant environments.
+
+In those cases, ACLs combined with Kubernetes RBAC should be used to enforce tighter access boundaries.
+
+## Service accounts
+
+Omni supports non-interactive access through a programming language or the official Omni client, `omnictl`. When user authentication is used, Omni issues short-lived credentials. Tokens can remain valid for up to eight hours, and Omni-generated public keys expire after four hours. These limits are fixed and cannot be configured.
+
+Because credentials may expire, user authentication is not recommended for CI/CD pipelines or other automated workflows. Service Accounts should be used instead to ensure reliable, uninterrupted access.
+
+A service account is a long-lived, static authentication token that can be used for the Omni API. Service account tokens can allow access to Omni, Talos, and Kubernetes. For setup instructions, see the documentation on creating an [Omni service account](../security-and-authentication/break-glass-emergency-access) and a [Kubernetes service account](../omni-cluster-setup/create-a-kubeconfig-for-a-service-account).
+
+Service accounts are different from a [“break glass” access token](../security-and-authentication/break-glass-emergency-access). Break glass tokens bypass Omni and provide direct access to the Talos and Kubernetes APIs, while service accounts authenticate through Omni’s standard mechanisms. This distinction is important because service accounts can be revoked, whereas break glass tokens cannot.
