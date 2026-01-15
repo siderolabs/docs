@@ -1914,7 +1914,7 @@ talosctl image cache-create [flags]
 talosctl images cache-create --images=ghcr.io/siderolabs/kubelet:v1.35.0-alpha.3 --image-cache-path=/tmp/talos-image-cache
 
 Alternatively, stdin can be piped to the command:
-talosctl images default | talosctl images cache-create --image-cache-path=/tmp/talos-image-cache --images=-
+talosctl images k8s-bundle | talosctl images cache-create --image-cache-path=/tmp/talos-image-cache --images=-
 
 ```
 
