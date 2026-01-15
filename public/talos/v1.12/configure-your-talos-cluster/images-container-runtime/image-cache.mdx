@@ -32,7 +32,7 @@ talosctl images talos-bundle ${release_v1_12} >> images.txt
 </CodeBlock>
 
 or deploy an [Image Factory](../../../../omni/infrastructure-and-extensions/self-hosted/deploy-image-factory-on-prem) to host Talos images internally.
-
+<Warn>Including all talos-bundle images will significantly increase the size of your installation media. The minimum images to install Talos include the `installer` and `installer-base` images.</Warn>
 Next, prepare an OCI image which contains all cached images:
 
 ```bash
