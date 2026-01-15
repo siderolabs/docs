@@ -1,0 +1,61 @@
+---
+title: Introduction to Cluster Templates
+---
+
+Cluster templates are Omni’s declarative way to define and manage clusters over time. A cluster template describes the desired state of a cluster, which Omni continuously parses and reconciles to ensure the cluster matches that definition.
+
+Rather than relying on a sequence of UI actions, templates make cluster configuration explicit, repeatable, and reviewable. When templates are managed via a change management system such as `git`, desired changes are expressed in the template, making it clearer what changed, when it changed, and why.
+
+A cluster template is structured as a multi-document YAML file. Each document represents a specific part of the cluster, such as the cluster itself, the control plane, worker machine sets, or individual machines. Omnictl validates these documents, converts them into Omni, and maintains backward compatibility so the same template can be reused across future Omni versions.
+
+The full template structure and all supported fields are documented in the [Cluster Templates reference documentation.](../reference/cluster-templates#cluster-templates)
+
+## The cluster template lifecycle
+
+Regardless of how a template is created, cluster templates are typically used in the same way:
+
+1. **Boot machines with the Omni image**:
+Machines are first booted using an Omni-provided Talos image. This allows them to register with Omni and become available for cluster creation and template-based management.
+2. **Decide how machines will be selected**:
+Cluster templates can add machines to a cluster in one of two ways: by referencing explicit machine UUIDs, or by using machine classes.
+
+    Referencing UUIDs gives you precise, manual control over which machines are used, but it tightly couples the template to specific machines. Over time, this makes scaling, replacement, and reuse more difficult, as every change requires updating machine lists directly.
+
+    Machine classes offer a more flexible approach. Instead of listing individual machines, the template defines a class and a desired size, and Omni automatically selects machines that match. Scaling then becomes a matter of adjusting the size in the template, rather than managing machine identities.
+
+    In environments backed by Infrastructure Providers, machine classes are also used to define the shape and quantity of machines to be created. Instead of selecting from a fixed pool of registered machines, Omni uses the machine class definition to request new machines from the underlying provider and reconciles the cluster to the desired size.
+
+    To learn how to define machine classes, see [Create a Machine Class](../omni-cluster-setup/create-a-machine-class).
+
+3. **Create a cluster template**:
+The cluster template defines the cluster itself, the control plane, one or more worker machine sets, and how machines are selected for each set.
+4. **Apply the template to create the cluster**:
+Syncing the template causes Omni to create the cluster and reconcile it to the declared state.
+5. **Manage the cluster by editing the template**:
+Ongoing changes are made by updating the template and syncing it again. When machine classes are used, increasing or decreasing capacity is done by adjusting the size in the template and allowing Omni to reconcile the cluster.
+
+## Create a cluster template
+
+There are two common ways to obtain a cluster template: exporting one from an existing cluster, or creating one directly as YAML.
+
+### Export a template from an existing cluster
+
+Exporting a template is often the starting point when a cluster was originally created through the UI. It provides a way to move from manual, UI-driven management to template-based management without rebuilding the cluster.
+
+To export a cluster template, replace `<name-of-cluster>` with the name of your cluster and run:
+
+```bash
+omnictl cluster template export -c &lt;name-of-cluster> -o cluster-template.yaml
+```
+
+This command exports the cluster’s configuration into `cluster-template.yaml`. The resulting file captures the current state of the cluster and can be used as the basis for managing it going forward.
+
+Once a template has been exported, it should be treated as the authoritative representation of the cluster. Future changes are made by editing the template and syncing it, rather than continuing to modify the cluster through the UI.
+
+For a complete walkthrough and example output, see [Export a Cluster Template from a Cluster Created in the UI.](../cluster-management/export-a-cluster-template-from-a-cluster-created-in-the-ui)
+
+### Create a template directly as YAML
+
+Cluster templates can also be defined directly as YAML and used to manage cluster creation.
+
+A full walkthrough of this process, including examples with both manual machine allocation and machine classes, is available in the [Create a Cluster](../getting-started/create-a-cluster#cli-with-machine-classes) guide.
