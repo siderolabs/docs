@@ -20,8 +20,8 @@ talosctl images k8s-bundle > images.txt
 cat extra-images.txt >> images.txt
 ```
 
-### AirGapped Environments
-If you are preparing for an airgapped environment, you will need to cache the talos images as well.
+### Air-Gapped Environments
+If you are preparing for an air-gapped environment, you will need to cache the talos images as well.
 
 Starting with Talos 1.12 you can get a list of images needed from talosctl.
 
@@ -30,6 +30,8 @@ Starting with Talos 1.12 you can get a list of images needed from talosctl.
 talosctl images talos-bundle ${release_v1_12} >> images.txt
 `}
 </CodeBlock>
+
+or deploy an [Image Factory](../../../../omni/infrastructure-and-extensions/self-hosted/deploy-image-factory-on-prem) to host Talos images internally.
 
 Next, prepare an OCI image which contains all cached images:
 
