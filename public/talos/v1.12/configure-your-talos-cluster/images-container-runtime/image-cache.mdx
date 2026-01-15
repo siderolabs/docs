@@ -13,12 +13,23 @@ The cache is local to each machine and is automatically managed by Talos when en
 ## Preparing Image Cache
 
 First, build a list of image references that need to be cached.
-The `talosctl images default` might be used as a starting point, but it should be customized to include additional images (e.g. custom CNI, workload images, etc.)
+The `talosctl images k8s-bundle` might be used as a starting point, but it should be customized to include additional images (e.g. custom CNI, workload images, etc.)
 
 ```bash
-talosctl images default > images.txt
+talosctl images k8s-bundle > images.txt
 cat extra-images.txt >> images.txt
 ```
+
+### AirGapped Environments
+If you are preparing for an airgapped environment, you will need to cache the talos images as well.
+
+Starting with Talos 1.12 you can get a list of images needed from talosctl.
+
+<CodeBlock lang="sh">
+{`
+talosctl images talos-bundle ${release_v1_12} >> images.txt
+`}
+</CodeBlock>
 
 Next, prepare an OCI image which contains all cached images:
 

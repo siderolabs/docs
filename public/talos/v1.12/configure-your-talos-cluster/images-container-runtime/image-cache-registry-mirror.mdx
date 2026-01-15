@@ -13,7 +13,7 @@ To serve the image cache over HTTPS:
 First, build a list of images and create the cache. This example builds a minimal Talos image cache. To learn how to create an image cache, see the [Image cache documentation](./image-cache)
 
 ```bash
-talosctl images default | \
+talosctl images k8s-bundle | \
   talosctl images cache-create \
     --images=- \
     --image-cache-path=/tmp/cache \
