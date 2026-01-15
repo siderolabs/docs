@@ -53,6 +53,7 @@ navigation:
                 - "registering-machines/join-machines-to-omni"
             - "create-a-kubeconfig-for-a-service-account.mdx"
             - "create-a-machine-class.mdx"
+            - "cluster-template.mdx"
             - "create-a-patch-for-cluster-machines.mdx"
             - "create-an-omni-service-account.mdx"
             - "how-to-set-initial-machine-labels.mdx"

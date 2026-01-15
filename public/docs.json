@@ -2207,6 +2207,7 @@
               },
               "omni/omni-cluster-setup/create-a-kubeconfig-for-a-service-account",
               "omni/omni-cluster-setup/create-a-machine-class",
+              "omni/omni-cluster-setup/cluster-template",
               "omni/omni-cluster-setup/create-a-patch-for-cluster-machines",
               "omni/omni-cluster-setup/create-an-omni-service-account",
               "omni/omni-cluster-setup/how-to-set-initial-machine-labels",
