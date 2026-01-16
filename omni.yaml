@@ -76,6 +76,7 @@ navigation:
             - "restore-etcd-of-a-cluster-managed-by-cluster-templates.mdx"
             - "using-audit-log.mdx"
             - "importing-talos-clusters.mdx"
+            - "wipe-a-machine.mdx"
             - "talos-config-overrides.mdx"
             - "override-ntp-servers.mdx"
             - "support-bundle.mdx"
