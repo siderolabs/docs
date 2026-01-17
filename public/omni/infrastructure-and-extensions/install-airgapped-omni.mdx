@@ -2,422 +2,566 @@
 title: Installing Airgapped Omni
 ---
 
-### Prerequisites
+import { omni_release, version, release } from '/snippets/custom-variables.mdx';
 
-DNS server NTP server TLS certificates Installed on machine running Omni
+This document will walk through each component to run the "Sidero stack" in an offline environment which includes the following components.
 
-* genuuid
-  * Used to generate a unique account ID for Omni.
-* Docker
-  * Used for running the suite of applications
-* Wireguard
-  * Used by Siderolink
-
-### Gathering Dependencies
-
-In this package, we will be installing:
-
-* Gitea
-* Keycloak
 * Omni
+* [Image Factory](./self-hosted/deploy-image-factory-on-prem)
+* Container registry
+* Authentication service
 
-To keep everything organized, I am using the following directory structure to store all the dependencies and I will move them to the airgapped network all at once.
+>When running Talos with Omni you do not need to run additional services such as the [Discovery Service](../../talos/v1.12/configure-your-talos-cluster/system-configuration/discovery) because discovery functionality is built in to Omni.
 
-> **NOTE:** The empty directories will be used for the persistent data volumes when we deploy these apps in Docker.
+If you already have services such as a container registry, authentication service (SAML or OIDC), or a trusted certificate authority you can skip those sections of the guide. This guide will set up proof-of-concept deployment to get you started. We recommend [talking with the Sidero team](https://www.siderolabs.com/contact/) for production deployments.
+
+<Note>Omni is licensed under the [Business Source License](https://github.com/siderolabs/omni/blob/main/LICENSE) and requires a support contract for production use.</Note>
+
+## Prerequisites
+
+There are some expectations your environment has the following supporting services for the services to run. These include:
+
+* Networks that can route Talos nodes to the Omni service endpoints
+* Basic networking services such as DNS, DHCP, and NTP
+* An admin system that can connect to the internet to download assets
+* A Linux server (e.g. RHEL, Ubuntu) to run the Sidero stack
+
+>The Sidero stack can be run on a single server or multiple servers, but we don't recommend running Omni inside of Kubernetes for air gapped environments.
+
+In addition to these services you'll need the following tools installed on the administrator machine and server.
+
+* [`talosctl`](../../talos/v1.12/getting-started/talosctl)
+* `docker` or `podman`
+* [`cfssl`](https://github.com/cloudflare/cfssl) and `cfssljson`
+* [`yq`](https://github.com/mikefarah/yq)
+* [`crane`](https://github.com/google/go-containerregistry/blob/main/cmd/crane/README.md)
+* `htpasswd`
+
+>Podman is known to work but has some flags that are different than docker and you may have to translate them for your version of podman.
+
+<Accordion title="Download required tools">
+Download static binaries of the required tools. `Docker` and `htpasswd` should be provided by your distributions package manager.
+
+`talosctl`
+
+<CodeBlock lang="sh">
+{`curl -L -o talosctl https://github.com/siderolabs/talos/releases/download/${release}/talosctl-linux-amd64\nchmod +x talosctl`}
+</CodeBlock>
+
+`cfssl`
 
 ```bash
-airgap
-├── certs
-├── gitea
-├── keycloak
-├── omni
-└── registry
+CFSSL_VERSION=$(curl -sI https://github.com/cloudflare/cfssl/releases/latest | grep -i location | awk -F '/' '{print $NF}' | tr -d '\r')
+curl -L -o cfssl https://github.com/cloudflare/cfssl/releases/download/${CFSSL_VERSION}/cfssl_${CFSSL_VERSION#v}_linux_amd64
+curl -L -o cfssljson https://github.com/cloudflare/cfssl/releases/download/${CFSSL_VERSION}/cfssljson_${CFSSL_VERSION#v}_linux_amd64
+chmod +x cfssl cfssljson
 ```
 
-#### Generate Certificates
+`yq`
 
-**TLS Certificates**
+```bash
+YQ_VERSION=$(curl -sI https://github.com/mikefarah/yq/releases/latest | grep -i location | awk -F '/' '{print $NF}' | tr -d '\r')
+curl -L -o yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
+chmod +x yq
+```
 
-This tutorial will involve configuring all of the applications to be accessed via https with signed `.pem` certificates generated with [certbot](https://certbot.eff.org/). There are many methods of configuring TLS certificates and this guide will not cover how to generate your own TLS certificates, but there are many resources available online to help with this subject if you do not have certificates already.
+`crane`
+```bash
+CRANE_VERSION=$(curl -sI https://github.com/google/go-containerregistry/releases/latest | grep -i location | cut -d/ -f8 | tr -d '\r')
+curl -sL "https://github.com/google/go-containerregistry/releases/download/${CRANE_VERSION}/go-containerregistry_Linux_x86_64.tar.gz" | tar -xz crane
+chmod +x crane
+```
+</Accordion>
 
-**Omni Certificate**
+### Export endpoints
 
-Omni uses etcd to store the data for our installation and we need to give it a private key to use for encryption of the etcd database.
+To make this guide easier to follow we will set global variables for each of the endpoints and ports we will use. Update the hostnames and ports if you change any of them from the defaults.
 
-1. First, Generate a GPG key.
+```bash
+REGISTRY_ENDPOINT=registry.internal:5000
+FACTORY_ENDPOINT=factory.internal:8080
+AUTH_ENDPOINT=auth.internal:5556
+OMNI_ENDPOINT=omni.internal
+```
+
+## 1. Generate Certificates
+
+In order to run services securely, even in an air gapped environment, you should run with encrypted data in transit and at rest. There are multiple certificates and keys needed to secure your infrastructure.
+
+* CA certificate (root of trust)
+* Domain certificates for the following endpoints
+  * Omni
+  * Authentication
+  * Image factory
+  * Container registry
+* Container signing certificate
+* Omni database encryption key
+
+
+### Create Root CA certificate (optional)
+
+<Note>If you already have a trusted, internal root CA you can skip generating the CA (root of trust). You will need to use your existing CA to create certificates for the services in this guide. Skip to [Generate endpoint certificates](#generate-endpoint-certificates)</Note>
+
+We will use the `cfssl` command to make the CA and certificate signing easier, but `openssl` can be used if you have existing CA infrastructure.
+
+```bash
+cat <<EOF > ca-csr.json
+{
+  "CN": "Internal Root CA",
+  "key": {
+    "algo": "rsa",
+    "size": 4096
+  },
+  "names": [
+    {
+      "C": "US",
+      "O": "Internal Infrastructure",
+      "OU": "Security"
+    }
+  ]
+}
+EOF
+```
+With the configuration create a CA certificate.
+
+```bash
+cfssl gencert -initca ca-csr.json | cfssljson -bare ca
+```
+
+This will give you a private key, `ca-key.pem`, a public key `ca.pem`, and a signing request `ca.csr`.
+
+For any client that will be calling the internal services you will need to install the ca.pem file into your trusted store.
+
+<Tabs>
+  <Tab title="Linux (RHEL)">
+  On Red Hat and Fedora based distros you can copy the `ca.pem` file into the `/etc/pki/ca-trust/source/anchors/` folder and then run the following command to generate the trusted root store:
+
+  ```bash
+  sudo cp ca.pem /etc/pki/ca-trust/source/anchors/
+  sudo update-ca-trust
+  ```
+  </Tab>
+  <Tab title="Linux (Ubuntu)">
+  On Ubuntu and Debian based Linux distros you can copy the `ca.pem` file into the `/usr/local/share/ca-certificates/` directory and rename it to `ca.crt`
+
+  ```bash
+  sudo cp ca.pem /usr/local/share/ca-certificates/ca.crt
+  sudo update-ca-certificates
+  ```
+  </Tab>
+  <Tab title="macOS">
+  For macOS you should open the *Keychain Access* application and drag the `ca.pem` file into the window to install it.
+  </Tab>
+  <Tab title="Windows">
+  On Windows you should rename the certificate extension from `.pem` to `.crt`. You can then double click on the file and select *Install Certificate* -> *Local Machine*. You then need to select "Place all certificates in the following store" and select the *Trusted Root Certification Authorities*.
+
+  If you're using Windows Subsystem for Linux (WSL) you should follow the Linux guide for installing the certificate.
+  </Tab>
+</Tabs>
+
+### Generate endpoint certificates
+
+Generate a single certificate that all services can use based on the CA we just created. For a production deployment you should generate individual certificates for each service.
+
+Create a signing configuration to let `cfssl` know we want a web server certificate that should expire in 1 year.
+
+```bash
+cat <<EOF > ca-config.json
+{
+  "signing": {
+    "default": {
+      "expiry": "8760h"
+    },
+    "profiles": {
+      "web-server": {
+        "usages": ["signing", "key encipherment", "server auth"],
+        "expiry": "8760h"
+      }
+    }
+  }
+}
+EOF
+```
+
+>When using `.internal` domains you will need to update your DNS server or `/etc/hosts` file to make sure the endpoints resolve properly. The file should look something like this.
+
+```text
+# Example config in /etc/hosts
+127.0.0.1 localhost registry.internal factory.internal auth.internal omni.internal
+```
+
+Now create a wildcard certificate for your services. We'll be using the ICANN reserved `.internal` TLD for service domains, but you can use any domain if you have it registered.
+
+```bash
+cat <<EOF > wildcard-csr.json
+{
+  "CN": "Internal Wildcard",
+  "hosts": [
+    "internal",
+    "${AUTH_ENDPOINT%:*}",
+    "${REGISTRY_ENDPOINT%:*}",
+    "${FACTORY_ENDPOINT%:*}",
+    "${OMNI_ENDPOINT%:*}",
+    "127.0.0.1",
+    "$(hostname -I | awk '{print $1}')"
+  ],
+  "key": {
+    "algo": "rsa",
+    "size": 4096
+  }
+}
+EOF
+```
+
+Generate the wildcard certificates for services.
+
+```bash
+cfssl gencert -ca=ca.pem -ca-key=ca-key.pem \
+  -config=ca-config.json \
+  -profile=web-server wildcard-csr.json \
+  | cfssljson -bare server
+```
+
+Create a certificate chain with server and CA.
+
+```bash
+cat server.pem ca.pem > server-chain.pem
+```
+
+This will create a private server key, `server-key.pem`, a public server key, `server.pem`, a server signing request, `server.csr`, and a `server-chain.pem`, a server certificate with CA.
+
+Services in this guide run with different user IDs so we will update the certificates to allow all users to read them. This is not suitable or secure for a production environment.
+
+```bash
+chmod 644 server*.pem
+```
+
+## 2. Image factory and container registry
+
+Using the certificates we just created, follow the guide [Deploy Image Factory On-prem](./self-hosted/deploy-image-factory-on-prem). This will 
+create a container registry and host the Image Factory in your environment. It will also sign container images with an offline key for verification.
+
+<Warning>If you do not have a working Image Factory with Talos images and extensions seeded do not continue with the guide. That is a pre-requisite for running Omni in an air gapped environment.</Warning>
+
+## 3. Authentication
+
+If you have existing SAML or OIDC authentication available you can use that with Omni. Please see the configuration guides in the [Authentication and Authorization](../security-and-authentication/authentication-and-authorization) section.
+
+For a PoC environment we will run [dex](https://dexidp.io/docs/) with static users configured. Dex can be used for static configuration or to communicate with upstream providers. For this guide we will configure static users.
+
+### Deploy Dex (optional)
+
+Because Omni does not have any user authentication Dex will be configured so we can log in to Omni with a static user. You will need to download the dex container from a machine that has internet access and push it to your internal registry.
+
+#### Download dex
+
+Download the dex container image.
+
+```bash
+docker pull ghcr.io/dexidp/dex:v2.41.1
+```
+
+If your machine has access to the internal registry you can push the image directly.
+
+```bash
+docker tag ghcr.io/dexidp/dex:v2.41.1 ${REGISTRY_ENDPOINT}/dexidp/dex:v2.41.1
+docker push ${REGISTRY_ENDPOINT}/dexidp/dex:v2.41.1
+```
+
+If you need to send the image to a remote machine or transfer it via an offline method you can export the container image.
+
+```bash
+docker save -o dex.tar ghcr.io/dexidp/dex:v2.41.1
+```
+
+On the remote machine load the archive into the local image storage and then push it to the registry.
+
+```bash
+docker load -i dex.tar
+docker push ${REGISTRY_ENDPOINT}/dexidp/dex:v2.41.1
+```
+
+#### Configure dex
+
+We will create an example dex configuration to use with Omni.
+
+Create a password. Make sure you remember this password for logging in later.
+
+```bash
+export OMNI_USER_PASSWORD=$(htpasswd -BnC 15 user42 | cut --delimiter=: --fields=1 --complement)
+```
+
+Create a dex configuration file.
+
+```bash
+cat <<EOF > dex.yaml
+issuer: https://${AUTH_ENDPOINT}
+storage:
+  type: memory
+
+web:
+  https: 0.0.0.0:5556
+  tlsCert: /etc/dex/tls/server-chain.pem
+  tlsKey: /etc/dex/tls/server-key.pem
+
+enablePasswordDB: true
+
+staticClients:
+  - name: Omni
+    id: omni
+    secret: aW50ZXJuYWwtc2lkZXJvLXN0YWNrCg== #internal-sidero-stack
+    redirectURIs: [https://omni.internal/oidc/consume]
+
+staticPasswords:
+  - email: "admin@omni.internal"
+    username: "admin"
+    preferredUsername: "admin"
+    hash: "$OMNI_USER_PASSWORD"
+EOF
+```
+
+#### Run dex
+
+Run dex with the provided configuration and certificate.
+
+```bash
+docker run -d \
+  --name dex \
+  -p 5556:5556 \
+  -v $(pwd)/dex.yaml:/etc/dex/dex.yaml \
+  -v $(pwd)/server-key.pem:/etc/dex/tls/server-key.pem \
+  -v $(pwd)/server-chain.pem:/etc/dex/tls/server-chain.pem \
+  ${REGISTRY_ENDPOINT}/dexidp/dex:v2.41.1 \
+    dex serve /etc/dex/dex.yaml
+```
+
+>If your machine has SELinux in enforcing mode you may need to add `:Z` to the volume mounts in the docker command.
+
+## 4. Run Omni
+
+Omni will depend on the following URLs. If these services are not running or the hostnames do not resolve you may need to add them to your /etc/hosts file.
+
+* omni.internal
+* factory.internal
+* registry.internal
+* auth.internal
+
+### Create etcd encryption key
+
+Data in Omni's database is encrypted and we need an encryption key to provide to Omni.
+
+Generate a GPG key:
 
 ```bash
 gpg --quick-generate-key "Omni (Used for etcd data encryption) how-to-guide@siderolabs.com" rsa4096 cert never
+FINGERPRINT=$(gpg --with-colons --list-keys "how-to-guide@siderolabs.com" | awk -F: '$1 == "fpr" {print $10; exit}')
+gpg --quick-add-key ${FINGERPRINT} rsa4096 encr never
+gpg --export-secret-key --armor how-to-guide@siderolabs.com > omni.asc
 ```
 
-This will generate a new GPG key pair with the specified properties.
+>Note: Do not add passphrases to keys during creation.
 
-What's going on here?
+### Download Omni
 
-* `quick-generate-key` allows us to quickly generate a new GPG key pair. -`"Omni (Used for etcd data encryption) how-to-guide@siderolabs.com"` is the user ID associated with the key which generally consists of the real name, a comment, and an email address for the user.
-* `rsa4096` specifies the algorithm type and key size.
-* `cert` means this key can be used to certify other keys.
-* `never` specifies that this key will never expire.
+Download the Omni container image.
 
-2. Add an encryption subkey
+<CodeBlock lang="sh">
+{`docker pull ghcr.io/siderolabs/omni:${omni_release}\ndocker tag ghcr.io/siderolabs/omni:${omni_release} \\\n  \${REGISTRY_ENDPOINT}/siderolabs/omni:${omni_release}`}
+</CodeBlock>
 
-We will use the fingerprint of this key to create an encryption subkey.
+If your machine has access to the internal registry you can push the image directly.
 
-To find the fingerprint of the key we just created, run:
+<CodeBlock lang="sh">
+{`docker push \${REGISTRY_ENDPOINT}/siderolabs/omni:${omni_release}`}
+</CodeBlock>
+
+If you need to send the image to a remote machine or transfer it via an offline method you can export the container image.
+
+<CodeBlock lang="sh">
+{`docker save -o omni.tar \${REGISTRY_ENDPOINT}/siderolabs/omni:${omni_release}`}
+</CodeBlock>
+
+On the remote machine load the archive into the local image storage and then push it to the registry.
+
+<CodeBlock lang="sh">
+{`docker load -i omni.tar\ndocker push \${REGISTRY_ENDPOINT}/siderolabs/omni:${omni_release}`}
+</CodeBlock>
+
+### Start Omni container
+
+This will run Omni with an embedded etcd database mounted to the host. It is not recommended for production use cases. The command assumes the certificates generated earlier are available in the local directory where you run this command.
+
+<CodeBlock lang="sh">
+{`docker run \\\n  --name omni \\\n  -d --net=host \\\n  --cap-add=NET_ADMIN \\\n  --device /dev/net/tun:/dev/net/tun \\\n  -v "\${PWD}/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro" \\\n  -v "\${PWD}/etcd:/_out/etcd" \\\n  -v "\${PWD}/sqlite:/_out/sqlite:rw" \\\n  -v "\${PWD}/server-key.pem:/server-key.pem:ro" \\\n  -v "\${PWD}/server-chain.pem:/server-chain.pem:ro" \\\n  -v "\${PWD}/omni.asc:/omni.asc:ro" \\\n  \${REGISTRY_ENDPOINT}/siderolabs/omni:${omni_release} \\\n    --name=air-gap-omni \\\n    --cert=/server-chain.pem \\\n    --key=/server-key.pem \\\n    --siderolink-api-cert=/server-chain.pem \\\n    --siderolink-api-key=/server-key.pem \\\n    --private-key-source=file:///omni.asc \\\n    --event-sink-port=8091 \\\n    --bind-addr=0.0.0.0:443 \\\n    --siderolink-api-bind-addr=0.0.0.0:8090 \\\n    --k8s-proxy-bind-addr=0.0.0.0:8100 \\\n    --advertised-api-url=https://omni.internal \\\n    --siderolink-api-advertised-url=https://omni.internal:8090 \\\n    --siderolink-wireguard-advertised-addr=\$(hostname -I | awk '{print \$1}'):50180 \\\n    --advertised-kubernetes-proxy-url=https://omni.internal:8100 \\\n    --auth-auth0-enabled=false \\\n    --auth-oidc-enabled=true \\\n    --auth-oidc-client-secret=aW50ZXJuYWwtc2lkZXJvLXN0YWNrCg== \\\n    --auth-oidc-provider-url=https://\${AUTH_ENDPOINT} \\\n    --auth-oidc-client-id=omni \\\n    --auth-oidc-scopes=openid,profile,email \\\n    --image-factory-address=https://\${FACTORY_ENDPOINT} \\\n    --initial-users=admin@omni.internal \\\n    --kubernetes-registry=\${REGISTRY_ENDPOINT}/siderolabs/kubelet \\\n    --sqlite-storage-path=/_out/sqlite/omni.db \\\n    --talos-installer-registry=\${REGISTRY_ENDPOINT}/siderolabs/installer \\\n    --workload-proxying-enabled=false \\\n    --metrics-bind-addr=0.0.0.0:2123`}
+</CodeBlock>
+
+>We changed the `--metrics-bind-addr` to use port `:2123` to avoid port conflicts with Image Factory (if it's running on the same host).
+
+These flags mount the files and directories needed by Omni (e.g. certificates, etcd storage) and set flags to connect Omni to the upstream services (e.g. factory, authentication).
+
+## 5. Create a cluster
+
+Before you create a cluster you will need to generate installation media. When creating a cluster you'll need to make sure you patch the machine config to redirect container registries to your internal registry.
+
+### Download Kubernetes containers
+
+Seed the internal registry with Kubernetes container images.
 
 ```bash
-gpg --list-secret-keys
+talosctl images k8s-bundle > k8s-images.txt
 ```
 
-Next, run the following command to create the encryption subkey, replacing `$FPR` with your own keys fingerprint.
+Download the images and push them into the internal registry.
+
+<Tabs>
+  <Tab title="Internet available">
+
+If your machine can reach the public internet and the internal registry at the same time you can copy the images internally with this command.
 
 ```bash
-gpg --quick-add-key $FPR rsa4096 encr never
+for SOURCE_IMAGE in $(cat images.txt)
+  do
+    IMAGE_WITHOUT_DIGEST=${SOURCE_IMAGE%%@*}
+    IMAGE_WITH_NEW_REG="${REGISTRY_ENDPOINT}/${IMAGE_WITHOUT_DIGEST#*/}"
+    crane copy \
+      $SOURCE_IMAGE \
+      $IMAGE_WITH_NEW_REG
+done
 ```
+</Tab>
+<Tab title="Air-gapped">
 
-In this command:
-
-* `$FPR` is the fingerprint of the key we are adding the subkey to.
-* `rsa4096` and `encr` specify that the new subkey will be an RSA encryption key with a size of 4096 bits.
-* `never` means this subkey will never expire.
-
-3. Export the secret key
-
-Lastly we'll export this key into an ASCII formatted file so Omni can use it.
+If you don't have direct access to an internal container registry (e.g. air gapped environment) you need to download the container images while connected to the internet with this command:
 
 ```bash
-gpg --export-secret-key --armor how-to-guide@siderolabs.com > certs/omni.asc
+cat images.txt \
+  | talosctl images cache-create \
+      --layout flat \
+      --image-cache-path ./image-cache \
+      --images=-
 ```
 
-* `--armor` is an option which creates the output in ASCII format. Without it, the output would be binary.
-
-Save this file to the certs directory in our package.
-
-#### Create the app.ini File
-
-Gitea uses a configuration file named **app.ini** which we can use to pre-configure with the necessary information to run Gitea and bypass the initial startup page. When we start the container, we will mount this file as a volume using Docker.
-
-Create the **app.ini** file
+Move the `image-cache` folder to an air gapped machine and serve the images on a read only, temporary container registry with:
 
 ```bash
-vim gitea/app.ini
+IP=$(hostname -I | awk '{print $1}')
+
+talosctl image cache-cert-gen \
+  --advertised-address $IP
+
+talosctl image cache-serve \
+  --address $IP:5000 \
+  --image-cache-path ./image-cache \
+  --tls-cert-file tls.crt \
+  --tls-key-file tls.key
 ```
 
-Replace the `DOMAIN`, `SSH_DOMAIN`, and `ROOT_URL` values with your own hostname:
-
-```ini
-APP_NAME=Gitea: Git with a cup of tea
-RUN_MODE=prod
-RUN_USER=git
-I_AM_BEING_UNSAFE_RUNNING_AS_ROOT=false
-
-[server]
-CERT_FILE=cert.pem
-KEY_FILE=key.pem
-APP_DATA_PATH=/data/gitea
-DOMAIN=${GITEA_HOSTNAME}
-SSH_DOMAIN=${GITEA_HOSTNAME}
-HTTP_PORT=3000
-ROOT_URL=https://${GITEA_HOSTNAME}:3000/
-HTTP_ADDR=0.0.0.0
-PROTOCOL=https
-LOCAL_ROOT_URL=https://localhost:3000/
-
-[database]
-PATH=/data/gitea/gitea.db
-DB_TYPE=sqlite3
-
-[security]
-INSTALL_LOCK=true # This is the value which tells Gitea not to run the initial configuration wizard on start up
-```
-
-> **NOTE:** If running this in a production environment, you will also want to configure the database settings for a production database. This configuration will use an internal sqlite database in the container.
-
-#### Gathering Images
-
-Next we will gather all the images needed installing Gitea, Keycloak, Omni, **and** the images Omni will need for creating and installing Talos.
-
-I'll be using the following images for the tutorial:
-
-* Gitea
-  * `docker.io/gitea/gitea:1.19.3`
-* Keycloak
-  * `quay.io/keycloak/keycloak:21.1.1`
-* Omni
-  * `ghcr.io/siderolabs/omni:v0.31.0`
-  * `ghcr.io/siderolabs/imager:v1.4.5`
-    * pull this image to match the version of Talos you would like to use.
-* Talos
-  * `ghcr.io/siderolabs/flannel:v0.21.4`
-  * `ghcr.io/siderolabs/install-cni:v1.4.0-1-g9b07505`
-  * `docker.io/coredns/coredns:1.10.1`
-  * `gcr.io/etcd-development/etcd:v3.5.9`
-  * `registry.k8s.io/kube-apiserver:v1.27.2`
-  * `registry.k8s.io/kube-controller-manager:v1.27.2`
-  * `registry.k8s.io/kube-scheduler:v1.27.2`
-  * `registry.k8s.io/kube-proxy:v1.27.2`
-  * `ghcr.io/siderolabs/kubelet:v1.27.2`
-  * `ghcr.io/siderolabs/installer:v1.4.5`
-  * `registry.k8s.io/pause:3.6`
-
-> **NOTE**: The Talos images needed may be found using the command `talosctl image default`. If you do not have `talosctl` installed, you may find the instructions on how to install it [here](https://omni.siderolabs.com/docs/how-to-guides/how-to-install-talosctl/).
-
-**Package the images**
-
-1. Pull the images to load them locally into Docker.
-
-* Run the following command for each of the images listed above **except** for the Omni image which will be provided to you as an archive file already.
+A temporary image registry will run on your local machine IP address port 5000 with self-signed certificates. Copy the images to an internal, permanent container registry.
 
 ```bash
-sudo docker pull registry/repository/image-name:tag
+for SOURCE_IMAGE in $(cat images.txt)
+  do
+    IMAGE_WITHOUT_DIGEST=${SOURCE_IMAGE%%@*}
+    IMAGE_WITH_NEW_REG="${REGISTRY_ENDPOINT}/${IMAGE_WITHOUT_DIGEST#*/}"
+    LOCALHOST_IMAGE="localhost:5000/${IMAGE_WITHOUT_DIGEST#*/}"
+    crane copy \
+      $LOCALHOST_IMAGE \
+      $IMAGE_WITH_NEW_REG
+done
 ```
+</Tab>
+</Tabs>
 
-2. Verify all of the images have been downloaded
+
+### Create installation media
+
+The first step to create a cluster is to boot machines and connect them to Omni. In order to do that we will need to embed the self-signed CA certificate into Talos.
+
+Create a configuration for a TrustedRootsConfig:
 
 ```bash
-sudo docker image ls
+yq eval --null-input '
+.apiVersion = "v1alpha1" |
+.kind = "TrustedRootsConfig" |
+.name = "internal-ca" |
+.certificates = load_str("ca.pem")
+' > trustedrootsconfig.yaml
 ```
 
-3. Save all of the images into an archive file.
+You can use this config two different ways. Use kernel arguments for Talos 1.11 and older and use embedded config for Talos 1.12.
 
-* All of the images can be saved as a single archive file which can be used to load all at once on our airgapped machine with the following command.
+<Tabs>
+  <Tab title="Embedded config (Talos 1.12+)">
+  Create an output directory for installation media and config.
 
-```bash
-docker save -o image-tarfile.tar \
-  list \
-  of \
-  images
-```
+  ```bash
+  mkdir _out
+  mv trustedrootsconfig.yaml _out/machine-config.yaml
+  echo "---" >> _out/machine-config.yaml
+  ```
 
-Here is an example of the command used for the images in this tutorial:
+  Download machine join configuration from Omni. You can do this from the Omni web interface home page by clicking on the **Download Machine Join Config** button or if you have `omnictl` installed you can download it with
 
-```bash
-docker save -o registry/all_images.tar \
-  docker.io/gitea/gitea:1.19.3 \
-  quay.io/keycloak/keycloak:21.1.1 \
-  ghcr.io/siderolabs/imager:v1.4.5 \
-  ghcr.io/siderolabs/flannel:v0.21.4 \
-  ghcr.io/siderolabs/install-cni:v1.4.0-1-g9b07505 \
-  docker.io/coredns/coredns:1.10.1 \
-  gcr.io/etcd-development/etcd:v3.5.9 \
-  registry.k8s.io/kube-apiserver:v1.27.2 \
-  registry.k8s.io/kube-controller-manager:v1.27.2 \
-  registry.k8s.io/kube-scheduler:v1.27.2 \
-  registry.k8s.io/kube-proxy:v1.27.2 \
-  ghcr.io/siderolabs/kubelet:v1.27.2 \
-  ghcr.io/siderolabs/installer:v1.4.5 \
-  registry.k8s.io/pause:3.6
-```
+  ```bash
+  omnictl jointoken machine-config >> _out/machine-config.yaml
+  ```
 
-#### Move Dependencies
+  Create a static hosts configuration for Omni and the registry.
 
-Now that we have all the packages necessary for the airgapped deployment of Omni, we'll create a compressed archive file and move it to our airgapped network.
+  ```bash
+  yq --null-input '
+  .apiVersion = "v1alpha1" |
+  .kind = "StaticHostConfig" |
+  .name = "'$(hostname -I | awk '{print $1}')'" |
+  .hostnames = ["'${OMNI_ENDPOINT%:*}'", "'${REGISTRY_ENDPOINT%:*}'"]
+' > hosts-config.yaml
+  ```
+  Append this configuration to the others.
 
-The directory structure should look like this now:
+  ```bash
+  echo "---" >> _out/machine-config.yaml
+  cat hosts-config.yaml >> _out/machine-config.yaml
+  ```
 
-```bash
-airgap
-├── certs
-│   ├── fullchain.pem
-│   ├── omni.asc
-│   └── privkey.pem
-├── gitea
-│   └── app.ini
-├── keycloak
-├── omni
-└── registry
-    ├── omni-image.tar # Provided to you by Sidero Labs
-    └── all_images.tar
-```
+  Embed both configurations and create an installation ISO with `imager`.
 
-Create a compressed archive file to move to our airgap machine.
+  <CodeBlock lang="sh">
+  {`docker run --rm -t \\\n  -v "\${PWD}/_out:/out" \\\n  --privileged \\\n  \${REGISTRY_ENDPOINT}/siderolabs/imager:${release} \\\n    iso \\\n    --embedded-config-path=/out/machine-config.yaml`}
+  </CodeBlock>
 
-```bash
-cd ../
-tar czvf omni-airgap.tar.gz airgap/
-```
+  </Tab>
+  <Tab title="Kernel args (Talos 1.11)">
 
-Now I will use scp to move this file to my machine which does not have internet access. Use whatever method you prefer to move this file.
+  Get the kernel arguments from Omni with `omnictl`. You can also copy them from the Omni web interface with the **Copy Kernel Parameters** button on the home page.
 
-```bash
-scp omni-airgap.tar.gz $USERNAME@$AIRGAP_MACHINE:/home/$USERNAME/
-```
+  ```bash
+  OMNI_KERNEL_ARGS=$(omnictl jointoken kernel-args)
+  ```
 
-Lastly, I will log in to my airgapped machine and extract the compressed archive file in the home directory
+  Compress and base64 encode the configuration for a kernel argument.
 
-```bash
-cd ~/
-tar xzvf omni-airgap.tar.gz
-```
+  ```bash
+  TRUSTED_ROOT_CONFIG=$(cat trustedrootsconfig.yaml | zstd --compress --ultra -21 | base64 -w 0)
+  ```
 
-### Log in Airgapped Machine
+  Create an ISO with `imager` with both of the kernel arguments.
 
-From here on out, the rest of the tutorial will take place from the airgapped machine we will be installing Omni, Keycloak, and Gitea on.
+  <CodeBlock lang="sh">
+  {`docker run --rm -t \\\n  -v "\${PWD}/_out:/out" \\\n  --privileged \\\n  \${REGISTRY_ENDPOINT}/siderolabs/imager:${release} \\\n    iso \\\n    --extra-kernel-arg "talos.config.early=\$TRUSTED_ROOT_CONFIG $OMNI_KERNEL_ARGS"`}
+  </CodeBlock>
 
-### Gitea
+  </Tab>
+</Tabs>
 
-Gitea will be used as a container registry for storing our images, but also many other functionalities including Git, Large File Storage, and the ability to store packages for many different package types. For more information on what you can use Gitea for, visit their [documentation](https://docs.gitea.com/).
+No matter which version of Talos you use you should have a Talos iso file in the `_out` directory. You can use this to boot a machine and it will connect to Omni and trust the self-signed CA certificate.
 
-#### Install Gitea
+### Create cluster in Omni
 
-Load the images we moved over. This will load all the images into Docker on the airgapped machine.
+Guides on creating a cluster on Omni can be found at [creating an Omni cluster](../getting-started/create-a-cluster).
 
-```bash
-docker load -i registry/omni-image.tar
-docker load -i registry/all_images.tar
-```
+Because we're working in an airgapped environment we will need the following values added to our cluster configs so they know where to pull images from. We also need to provide the CA certificate to the node so it will trust the certificate that signed `omni.internal` endpoint.
 
-Run Gitea using Docker:
-
-* The **app.ini** file is already configured and mounted below with the `- v` argument.
-
-```bash
-sudo docker run -it \
-    -v $PWD/certs/privkey.pem:/data/gitea/key.pem \
-    -v $PWD/certs/fullchain.pem:/data/gitea/cert.pem \
-    -v $PWD/gitea/app.ini:/data/gitea/conf/app.ini \
-    -v $PWD/gitea/data/:/data/gitea/ \
-    -p 3000:3000 \
-    gitea/gitea:1.19.3
-```
-
-You may now log in at the `https://${GITEA_HOSTNAME}:3000` to begin configuring Gitea to store all the images needed for Omni and Talos.
-
-#### Gitea setup
-
-This is just the bare minimum setup to run Omni. Gitea has many additional configuration options and security measures to use in accordance with your industry's security standards. More information on the configuration of Gitea can be found [here](https://docs.gitea.com/).
-
-**Create a user**
-
-Click the **Register** button at the **top right** corner. The first user created will be created as an administrator - permissions can be adjusted afterwards if you like.
-
-**Create organizations**
-
-After registering an admin user, the organizations can be created which will act as the package repositories for storing images. Create the following organizations:
-
-* `siderolabs`
-* `keycloak`
-* `coredns`
-* `etcd-development`
-* `registry-k8s-io-proxy`
-
-> **NOTE:** If you are using self-signed certs and would like to push images to your local Gitea using Docker, you will also need to configure your certs.d directory as described [here](https://docs.docker.com/engine/security/certificates/).
-
-#### Push Images to Gitea
-
-Now that all of our organizations have been created, we can push the images we loaded into our Gitea for deploying Keycloak, Omni, and storing images used by Talos.
-
-For all of the images loaded, we first need to tag them for our Gitea.
-
-```bash
-sudo docker tag original-image:tag gitea:3000/new-image:tag
-```
-
-For example, if I am tagging the kube-proxy image it will look like this:
-
-> **NOTE:** Don't forget to tag all of the images from **registry.k8s.io** to go to the **registry-k8s-io-proxy** organization created in Gitea.
-
-```bash
-docker tag registry.k8s.io/kube-proxy:v1.27.2 ${GITEA_HOSTNAME}:3000/registry-k8s-io-proxy/kube-proxy:v1.27.2
-```
-
-Finally, push all the images into Gitea.
-
-```bash
-docker push ${GITEA_HOSTNAME}:3000/registry-k8s-io-proxy/kube-proxy:v1.27.2
-```
-
-### Keycloak
-
-#### Install Keycloak
-
-The image used for keycloak is already loaded into Gitea and there are no files to stage before starting it so I'll run the following command to start it. **Replace KEYCLOAK\_HOSTNAME and GITEA\_HOSTNAME with your own hostnames**.
-
-```bash
-sudo docker run -it \
-    -p 8080:8080 \
-    -p 8443:8443 \
-    -v $PWD/certs/fullchain.pem:/etc/x509/https/tls.crt \
-    -v $PWD/certs/privkey.pem:/etc/x509/https/tls.key \
-    -v $PWD/keycloak/data:/opt/keycloak/data \
-    -e KEYCLOAK_ADMIN=admin \
-    -e KEYCLOAK_ADMIN_PASSWORD=admin \
-    -e KC_HOSTNAME=${KEYCLOAK_HOSTNAME} \
-    -e KC_HTTPS_CERTIFICATE_FILE=/etc/x509/https/tls.crt \
-    -e KC_HTTPS_CERTIFICATE_KEY_FILE=/etc/x509/https/tls.key \
-    ${GITEA_HOSTNAME}:3000/keycloak/keycloak:21.1.1 \
-    start
-```
-
-Once Keycloak is installed, you can reach it in your browser at `https://${KEYCLOAK\_HOSTNAME}:3000`
-
-#### Configuring Keycloak
-
-For details on configuring Keycloak as a SAML Identity Provider to be used with Omni, follow this guide: [Configuring Keycloak SAML](../infrastructure-and-extensions/self-hosted/configure-keycloak-for-omni)
-
-### Omni
-
-With Keycloak and Gitea installed and configured, we're ready to start up Omni and start creating and managing clusters.
-
-#### Install Omni
-
-To install Omni, first generate a UUID to pass to Omni when we start it.
-
-```bash
-export OMNI_ACCOUNT_UUID=$(uuidgen)
-```
-
-Next run the following command, replacing hostnames for Omni, Gitea, or Keycloak with your own.
-
-```bash
-sudo docker run \
-  --net=host \
-  --cap-add=NET_ADMIN \
-  -v $PWD/etcd:/_out/etcd \
-  -v $PWD/certs/fullchain.pem:/fullchain.pem \
-  -v $PWD/certs/privkey.pem:/privkey.pem \
-  -v $PWD/certs/omni.asc:/omni.asc \
-  ${GITEA_HOSTNAME}:3000/siderolabs/omni:v0.12.0 \
-    --account-id=${OMNI_ACCOUNT_UUID} \
-    --name=omni \
-    --cert=/fullchain.pem \
-    --key=/privkey.pem \
-    --siderolink-api-cert=/fullchain.pem \
-    --siderolink-api-key=/privkey.pem \
-    --private-key-source=file:///omni.asc \
-    --event-sink-port=8091 \
-    --bind-addr=0.0.0.0:443 \
-    --siderolink-api-bind-addr=0.0.0.0:8090 \
-    --k8s-proxy-bind-addr=0.0.0.0:8100 \
-    --advertised-api-url=https://${OMNI_HOSTNAME}:443/ \
-    --siderolink-api-advertised-url=https://${OMNI_HOSTNAME}:8090/ \
-    --siderolink-wireguard-advertised-addr=${OMNI_HOSTNAME}:50180 \
-    --advertised-kubernetes-proxy-url=https://${OMNI_HOSTNAME}:8100/ \
-    --auth-auth0-enabled=false \
-    --auth-saml-enabled \
-    --talos-installer-registry=${GITEA_HOSTNAME}:3000/siderolabs/installer \
-    --talos-imager-image=${GITEA_HOSTNAME}:3000/siderolabs/imager:v1.4.5 \
-    --kubernetes-registry=${GITEA_HOSTNAME}:3000/siderolabs/kubelet \
-    --auth-saml-url "https://${KEYCLOAK_HOSTNAME}:8443/realms/omni/protocol/saml/descriptor"
-```
-
-What's going on here:
-
-* `--auth-auth0-enabled=false` tells Omni not to use Auth0.
-* `--auth-saml-enabled` enables SAML authentication.
-* `--talos-installer-registry`, `--talos-imager-image` and `--kubernetes-registry` allow you to set the default images used by Omni to point to your local repository.
-* `--auth-saml-url` is the URL we saved earlier in the configuration of Keycloak.
-  * `--auth-saml-metadata` may also be used if you would like to pass it as a file instead of a URL and can be used if using self-signed certificates for Keycloak.
-
-#### Creating a cluster
-
-Guides on creating a cluster on Omni can be found here:
-
-* [Creating an Omni cluster](../getting-started/create-a-cluster)
-
-Because we're working in an airgapped environment we will need the following values added to our cluster configs so they know where to pull images from. More information on the Talos MachineConfig.registries can be found [here](https://www.talos.dev/latest/talos-guides/discovery/).
-
-> **NOTE:** In this example, cluster discovery is also disabled. You may also configure cluster discovery on your network. More information on the Discovery Service can be found [here](https://www.talos.dev/latest/talos-guides/discovery/)
+> **NOTE:** In this example, cluster discovery is also disabled. You may also configure cluster discovery via Omni. More information on the Discovery Service can be found <a href="../../talos/v1.12/configure-your-talos-cluster/system-configuration/discovery">here</a>.
 
 ```yaml
 machine:
@@ -425,26 +569,28 @@ machine:
     mirrors:
     docker.io:
       endpoints:
-      - https://${GITEA_HOSTNAME}:3000
+      - https://${REGISTRY_ENDPOINT}
     gcr.io:
       endpoints:
-      - https://${GITEA_HOSTNAME}:3000
+      - https://${REGISTRY_ENDPOINT}
     ghcr.io:
       endpoints:
-      - https://${GITEA_HOSTNAME}:3000
+      - https://${REGISTRY_ENDPOINT}
     registry.k8s.io:
       endpoints:
-      - https://${GITEA_HOSTNAME}:3000/v2/registry-k8s-io-proxy
-      overridePath: true
+      - https://${REGISTRY_ENDPOINT}
 cluster:
   discovery:
     enabled: false
+---
+apiVersion: v1alpha1
+kind: RegistryTLSConfig
+name: ${REGISTRY_ENDPOINT}
+ca: |-
+  -----BEGIN CERTIFICATE-----
+  MIID...IDAQAB
+  -----END CERTIFICATE-----
 ```
 
-Specifics on patching machines can be found here:
+The machine patch should be added to the cluster during cluster creation and should be applied cluster wide.
 
-* [Create a Patch for Cluster Machines](../omni-cluster-setup/create-a-patch-for-cluster-machines)
-
-### Closure
-
-With Omni, Gitea, and Keycloak set up, you are ready to start managing and installing Talos clusters on your network! The suite of applications installed in this tutorial is an example of how an airgapped environment can be set up to make the most out of the Kubernetes clusters on your network. Other container registries or authentication providers may also be used with a similar setup, but this suite was chosen to give you a starting point and an example of what your environment could look like.
