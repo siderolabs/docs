@@ -107,12 +107,20 @@ This command runs in several phases:
    The update is verified by checking the `Node` resource state.
 5. Kubernetes bootstrap manifests are re-applied to the cluster.
    Updated bootstrap manifests might come with a new Talos version (e.g. CoreDNS version update), or might be the result of machine configuration change.
-
-> Note: The `upgrade-k8s` command never deletes any resources from the cluster: they should be deleted manually.
+6. Unneeded resources are pruned from the cluster (Talos v1.13+).
 
 If the command fails for any reason, it can be safely restarted to continue the upgrade process from the moment of the failure.
 
 > Note: When using custom/overridden Kubernetes component images, use flags `--*-image` to override the default image names.
+
+### Pruning
+
+> Note: Pruning is supported from Talos and talosctl v1.13 onwards.
+
+Pruning of resources from the cluster occurs when any services were deleted or disabled.
+For example if [kube-proxy](https://docs.siderolabs.com/talos/latest/reference/configuration/v1alpha1/config#proxy) was disabled in the machine configuration the resources associated with it would be deleted at this stage.
+
+Pruning can be disabled by passing the `--manifests-no-prune` flag.
 
 ### Synchronize Declared and Deployed Configurations
 
