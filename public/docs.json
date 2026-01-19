@@ -434,6 +434,7 @@
                   "talos/v1.12/learn-more/philosophy",
                   "talos/v1.12/learn-more/process-capabilities",
                   "talos/v1.12/learn-more/talos-network-connectivity",
+                  "talos/v1.12/learn-more/talos-platform-configuration",
                   "talos/v1.12/learn-more/talosctl"
                 ]
               }

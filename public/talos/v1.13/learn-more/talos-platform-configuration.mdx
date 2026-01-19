@@ -1,0 +1,190 @@
+---
+title: Talos platform configuration
+---
+
+Talos is designed to run consistently across many environments, including public clouds, virtualized platforms, and bare metal. While Talos provides a consistent provisioning and management API, some environments have unique requirements.
+
+To account for these differences, Talos needs to understand the environment it is running in. The `platform` argument provides this context and tells Talos how to:
+
+* fetch the machine configuration
+* discover instance metadata (IDs, region, zone, etc.)
+* configure networking correctly
+* apply the right boot-time defaults
+
+This value is passed to Talos at boot time, for example, via kernel arguments, and does not need to be changed afterward.
+
+> **Note**: The platform argument does *not* change how Talos behaves as an operating system. It only affects how Talos integrates with the underlying infrastructure.
+
+The sections below describe the supported platform values and explain how Talos behaves in each environment.
+
+## Metal (Bare Metal)
+
+When `talos.platform=metal` is set, Talos assumes it is running on bare metal or in an environment that does not provide a cloud-style metadata service.
+
+In this mode, Talos does not attempt to contact any external metadata endpoint, cloud API, or hypervisor-specific service. No instance metadata is automatically discovered, and no cloud-specific defaults are applied.
+
+Talos retrieves its machine configuration only from sources that are explicitly provided by the user. This typically means:
+
+* [Supplying the machine configuration](../configure-your-talos-cluster/system-configuration/acquire) at install time (for example, via ISO or PXE)
+* Supplying the machine configuration at install time (for example, via ISO or PXE)
+* Or applying the configuration after boot using `talosctl`
+
+Because there is no metadata service to describe the environment, Talos does not infer networking details automatically. Network configuration must either:
+
+* Be included directly in the machine configuration, or
+* Be provided later using `talosctl` once the node is reachable
+
+Talos will not automatically configure IP addresses, gateways, DNS servers, or MTU settings in this mode unless they are explicitly defined. Similarly, Talos does not automatically discover region, zone, instance identity, or external IP addresses.
+
+In practice, this platform is appropriate for:
+
+* Physical servers
+* Local virtualization without metadata support
+* Custom hypervisors
+* Environments where cloud metadata services are unavailable or intentionally disabled
+
+Using talos.platform=metal gives you full control over system and network configuration, but also places responsibility on you to provide all required settings. If no network configuration is supplied and no post-boot configuration is applied, the node may boot but remain unreachable.
+
+## Amazon Web Services
+
+When `talos.platform=aws` is set, Talos assumes it is running on an EC2 instance and enables AWS-specific bootstrapping behavior.
+
+At startup, Talos connects to the EC2 Instance Metadata Service (IMDS) at the link-local address:
+
+```bash
+169.254.169.254
+```
+
+Talos uses IMDS to discover EC2-specific metadata, including the instance ID, instance type, region, and availability zone. If an initial Talos machine configuration has been provided via the EC2 user data field, Talos retrieves that configuration through IMDS.
+
+Using information obtained from IMDS, Talos automatically configures the system to match the EC2 networking environment. IP addressing, routing, and DNS configuration are derived from AWS-provided metadata, and time synchronization is configured using AWS-provided time sources (such as the Amazon Time Sync Service). As a result, no manual network or time configuration is required in the machine configuration.
+
+If no machine configuration is available at boot time, Talos starts in maintenance mode and waits for configuration to be applied via `talosctl` or Omni .
+
+This behavior is consistent for both on-demand and spot instances. If IMDS is disabled or inaccessible, Talos will not be able to retrieve instance metadata or any machine configuration supplied through EC2 user data. Talos may still work without IMDS, but some configuration will require manual intervention.
+
+## Microsoft Azure
+
+When `talos.platform=azure` is set, Talos assumes it is running on Microsoft Azure and enables Azure-specific bootstrapping behavior.
+
+On startup, Talos queries the Azure Instance Metadata Service (IMDS), which is available only from within the virtual machine at the link-local address:
+
+```bash
+169.254.169.254
+```
+
+Talos uses Azure IMDS to discover core instance metadata, including the region, VM size, instance resource ID, and availability zone or fault domain. It also uses Azure network metadata to understand the shape of the Azure networking environment and any externally assigned IP addresses.
+
+Unlike some other cloud platforms, Azure does not provide the machine configuration through instance user data. Instead, Talos retrieves its machine configuration from the OVF environment, which is supplied to the VM as Azure custom data at provisioning time.
+
+Using Azure metadata, Talos automatically configures networking to match Azure’s environment. Specifically, Talos:
+
+* Brings up the primary network interface (`eth0`) and enables DHCPv4.
+* Sets the MTU on `eth0` to 1400 to account for Azure’s virtual network encapsulation.
+* Detects externally assigned IP addresses from Azure metadata and records them as external IPs.
+* Enables DHCPv6 and installs appropriate IPv6 routes when IPv6 addressing is present.
+
+These adjustments are applied automatically and do not require any manual network configuration.
+
+This platform supports both standalone Azure virtual machines and Azure Virtual Machine Scale Sets. In practice, you must provide the Talos machine configuration using Azure custom data. Once the VM boots, Talos handles metadata discovery and network configuration automatically. If the OVF custom data or Azure metadata service is unavailable, Talos will not be able to retrieve its configuration.
+
+## Google Cloud Platform
+
+When `talos.platform=gcp` is set, Talos assumes it is running on Google Compute Engine (GCE) and enables GCP-specific bootstrapping behavior.
+
+On startup, Talos queries the GCE Instance Metadata Service, which is accessible only from within the virtual machine over a link-local network endpoint attached to the primary network interface. Talos uses this service to retrieve both the machine configuration and instance metadata.
+
+The Talos machine configuration is read from the instance metadata attribute named `user-data`. If this attribute is missing or empty, Talos treats the instance as having no configuration source and cannot proceed with automatic bootstrapping.
+
+From the metadata service, Talos also discovers core instance information, including the project ID, instance name and instance ID, machine type, zone (used to derive the region), hostname, instance tags, and whether the instance is preemptible (recorded as spot instance metadata).
+
+Using GCP metadata, Talos automatically configures the system to match GCE’s networking and runtime environment. Specifically, Talos:
+
+* Brings up one network interface per detected GCE interface (`eth0`, `eth1`, and so on)
+* Sets the MTU for each interface based on values provided by GCP metadata
+* Enables DHCPv4 on each interface
+* Applies IPv6 addresses and installs IPv6 routes when IPv6 configuration and gateways are present
+* Detects externally assigned IP addresses from GCP access configurations of type `ONE_TO_ONE_NAT` and records them as external IPs
+* Configures time synchronization using the GCP-provided time source `metadata.google.internal`
+
+These adjustments are applied automatically and do not require any manual network configuration.
+
+In practice, this means the Talos machine configuration must be supplied through the GCE metadata `user-data` attribute. Once the instance boots, Talos handles metadata discovery, networking, DNS, and time configuration automatically. If the GCP metadata service is unavailable, or if the `user-data` attribute is not defined, Talos will not be able to retrieve its configuration.
+
+## DigitalOcean
+
+When `talos.platform=digital-ocean` is set, Talos assumes it is running on a DigitalOcean Droplet and enables DigitalOcean-specific bootstrapping behavior.
+
+At startup, Talos queries the DigitalOcean metadata service, which is available only from within the Droplet over a link-local network endpoint attached to the primary network interface.
+
+Talos retrieves the machine configuration directly from the metadata service at `/metadata/v1/user-data`. If this endpoint is unavailable or returns no data, Talos cannot obtain its configuration and bootstrapping will fail.
+
+Talos also uses the metadata service to discover instance and network information, including the Droplet ID, region, hostname, network interfaces, gateways, DNS resolvers, and externally assigned IP addresses.
+
+Using this information, Talos automatically configures networking to match DigitalOcean’s environment. This includes bringing up public and private interfaces, assigning IPv4 and IPv6 addresses, installing default routes, recording external IPs, and ensuring access to the metadata service itself. No manual network configuration is required.
+
+In practice, you must supply the Talos machine configuration using DigitalOcean user data when creating the Droplet. Once the instance boots, Talos handles metadata discovery and network configuration automatically. If the metadata service or user data endpoint is inaccessible, Talos will not be able to retrieve its configuration.
+
+## OpenStack
+
+When `talos.platform=openstack` is set, Talos assumes it is running on an OpenStack instance and enables OpenStack-specific bootstrapping behavior.
+
+At startup, Talos attempts to retrieve instance metadata from the OpenStack metadata service. When available, this service is exposed to the instance over a link-local address and provides information about the instance identity, availability zone, and networking environment.
+
+OpenStack deployments may also provide instance data through a config drive instead of (or in addition to) a metadata service. When a config drive is present, Talos reads metadata and user-supplied configuration directly from the attached disk during early boot.
+
+Talos retrieves its machine configuration from the OpenStack-provided user data mechanism. The exact delivery method depends on how the OpenStack cloud is configured (metadata service or config drive), but no additional configuration is required inside the Talos machine itself.
+
+Using OpenStack metadata, Talos automatically configures networking to match the environment. This includes bringing up network interfaces, enabling DHCP where appropriate, installing default routes, and recording externally assigned IP addresses. Manual network configuration is not required in typical OpenStack setups.
+
+In practice, this means you must provide the Talos machine configuration as OpenStack user data when creating the instance and ensure that either the metadata service or config drive is enabled. Once the instance boots, Talos handles metadata discovery and network configuration automatically. If neither metadata nor a config drive is available, Talos will not be able to retrieve its configuration.
+
+## VMware
+
+When `talos.platform=vmware` is set, Talos assumes it is running inside a VMware virtual machine and enables VMware-specific bootstrapping behavior.
+
+Unlike public cloud platforms, VMware does not provide a centralized metadata service. Instead, Talos relies on VMware GuestInfo metadata, which is provided to the virtual machine through VMware GuestInfo key-value pairs configured on the VM (for example, via vSphere or ESXi settings) and made available during boot.
+
+Talos retrieves its machine configuration and platform metadata from GuestInfo. This data is typically provided when the VM is created or updated, using VMware tooling to populate GuestInfo keys. Talos does not read configuration from cloud user data or external metadata endpoints in this mode.
+
+Using the metadata supplied through GuestInfo, Talos configures networking to match the VMware environment. This includes bringing up network interfaces, applying IP addressing and routes as defined by the provided configuration, and setting hostname and instance identity information. Networking behavior is driven entirely by the metadata supplied to the VM.
+
+This platform supports VMware-based environments such as vSphere and ESXi. In practice, you must ensure that the Talos machine configuration and required metadata are correctly provided through GuestInfo before the VM boots. Once available, Talos consumes this data during startup and configures the system accordingly. If GuestInfo metadata is missing or malformed, Talos will not be able to retrieve its configuration.
+
+## Nocloud
+
+When `talos.platform=nocloud` is set, Talos assumes it is running in an environment that follows the **NoCloud metadata model**, which is commonly used by hypervisors and provisioning systems that do not provide a cloud-native metadata service.
+
+Unlike public cloud platforms, NoCloud does not rely on a provider-specific metadata API. Instead, Talos retrieves configuration and metadata from sources that are explicitly made available to the machine, either through a local configuration disk or a simple HTTP endpoint.
+
+Talos looks for NoCloud data in one of two ways:
+
+* **Config drive (local disk)**: Talos searches for a volume labeled `cidata` and reads configuration files from it. When present, Talos attempts to load:
+
+    * `meta-data` (optional)
+    * `network-config` (optional)
+    * `user-data` (used as the Talos machine configuration)
+
+* **Network metadata source**: In environments configured for NoCloud network mode, Talos fetches metadata and configuration from an HTTP or HTTPS endpoint. In this case, Talos retrieves:
+
+    * `meta-data` (optional)
+    * `network-config` (optional)
+    * `user-data` (used as the Talos machine configuration)
+
+Talos determines which source to use based on information exposed to the system firmware (via SMBIOS). If NoCloud network mode is detected and a metadata base URL is provided, Talos uses the network source. Otherwise, it falls back to the local `cidata` configuration disk.
+
+Using the data provided through NoCloud, Talos configures the system to match the environment it is running in. This includes setting the hostname and instance identity, applying region and zone information when available, and configuring networking based on the supplied network configuration. Networking behavior is driven entirely by the provided NoCloud metadata and does not rely on automatic discovery.
+
+This platform is commonly used for environments such as custom hypervisors, local virtualization platforms, and bare-metal provisioning systems that support NoCloud-style configuration delivery. In practice, you must ensure that a valid Talos machine configuration is provided through NoCloud `user-data` before or during boot. If no usable configuration is found, Talos treats the system as having no configuration source and cannot proceed with normal bootstrapping.
+
+## Omni
+
+Omni is not selected using the `platform` argument and does not represent a Talos platform. Instead, Omni affects how machine configuration is delivered to Talos after the machine has booted.
+
+When Omni is used, the initial Talos machine configuration enables a SideroLink connection to Omni. After this connection is established, Omni delivers the full machine configuration to the node via the Talos API.
+
+In this mode, Talos does not rely on platform-specific user data mechanisms to retrieve its machine configuration, even if such data is available in the underlying environment. Configuration updates are driven by Omni through the API.
+
+An initial configuration is still required to bootstrap the machine and establish the SideroLink connection. This initial configuration can be provided using any of the methods described in the platform sections above. For example, it may be supplied through instance user data on cloud platforms or embedded into the boot media on bare metal.
+
+Once the machine is connected, Omni becomes the source of ongoing configuration regardless of the platform on which Talos is running.
