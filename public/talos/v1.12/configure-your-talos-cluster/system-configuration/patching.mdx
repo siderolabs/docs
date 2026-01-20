@@ -7,10 +7,10 @@ Talos generates machine configuration for two types of machines: controlplane an
 Many configuration options can be adjusted using `talosctl gen config` but not all of them.
 Configuration patching allows modifying machine configuration to fit it for the cluster or a specific machine.
 
-Configuration patching can be used also to mutate existing machine configuration on running Talos nodes.
-See [reproducible machine configuration](./reproducible-machine-configuration) for more details.
+Configuration patching can also be used to mutate existing machine configuration on running Talos nodes.
+See [reproducible machine configuration](./reproducible-machine-configuration) for more information on managing your patches.
 
-### Configuration Patches
+### Patch machine configuration using strategic merge patches
 
 Talos Linux supports patching machine configuration using strategic merge patches.
 Strategic merge patches look like incomplete machine configuration files:
@@ -22,7 +22,7 @@ hostname: my-custom-hostname
 auto: off
 ```
 
-Multiple configuration documents cen be included in the patch using multi-document YAML syntax (`---` separator).
+Multiple configuration documents can be included in the patch using multi-document YAML syntax (`---` separator).
 
 When applied to the machine configuration, the patch gets merged with the respective section of the machine configuration.
 
@@ -37,13 +37,13 @@ There are some special rules:
   - `cluster.apiServer.auditPolicy` value is replaced on merge
   - `ExtensionServiceConfig.configFiles` section is merged matching on `mountPath` (replacing `content` if matches)
 
-When patching a [multi-document machine configuration](../../reference/configuration/overview), following rules apply:
-
-- for each document in the patch, the document is merged with the respective document in the machine configuration (matching by `kind`, `apiVersion` and `name` for named documents)
-- if the patch document doesn't exist in the machine configuration, it is appended to the machine configuration
+- When patching a [multi-document machine configuration](../../reference/configuration/overview), following rules apply:
+  - for each document in the patch, the document is merged with the respective document in the machine configuration (matching by `kind`, `apiVersion` and `name` for named documents)
+  - if the patch document doesn’t exist in the machine configuration, it is appended to the machine configuration
 
 The strategic merge patch itself might be a multi-document YAML, and each document will be applied as a patch to the base machine configuration.
-Keep in mind that you can't patch the same document multiple times with the same patch.
+
+A single patch file cannot modify the same document more than once.
 
 You can also delete parts from the configuration using `$patch: delete` syntax similar to the
 [Kubernetes](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/strategic-merge-patch.md#delete-directive)
@@ -95,7 +95,9 @@ This will remove the documents `SideroLinkConfig` and `ExtensionServiceConfig` w
 
 ## Examples
 
-### Machine Network
+The following examples demonstrate common use cases for configuration patches.
+
+### Machine network
 
 Base machine configuration:
 
@@ -137,7 +139,7 @@ name: 192.168.10.50
 link: eth0
 ```
 
-### Cluster Network
+### Cluster network
 
 Base machine configuration:
 
@@ -152,7 +154,6 @@ cluster:
 ```
 
 The goal is to update pod and service subnets and disable default CNI (Flannel).
-
 
 ```yaml
 cluster:
@@ -209,7 +210,7 @@ machine:
         - 192.168.10.0/24
 ```
 
-### Admission Control: Pod Security Policy
+### Admission control: Pod Security Policy
 
 Base machine configuration:
 
@@ -275,7 +276,7 @@ cluster:
           kind: PodSecurityConfiguration
 ```
 
-## Configuration Patching with `talosctl` CLI
+## Configuration patching with `talosctl` CLI
 
 Several `talosctl` commands accept config patches as command-line flags.
 Config patches might be passed either as an inline value or as a reference to a file with `@file.patch` or `file.patch` syntax:
@@ -307,3 +308,50 @@ Machine configuration on the running Talos node can be patched with `talosctl pa
 ```shell
 talosctl patch mc --nodes 172.20.0.2 --patch patch.yaml
 ```
+
+## Multi-document patching
+
+In addition to patching single-document machine configurations, Talos supports patching [multi-document machine configuration](../../reference/configuration/overview).
+
+<iframe
+  className="w-full aspect-video rounded-xl"
+  src="https://www.youtube.com/watch?v=0lrFpqi4bOI&t=561s"
+  title="Multi-doc configurations with Talos Linux"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+></iframe>
+
+Multi-document patching allows configuration to be modified at the document level. This makes it possible to manage and reuse small, focused configuration fragments instead of editing a single, monolithic machine configuration.
+
+This approach is commonly used to apply targeted changes, such as updating hostnames, network settings, or kubelet configuration, without regenerating the full machine configuration.
+
+For example, the following patch updates a machine’s hostname:
+
+```yaml
+apiVersion: v1alpha1
+kind: HostnameConfig
+hostname: worker-33
+auto: off
+```
+
+### Apply a multi-document patch
+
+Multi-document patches are applied while the machine is in maintenance mode. In this state, the machine has not yet received any credentials or certificates to authenticate the client.
+
+To bootstrap authentication, the initial machine configuration must be applied using the [the `--insecure` flag](../system-configuration/insecure), along with the multi-document patch.
+
+```bash
+talosctl apply \
+  -f <machine-configuration> \
+  --insecure \
+  --node <node-ip> \
+  --patch @<multi-document>
+```
+
+Where:
+    * `<machine-configuration>` -  is the base machine configuration (for example, `controlplane.yaml` or `worker.yaml`) generated using `talosctl gen config`. This configuration contains the credentials required to authenticate the client.
+
+    * `<node-ip>` - is the IP address of the target node.
+
+    * `<multi-document>` - is the YAML file containing the multi-document patch.

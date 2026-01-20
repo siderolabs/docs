@@ -3,16 +3,17 @@ title: Overview
 description: Talos Linux machine configuration reference.
 ---
 
-Talos Linux machine is fully configured via a single YAML file called *machine configuration*.
+Talos Linux machines are fully configured using a single YAML file called the machine configuration.
 
-The file might contain one or more configuration documents separated by `---` (three dashes) lines.
-At the moment, majority of the configuration options are within the [v1alpha1](./v1alpha1/config) document, so
-this is the only mandatory document in the configuration file.
+This file is a multi-document configuration that may contain multiple YAML documents, separated by `---` (three dashes).
 
-Configuration documents might be named (contain a `name:` field) or unnamed.
-Unnamed documents can be supplied to the machine configuration file only once, while named documents can be supplied multiple times with unique names.
+Each document represents a partial machine configuration. Talos parses and validates each document independently, then merges them into a single effective configuration before applying it to the machine. Documents are processed sequentially, and later documents take precedence over earlier ones.
 
-The `v1alpha1` document has its own (legacy) structure, while every other document has the following set of fields:
+At present, most configuration options are defined within the [v1alpha1](./v1alpha1/config) document, which is the only mandatory document in the configuration file.
+
+Configuration documents may be named (contain a `name:` field) or unnamed. Unnamed documents can appear only once in the machine configuration, while named documents can be supplied multiple times, provided each has a unique name.
+
+The `v1alpha1` document uses a legacy structure. All other configuration documents follow this common schema:
 
 ```yaml
 apiVersion: v1alpha1 # version of the document
