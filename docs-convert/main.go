@@ -46,8 +46,14 @@ func convertFile(srcPath, dstPath string) error {
 	// Process lines
 	i := 0
 	inFrontmatter := false
+	inCodeBlock := false
 	for i < len(lines) {
 		line := lines[i]
+
+		// Track code block boundaries (triple backticks)
+		if strings.HasPrefix(strings.TrimSpace(line), "```") {
+			inCodeBlock = !inCodeBlock
+		}
 
 		// Track frontmatter boundaries
 		if line == "---" {
@@ -176,8 +182,10 @@ func convertFile(srcPath, dstPath string) error {
 
 		// Escape placeholder-like angle brackets (e.g., <src-path>, <dest-path>)
 		// but preserve actual HTML tags (a, br, Accordion)
-		// Simple heuristic: if it contains a hyphen or underscore, it's likely a placeholder
-		line = escapeAngleBracketPlaceholders(line)
+		// Skip escaping inside code blocks (triple backticks) where angle brackets are literal
+		if !inCodeBlock {
+			line = escapeAngleBracketPlaceholders(line)
+		}
 
 		fmt.Fprintln(writer, line)
 		i++
@@ -241,7 +249,17 @@ func fixAnchorLinks(line string) string {
 func escapeAngleBracketPlaceholders(line string) string {
 	result := ""
 	i := 0
+	inBackticks := false
+
 	for i < len(line) {
+		// Track backtick state
+		if line[i] == '`' {
+			inBackticks = !inBackticks
+			result += string(line[i])
+			i++
+			continue
+		}
+
 		// Check for HTML comment pattern <!--
 		if i+3 < len(line) && line[i:i+4] == "<!--" {
 			// Find the closing -->
@@ -315,9 +333,15 @@ func escapeAngleBracketPlaceholders(line string) string {
 					content == "/thead" ||
 					content == "/tbody"
 
-				// If it's not a known HTML tag, escape using JSX expressions
+				// If it's not a known HTML tag, escape it
 				if !isKnownTag {
-					result += `{"<"}` + content + `{">"}`
+					// Inside backticks, leave as-is (no escaping needed in code context)
+					// Outside backticks, use JSX expressions
+					if inBackticks {
+						result += line[i : end+1]
+					} else {
+						result += `{"<"}` + content + `{">"}`
+					}
 					i = end + 1
 					continue
 				} else {
@@ -854,15 +878,25 @@ func main() {
 			return nil
 		}
 
-		// Convert .md to .mdx
-		dstPath := filepath.Join(dstDir, strings.TrimSuffix(relPath, ".md")+".mdx")
+		// Special handling for cli.md at root - move it to parent directory
+		var dstPath string
+		if relPath == "cli.md" {
+			// Output to parent directory of dstDir
+			// Clean the path first to remove trailing slashes
+			cleanDstDir := filepath.Clean(dstDir)
+			parentDir := filepath.Dir(cleanDstDir)
+			dstPath = filepath.Join(parentDir, "cli.mdx")
+			fmt.Printf("Converting %s -> cli.mdx (moved to parent directory: %s)\n", relPath, dstPath)
+		} else {
+			// Convert .md to .mdx in normal location
+			dstPath = filepath.Join(dstDir, strings.TrimSuffix(relPath, ".md")+".mdx")
+			fmt.Printf("Converting %s -> %s\n", relPath, strings.TrimSuffix(relPath, ".md")+".mdx")
+		}
 
 		// Create destination directory
 		if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil {
 			return err
 		}
-
-		fmt.Printf("Converting %s -> %s\n", relPath, strings.TrimSuffix(relPath, ".md")+".mdx")
 
 		return convertFile(path, dstPath)
 	})

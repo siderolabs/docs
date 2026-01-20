@@ -6,8 +6,8 @@ CONTAINER_NAME := docs-preview
 PORT := 3000
 DOCS_GEN_IMAGE := ghcr.io/siderolabs/docs-gen:latest
 DOCS_CONVERT_IMAGE := ghcr.io/siderolabs/docs-convert:latest
-TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.11.3
-TALOS_VERSION := v1.11
+TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.12.1
+TALOS_VERSION := v1.12
 VALE_IMAGE := jdkato/vale:latest
 VALE_CONFIG ?= .vale.ini
 

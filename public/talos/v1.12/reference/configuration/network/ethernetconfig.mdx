@@ -57,7 +57,7 @@ channels:
     <tr>
       <td>`features`</td>
       <td>map[string]bool</td>
-      <td>Configuration for Ethernet features.<br /><br />Set of features available and whether they can be enabled or disabled is driver specific.<br />Use `talosctl get ethernetstatus {"<"}link{">"} -o yaml` to get the list of available features and<br />their current status.</td>
+      <td>Configuration for Ethernet features.<br /><br />Set of features available and whether they can be enabled or disabled is driver specific.<br />Use `talosctl get ethernetstatus <link> -o yaml` to get the list of available features and<br />their current status.</td>
       <td></td>
     </tr>
     <tr>
@@ -75,7 +75,7 @@ channels:
     <tr>
       <td>`wakeOnLan`</td>
       <td>[]WOLMode</td>
-      <td>Wake-on-LAN modes to enable.<br /><br />If this field is omitted, Wake-on-LAN configuration is not changed.<br />An empty list disables Wake-on-LAN.<br /><br />This is similar to `ethtool -s {"<"}link{">"} wol {"<"}options{">"}` command.</td>
+      <td>Wake-on-LAN modes to enable.<br /><br />If this field is omitted, Wake-on-LAN configuration is not changed.<br />An empty list disables Wake-on-LAN.<br /><br />This is similar to `ethtool -s <link> wol <options>` command.</td>
       <td>`phy`<br />`unicast`<br />`multicast`<br />`broadcast`<br />`arp`<br />`magic`<br />`magicsecure`<br />`filter`<br /></td>
     </tr>
   </tbody>
