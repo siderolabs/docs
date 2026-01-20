@@ -109,7 +109,7 @@ For rings and channels configuration, values can be increased if they do not exc
 
 Starting with 1.12, Talos Linux now supports configuring Wake-on-LAN (WOL) directly in the Ethernet configuration.
 
-Use the `wakeOnLAN` field under the `EthernetConfig` resource to enable WOL and specify the desired WOL modes.
+Use the `wakeOnLan` field under the `EthernetConfig` resource to enable WOL and specify the desired WOL modes.
 This allows a node’s network interface to wake the system from a low-power state when receiving a magic packet or other WOL-triggering event.
 
 Example:
@@ -118,7 +118,7 @@ Example:
 apiVersion: v1alpha1
 kind: EthernetConfig
 name: enp0s3
-wakeOnLAN:
+wakeOnLan:
   enabled: true
   modes: ["magic", "unicast"]
 ```
@@ -143,4 +143,4 @@ You can check WOL support and status with:
 talosctl get ethernetstatus <interface> -o yaml
 ```
 
-This command will show the current wakeOnLAN settings along with other Ethernet features.
+This command will show the current wakeOnLan settings along with other Ethernet features.
