@@ -49,14 +49,22 @@ cluster:
 Disabling all registries effectively disables member discovery.
 
 <Note>
-Talos can operate normally with discovery disabled, and this does not affect day-to-day cluster operation.
+Talos can operate with discovery disabled, and this does not affect day-to-day cluster operation.
 
-However, disabling discovery removes visibility into cluster membership and peer endpoints, which can make troubleshooting more difficult.
+When discovery is disabled, Talos no longer has access to peer and control plane endpoint information from discovery registries.
+As a result, some behaviors change and certain features rely more heavily on Kubernetes API availability.
 
-In air-gapped or otherwise restricted environments, outbound access to the public discovery service (`https://discovery.talos.dev`) is often unavailable.
-In these cases, discovery can be safely disabled or replaced with a privately operated discovery service.
+Behavioral changes when discovery is disabled:
 
-An enabled discovery service is required for [KubeSpan](../../networking/kubespan) to function correctly.
+- KubeSpan and KubePrism require discovery and do not function correctly without it.
+- Initial cluster bootstrap and recovery may take longer, as peer and control plane endpoints are not available from discovery.
+- Endpoint resolution may depend on Kubernetes being available (for example via `kubectl get endpoints kubernetes`), which can require a functioning API server and load balancer.
+- Worker nodes may be more dependent on control plane availability, as they cannot rely on discovery registries to obtain peer endpoint information during failures.
+
+In air-gapped or otherwise restricted environments, outbound access to the public discovery service (`https://discovery.talos.dev`) may be unavailable.
+In these cases, discovery can be disabled or replaced with a privately operated discovery service.
+
+An enabled discovery service is required for [KubeSpan](../../networking/kubespan) to function.
 </Note>
 
 ### Kubernetes Registry
