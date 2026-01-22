@@ -1,0 +1,297 @@
+---
+title: Talos for Linux Admins
+---
+
+This document is intended for Linux administrators who are familiar with traditional Linux systems and want to understand how to inspect, manage, and reason about a Talos node.
+
+## How Talos differs from traditional Linux
+
+Talos is a minimal, API-driven operating system designed specifically to run Kubernetes.
+
+Unlike traditional Linux distributions, Talos does not have:
+
+* An interactive shell (SSH)
+* A package manager
+* A mutable user space
+* Common Linux utilities by default
+
+Instead, all node inspection and management is performed through the Talos API using the talosctl CLI. This design allows Talos to remain immutable and consistently managed while still exposing the information required for day-to-day operations.
+
+For Linux administrators, this means familiar actions still exist conceptually, but they are accessed through API calls rather than local commands.
+
+## Things to note that you will use constantly
+
+In addition to learning the Talos command equivalents, there are a few concepts you’ll rely on frequently.
+
+* **Maintenance node**: When a node is in maintenance mode, meaning it has booted but has not yet received a machine configuration, commands must be run with the `--insecure` flag. Not all commands are available in this mode. Refer to [the --insecure flag documentation](../configure-your-talos-cluster/system-configuration/insecure) to understand which operations are supported and how to use them safely.
+* **Discoverability**: To see all available resource definitions exposed by Talos, run:
+
+  ```bash
+    talosctl get resourcedefinitions --nodes <node-ip>
+  ```
+
+Here are some familiar Linux commands and its Talos equivalent.
+
+## Orientation and discovery
+
+<table>
+  <tr>
+   <td>**Linux habit**</td>
+   <td>**Talos command**</td>
+   <td>**Notes**</td>
+  </tr>
+  <tr>
+   <td>Check kube context</td>
+   <td>`talosctl config info`</td>
+   <td>Shows active endpoints and context</td>
+  </tr>
+  <tr>
+   <td>"What objects exist?"</td>
+   <td>`talosctl get rd`</td>
+   <td>Lists all available Talos resources</td>
+  </tr>
+  <tr>
+   <td>node name</td>
+   <td>`talosctl get nodename`</td>
+   <td>Displays the name of the specified node</td>
+  </tr>
+  <tr>
+   <td>hostname</td>
+   <td>`talosctl get hostname`</td>
+   <td>Displays the hostname of the node</td>
+  </tr>
+  <tr>
+   <td>`kubectl get nodes`</td>
+   <td>`talosctl get members`</td>
+   <td>Lists all cluster members</td>
+  </tr>
+</table>
+
+## Files and filesystem
+
+<table>
+  <tr>
+   <td>**Linux command**</td>
+   <td>**Talos command**</td>
+   <td>**Notes**</td>
+  </tr>
+  <tr>
+   <td>`ls`</td>
+   <td>`talosctl list`</td>
+   <td>Lists exposed filesystem paths only</td>
+  </tr>
+  <tr>
+   <td>`cat`</td>
+   <td>`talosctl read`</td>
+   <td>Read-only file access</td>
+  </tr>
+  <tr>
+   <td>`mount`</td>
+   <td>`talosctl mounts`, `talosctl get mounts`, and `talosctl get volumestatus`</td>
+   <td>Shows mounted filesystems</td>
+  </tr>
+</table>
+
+<Note>Talos has no interactive shell and no writable filesystem</Note>
+
+## Disks and storage
+
+<table>
+  <tr>
+   <td>**Linux command**</td>
+   <td>**Talos command**</td>
+   <td>**Notes**</td>
+  </tr>
+  <tr>
+   <td>`lsblk`</td>
+   <td>`talosctl get disks`</td>
+   <td>High-level disk inventory</td>
+  </tr>
+  <tr>
+   <td>`lspci`</td>
+   <td>`talosctl get pcidevices`</td>
+   <td>PCI device discovery</td>
+  </tr>
+  <tr>
+   <td>Volume discovery</td>
+   <td>`talosctl get discoveredvolume`</td>
+   <td>Used during installation / bootstrap</td>
+  </tr>
+  <tr>
+   <td>Disk usage</td>
+   <td>`talosctl usage`</td>
+   <td>Filesystem-level visibility</td>
+  </tr>
+</table>
+
+## Hardware and system info
+
+<table>
+  <tr>
+   <td>**Linux command**</td>
+   <td>**Talos command**</td>
+   <td>**Notes**</td>
+  </tr>
+  <tr>
+   <td>`lscpu`</td>
+   <td>`talosctl get cpu`</td>
+   <td>CPU topology and features</td>
+  </tr>
+  <tr>
+   <td>`free`</td>
+   <td>`talosctl memory`</td>
+   <td>Memory usage summary</td>
+  </tr>
+  <tr>
+   <td>`dmidecode`</td>
+   <td>`talosctl get systeminformation`</td>
+   <td>Vendor, model, UUID, firmware</td>
+  </tr>
+  <tr>
+   <td>`lsmod`</td>
+   <td>`talosctl get loadedkernelmodules`</td>
+   <td>Loaded kernel modules</td>
+  </tr>
+  <tr>
+   <td>`modprobe`</td>
+   <td>`talosctl patch mc`</td>
+   <td>Needs to be done from a configuration patch</td>
+  </tr>
+</table>
+
+## Processes and services
+
+<table>
+  <tr>
+   <td>**Linux command**</td>
+   <td>**Talos command**</td>
+   <td>**Notes**</td>
+  </tr>
+  <tr>
+   <td>`ps`</td>
+   <td>`talosctl processes`</td>
+   <td>Shows running processes</td>
+  </tr>
+  <tr>
+   <td>`top`, `htop`</td>
+   <td>`talosctl dashboard`</td>
+   <td>Live streaming view</td>
+  </tr>
+  <tr>
+   <td>`systemctl status`</td>
+   <td>`talosctl services`</td>
+   <td>Talos services, not systemd</td>
+  </tr>
+  <tr>
+   <td>`systemctl restart`</td>
+   <td>`talosctl service restart [service]`</td>
+   <td>Restart OS services</td>
+  </tr>
+  <tr>
+   <td>`docker stats`</td>
+   <td>`talosctl stats`</td>
+   <td>Container runtime statistics</td>
+  </tr>
+</table>
+
+<Note>Talos does not use systemd, services are Talos-native</Note>
+
+## Networking
+
+<table>
+  <tr>
+   <td>**Linux command**</td>
+   <td>**Talos command**</td>
+   <td>**Notes**</td>
+  </tr>
+  <tr>
+   <td>`ip addr`</td>
+   <td>`talosctl get addresses | links`</td>
+   <td>Interface IP addresses</td>
+  </tr>
+  <tr>
+   <td>`ip route`</td>
+   <td>`talosctl get routes`</td>
+   <td>Routing table</td>
+  </tr>
+  <tr>
+   <td>`ethtool`</td>
+   <td>`talosctl get linkstatuses` and `talosctl get ethernetstatuses`</td>
+   <td>Link state and speed</td>
+  </tr>
+  <tr>
+   <td>`netstat`, `ss`</td>
+   <td>`talosctl netstat`</td>
+   <td>Socket inspection</td>
+  </tr>
+  <tr>
+   <td>`tcpdump`</td>
+   <td>`talosctl pcap`</td>
+   <td>Packet capture (stream or file)</td>
+  </tr>
+</table>
+
+## Logs and events
+
+<table>
+  <tr>
+   <td>**Linux command**</td>
+   <td>**Talos command**</td>
+   <td>**Notes**</td>
+  </tr>
+  <tr>
+   <td>`journalctl -u <svc>`</td>
+   <td>`talosctl logs <service>`</td>
+   <td>Service logs</td>
+  </tr>
+  <tr>
+   <td>`journalctl -f`</td>
+   <td>`talosctl logs -f <service>`</td>
+   <td>Follow logs</td>
+  </tr>
+  <tr>
+   <td>`dmesg`</td>
+   <td>`talosctl dmesg` or `talosctl logs kernel`</td>
+   <td>Kernel ring buffer</td>
+  </tr>
+</table>
+
+## Additional commands
+
+<table>
+  <tr>
+   <td>**Linux command**</td>
+   <td>**Talos command**</td>
+   <td>**Notes**</td>
+  </tr>
+  <tr>
+   <td>`do-release-upgrade`</td>
+   <td>`talosctl upgrade`</td>
+   <td>Upgrade talos</td>
+  </tr>
+  <tr>
+   <td></td>
+   <td>`talosctl wipe`</td>
+   <td>Erase a drive or partition</td>
+  </tr>
+  <tr>
+   <td>`poweroff`</td>
+   <td>`talosctl shutdown` and `talosctl reboot`</td>
+   <td>Shut down node</td>
+  </tr>
+  <tr>
+   <td>`docker pull`</td>
+   <td>`talosctl image pull`</td>
+   <td>Pull a container image</td>
+  </tr>
+  <tr>
+   <td>`docker images`</td>
+   <td>`talosctl image list`</td>
+   <td>Lists all available images</td>
+  </tr>
+  <tr>
+   <td>`scp`</td>
+   <td>`talosctl copy`</td>
+   <td>Copy files from nodes</td>
+  </tr>
+</table>

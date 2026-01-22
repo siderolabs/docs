@@ -433,6 +433,7 @@
                   "talos/v1.12/learn-more/networking-resources",
                   "talos/v1.12/learn-more/philosophy",
                   "talos/v1.12/learn-more/process-capabilities",
+                  "talos/v1.12/learn-more/talos-for-linux-admins",
                   "talos/v1.12/learn-more/talos-network-connectivity",
                   "talos/v1.12/learn-more/talos-platform-configuration",
                   "talos/v1.12/learn-more/talosctl"
@@ -750,6 +751,7 @@
                   "talos/v1.11/learn-more/networking-resources",
                   "talos/v1.11/learn-more/philosophy",
                   "talos/v1.11/learn-more/process-capabilities",
+                  "talos/v1.11/learn-more/talos-for-linux-admins",
                   "talos/v1.11/learn-more/talos-network-connectivity",
                   "talos/v1.11/learn-more/talosctl"
                 ]

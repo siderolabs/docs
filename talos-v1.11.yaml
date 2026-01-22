@@ -253,5 +253,6 @@ navigation:
             - "networking-resources.mdx"
             - "philosophy.mdx"
             - "process-capabilities.mdx"
+            - "talos-for-linux-admins.mdx"
             - "talos-network-connectivity.mdx"
             - "talosctl.mdx"
