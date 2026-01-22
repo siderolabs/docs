@@ -4,19 +4,22 @@ title: Install and Configure Omnictl
 
 `omnictl` is the command-line tool for Omni. It lets you authenticate, manage, and interact with Talos-based Kubernetes clusters through Omni’s centralized API.  
 
-Follow the instructions, to install and configure `omnictl` for your operating system:
+Follow the steps below to install and configure `omnictl` for your operating system.
 
 ## Step 1: Install `omnictl`
 
 You need to install `omnictl` to use Omni from your terminal. 
 
-There are two main ways to do this depending on your setup.
+There are two main installation options, depending on your setup:
+
+* macOS and Linux (recommended)
+* Manual installation
 
 ### macOS and Linux (recommended)
 
-If you’re on macOS or Linux, the easiest method to install `omnictl` is through [Homebrew](https://brew.sh/).
+On macOS and Linux, the easiest way to install `omnictl` is using [Homebrew](https://brew.sh/).
 
-This command automatically installs and updates `omnictl`, along with `talosctl` and the `kubectl oidc-login` plugin.
+This command installs `omnictl` and keeps it up to date. It also installs `talosctl` and the `kubectl oidc-login` plugin.
 
 ```
 brew install siderolabs/tap/sidero-tools
@@ -24,7 +27,7 @@ brew install siderolabs/tap/sidero-tools
 
 ### Manual installation
 
-If you prefer a manual setup or aren’t using Homebrew, you can download `omnictl` directly from the Omni dashboard or from the GitHub releases page:
+If you prefer not to use Homebrew, you can install `omnictl` manually by downloading the binary from the Omni dashboard or from GitHub releases.
 
 <Tabs>
 <Tab title="Omni UI">
@@ -35,7 +38,7 @@ Navigate to your Omni dashboard and download the binary for your platform.
 <Tab title="GitHub Releases">
 Visit the [Omni releases page](https://github.com/siderolabs/omni/releases) to download the latest version of `omnictl`.
 
-Alternatively, you can automatically fetch the latest release using `curl`:
+Alternatively, you can download the latest release using `curl`:
 
 ```bash
 curl -LO "https://github.com/siderolabs/omni/releases/latest/download/omnictl-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')"
@@ -43,21 +46,26 @@ curl -LO "https://github.com/siderolabs/omni/releases/latest/download/omnictl-$(
 </Tab>
 </Tabs>
 
-You’ll receive a binary file named according to your platform and architecture (for example, `omnictl-linux-amd64` or `omnictl-darwin-arm64`).
+The downloaded file is named based on your operating system and architecture, for example `omnictl-linux-amd64` or `omnictl-darwin-arm64`.
 
-Once downloaded, rename the file, make it executable, and move it into your system path.
-
-For example, see instructions for your operating system below:
+After downloading the binary, rename it, make it executable, and move it into a directory on your system `PATH`.
 
 <Tabs>
   <Tab title= "macOs and Linux">
-    On macOS and Linux:
+    On macOS and Linux, create a variable that points to the downloaded `omnictl` binary. Replace `<path-to-downloaded-binary>` with the actual path to the file:
+    
+    ```bash
+    export PATH_TO_FILE=<path-to-downloaded-binary>
+    ```
+   
+    Then rename the binary, make it executable, and move it to `/usr/local/bin`:
 
     ```bash
-    mv omnictl-darwin-arm64 omnictl
+    mv "$PATH_TO_FILE" omnictl
     chmod +x omnictl
     sudo mv omnictl /usr/local/bin/
     ```
+  
   </Tab>
   <Tab title= "Windows">
     On Windows:
@@ -75,37 +83,37 @@ For example, see instructions for your operating system below:
   </Tab>
 </Tabs>
 
-After this, you’ll be able to run `omnictl` from any terminal window.
+After completing these steps, you should be able to run `omnictl` from any terminal window.
 
 ## Step 2: Configure `omnictl`
 
-Next, you’ll configure Omni by adding your `omniconfig.yaml` file to your to your default configuration directory.
+Next, configure omnictl by adding your `omniconfig.yaml` file to the default configuration directory.
 
-First, download the `omniconfig.yaml` from your Omni dashboard.
+First, download the `omniconfig.yaml` file from your Omni dashboard to your local machine.
 
-![Download Omnictl button](./images/install-and-configure-omnictl-omnictl.png)
+![Download Omnictl button](./images/install-and-configure-omnictl-omniconfig.png)
 
-`omnictl` stores its configuration in the standard directory for your operating system:
+`omnictl` stores its configuration in a standard location depending on your operating system:
 
 - **Linux/macOS**: Follows the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/latest/).
 
 - **Windows**: Uses the `%LOCALAPPDATA%` directory.
 
-<table><thead><tr><th width="119.21484375">OS</th><th>Omniconfig Path</th></tr></thead><tbody><tr><td>Linux</td><td><code>\~/.config/omni/config</code></td></tr><tr><td>MacOS</td><td><code>~/Library/Application Support/omni/config</code></td></tr><tr><td>Windows</td><td><code>%LOCALAPPDATA%\omni\config</code>, e.g., <code>C:\Users\<USER>\AppData\Local\omni\config</code></td></tr></tbody></table>
+<table><thead><tr><th width="119.21484375">OS</th><th>Omniconfig Path</th></tr></thead><tbody><tr><td>Linux</td><td><code>\~/.talos/omni/config</code></td></tr><tr><td>MacOS</td><td><code>~/Library/Application Support/omni/config</code></td></tr><tr><td>Windows</td><td><code>%LOCALAPPDATA%\omni\config</code>, e.g., <code>C:\Users\<USER>\AppData\Local\omni\config</code></td></tr></tbody></table>
 
-Move or copy the downloaded file to the appropriate path for your OS:
+Copy the downloaded file to the appropriate location for your operating system:
 
 ```bash
 cp omniconfig.yaml <LOCATION_FOR_YOUR_OS_ABOVE>
 ```
 
-If you would like to merge the `omniconfig.yaml` with an existing configuration, use the following command:
+If you already have an existing Omni configuration and want to merge the new file into it, run:
 
 ```bash
 omnictl config merge ./omniconfig.yaml
 ```
 
-You can confirm that the new configuration was added successfully by listing your contexts with this command:
+To confirm that the configuration was added successfully, list the available contexts:
 
 <Tabs>
   <Tab title= "Command">
@@ -127,19 +135,18 @@ You can confirm that the new configuration was added successfully by listing you
 
 ## Step 3: Authenticate and verify
 
-Once installed and configured, the last step is authentication.
-This connects your local CLI to your Omni account.
+The final step is authentication, which connects your local CLI to your Omni account.
 
-Run the following command to trigger authentication:
+Run the following command:
 
 ```bash
 omnictl get clusters
 ```
 
-A browser window should open automatically for sign-in. If it doesn’t, copy and paste the URL manually:
+A browser window should open automatically for sign-in. If it does not, print the authentication URL and open it manually:
 
 ```bash
 BROWSER=echo omnictl get clusters
 ```
 
-After you complete the sign-in, your credentials are cached locally, and you can start managing your clusters with omnictl.
+After signing in, your credentials are cached locally, and you can begin managing your clusters with `omnictl`.
