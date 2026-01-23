@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:24.13.0-alpine
 
 # Install Mintlify CLI globally
 RUN npm install -g mint@latest
