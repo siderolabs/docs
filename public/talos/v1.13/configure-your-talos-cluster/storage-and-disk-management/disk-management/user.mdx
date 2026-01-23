@@ -102,15 +102,22 @@ or from the `DiscoveredVolume` resource any time later.
 
 ## Types of User Volumes
 
-`UserVolumeConfig` includes an optional `volumeType` field that controls how a user volume is created and managed. If omitted, the system defaults to `partition`.
+`UserVolumeConfig` includes an optional `volumeType` field that controls how a user volume is created and managed.
+If omitted, the system defaults to `partition`.
+Types `disk` and `directory` are advanced options with specific use cases. If unsure, use the default `partition` type.
 
 ### `volumeType: partition` (default)
 
 A standard volume backed by a dedicated partition on the underlying storage device.
+If you are unsure which type to choose, this is the recommended option.
 
 ### `volumeType: disk`
 
+It is primarily intended for scenarios where you want to dedicate a whole disk to a single workload without partitioning - for example, when provisioning on top of LVM logical volumes or other block devices that do not support partitioning.
 When set to `disk`, the volume is provisioned from an entire block device rather than a partition.
+If you want to consume the entire disk with partitioning support, use a `partition` user volume instead and set `grow: true` without specifying `maxSize`.
+
+When using `volumeType: disk`, the disk itself is not labeled or partitioned. The disk selector must uniquely and stably identify the device (for example via WWN, serial, or persistent path). If the selector is ambiguous, a different device may be selected after a reboot.
 
 Restrictions for `disk` volumes:
 
@@ -119,6 +126,7 @@ Restrictions for `disk` volumes:
 
 ### `volumeType: directory`
 
+This type is useful for lightweight storage needs where full partitioning is unnecessary or impractical, and all that is required is a simple directory on the EPHEMERAL volume.
 When set to `directory`, the system bypasses provisioning and filesystem creation. Instead, it creates a host directory at:
 
 ```
@@ -128,7 +136,7 @@ When set to `directory`, the system bypasses provisioning and filesystem creatio
 Characteristics and limitations of `directory` volumes:
 
 * No provisioning, filesystem operations, or encryption are performed.
-* The volume is simply a directory on the host filesystem.
+* The volume is simply a directory on the EPHEMERAL volume.
 * This type provides minimal overhead but does not deliver filesystem-level isolation.
 * Storage capacity is limited by the host’s EPHEMERAL partition.
 * Not suitable for workloads that require predictable or enforceable storage quotas.
