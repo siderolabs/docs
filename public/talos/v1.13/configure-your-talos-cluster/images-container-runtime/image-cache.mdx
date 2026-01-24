@@ -82,8 +82,7 @@ docker run --rm -t -v $PWD/_out:/secureboot:ro -v $PWD/_out:/out -v $PWD/image-c
 
 > Note: If the image cache was pushed to a container registry, the `--image-cache` flag should point to the image reference.
 
-For a disk image, the `IMAGECACHE` partition will use all available space on the disk image (excluding the mandatory boot partitions).
-Therefore, you may need to adjust the disk image size using the `--image-disk-size` flag to ensure the `IMAGECACHE` partition is large enough to accommodate the image cache contents, for example, `--image-disk-size=4GiB`.
+For a disk image, the `IMAGECACHE` partition will be created with the the size of `--image-cache` directory with a 20% overhead rounded off to the next MiB.
 
 Upon boot, Talos will expand the disk image to utilize the full disk size.
 
