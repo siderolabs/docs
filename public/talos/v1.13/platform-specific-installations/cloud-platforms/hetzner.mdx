@@ -9,15 +9,17 @@ import { release_v1_13 } from '/snippets/custom-variables.mdx';
 
 ## Upload image
 
-**NOTE:** Hetzner Cloud provides Talos as Public ISO with the schematic id `ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515` (Hetzner + qemu-guest-agent) since 2025-04-23.
-Minor updates of the ISO will be provided by Hetzner Cloud on a best effort.
+<Note>
+Hetzner Cloud provides Talos as a Public ISO with the schematic id `ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515` (Hetzner + qemu-guest-agent) since 2025-04-23.
+Minor updates of the ISO will be provided by Hetzner Cloud on a best effort basis.
 
-If you need an ISO with a different schematic id, please email the support team to get a Talos ISO uploaded by following [issues:3599](https://github.com/siderolabs/talos/issues/3599#issuecomment-841172018) or you can prepare image snapshot by yourself.
+If you need an ISO with a different schematic id, please email the support team to get a Talos ISO uploaded by following [issues:3599](https://github.com/siderolabs/talos/issues/3599#issuecomment-841172018) or you can prepare the image snapshot by yourself.
+</Note>
 
-There are three options to upload your own.
+There are three options to upload your own:
 
 1. Run an instance in rescue mode and replace the system OS with the Talos image
-2. Use [Hashicorp packer](https://www.packer.io/docs/builders/hetzner-cloud) to prepare an image
+2. Use [Hashicorp Packer](https://www.packer.io/docs/builders/hetzner-cloud) to prepare an image
 3. Use special utility [hcloud-upload-image](https://github.com/apricote/hcloud-upload-image/)
 
 ### Rescue mode
@@ -25,11 +27,11 @@ There are three options to upload your own.
 Create a new Server in the Hetzner console.
 Enable the Hetzner Rescue System for this server and reboot.
 Upon a reboot, the server will boot a special minimal Linux distribution designed for repair and reinstall.
-Once running, login to the server using ```ssh``` to prepare the system disk by doing the following:
+Once running, login to the server using `ssh` to prepare the system disk by doing the following:
 
 <CodeBlock lang="sh">
 {`
-# Check that you in Rescue mode
+# Check that you are in Rescue mode
 df
 
 ### Result is like:
@@ -52,7 +54,7 @@ shutdown -h now
 </CodeBlock>
 
 To make sure disk content is consistent, it is recommended to shut the server down before taking an image (snapshot).
-Once shutdown, simply create an image (snapshot) from the console.
+Once shut down, simply create an image (snapshot) from the console.
 You can now use this snapshot to run Talos on the cloud.
 
 ### Packer
@@ -61,10 +63,8 @@ Install [packer](https://learn.hashicorp.com/tutorials/packer/get-started-instal
 
 Create a config file for packer to use:
 
-<CodeBlock lang="hcl">
+<CodeBlock lang="hcl" filename="hcloud.pkr.hcl">
 {`
-# hcloud.pkr.hcl
-
 packer {
   required_plugins {
     hcloud = {
@@ -128,7 +128,7 @@ build {
 `}
 </CodeBlock>
 
-Additionally you could create a file containing
+Additionally, you could create a file containing
 
 ```hcl
 arch            = "arm64"
@@ -139,10 +139,10 @@ server_location = "fsn1"
 and build the snapshot for arm64.
 
 Create a new image by issuing the commands shown below.
-Note that to create a new API token for your Project, switch into the Hetzner Cloud Console choose a Project, go to Access → Security, and create a new token.
+Note that to create a new API token for your Project, switch into the Hetzner Cloud Console, choose a Project, go to Access → Security, and create a new token.
 
 ```bash
-# First you need set API Token
+# First you need set the API Token
 export HCLOUD_TOKEN=${TOKEN}
 
 # Upload image
@@ -156,7 +156,7 @@ After doing this, you can find the snapshot in the console interface.
 
 ### hcloud-upload-image
 
-Install process described [here](https://github.com/apricote/hcloud-upload-image/?tab=readme-ov-file#getting-started) (you can download binary or build from source, it is also possible to use Docker).
+Install `hcloud-upload-image` as described [in its repository](https://github.com/apricote/hcloud-upload-image/?tab=readme-ov-file#getting-started). You can either download the binary, build it from source or use the Docker container.
 
 For process simplification you can use this `bash` script:
 
@@ -166,11 +166,8 @@ For process simplification you can use this `bash` script:
 export TALOS_IMAGE_VERSION=${release_v1_13} # You can change to the current version
 export TALOS_IMAGE_ARCH=amd64 # You can change to arm architecture
 export HCLOUD_SERVER_ARCH=x86 # HCloud server architecture can be x86 or arm
-wget https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/\${TALOS_IMAGE_VERSION}/hcloud-\${TALOS_IMAGE_ARCH}.raw.xz
-hcloud-upload-image upload \
-      --image-path hcloud-${TALOS_IMAGE_ARCH}.raw.xz \
-      --architecture $HCLOUD_SERVER_ARCH \
-      --compression xz
+wget https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/$TALOS_IMAGE_VERSION/hcloud-$TALOS_IMAGE_ARCH.raw.xz
+hcloud-upload-image upload --image-path hcloud-$TALOS_IMAGE_ARCH.raw.xz --architecture $HCLOUD_SERVER_ARCH --compression xz
 `}
 </CodeBlock>
 
@@ -208,14 +205,11 @@ hcloud load-balancer add-target controlplane \
 
 #### Generating Base Configurations
 
-Using the IP/DNS name of the loadbalancer created earlier, generate the base configuration files for the Talos machines by issuing:
+Using the IP/DNS name of the load balancer created earlier, generate the base configuration files for the Talos machines by issuing:
 
 ```bash
-$ talosctl gen config talos-k8s-hcloud-tutorial https://<load balancer IP or DNS>:6443 \
+talosctl gen config talos-k8s-hcloud-tutorial https://<load balancer IP or DNS>:6443 \
     --with-examples=false --with-docs=false
-created controlplane.yaml
-created worker.yaml
-created talosconfig
 ```
 
 Generating the config without examples and docs is necessary because otherwise you can easily exceed the 32 kb limit on uploadable userdata (see [issue 8805](https://github.com/siderolabs/talos/issues/8805)).
@@ -228,16 +222,14 @@ Optionally, you can specify [machine configuration patches](../../configure-your
 Validate any edited machine configs with:
 
 ```bash
-$ talosctl validate --config controlplane.yaml --mode cloud
-controlplane.yaml is valid for cloud mode
-$ talosctl validate --config worker.yaml --mode cloud
-worker.yaml is valid for cloud mode
+talosctl validate --config controlplane.yaml --mode cloud
+talosctl validate --config worker.yaml --mode cloud
 ```
 
 ### Create the Servers
 
 We can now create our servers.
-Note that you can find ```IMAGE_ID``` in the snapshot section of the console: ```https://console.hetzner.cloud/projects/$PROJECT_ID/servers/snapshots```.
+Note that you can find `IMAGE_ID` in the snapshot section of the console: `https://console.hetzner.cloud/projects/$PROJECT_ID/servers/snapshots`.
 
 #### Create the Control Plane Nodes
 
@@ -317,12 +309,13 @@ talosctl --talosconfig talosconfig kubeconfig .
 
 First of all, we need to patch the Talos machine configuration used by each node:
 
-```yaml
-# patch.yaml
+<CodeBlock filename="patch.yaml">
+{`
 cluster:
   externalCloudProvider:
     enabled: true
-```
+`}
+</CodeBlock>
 
 Then run the following command:
 
