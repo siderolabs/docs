@@ -2,6 +2,8 @@
 title: Register a Bare Metal Machine (PXE/iPXE)
 ---
 
+import { release } from '/snippets/custom-variables.mdx';
+
 This guide shows you how to register a bare metal machine with Omni by PXE/iPXE booting.
 
 ### Copy the required kernel parameters
@@ -58,8 +60,27 @@ Place the following in `/var/lib/matchbox/groups/default.json`:
 
 Once your machine is configured to PXE boot using your tool of choice, power the machine on.
 
-### Conclusion <a href="#conclusion" id="conclusion"></a>
-
 Navigate to the “Machines” menu in the sidebar of Omni. You should now see a machine listed.
 
 You now have a bare metal machine registered with Omni and ready to provision.
+
+## Alternative option: Use a hosting provider that supports iPXE with DHCP
+
+Some bare metal hosting providers (for example, managed dedicated server providers) already provide DHCP and an iPXE boot environment.
+
+In these cases, you don’t need to run your own PXE stack (such as Matchbox or Booter). Instead, you can chainload Talos directly from the Talos Image Factory.
+
+Use the following minimal iPXE script:
+
+```ipxe
+#!ipxe
+dhcp
+chain --replace --autofree https://pxe.factory.talos.dev/pxe/<YOUR_SCHEMATIC_ID>/<TALOS_VERSION>/metal-amd64
+```
+
+Replace:
+
+- `<YOUR_SCHEMATIC_ID>` with the schematic ID generated in Image Factory
+- `<TALOS_VERSION>` with the Talos version you want to boot (for example, {release})
+
+After the machine boots, it will register with Omni using the kernel parameters configured in Image Factory.
