@@ -76,11 +76,18 @@ type Footer struct {
 }
 
 type Integrations struct {
-	GA4 *GA4Integration `yaml:"ga4,omitempty" json:"ga4,omitempty"`
+	GA4     *GA4Integration     `yaml:"ga4,omitempty" json:"ga4,omitempty"`
+	Posthog *PosthogIntegration `yaml:"posthog,omitempty" json:"posthog,omitempty"`
 }
 
 type GA4Integration struct {
 	MeasurementId string `yaml:"measurementId" json:"measurementId"`
+}
+
+type PosthogIntegration struct {
+	ApiKey           string  `yaml:"apiKey" json:"apiKey"`
+	ApiHost          *string `yaml:"apiHost,omitempty" json:"apiHost,omitempty"`
+	SessionRecording *bool   `yaml:"sessionRecording,omitempty" json:"sessionRecording,omitempty"`
 }
 
 type SEO struct {
@@ -238,6 +245,9 @@ func main() {
 		return
 	}
 
+	// Process integrations with defaults
+	processedIntegrations := processIntegrations(mergedConfig.Integrations)
+
 	// Generate Mintlify config
 	mintlifyConfig := MintlifyConfig{
 		Schema:       mergedConfig.Schema,
@@ -255,7 +265,7 @@ func main() {
 		Errors:       mergedConfig.Errors,
 		Navbar:       mergedConfig.Navbar,
 		Footer:       mergedConfig.Footer,
-		Integrations: mergedConfig.Integrations,
+		Integrations: processedIntegrations,
 		Redirects:    mergedConfig.Redirects,
 		Navigation: MintlifyNavigation{
 			Global: mergedConfig.Navigation.Global,
@@ -606,6 +616,30 @@ func validateAgainstSchema(jsonData []byte, schemaURL string) error {
 	}
 
 	return nil
+}
+
+// processIntegrations processes integrations and sets default values
+func processIntegrations(integrations *Integrations) *Integrations {
+	if integrations == nil {
+		return nil
+	}
+
+	// Create a copy to avoid modifying the original
+	processed := &Integrations{
+		GA4:     integrations.GA4,
+		Posthog: integrations.Posthog,
+	}
+
+	// Set PostHog defaults
+	if processed.Posthog != nil {
+		// Default sessionRecording to true if not specified
+		if processed.Posthog.SessionRecording == nil {
+			defaultSessionRecording := true
+			processed.Posthog.SessionRecording = &defaultSessionRecording
+		}
+	}
+
+	return processed
 }
 
 // processManualPages processes manually defined pages and subgroups
