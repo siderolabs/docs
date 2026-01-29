@@ -9,7 +9,7 @@ import { release_v1_13 } from '/snippets/custom-variables.mdx';
 
 In this guide we will create a Kubernetes cluster using VirtualBox.
 
-## Video Walkthrough
+## Video walkthrough
 
 To see a live demo of this writeup, visit Youtube here:
 
@@ -17,7 +17,7 @@ To see a live demo of this writeup, visit Youtube here:
 
 ## Installation
 
-### How to Get VirtualBox
+### How to get VirtualBox
 
 Install VirtualBox with your operating system package manager or from the [website](https://www.virtualbox.org/).
 For example, on Ubuntu for x86:
@@ -36,7 +36,7 @@ brew install siderolabs/tap/talosctl
 
 For manual installation and other platforms please see the [talosctl installation guide](../../getting-started/talosctl).
 
-### Download ISO Image
+### Download ISO image
 
 Download the ISO image from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
 
@@ -92,7 +92,7 @@ Finally, in the "Storage" section, select the optical drive and, on the right, s
 Repeat this process for a second VM to use as a worker node.
 You can also repeat this for additional nodes desired.
 
-## Start Control Plane Node
+## Start control plane node
 
 Once the VMs have been created and updated, start the VM that will be the first control plane node.
 This VM will boot the ISO image specified earlier and enter "maintenance mode".
@@ -102,7 +102,7 @@ If you wish to export this IP as a bash variable, simply issue a command like `e
 
 <img src="./images/virtualbox-maintenance-mode.png" width="500px"/>
 
-## Generate Machine Configurations
+## Generate machine configurations
 
 With the IP address above, you can now generate the machine configurations to use for installing Talos and Kubernetes.
 Issue the following command, updating the output directory, cluster name, and control plane IP as you see fit:
@@ -113,7 +113,7 @@ talosctl gen config talos-vbox-cluster https://$CONTROL_PLANE_IP:6443 --output-d
 
 This will create several files in the `_out` directory: controlplane.yaml, worker.yaml, and talosconfig.
 
-## Create Control Plane Node
+## Create control plane node
 
 Using the `controlplane.yaml` generated above, you can now apply this config using talosctl.
 Issue:
@@ -133,7 +133,7 @@ Talos will be installed to disk, the VM will reboot, and then Talos will configu
 >
 > Simply remove the ISO image from the VM and restart it.
 
-## Create Worker Node
+## Create worker node
 
 Create at least a single worker node using a process similar to the control plane creation above.
 Start the worker node VM and wait for it to enter "maintenance mode".
@@ -167,7 +167,7 @@ You should see stage change to `Running` and your cluster is now ready.
 talosctl --talosconfig $TALOSCONFIG bootstrap
 ```
 
-## Using the Cluster
+## Using the cluster
 
 Once the cluster is available, you can make use of `talosctl` and `kubectl` to interact with the cluster.
 For example, to view current running containers, run `talosctl containers` for a list of containers in the `system` namespace, or `talosctl containers -k` for the `k8s.io` namespace.
@@ -197,6 +197,6 @@ You can then use kubectl in this fashion:
 kubectl get nodes
 ```
 
-## Cleaning Up
+## Cleaning up
 
 To cleanup, simply stop and delete the virtual machines from the VirtualBox UI.

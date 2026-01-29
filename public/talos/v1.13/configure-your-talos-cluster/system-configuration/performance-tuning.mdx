@@ -11,7 +11,7 @@ With any performance tuning, it's essential to measure the impact of the changes
 
 If you find more performance tuning knobs, please let us know by editing this document.
 
-## Kernel Parameters
+## Kernel parameters
 
 Talos Linux kernel parameters can be adjusted in the following ways:
 
@@ -19,7 +19,7 @@ Talos Linux kernel parameters can be adjusted in the following ways:
 * on initial install (when booting off ISO/PXE), `.machine.install.extraKernelArgs` can be used to set kernel parameters
 * after the initial install (or when booting off a disk image), `.machine.install.extraKernelArgs` changes require a no-op upgrade (e.g. to the same version of Talos) to take effect
 
-### CPU Scaling
+### CPU scaling
 
 Talos Linux uses the `schedutil` [CPU scaling governor](https://docs.kernel.org/admin-guide/pm/cpufreq.html) by default, for maximum performance, you can switch to the `performance` governor:
 
@@ -27,7 +27,7 @@ Talos Linux uses the `schedutil` [CPU scaling governor](https://docs.kernel.org/
 cpufreq.default_governor=performance
 ```
 
-### Processor Sleep States
+### Processor sleep states
 
 Modern processors support various sleep states to save power, but they might introduce latency when transitioning back to the active state.
 
@@ -47,7 +47,7 @@ For maximum performance (and lower latency), disable the `intel_idle` driver:
 intel_idle.max_cstate=0
 ```
 
-### Hardware Vulnerabilities
+### Hardware vulnerabilities
 
 Modern processors have various [security vulnerabilities](https://docs.kernel.org/admin-guide/hw-vuln/index.html) that require software/microcode mitigations.
 These mitigations might have a performance impact, and some of them can be disabled if you are willing to take the risk.

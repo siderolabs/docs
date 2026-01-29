@@ -16,7 +16,7 @@ The same concept can extended to air-gapped or partially connected environments,
 There are many implementations of container registries that support pull-through caching, including
 [Docker Registry](https://hub.docker.com/_/registry), [Harbor](https://goharbor.io/), [Zot](https://zotregistry.dev/), and others.
 
-## Launch the Caching Docker Registry Proxies
+## Launch the caching Docker Registry proxies
 
 The Docker Registry is the simplest way to set up pull-through caching proxies.
 It requires to set up a separate registry container per upstream registry.
@@ -50,7 +50,7 @@ docker run -d -p 5003:5000 \
 As a registry container can only handle a single upstream Docker registry, we launch a container per upstream, each on its own
 host port (5000, 5001, 5002, 5003 and 5004).
 
-## Configuring Talos to Use the Caching Registries
+## Configuring Talos to use the caching registries
 
 Talos Linux can be configured to redirect image pulls to the caching registries using [RegistryMirrorConfig](../../reference/configuration/cri/registrymirrorconfig) configuration document.
 The registry mirror configuration is honored by Talos Linux itself and automatically propagated to CRI runtimes (containerd).
@@ -142,7 +142,7 @@ ca: |-
     -----END CERTIFICATE-----
 ```
 
-## Using Harbor as a Caching Registry
+## Using Harbor as a caching registry
 
 [Harbor](https://goharbor.io/) is an open source container registry that can be used as a caching proxy.
 Harbor supports configuring multiple upstream registries, so it can be used to cache multiple registries at once behind a single endpoint.

@@ -21,7 +21,7 @@ chmod +x /usr/local/bin/talosctl
   `}
 </CodeBlock>
 
-## Download the Image
+## Download the image
 
 The default schematic id for "vanilla" RockPi 4c is `08e72e242b71f42c9db5bed80e8255b2e0d442a372bc09055b79537d9e3ce191`.
 Refer to the [Image Factory](../../learn-more/image-factory) documentation for more information.
@@ -35,7 +35,7 @@ xz -d metal-arm64.raw.xz
   `}
 </CodeBlock>
 
-## Writing the Image
+## Writing the image
 
 The path to your SD card/eMMC/USB/nVME can be found using `fdisk` on Linux or `diskutil` on macOS.
 In this example, we will assume `/dev/mmcblk0`.
@@ -64,7 +64,7 @@ Follow the Radxa docs on [Install on M.2 NVME SSD](https://wiki.radxa.com/Rockpi
 After these above steps, Talos will boot from the nVME/USB and enter maintenance mode.
 Proceed to [bootstrapping the node](#bootstrapping-the-node).
 
-## Bootstrapping the Node
+## Bootstrapping the node
 
 Wait for the console to show you the instructions for bootstrapping the node.
 Following the instructions in the console output to connect to the interactive installer:

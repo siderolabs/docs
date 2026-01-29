@@ -25,7 +25,7 @@ talosctl gen config \
     --config-patch @patch.yaml
 ```
 
-## Installing Tigera Operator
+## Installing Tigera operator
 
 Recommended way to install Calico is via `Tigera-operator` manifest. The operator will make sure that all Calico components are always up and running.
 
@@ -37,7 +37,7 @@ Use the following command to install the latest Tigera operator.
 kubectl create -f https://docs.tigera.io/calico/latest/manifests/tigera-operator.yaml
 ```
 
-### Configuring Calico Networking
+### Configuring Calico networking
 
 Calico has a pluggable dataplane architecture that lets you choose the networking technology based on your use case. You can configure the dataplane by setting the `linuxDataplane` key in the installation manifest.
 
@@ -127,7 +127,7 @@ EOF
 </Tab>
 </Tabs>
 
-## Deploy Calico Whisker Network Observability Stack
+## Deploy Calico Whisker network observability stack
 
 Use the following command to enable Calico observability stack:
 

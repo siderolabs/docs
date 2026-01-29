@@ -7,7 +7,7 @@ aliases:
 
 import { k8s_release } from '/snippets/custom-variables.mdx';
 
-## Viewing logs
+## View logs
 
 Kernel messages can be retrieved with `talosctl dmesg` command:
 
@@ -64,12 +64,12 @@ $ talosctl -n 172.20.1.2 logs -k kube-system/kube-proxy-gfkqj:kube-proxy:ad5e8dd
 
 If some host workloads (e.g. system extensions) send syslog messages, they can be retrieved with `talosctl logs syslogd` command.
 
-## Forwarding logs for aggregation
+## Forward logs for aggregation
 
 Talos writes logs to files in `/var/log` directory.
 A pod running in Kubernetes can mount this directory and forward logs to a log aggregation system.
 
-## Sending logs over network
+## Send logs over network
 
 ### Service logs
 
@@ -160,7 +160,7 @@ Sample message:
 > `extraKernelArgs` in the machine configuration are only applied on Talos upgrades, not just by applying the config.
 > (Upgrading to the same version is fine).
 
-### Receiving logs
+### Receive logs
 
 If you have configure remote service logs or kernel logs on a Talos system and want to collect the logs centrally for debugging purposes you can temporarily run the netcat `nc` command to receive logs.
 

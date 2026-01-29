@@ -10,15 +10,30 @@ This is especially useful in environments with limited or no Internet connectivi
 
 The cache is local to each machine and is automatically managed by Talos when enabled.
 
-## Preparing Image Cache
+## Preparing image cache
 
 First, build a list of image references that need to be cached.
-The `talosctl images default` might be used as a starting point, but it should be customized to include additional images (e.g. custom CNI, workload images, etc.)
+The `talosctl images k8s-bundle` might be used as a starting point, but it should be customized to include additional images (e.g. custom CNI, workload images, etc.)
 
 ```bash
-talosctl images default > images.txt
+talosctl images k8s-bundle > images.txt
 cat extra-images.txt >> images.txt
 ```
+
+### Air-gapped environments
+If you are preparing for an air-gapped environment, you will need to cache the talos images as well.
+
+Starting with Talos 1.12 you can get a list of images needed from talosctl.
+
+<CodeBlock lang="sh">
+{`
+talosctl images talos-bundle ${release_v1_13} >> images.txt
+`}
+</CodeBlock>
+
+or deploy an [Image Factory](../../../../omni/self-hosted/run-image-factory-on-prem) to host Talos images internally.
+
+<Warning>Including all talos-bundle images will significantly increase the size of your installation media. The minimum images to install Talos include the `installer` and `installer-base` images.</Warning>
 
 Next, prepare an OCI image which contains all cached images:
 
@@ -37,7 +52,7 @@ Example of pushing the OCI image cache directory to a container registry:
 crane push ./image-cache.oci my.registry/image-cache:my-cache
 ```
 
-## Building Boot Assets
+## Build boot assets
 
 The image cache is provided to Talos via the boot assets.
 There are two supported boot asset types for the Image Cache: ISO and disk image.
@@ -67,7 +82,7 @@ The ISO image can be utilized in the following ways (which allows both booting T
 
 > Note: Third-party boot loaders, such as Ventoy, are not supported as Talos will not be able to access the image cache.
 
-### Disk Image
+### Disk image
 
 In case of disk image, the image cache is included in the disk image itself, and on boot it would be used immediately by the Talos.
 
@@ -126,7 +141,7 @@ If the disk image is used, the `IMAGECACHE` volume doesn't need to be configured
 
 See [System Volumes](../storage-and-disk-management/disk-management/system) for more information on volume configuration.
 
-## Updating the Image Cache
+## Update the image cache
 
 The image cache is initially populated during installation from the boot media (ISO or disk image) and stored on disk.
 Over time, you may want to update or refresh the cached images without reinstalling the node.
@@ -143,7 +158,7 @@ This process allows you to refresh cached images without rebuilding or reinstall
 
 > **Note:** You can update the image cache using any medium described in the documentation for building boot assets. The media does not need to have Talos installed or be bootable itself, it only needs to provide the cache contents.
 
-### Limitations of Live Image Cache Updates
+### Limitations of live image cache updates
 
 Only images baked into the ISO or USB are copied. There is no way to push arbitrary new images directly into the cache on a running system.
 

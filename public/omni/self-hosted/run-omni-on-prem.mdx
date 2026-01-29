@@ -1,5 +1,5 @@
 ---
-title: Deploy Omni on Prem
+title: Run Omni On-Prem
 ---
 
 import { omni_release } from '/snippets/custom-variables.mdx';
@@ -22,7 +22,7 @@ Install Docker according to the Ubuntu installation guide [here](https://docs.do
 curl -L https://get.docker.io | sh
 ```
 
-#### Generate Certs
+#### Generate certificates
 
 On-prem Omni will require valid SSL certificates. This means that self-signed certs _will not_ work. Generating certificates is left as an exercise to the user, but here is a rough example that was tested using [DigitalOcean's DNS integration](https://certbot-dns-digitalocean.readthedocs.io/en/stable/) with certbot to generate certificates. The process should be very similar for other providers like Route53.
 
@@ -43,7 +43,7 @@ $ echo '<creds example' > creds.ini
 $ certbot certonly --dns-<provider> -d <domain name for onprem omni>
 ```
 
-### Configure Authentication
+### Configure authentication
 
 #### Auth0
 
@@ -70,17 +70,17 @@ Take note of the following information from the Auth0 application:
 * Domain
 * Client ID
 
-#### SAML Identity Providers
+#### SAML identity providers
 
 Other identity providers also work with Omni. Configuring these should be similar to Auth0.
 
-* [EntraID/Azure AD](../../security-and-authentication/using-saml-with-omni/how-to-configure-entraid-for-omni)
-* [Keycloak](../../infrastructure-and-extensions/self-hosted/configure-keycloak-for-omni)
-* [Okta](../../security-and-authentication/using-saml-with-omni/configure-okta-for-omni)
-* [Workspace ONE Access](../../security-and-authentication/using-saml-with-omni/configure-workspace-one-access-for-omni)
-* [Unifi Identity Enterprise](../../security-and-authentication/using-saml-with-omni/configure-unifi-identity-enterprise-for-omni)
+* [EntraID/Azure AD](../security-and-authentication/using-saml-with-omni/how-to-configure-entraid-for-omni)
+* [Keycloak](./configure-keycloak-for-omni)
+* [Okta](../security-and-authentication/using-saml-with-omni/configure-okta-for-omni)
+* [Workspace ONE Access](../security-and-authentication/using-saml-with-omni/configure-workspace-one-access-for-omni)
+* [Unifi Identity Enterprise](../security-and-authentication/using-saml-with-omni/configure-unifi-identity-enterprise-for-omni)
 
-### Create Etcd Encryption Key
+### Create etcd encryption key
 
 Generate a GPG key:
 

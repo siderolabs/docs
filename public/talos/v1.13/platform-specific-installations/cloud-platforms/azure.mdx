@@ -5,13 +5,13 @@ aliases:
   - ../../../cloud-platforms/azure
 ---
 
-## Creating a Cluster via the CLI
+## Creating a cluster via the CLI
 
 In this guide we will create an HA Kubernetes cluster with 1 worker node.
 We assume existing [Blob Storage](https://docs.microsoft.com/en-us/azure/storage/blobs/), and some familiarity with Azure.
 If you need more information on Azure specifics, please see the [official Azure documentation](https://docs.microsoft.com/en-us/azure/).
 
-### Environment Setup
+### Environment setup
 
 We'll make use of the following environment variables throughout the setup.
 Edit the variables below with your correct information.
@@ -36,7 +36,7 @@ export CONNECTION=$(az storage account show-connection-string \
                     -o tsv)
 ```
 
-### Create the Image
+### Create the image
 
 First, download the Azure image from [Image Factory](https://factory.talos.dev/).
 Once downloaded, untar with `tar -xvf /path/to/azure-amd64.tar.gz`
@@ -53,7 +53,7 @@ az storage blob upload \
   -n talos-azure.vhd
 ```
 
-#### Register the Image
+#### Register the image
 
 Now that the image is present in our blob storage, we'll register it.
 
@@ -65,9 +65,9 @@ az image create \
   -g $GROUP
 ```
 
-### Network Infrastructure
+### Network infrastructure
 
-#### Virtual Networks and Security Groups
+#### Virtual networks and security groups
 
 Once the image is prepared, we'll want to work through setting up the network.
 Issue the following to create a network security group and add rules to it.
@@ -120,7 +120,7 @@ az network nsg rule create \
   --direction inbound
 ```
 
-#### Load Balancer
+#### Load balancer
 
 We will create a public ip, load balancer, and a health check that we will use for our control plane.
 
@@ -160,7 +160,7 @@ az network lb rule create \
   --probe-name talos-lb-health
 ```
 
-#### Network Interfaces
+#### Network interfaces
 
 In Azure, we have to pre-create the NICs for our control plane so that they can be associated with our load balancer.
 
@@ -190,7 +190,7 @@ done
 # Use `--sku Basic` to set SKU to Basic.
 ```
 
-### Cluster Configuration
+### Cluster configuration
 
 With our networking bits setup, we'll fetch the IP for our load balancer and create our configuration files.
 
@@ -204,7 +204,7 @@ LB_PUBLIC_IP=$(az network public-ip show \
 talosctl gen config talos-k8s-azure-tutorial https://${LB_PUBLIC_IP}:6443
 ```
 
-### Compute Creation
+### Compute creation
 
 We are now ready to create our azure nodes.
 Azure allows you to pass Talos machine configuration to the virtual machine at bootstrap time via
@@ -212,7 +212,7 @@ Azure allows you to pass Talos machine configuration to the virtual machine at b
 
 Talos supports only `custom-data` method, machine configuration is available to the VM only on the first boot.
 
-#### Manual Image Upload
+#### Manual image upload
 
 ```bash
 # Create availability set
@@ -261,7 +261,7 @@ done
 # for troubleshooting
 ```
 
-### Bootstrap Etcd
+### Bootstrap etcd
 
 You should now be able to interact with your cluster with `talosctl`.
 We will need to discover the public IP for our first control plane node first.

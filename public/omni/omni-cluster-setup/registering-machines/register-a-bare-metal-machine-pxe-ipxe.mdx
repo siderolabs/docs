@@ -4,17 +4,17 @@ title: Register a Bare Metal Machine (PXE/iPXE)
 
 This guide shows you how to register a bare metal machine with Omni by PXE/iPXE booting.
 
-### Copy the Required Kernel Parameters <a href="#copy-the-required-kernel-parameters" id="copy-the-required-kernel-parameters"></a>
+### Copy the required kernel parameters
 
 Upon logging in you will be presented with the Omni dashboard. Click the “Copy Kernel Parameters” button on the right hand side, and save the value for later.
 
-### Download the PXE/iPXE Assets <a href="#download-the-pxeipxe-assets" id="download-the-pxeipxe-assets"></a>
+### Download the PXE/iPXE assets
 
 The following example assumes the use of Matchbox server.
 
 Download `vmlinuz` and `initramfs.xz` from the [release](https://github.com/siderolabs/talos/releases) of your choice (Talos Linux 1.4 or greater is required), and place them in `/var/lib/matchbox/assets`.
 
-#### Create the Profile <a href="#create-the-profile" id="create-the-profile"></a>
+#### Create the profile
 
 Place the following in `/var/lib/matchbox/profiles/default.json`:
 
@@ -46,7 +46,7 @@ Update `siderolink.api`, `talos.events.sink`, and `talos.logging.kernel` with th
 
 Place the following in `/var/lib/matchbox/groups/default.json`:
 
-#### Create the Group <a href="#create-the-group" id="create-the-group"></a>
+#### Create the group
 
 ```json
 {

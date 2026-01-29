@@ -82,7 +82,7 @@ machine:
         # # Look up disk using disk attributes like model, size, serial and others.
         # diskSelector:
         #     size: 4GB # Disk size.
-        #     model: WDC* # Disk model `/sys/block/{"<"}dev{">"}/device/model`.
+        #     model: WDC* # Disk model `/sys/block/<dev>/device/model`.
         #     busPath: /pci0000:00/0000:00:17.0/ata1/host0/target0:0:0/0:0:0:0 # Disk bus path.
 ```
 
@@ -356,7 +356,7 @@ KubeletConfig represents the kubelet config values.
 ```yaml
 machine:
     kubelet:
-        image: ghcr.io/siderolabs/kubelet:v1.35.0-alpha.3 # The `image` field is an optional reference to an alternative kubelet image.
+        image: ghcr.io/siderolabs/kubelet:v1.35.0 # The `image` field is an optional reference to an alternative kubelet image.
         # The `extraArgs` field is used to provide additional flags to the kubelet.
         extraArgs:
             feature-gates: ServerSideApply=true
@@ -694,21 +694,6 @@ NetworkConfig represents the machine's networking config values.
 
 
 
-```yaml
-machine:
-    network:
-        nameservers:
-            - 9.8.7.6
-            - 8.7.6.5
-        searchDomains:
-            - example.org
-            - example.com
-
-        # # Configures KubeSpan feature.
-        # kubespan:
-        #     enabled: true # Enable the KubeSpan feature.
-```
-
 
 <table>
   <thead>
@@ -847,7 +832,7 @@ machine:
         # # Look up disk using disk attributes like model, size, serial and others.
         # diskSelector:
         #     size: 4GB # Disk size.
-        #     model: WDC* # Disk model `/sys/block/{"<"}dev{">"}/device/model`.
+        #     model: WDC* # Disk model `/sys/block/<dev>/device/model`.
         #     busPath: /pci0000:00/0000:00:17.0/ata1/host0/target0:0:0/0:0:0:0 # Disk bus path.
 ```
 
@@ -914,7 +899,7 @@ machine:
     install:
         diskSelector:
             size: '>= 1TB' # Disk size.
-            model: WDC* # Disk model `/sys/block/{"<"}dev{">"}/device/model`.
+            model: WDC* # Disk model `/sys/block/<dev>/device/model`.
 
             # # Disk bus path.
             # busPath: /pci0000:00/0000:00:17.0/ata1/host0/target0:0:0/0:0:0:0
@@ -941,37 +926,37 @@ machine:
     <tr>
       <td>`name`</td>
       <td>string</td>
-      <td>Disk name `/sys/block/{"<"}dev{">"}/device/name`.</td>
+      <td>Disk name `/sys/block/<dev>/device/name`.</td>
       <td></td>
     </tr>
     <tr>
       <td>`model`</td>
       <td>string</td>
-      <td>Disk model `/sys/block/{"<"}dev{">"}/device/model`.</td>
+      <td>Disk model `/sys/block/<dev>/device/model`.</td>
       <td></td>
     </tr>
     <tr>
       <td>`serial`</td>
       <td>string</td>
-      <td>Disk serial number `/sys/block/{"<"}dev{">"}/serial`.</td>
+      <td>Disk serial number `/sys/block/<dev>/serial`.</td>
       <td></td>
     </tr>
     <tr>
       <td>`modalias`</td>
       <td>string</td>
-      <td>Disk modalias `/sys/block/{"<"}dev{">"}/device/modalias`.</td>
+      <td>Disk modalias `/sys/block/<dev>/device/modalias`.</td>
       <td></td>
     </tr>
     <tr>
       <td>`uuid`</td>
       <td>string</td>
-      <td>Disk UUID `/sys/block/{"<"}dev{">"}/uuid`.</td>
+      <td>Disk UUID `/sys/block/<dev>/uuid`.</td>
       <td></td>
     </tr>
     <tr>
       <td>`wwid`</td>
       <td>string</td>
-      <td>Disk WWID `/sys/block/{"<"}dev{">"}/wwid`.</td>
+      <td>Disk WWID `/sys/block/<dev>/wwid`.</td>
       <td></td>
     </tr>
     <tr>
@@ -2024,7 +2009,7 @@ APIServerConfig represents the kube apiserver configuration options.
 ```yaml
 cluster:
     apiServer:
-        image: registry.k8s.io/kube-apiserver:v1.35.0-alpha.3 # The container image used in the API server manifest.
+        image: registry.k8s.io/kube-apiserver:v1.35.0 # The container image used in the API server manifest.
         # Extra arguments to supply to the API server.
         extraArgs:
             feature-gates: ServerSideApply=true
@@ -2377,7 +2362,7 @@ ControllerManagerConfig represents the kube controller manager configuration opt
 ```yaml
 cluster:
     controllerManager:
-        image: registry.k8s.io/kube-controller-manager:v1.35.0-alpha.3 # The container image used in the controller manager manifest.
+        image: registry.k8s.io/kube-controller-manager:v1.35.0 # The container image used in the controller manager manifest.
         # Extra arguments to supply to the controller manager.
         extraArgs:
             feature-gates: ServerSideApply=true
@@ -2518,7 +2503,7 @@ ProxyConfig represents the kube proxy configuration options.
 ```yaml
 cluster:
     proxy:
-        image: registry.k8s.io/kube-proxy:v1.35.0-alpha.3 # The container image used in the kube-proxy manifest.
+        image: registry.k8s.io/kube-proxy:v1.35.0 # The container image used in the kube-proxy manifest.
         mode: ipvs # proxy mode of kube-proxy.
         # Extra arguments to supply to kube-proxy.
         extraArgs:
@@ -2579,7 +2564,7 @@ SchedulerConfig represents the kube scheduler configuration options.
 ```yaml
 cluster:
     scheduler:
-        image: registry.k8s.io/kube-scheduler:v1.35.0-alpha.3 # The container image used in the scheduler manifest.
+        image: registry.k8s.io/kube-scheduler:v1.35.0 # The container image used in the scheduler manifest.
         # Extra arguments to supply to the scheduler.
         extraArgs:
             feature-gates: AllBeta=true
@@ -2877,7 +2862,7 @@ EtcdConfig represents the etcd configuration options.
 ```yaml
 cluster:
     etcd:
-        image: registry.k8s.io/etcd:v3.6.6 # The container image used to create the etcd service.
+        image: registry.k8s.io/etcd:v3.6.7 # The container image used to create the etcd service.
         # The `ca` is the root certificate authority of the PKI.
         ca:
             crt: LS0tIEVYQU1QTEUgQ0VSVElGSUNBVEUgLS0t
@@ -2948,7 +2933,7 @@ CoreDNS represents the CoreDNS config values.
 ```yaml
 cluster:
     coreDNS:
-        image: registry.k8s.io/coredns/coredns:v1.13.1 # The `image` field is an override to the default coredns image.
+        image: registry.k8s.io/coredns/coredns:v1.13.2 # The `image` field is an override to the default coredns image.
 ```
 
 

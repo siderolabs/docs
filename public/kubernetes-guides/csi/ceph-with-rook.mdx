@@ -100,7 +100,7 @@ ceph-bucket            rook-ceph.ceph.rook.io/bucket   Delete          Immediate
 ceph-filesystem        rook-ceph.cephfs.csi.ceph.com   Delete          Immediate           true                   77m
 ```
 
-## Talos Linux Considerations
+## Talos Linux considerations
 
 By default, Rook configues Ceph to have 3 `mon` instances, in which case the data stored in `dataDirHostPath` can be regenerated from the other `mon` instances.
 So when performing maintenance on a Talos Linux node with a Rook Ceph cluster (e.g. upgrading the Talos Linux version), it is imperative that care be taken to maintain the health of the Ceph cluster.
@@ -130,9 +130,9 @@ cephcluster.ceph.rook.io/rook-ceph condition met
 
 The above steps need to be performed for each Talos Linux node undergoing maintenance, one at a time.
 
-## Cleaning Up
+## Cleaning up
 
-### Rook Ceph Cluster Removal
+### Rook Ceph cluster removal
 
 Removing a Rook Ceph cluster requires a few steps, starting with signalling to Rook that the Ceph cluster is really being destroyed.
 Then all Persistent Volumes (and Claims) backed by the Ceph cluster must be deleted, followed by the Storage Classes and the Ceph storage types.
@@ -217,7 +217,7 @@ customresourcedefinition.apiextensions.k8s.io "objectbucketclaims.objectbucket.i
 customresourcedefinition.apiextensions.k8s.io "objectbuckets.objectbucket.io" deleted
 ```
 
-### Talos Linux Rook Metadata Removal
+### Talos Linux Rook metadata removal
 
 If the Rook Operator is cleanly removed following the above process, the node metadata and disks should be clean and ready to be re-used.
 In the case of an unclean cluster removal, there may be still a few instances of metadata stored on the system disk, as well as the partition information on the storage disks.

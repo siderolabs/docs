@@ -32,7 +32,7 @@ Using SAML changes how user identities are managed in Omni:
 * Attributes from the SAML assertion are added to the user’s `Identity` resource with the prefix `saml.omni.sidero.dev/`.
 * Access Control Lists (ACLs) can be used to grant fine-grained permissions beyond roles.
 
-## Authentication for Automation
+## Authentication for automation
 
 In addition to interactive login, `omnictl` can also be used in automation. When using user authentication in non-interactive workflows, Omni issues short-lived credentials that expire after a limited time. User tokens can remain valid for up to eight hours, and Omni-generated user public keys currently expire after four hours. These limits are not configurable.
 

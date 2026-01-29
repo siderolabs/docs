@@ -27,7 +27,7 @@ Starting the server without the `--audit-log-dir` or with empty value will disab
 The audit log is stored in the directory specified by `--audit-log-dir <dir>` flag. The log files are named `<year>-<month>-<day>.jsonlog`. The retention period is 30 days (including the current day), after which the log files are deleted.
 </Info>
 
-#### Getting the Audit log
+#### Getting the audit log
 
 There are two ways of getting a concatenated audit log using Omni:
 
@@ -36,7 +36,7 @@ There are two ways of getting a concatenated audit log using Omni:
 
 The second way is preferable if you have a huge audit log, as it will not consume a lot of memory on the client if you look for something specific.
 
-#### Format of the Audit log
+#### Format of the audit log
 
 The audit log is stored in JSON format. Each line in the log file is a JSON object representing an audit event.
 

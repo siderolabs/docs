@@ -18,7 +18,7 @@ Regardless of the method, the process is:
 * Configure your Kubernetes endpoint to point to the newly created control plane nodes.
 * Bootstrap the cluster.
 
-## Define the Kubernetes Endpoint
+## Define the Kubernetes endpoint
 
 There are a variety of ways to create an HA endpoint for the Kubernetes cluster.
 Some of the ways are:
@@ -31,9 +31,9 @@ Whatever way is chosen, it should result in an IP address/DNS name that routes t
 We do not know the control plane node IP addresses at this stage, but we should define the endpoint DNS entry so that we can use it in creating the cluster configuration.
 After the nodes are provisioned, we can use their addresses to create the endpoint A records, or bind them to the load balancer, etc.
 
-## Create the Machine Configuration Files
+## Create the machine configuration files
 
-### Generating Configurations
+### Generating configurations
 
 Using the DNS name of the loadbalancer defined above, generate the base configuration files for the Talos machines:
 
@@ -46,7 +46,7 @@ created talosconfig
 
 > The `port` used above should be 6443, unless your load balancer maps a different port to port 6443 on the control plane nodes.
 
-### Validate the Configuration Files
+### Validate the configuration files
 
 ```bash
 talosctl validate --config controlplane.yaml --mode metal
@@ -56,7 +56,7 @@ talosctl validate --config worker.yaml --mode metal
 > Note: Validation of the install disk could potentially fail as validation
 > is performed on your local machine and the specified disk may not exist.
 
-### Passing in the configuration as User Data
+### Passing in the configuration as user data
 
 You can use the metadata service provide by Equinix Metal to pass in the machines configuration.
 It is required to add a shebang to the top of the configuration file.
@@ -89,7 +89,7 @@ If you did not pass in the machine configuration as User Data, you need to provi
 
 `talosctl apply-config --insecure --nodes <Node IP> --file ./controlplane.yaml`
 
-### Creating a Cluster via the Equinix Metal CLI
+### Creating a cluster via the Equinix Metal CLI
 
 This guide assumes the user has a working API token,and the [Equinix Metal CLI](https://github.com/equinix/metal-cli/) installed.
 
@@ -126,7 +126,7 @@ endpoint.mydomain.com has address 147.75.109.71
 endpoint.mydomain.com has address 145.40.90.177
 ```
 
-## Bootstrap Etcd
+## Bootstrap etcd
 
 Set the `endpoints` and `nodes` for `talosctl`:
 

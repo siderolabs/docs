@@ -16,7 +16,7 @@ However, when a node is in maintenance mode, it still serves the Talos API over 
 
 In this case, the `--insecure` flag tells `talosctl` to skip verifying the server’s certificate, allowing the connection to proceed.
 
-Only a small subset of Talos API commands support the --insecure flag, specifically those required for initial setup and maintenance operations.
+Only a small subset of Talos API commands support the `--insecure` flag, specifically those required for initial setup and maintenance operations.
 
 However, once you've applied a machine config, you must stop using the `--insecure` flag for all subsequent operations.
 The node will now expect secure communication using certificates stored in a talosconfig file.
@@ -24,7 +24,7 @@ The node will now expect secure communication using certificates stored in a tal
 **Note**: The `--insecure` flag is used in a different context by the `talosctl image cache-create` command.
 This command is not used for interacting with the Talos node, but for allowing access to insecure image registries that do not support TLS.
 
-## Validating the Node Identity in `--insecure` Mode
+## Validate the node identity in `--insecure` Mode
 
 When using `--insecure`, `talosctl` cannot automatically verify the identity of the remote node.
 However, Talos still provides a way to manually confirm that you are communicating with the intended machine.
@@ -55,7 +55,7 @@ talosctl apply-config
 
 This allows you to confirm that the configuration is being applied to the intended node, even though full authentication has not yet been established.
 
-## In Omni-Managed Clusters
+## In Omni-managed clusters
 
 The `--insecure` flag works differently when you're using Omni to manage Talos clusters.
 
@@ -67,9 +67,9 @@ So the SideroLink connection is the only way you can run commands against a node
 This architecture provides a unique security advantage because if a machine is managed by Omni, you cannot send configurations to it from another machine without authentication, even if they are on the same network.
 This is because the Talos machine does not listen on any general network interface and only communicates with Omni through the secure SideroLink tunnel.
 
-## Supported Commands With the insecure Flag
+## Supported commands with the insecure flag
 
-The following commands can be used with the --insecure flag:
+The following commands can be used with the `--insecure` flag:
 
 `talosctl apply-config`
 
@@ -118,7 +118,7 @@ Erase data from disk partitions on a Talos node.
 
 Refer to the [CLI reference](../../reference/cli) for full CLI details.
 
-## Usage Example
+## Usage example
 
 Here is an example of how to use the `--insecure` flag in Talos:
 

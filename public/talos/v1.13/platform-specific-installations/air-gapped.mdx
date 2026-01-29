@@ -18,12 +18,12 @@ In this guide, we will assume that the environment is completely air-gapped, wit
 If there is partial connectivity, most of the requirements can be addresses via [pull-through cache](../configure-your-talos-cluster/images-container-runtime/pull-through-cache) and
 HTTP proxy configuration.
 
-## Network Configuration
+## Network configuration
 
 Network configuration in air-gapped environments might require custom settings for DNS and NTP servers.
 If running in a virtual environment, the hypervisor might provide time synchronization via [PTP interface](../configure-your-talos-cluster/system-configuration/time-sync) which doesn't require network access.
 
-## Container Images
+## Container images
 
 Talos Linux provides support for redirecting image pull requests to internal registries via [registry mirrors](../configure-your-talos-cluster/images-container-runtime/pull-through-cache) feature.
 This feature can be used to redirect all image pull requests to an internal registry which is pre-populated with required images.
@@ -32,9 +32,9 @@ See the section on [airgapped registry](../configure-your-talos-cluster/images-c
 
 ## Image Factory
 
-See the [guide on running Image Factory in air-gapped environments](../../../omni/infrastructure-and-extensions/self-hosted/deploy-image-factory-on-prem) for more details.
+See the [guide on running Image Factory in air-gapped environments](../../../omni/self-hosted/run-image-factory-on-prem) for more details.
 
-## Discovery Service
+## Discovery service
 
 Talos Linux by default uses the public Discovery Service at `discovery.talos.dev` to facilitate cluster bootstrapping and node discovery.
 In air-gapped environments, it is recommended to run a self-hosted instance of the Discovery Service (requires a license from Sidero Labs).

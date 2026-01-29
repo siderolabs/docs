@@ -120,7 +120,7 @@ As the admin user `admin@example.org`, apply this ACL using omnictl:
 $ omnictl apply -f acl.yaml
 ```
 
-## Accessing the Clusters
+## Access the clusters
 
 Now, in an incognito window, log in as a support engineer, `cluster-support-1@example.org`. Since the user is not assigned to any Omni role yet, they cannot use Omni Web.
 
@@ -171,7 +171,7 @@ The user will be able to get the cluster but not delete it, because the ACL allo
 
 If you do the same operations as the admin user, you'll notice that you are able to both get and delete staging and production clusters.
 
-## Assigning Omni roles to Users
+## Assign Omni roles to users
 
 If you want to allow SAML users to use Omni Web, you need to assign them at least the `Reader` role. As the admin, sign in to Omni Web and assign the role `Reader` to both `cluster-support-1@example.org` and `cluster-admin-1@example.org`.
 

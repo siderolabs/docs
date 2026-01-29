@@ -30,7 +30,7 @@ You will need to have `os:admin` role for the Talos cluster you want to import.
 
 You will need Omni role `Operator` or above in Omni to be able to create the necessary resources.
 
-## Cluster Import
+## Cluster import
 
 `omnictl cluster import` command has several key flags that, if omitted, are automatically inferred from the connected cluster or the local environment. These flags can be seen below. Note that this list doesn't include all possible flags.
 
@@ -133,7 +133,7 @@ This command does the following:
 
 Note that the cluster has been imported but marked as `locked`. This is to prevent any changes being done by Omni to the imported cluster. Cluster locking is an Omni feature that prevents any changes from being applied to the Talos cluster.
 
-### Image Schematic
+### Image schematic
 With [Talos Linux Image Factory](https://factory.talos.dev/), it's possible to create a talos installer using extensions, extra kernel command line arguments as well as other settings. Such configuration is referred to as a Schematic.
 Cluster import command tries to detect if a Talos machine was configured using a boot asset from an Image Factory. If so, it will ensure that the same Schematic is used with the Image Factory Omni is connected to.
 
@@ -149,7 +149,7 @@ If a Talos machine was not configured using an Image Factory asset, the validati
 
 This will not affect machines configured by using a boot asset from [Talos releases](https://github.com/siderolabs/talos/releases).
 
-### Config Patches
+### Config patches
 
 When importing a cluster into Omni, the goal is to preserve the cluster’s existing state and avoid modifying node configurations unless absolutely necessary.
 Cluster Machine config patches are used to achieve this idea.
@@ -162,11 +162,11 @@ Certain machine config [fields](https://github.com/siderolabs/omni/blob/main/cli
 After a cluster is imported to Omni, the final machine config for each node is built by applying the config patch to the default machine config built using the initial talos and kubernetes versions used on cluster import.
 Redacted version of this machine config can be found under the `Config` tab of the Cluster Machine overview page in the Omni UI, while config patches can be found under `Patches` tab of the same overview page.
 
-### Unlocking the Cluster
+### Unlock the cluster
 
 Since Omni uses its own Kubernetes apiserver endpoint, when the cluster is unlocked, Omni will update `kube-apiserver`, `kube-scheduler` and `kube-controller-manager` static pod definitions to point to the Omni-managed kubernetes apiserver endpoint.
 
-### Aborting an ongoing Import
+### Aborting an ongoing import
 
 Import operation can be aborted using `cluster import abort` command. This command will delete all the resources created by Omni while importing the cluster and will also temporarily remove Omni connection from the Talos nodes.
 Unlike cluster deletion, aborting an import will not reset the machines to their initial state. Cluster will just stop being managed by Omni.

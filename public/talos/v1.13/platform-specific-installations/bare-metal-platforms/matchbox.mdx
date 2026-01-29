@@ -5,7 +5,7 @@ aliases:
   - ../../../bare-metal-platforms/matchbox
 ---
 
-## Creating a Cluster
+## Creating a cluster
 
 In this guide we will create an HA Kubernetes cluster with 3 worker nodes.
 We assume an existing load balancer, matchbox deployment, and some familiarity with iPXE.
@@ -13,9 +13,9 @@ We assume an existing load balancer, matchbox deployment, and some familiarity w
 We leave it up to the user to decide if they would like to use static networking, or DHCP.
 The setup and configuration of DHCP will not be covered.
 
-### Create the Machine Configuration Files
+### Create the machine configuration files
 
-#### Generating Base Configurations
+#### Generating base configurations
 
 Using the DNS name of the load balancer, generate the base configuration files for the Talos machines:
 
@@ -29,7 +29,7 @@ created talosconfig
 At this point, you can modify the generated configs to your liking.
 Optionally, you can specify [machine configuration patches](../../configure-your-talos-cluster/system-configuration/patching#configuration-patching-with-talosctl-cli) which will be applied during the config generation.
 
-#### Validate the Configuration Files
+#### Validate the configuration files
 
 ```bash
 $ talosctl validate --config controlplane.yaml --mode metal
@@ -38,21 +38,21 @@ $ talosctl validate --config worker.yaml --mode metal
 worker.yaml is valid for metal mode
 ```
 
-#### Publishing the Machine Configuration Files
+#### Publishing the machine configuration files
 
 In bare-metal setups it is up to the user to provide the configuration files over HTTP(S).
 A special kernel parameter (`talos.config`) must be used to inform Talos about _where_ it should retrieve its configuration file.
 To keep things simple we will place `controlplane.yaml`, and `worker.yaml` into Matchbox's `assets` directory.
 This directory is automatically served by Matchbox.
 
-### Create the Matchbox Configuration Files
+### Create the Matchbox configuration files
 
 The profiles we will create will reference `vmlinuz`, and `initramfs.xz`.
 Download these files from the [release](https://github.com/siderolabs/talos/releases) of your choice, and place them in `/var/lib/matchbox/assets`.
 
 #### Profiles
 
-##### Control Plane Nodes
+##### Control plane nodes
 
 ```json
 {
@@ -77,7 +77,7 @@ Download these files from the [release](https://github.com/siderolabs/talos/rele
 
 > Note: Be sure to change `http://matchbox.talos.dev` to the endpoint of your matchbox server.
 
-##### Worker Nodes
+##### Worker nodes
 
 ```json
 {
@@ -145,12 +145,12 @@ Now, create the following groups, and ensure that the `selector`s are accurate f
 }
 ```
 
-### Boot the Machines
+### Boot the machines
 
 Now that we have our configuration files in place, boot all the machines.
 Talos will come up on each machine, grab its configuration file, and bootstrap itself.
 
-### Bootstrap Etcd
+### Bootstrap etcd
 
 Set the `endpoints` and `nodes`:
 

@@ -14,7 +14,6 @@ If you're looking to set up a cluster with multiple control plane nodes, see [Pr
 
 **Installing on cloud or virtualized platforms?** Check out the [platform-specific guides](../platform-specific-installations) for installation methods tailored to different environments.
 
-
 <iframe
   className="w-full aspect-video rounded-xl"
   src="https://www.youtube.com/embed/VKfE5BuqlSc"
@@ -43,7 +42,7 @@ Refer to the [talosctl installation guide](./talosctl) for installation on other
 
     If you’re working in a restricted network environment, check out the official documentation on using [registry proxies](../configure-your-talos-cluster/images-container-runtime/pull-through-cache), local registries, or setting up an [air-gapped installation](../platform-specific-installations/air-gapped).
 
-## Talos Cluster Setup Overview
+## Talos cluster setup overview
 
 Every Talos cluster follows the same process, regardless of where you deploy it:
 
@@ -57,11 +56,11 @@ Every Talos cluster follows the same process, regardless of where you deploy it:
 
 Let's walk through each step and create a Talos cluster.
 
-## Step 1: Download The Talos Linux Image
+## Step 1: Download the Talos Linux image
 
 Get the latest ISO for your architecture from our [Image factory](https://factory.talos.dev/).
 
-## Step 2: Boot Your Machine
+## Step 2: Boot your machine
 
 Boot your hardware using the ISO you just downloaded.
 At this stage, you'll:
@@ -76,7 +75,7 @@ You’ll see the Talos dashboard once your hardware boots from the ISO image.
 **Troubleshooting network connectivity:** If your machine fails to establish a network connection after booting, you may need to add network drivers through system extensions.
 Add these extensions to your Talos image via the [Image factory](https://factory.talos.dev/), or see the [system extensions repository](https://github.com/siderolabs/extensions) for more information.
 
-## Step 3: Store Your Node IP Addresses in a Variable
+## Step 3: Store your node IP addresses in a variable
 
 To create variables for your machines’ IP addresses:
 
@@ -103,7 +102,7 @@ You can include as many IP addresses as needed:
 Unplug your installation USB drive or unmount the ISO.
 This prevents you from accidentally installing to the USB drive and makes it clearer which disk to select for installation.
 
-## Step 5: Learn About Your Installation Disks
+## Step 5: Learn about your installation disks
 
 When you first boot your machine from the ISO, Talos runs temporarily in memory.
 This means that your Talos nodes, configurations, and cluster membership won't survive reboots or power cycles.
@@ -118,7 +117,7 @@ talosctl get disks --insecure --nodes $CONTROL_PLANE_IP
 
 Note the disk ID (e.g., `sda`, `vda`) as you will use it in the next step.
 
-## Step 6: Generate Cluster Configuration
+## Step 6: Generate cluster configuration
 
 Talos Linux is configured entirely using declarative configuration files avoiding the need to deal with SSH and running commands.
 
@@ -146,7 +145,7 @@ You'll get three files from this command:
 - **worker.yaml**: The configuration for your worker nodes.
 - **talosconfig**: Your `talosctl` configuration file, used to connect to and authenticate access to your cluster.
 
-## Step 7: Apply Configurations
+## Step 7: Apply configurations
 
 Now that you've created your configurations, it's time to apply them to bring your nodes and cluster online:
 
@@ -167,13 +166,15 @@ Now that you've created your configurations, it's time to apply them to bring yo
 
 ## Step 8: Set your endpoints
 
+<Info>An endpoint is a control plane node or [Omni](../../../omni/getting-started/getting-started) domain. You can read more about the architecture [here](../learn-more/talosctl).</Info>
+
 Set your endpoints with this:
 
 ```bash
 talosctl --talosconfig=./talosconfig config endpoints $CONTROL_PLANE_IP
 ```
 
-## Step 9: Bootstrap Your Etcd Cluster
+## Step 9: Bootstrap your etcd cluster
 
 Wait for your control plane node to finish booting, then bootstrap your etcd cluster by running:
 
@@ -184,7 +185,7 @@ talosctl bootstrap --nodes $CONTROL_PLANE_IP --talosconfig=./talosconfig
 **Note:** Run this command ONCE on a SINGLE control plane node.
 If you have multiple control plane nodes, you can choose any of them.
 
-## Step 10: Get Kubernetes Access
+## Step 10: Get Kubernetes access
 
 Download your `kubeconfig` file to start using `kubectl`.
 
@@ -206,7 +207,7 @@ export KUBECONFIG=./alternative-kubeconfig
 
 ```
 
-## Step 11: Check Cluster Health
+## Step 11: Check cluster health
 
 Run the following command to check the health of your nodes:
 
@@ -214,7 +215,7 @@ Run the following command to check the health of your nodes:
 talosctl --nodes $CONTROL_PLANE_IP --talosconfig=./talosconfig health
 ```
 
-## Step 12: Verify Node Registration
+## Step 12: Verify node registration
 
 Confirm that your nodes are registered in Kubernetes:
 
@@ -224,14 +225,14 @@ kubectl get nodes
 
 You should see your control plane and worker nodes listed with a **Ready** status.
 
-## Next Steps
+## Next steps
 
 Congratulations!
 You now have a working Kubernetes cluster on Talos Linux.
 
 For a list of all the commands and operations that `talosctl` provides, see the CLI reference.
 
-### What's Next?
+### What's next?
 
 - [Set up persistent storage](../../../kubernetes-guides/csi/storage)
 - [Deploy a Metrics Server](../../../kubernetes-guides/monitoring-and-observability/deploy-metrics-server)

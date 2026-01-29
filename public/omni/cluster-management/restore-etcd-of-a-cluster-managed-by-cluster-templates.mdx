@@ -8,7 +8,7 @@ This tutorial has the following requirements:
 * The cluster which you want to restore **must still exist** (not be deleted from Omni) and have past backups available.
 * The cluster **must be managed using cluster templates** (not via the UI).
 
-### Finding the Cluster's UUID
+### Finding the cluster's UUID
 
 To find the cluster's UUID, run the following command, replacing `my-cluster` with the name of your cluster:
 
@@ -25,7 +25,7 @@ default     ClusterUUID   my-cluster      1         bb874758-ee54-4d3b-bac3-4c83
 
 Note the `UUID` column, which contains the cluster's UUID.
 
-### Finding the Snapshot to Restore
+### Finding the snapshot to restore
 
 List the available snapshots for the cluster:
 
@@ -44,7 +44,7 @@ external    EtcdBackup   my-cluster-1701184500   undefined   {"nanos":0,"seconds
 
 The `SNAPSHOT` column contains the snapshot name which you will need to restore the cluster. Let's assume you want to restore the cluster to the snapshot `FFFFFFFF9A99FBFD.snapshot`.
 
-### Deleting the Existing Control Plane
+### Deleting the existing control plane
 
 To restore the cluster, we need to first delete the existing control plane of the cluster. This will take the cluster into the non-bootstrapped state. Only then we can create the new control plane with the restored etcd.
 
@@ -54,7 +54,7 @@ Use the following command to delete the control plane, replacing `my-cluster` wi
 omnictl delete machineset my-cluster-control-planes
 ```
 
-### Creating the Restore Template
+### Creating the restore template
 
 Edit your cluster template manifest `template-manifest.yaml`, edit the list of control plane machines for your needs, and add the `bootstrapSpec` section to the control plane, with cluster UUID and the snapshot name we found above:
 
@@ -81,7 +81,7 @@ machines:
   - 79f8db4d-3b6b-49a7-8ac4-aa5d2287f706
 ```
 
-### Syncing the Template
+### Syncing the template
 
 To sync the template, run the following command:
 
@@ -92,7 +92,7 @@ omnictl cluster template status -f template-manifest.yaml
 
 After the sync, your cluster will be restored to the snapshot you specified.
 
-### Restarting Kubelet on Worker Nodes
+### Restarting Kubelet on worker nodes
 
 To ensure a healthy cluster operation, the kubelet needs to be restarted on all worker nodes.
 

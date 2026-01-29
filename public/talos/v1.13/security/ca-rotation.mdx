@@ -29,7 +29,7 @@ Both rotation flows are described in detail below.
 
 ## Talos API
 
-### Automated Talos API CA Rotation
+### Automated Talos API CA rotation
 
 Talos API CA rotation doesn't interrupt connections within the cluster, and it doesn't require a reboot of the nodes.
 
@@ -108,7 +108,7 @@ If other client access `talosconfig` files needs to be generated, use `talosctl 
 
 > Note: if using [Talos API access from Kubernetes](../../../kubernetes-guides/advanced-guides/talos-api-access-from-k8s) feature, pods might need to be restarted manually to pick up new `talosconfig`.
 
-### Manual Steps for Talos API CA Rotation
+### Manual steps for Talos API CA rotation
 
 1. Generate new Talos CA (e.g. use `talosctl gen secrets` and use Talos CA).
 2. Patch machine configuration on all nodes updating `.machine.acceptedCAs` with new CA certificate.
@@ -120,7 +120,7 @@ If other client access `talosconfig` files needs to be generated, use `talosctl 
 
 ## Kubernetes API
 
-### Automated Kubernetes API CA Rotation
+### Automated Kubernetes API CA rotation
 
 The automated process only rotates Kubernetes API CA, used by the `kube-apiserver`, `kubelet`, etc.
 Other Kubernetes secrets might need to be rotated manually as required.
@@ -182,7 +182,7 @@ New `kubeconfig` can be fetched with `talosctl kubeconfig` command from the clus
 
 Kubernetes pods might need to be restarted manually to pick up changes to the Kubernetes API CA.
 
-### Manual Steps for Kubernetes API CA Rotation
+### Manual steps for Kubernetes API CA rotation
 
 Steps are similar [to the Talos API CA rotation](#manual-steps-for-talos-api-ca-rotation), but use:
 

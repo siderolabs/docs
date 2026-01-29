@@ -30,7 +30,7 @@ cd ~/talos-kvm
 
 Download the latest `metal-amd64.iso` from the Talos [GitHub releases page](https://github.com/siderolabs/talos/releases).
 
-## Configure the Network
+## Configure the network
 
 Before we get started, let’s set up an isolated network for your Talos cluster.
 
@@ -116,7 +116,7 @@ Autostart:      yes
 Bridge:         talos-bridge
 ```
 
-## Provisioning the Environment
+## Provisioning the environment
 
 Now that you have a dedicated network let's go ahead and provision VMs.
 
@@ -163,7 +163,7 @@ Use the following command to verify that your VMs are in a running state:
 virsh list
 ```
 
-## Configure the Cluster
+## Configure the cluster
 
 Now that you have your VMs provisioned it's time to configure the cluster. This step is done through `talosctl` command utility.
 
@@ -214,7 +214,7 @@ talosctl apply-config --insecure --nodes $NODE_IP --file configs/worker.yaml
 
 At this point your VMs will reboot.
 
-## Bootstrapping the Cluster
+## Bootstrapping the cluster
 
 After your VMs restart, you can bootstrap the cluster. Bootstrap simply means starting up your Kubernetes cluster for the first time.
 

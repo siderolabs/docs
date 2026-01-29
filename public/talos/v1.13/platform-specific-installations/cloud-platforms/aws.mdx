@@ -7,7 +7,7 @@ aliases:
 
 import { release_v1_13 } from '/snippets/custom-variables.mdx';
 
-## Creating a Cluster via the AWS CLI
+## Creating a cluster via the AWS CLI
 
 In this guide we will create an HA Kubernetes cluster with 3 control plane nodes across 3 availability zones.
 You should have an existing AWS account and have the AWS CLI installed and configured.
@@ -23,7 +23,7 @@ If you would like to create infrastructure via `terraform` or `opentofu` please 
 
 > Note: this guide is not a production set up and steps were tested in `bash` and `zsh` shells.
 
-### Create AWS Resources
+### Create AWS resources
 
 We will be creating a control plane with 3 Ec2 instances spread across 3 availability zones.
 It is recommended to not use the default VPC so we will create a new one for this tutorial.
@@ -40,7 +40,7 @@ VPC_ID=$(aws ec2 create-vpc \
     --output text --query 'Vpc.VpcId')
 ```
 
-### Create the Subnets
+### Create the subnets
 
 Create 3 smaller CIDRs to use for each subnet in different availability zones.
 Make sure to adjust these CIDRs if you changed the default value from the last command.
@@ -98,7 +98,7 @@ aws ec2 create-route \
     --gateway-id $IGW_ID
 ```
 
-### Official AMI Images
+### Official AMI images
 
 Official AMI image ID can be found in the `cloud-images.json` file attached to the [Talos release](https://github.com/siderolabs/talos/releases).
 
@@ -116,7 +116,7 @@ If using the official AMIs, you can skip to [Creating the Security group](#creat
 
 > The use of the official Talos AMIs are recommended, but if you wish to build your own AMIs, follow the procedure below.
 
-#### Create the S3 Bucket
+#### Create the S3 bucket
 
 ```bash
 aws s3api create-bucket \
@@ -125,13 +125,13 @@ aws s3api create-bucket \
     --acl private
 ```
 
-#### Create the `vmimport` Role
+#### Create the `vmimport` role
 
 In order to create an AMI, ensure that the `vmimport` role exists as described in the [official AWS documentation](https://docs.aws.amazon.com/vm-import/latest/userguide/required-permissions.html).
 
 Note that the role should be associated with the S3 bucket we created above.
 
-#### Create the Image Snapshot
+#### Create the image snapshot
 
 First, download the AWS image from Image Factory:
 
@@ -160,7 +160,7 @@ aws ec2 describe-import-snapshot-tasks \
 
 Once the `SnapshotTaskDetail.Status` indicates `completed`, we can register the image.
 
-#### Register the Image
+#### Register the image
 
 ```bash
 AMI=$(aws ec2 register-image \
@@ -176,7 +176,7 @@ AMI=$(aws ec2 register-image \
 
 We now have an AMI we can use to create our cluster.
 
-### Create a Security Group
+### Create a security group
 
 ```bash
 SECURITY_GROUP_ID=$(aws ec2 create-security-group \
@@ -225,7 +225,7 @@ aws ec2 authorize-security-group-ingress \
     --output text
 ```
 
-### Create a Load Balancer
+### Create a load balancer
 
 The load balancer is used for a stable Kubernetes API endpoint.
 
@@ -265,7 +265,7 @@ LISTENER_ARN=$(aws elbv2 create-listener \
     --output text)
 ```
 
-### Create the Machine Configuration Files
+### Create the machine configuration files
 
 We will create a [machine config patch](../../configure-your-talos-cluster/system-configuration/patching#rfc6902-json-patches) to use the AWS time servers.
 You can create [additional patches](../../reference/configuration/v1alpha1/config) to customize the configuration as needed.
@@ -292,12 +292,12 @@ talosctl gen config talos-k8s-aws-tutorial https://${LOAD_BALANCER_DNS}:6443 \
 
 > Note that the generated configs are too long for AWS userdata field if the `--with-examples` and `--with-docs` flags are not passed.
 
-### Create the EC2 Instances
+### Create the EC2 instances
 
 > Note: There is a known issue that prevents Talos from running on T2 instance types.
 > Please use T3 if you need burstable instance types.
 
-#### Create the Control Plane Nodes
+#### Create the control plane nodes
 
 ```bash
 declare -a CP_INSTANCES
@@ -319,7 +319,7 @@ for SUBNET in ${SUBNETS[@]}; do
 done
 ```
 
-#### Create the Worker Nodes
+#### Create the worker nodes
 
 For the worker nodes we will create a new launch template with the `worker.yaml` machine configuration and create an autoscaling group.
 
@@ -367,7 +367,7 @@ aws autoscaling create-auto-scaling-group \
     --vpc-zone-identifier $(echo ${SUBNETS[@]} | tr ' ' ',')
 ```
 
-### Configure the Load Balancer
+### Configure the load balancer
 
 Now, using the load balancer target group's ARN, and the **PrivateIpAddress** from the controlplane instances that you created :
 

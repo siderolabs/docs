@@ -2,7 +2,7 @@
 title: Expose an HTTP Service from a Cluster
 ---
 
-### Enabling Workload Service Proxying Feature <a href="#enabling-workload-service-proxying-feature" id="enabling-workload-service-proxying-feature"></a>
+### Enable workload service proxying feature
 
 You first need to enable the workload service proxying feature on the cluster you want to expose Services from.
 
@@ -21,7 +21,7 @@ features:
 
 You will notice that the “Exposed Services” section will appear on the left menu for the cluster the feature is enabled on.
 
-### Exposing a Kubernetes Service <a href="#exposing-a-kubernetes-service" id="exposing-a-kubernetes-service"></a>
+### Expose a Kubernetes service
 
 Let’s install a simple Nginx deployment and service to expose it.
 
@@ -103,7 +103,7 @@ To encode an SVG file `icon.svg` to be used for the annotation, you can use the 
 gzip -c icon.svg | base64
 ```
 
-### Accessing the Exposed Service <a href="#accessing-the-exposed-service" id="accessing-the-exposed-service"></a>
+### Access the exposed service
 
 You will notice that the Service you annotated will appear under the “Exposed Services” section in Omni Web, on the left menu when the cluster is selected.
 
@@ -143,7 +143,7 @@ helm repo add grafana https://grafana.github.io/helm-charts
 helm install -f values.yaml grafana grafana/grafana
 ```
 
-#### Kubernetes Dashboard
+#### Kubernetes dashboard
 
 The Kubernetes dashboard can be deployed via helm into a cluster and exposed with the workload proxy using the following `values.yaml`.
 

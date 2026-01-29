@@ -18,20 +18,21 @@ navigation:
             - "create-a-cluster.mdx"
             - "support-matrix.mdx"
 
+        - group: "Self Hosted"
+          folder: "omni/self-hosted"
+          pages:
+            - "omni-deployment-options.mdx"
+            - "run-omni-on-prem.mdx"
+            - "run-omni-airgapped.mdx"
+            - "run-image-factory-on-prem.mdx"
+            - "configure-keycloak-for-omni.mdx"
+            - "expose-omni-with-nginx-https.mdx"
+            - "back-up-omni-db.mdx"
+            - "upgrading-omni.mdx"
+
         - group: "Infrastructure and Extensions"
           folder: "omni/infrastructure-and-extensions"
           pages:
-            - group: "Self Hosted"
-              pages:
-                - "self-hosted/overview"
-                - "self-hosted/omni-deployment-options"
-                - "self-hosted/deploy-omni-on-prem"
-                - "self-hosted/deploy-image-factory-on-prem"
-                - "self-hosted/configure-keycloak-for-omni"
-                - "self-hosted/how-to-back-up-on-prem-omni-db"
-                - "self-hosted/expose-omni-with-nginx-https"
-                - "self-hosted/upgrading-omni"
-            - "install-airgapped-omni.mdx"
             - "infrastructure-providers.mdx"
             - "writing-infrastructure-providers.mdx"
             - "machine-registration.mdx"

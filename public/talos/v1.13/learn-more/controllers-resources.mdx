@@ -38,7 +38,7 @@ A controller might also have additional inputs: running reconcile on schedule, w
 A controller has a single output: a set of resources of fixed type in a fixed namespace.
 Only one controller can manage resource type in the namespace, so conflicts are avoided.
 
-## Querying Resources
+## Querying resources
 
 Talos CLI tool `talosctl` provides read-only access to the resource API which includes getting specific resource,
 listing resources and watching for changes.
@@ -120,7 +120,7 @@ Command `talosctl get` supports following output modes:
 * `json` prints same information as `yaml`, some additional details (e.g. comments) might be lost.
   This format is useful for automated processing with tools like `jq`.
 
-### Watching Changes
+### Watching changes
 
 If flag `--watch` is appended to the `talosctl get` command, the command switches to watch mode.
 If list of resources was requested, `talosctl` prints initial contents of the list and then appends resource information for every change:
@@ -198,7 +198,7 @@ spec:
 ...
 ```
 
-## Inspecting Controller Dependencies
+## Inspecting controller dependencies
 
 Talos can report current dependencies between controllers and resources for debugging purposes:
 

@@ -12,7 +12,7 @@ container runtimes, loading additional firmware, etc.
 System extensions are only activated during the installation or upgrade of Talos Linux.
 With system extensions installed, the Talos root filesystem is still immutable and read-only.
 
-## Official System Extension Tiers
+## Official system extension tiers
 
 Talos Linux provides a number of [official system extensions](https://github.com/siderolabs/extensions), which are split into the following
 tiers based on support level:
@@ -31,7 +31,7 @@ tiers based on support level:
 | CVE Scan | 🟢 | ✔️ (scan is done, but CVEs don’t block the release) | ❌ |
 | Compatibility/Build issues | 🟢 | ✔️ (best effort) | ❌ (extension will be disabled if it fails to build) |
 
-## Installing System Extensions
+## Install system extensions
 
 > Note: the way to install system extensions in the `.machine.install` section of the machine configuration is now deprecated.
 
@@ -49,7 +49,7 @@ both initial boot assets and disk images/`installer`, or just the `installer`.
 
 The process of generating boot assets with extensions included is described in the [boot assets guide](../../platform-specific-installations/boot-assets).
 
-### Example: Booting from an ISO
+### Example: Boot from an ISO
 
 Let's assume NVIDIA extension is required on a bare metal machine which is going to be booted from an ISO.
 As NVIDIA extension is not required for the initial boot and install step, it is sufficient to include the extension in the `installer` image only.
@@ -63,7 +63,7 @@ As NVIDIA extension is not required for the initial boot and install step, it is
 When it's time to upgrade Talos, generate a custom `installer` container for a new version of Talos, push it to a registry, and perform upgrade
 pointing to the custom `installer` image.
 
-### Example: Disk Image
+### Example: Disk image
 
 Let's assume NVIDIA extension is required on AWS VM.
 
@@ -75,14 +75,14 @@ Let's assume NVIDIA extension is required on AWS VM.
 When it's time to upgrade Talos, either repeat steps 1-4 to replace the VM with a new AMI, or
 like in the previous example, generate a custom `installer` and use it to upgrade Talos in-place.
 
-## Authoring System Extensions
+## Author system extensions
 
 A Talos system extension is a container image with the [specific folder structure](https://github.com/siderolabs/extensions?tab=readme-ov-file#building-extensions).
 System extensions can be built and managed using any tool that produces container images, e.g. `docker build`.
 
 Sidero Labs maintains a [repository of system extensions](https://github.com/siderolabs/extensions).
 
-## Resource Definitions
+## Resource definitions
 
 Use `talosctl get extensions` to get a list of system extensions:
 

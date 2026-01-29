@@ -8,7 +8,7 @@ description: "Operational instructions for etcd database."
 > Note: Commands from `talosctl etcd` namespace are functional only on the Talos control plane nodes.
 > Each time you see `<IPx>` in this page, it is referencing IP address of control plane node.
 
-## Space Quota
+## Space quota
 
 `etcd` default database space quota is set to 2 GiB by default.
 If the database size exceeds the quota, `etcd` will stop operations until the issue is resolved.
@@ -112,7 +112,7 @@ Should something go wrong with the downgrade, it is possible to use this backup 
 
 This example shows how to downgrade an `etcd` in Talos cluster.
 
-### Step 1: Check Downgrade Requirements
+### Step 1: Check downgrade Requirements
 
 Is the cluster healthy and running v3.6.x?
 
@@ -132,11 +132,11 @@ Is the cluster healthy and running v3.6.x?
   </Tab>
 </Tabs>
 
-### Step 2: Download Snapshot
+### Step 2: Download snapshot
 
 [Download the snapshot backup](./disaster-recovery) to provide a downgrade path should any problems occur.
 
-### Step 3: Validate Downgrade
+### Step 3: Validate downgrade
 
 Validate the downgrade target version before enabling the downgrade:
 
@@ -157,7 +157,7 @@ Validate the downgrade target version before enabling the downgrade:
   </Tab>
 </Tabs>
 
-### Step 4: Enable Downgrade
+### Step 4: Enable downgrade
 
 <Tabs>
   <Tab title="Command">
@@ -199,7 +199,7 @@ Confirm the storage version of all servers has been migrated to v3.5 by checking
 
 > Note: Once downgrade is enabled, the cluster will remain operating with v3.5 protocol even if all the servers are still running the v3.6 binary, unless the downgrade is canceled with `talosctl -n <IP1> downgrade cancel`.
 
-### Step 5: Patch Machine Config
+### Step 5: Patch machine configuration
 
 Before patching the node, check if the etcd is leader.
 We recommend downgrading the leader last.
@@ -260,7 +260,7 @@ Verify that each member, and then the entire cluster, becomes healthy with the n
   </Tab>
 </Tabs>
 
-### Step 6: Continue on the Remaining Control Plane Nodes
+### Step 6: Continue on the remaining control plane nodes
 
 When all members are downgraded, check the health and status of the cluster, and confirm the minor version of all members is v3.5, and storage version is empty:
 

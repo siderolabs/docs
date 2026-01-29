@@ -12,8 +12,6 @@ The simplest way to set machine labels is by using the "Download Installation Me
 
 <img src="./images/how-to-set-initial-machine-labels-download-install-media.png" alt=""/>
 
-
-
 This guide demonstrates how to set initial machine labels when generating boot media / URL using the `omnictl` CLI tool or using [Image Factory](https://factory.talos.dev) directly.
 
 Both methods allow you to label your machines programmatically.
@@ -65,7 +63,7 @@ These initial labels work not only for ISOs but for most installation media and 
 This command will print the PXE boot URL and exit.
 </Info>
 
-## Using Image Factory Directly
+## Using Image Factory directly
 
 Instead of using your Omni instance to generate labeled boot media or PXE URLs, you can use the image factory directly.
 
@@ -124,7 +122,7 @@ Although Image Factory has a [web UI](https://factory.talos.dev), it is currentl
 The version of the Image Factory UI built into Omni **does** support specifying initial machine labels.
 </Warning>
 
-## Verifying Labels
+## Verifying labels
 
 After a machine boots from the labeled media/PXE URL and registers with Omni, you can verify the labels using the Omni web interface or the `omnictl` CLI tool.
 

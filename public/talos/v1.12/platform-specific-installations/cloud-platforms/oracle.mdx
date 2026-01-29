@@ -91,7 +91,7 @@ machine:
       - 169.254.169.254
 ```
 
-## Creating a Cluster via the CLI
+## Creating a cluster via the CLI
 
 Login to the [console](https://www.oracle.com/cloud/).
 And open the Cloud Shell.
@@ -115,7 +115,7 @@ export sl_id=$(oci network vcn list --compartment-id $compartment_id --query 'da
 oci network security-list update --security-list-id $sl_id --egress-security-rules '[{"destination": "0.0.0.0/0", "protocol": "all", "isStateless": false}]' --ingress-security-rules '[{"source": "0.0.0.0/0", "protocol": "all", "isStateless": false}]' --force
 ```
 
-### Create a Load Balancer
+### Create a load balancer
 
 Create a load balancer by issuing the commands shown below.
 Save the IP/DNS name, as this info will be used in the next step.
@@ -152,9 +152,9 @@ oci nlb listener create --default-backend-set-name controlplane --name controlpl
 oci nlb network-load-balancer list --compartment-id $compartment_id --display-name controlplane-lb --query 'data.items[0]."ip-addresses"'
 ```
 
-### Create the Machine Configuration Files
+### Create the machine configuration files
 
-#### Generating Base Configurations
+#### Generating base configurations
 
 Using the IP/DNS name of the loadbalancer created earlier, generate the base configuration files for the Talos machines by issuing:
 
@@ -168,7 +168,7 @@ created talosconfig
 At this point, you can modify the generated configs to your liking.
 Optionally, you can specify [machine configuration patches](../../configure-your-talos-cluster/system-configuration/patching#configuration-patching-with-talosctl-cli) which will be applied during the config generation.
 
-#### Validate the Configuration Files
+#### Validate the configuration files
 
 Validate any edited machine configs with:
 
@@ -179,9 +179,9 @@ $ talosctl validate --config worker.yaml --mode cloud
 worker.yaml is valid for cloud mode
 ```
 
-### Create the Servers
+### Create the servers
 
-#### Create the Control Plane Nodes
+#### Create the control plane nodes
 
 Create the control plane nodes with:
 
@@ -215,7 +215,7 @@ oci nlb backend create --backend-set-name talos --network-load-balancer-id $netw
 oci nlb backend create --backend-set-name controlplane --network-load-balancer-id $network_load_balancer_id --port 6443 --target-id $instance_id
 ```
 
-#### Create the Worker Nodes
+#### Create the worker nodes
 
 Create the worker nodes with the following command, repeating (and incrementing the name counter) as many times as desired.
 
@@ -232,7 +232,7 @@ oci compute instance launch --shape $shape --availability-domain $availability_d
 oci compute instance launch --shape $shape --availability-domain $availability_domain --compartment-id $compartment_id --image-id $image_id --subnet-id $subnet_id --display-name worker-3 --assign-public-ip true --user-data-file worker.yaml
 ```
 
-### Bootstrap Etcd
+### Bootstrap etcd
 
 To configure `talosctl` we will need the first control plane node's IP.
 This can be found by issuing:

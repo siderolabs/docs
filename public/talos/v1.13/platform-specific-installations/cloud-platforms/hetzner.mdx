@@ -173,7 +173,7 @@ hcloud-upload-image upload --image-path hcloud-$TALOS_IMAGE_ARCH.raw.xz --archit
 
 After these actions, you can find the snapshot in the console interface.
 
-## Creating a Cluster via the CLI
+## Creating a cluster via the CLI
 
 This section assumes you have the [hcloud console utility](https://community.hetzner.com/tutorials/howto-hcloud-cli) on your local machine.
 
@@ -182,7 +182,7 @@ This section assumes you have the [hcloud console utility](https://community.het
 hcloud context create talos-tutorial
 ```
 
-### Create a Load Balancer
+### Create a load balancer
 
 Create a load balancer by issuing the commands shown below.
 Save the IP/DNS name, as this info will be used in the next step.
@@ -201,9 +201,9 @@ hcloud load-balancer add-target controlplane \
     --label-selector 'type=controlplane'
 ```
 
-### Create the Machine Configuration Files
+### Create the machine configuration files
 
-#### Generating Base Configurations
+#### Generating base configurations
 
 Using the IP/DNS name of the load balancer created earlier, generate the base configuration files for the Talos machines by issuing:
 
@@ -217,7 +217,7 @@ Generating the config without examples and docs is necessary because otherwise y
 At this point, you can modify the generated configs to your liking.
 Optionally, you can specify [machine configuration patches](../../configure-your-talos-cluster/system-configuration/patching#configuration-patching-with-talosctl-cli) which will be applied during the config generation.
 
-#### Validate the Configuration Files
+#### Validate the configuration files
 
 Validate any edited machine configs with:
 
@@ -226,12 +226,12 @@ talosctl validate --config controlplane.yaml --mode cloud
 talosctl validate --config worker.yaml --mode cloud
 ```
 
-### Create the Servers
+### Create the servers
 
 We can now create our servers.
 Note that you can find `IMAGE_ID` in the snapshot section of the console: `https://console.hetzner.cloud/projects/$PROJECT_ID/servers/snapshots`.
 
-#### Create the Control Plane Nodes
+#### Create the control plane nodes
 
 Create the control plane nodes with:
 
@@ -257,7 +257,7 @@ hcloud server create --name talos-control-plane-3 \
     --user-data-from-file controlplane.yaml
 ```
 
-#### Create the Worker Nodes
+#### Create the worker nodes
 
 Create the worker nodes with the following command, repeating (and incrementing the name counter) as many times as desired.
 
@@ -269,7 +269,7 @@ hcloud server create --name talos-worker-1 \
     --user-data-from-file worker.yaml
 ```
 
-### Bootstrap Etcd
+### Bootstrap etcd
 
 To configure `talosctl` we will need the first control plane node's IP.
 This can be found by issuing:

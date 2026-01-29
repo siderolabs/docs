@@ -18,7 +18,7 @@ Disk encryption can be optionally enabled for raw volumes.
 
 > Note: If you need to allocate a volume to be mounted to a container, please see [User Volumes](./user) guide.
 
-### Creating Raw Volumes
+### Create raw volumes
 
 To create a raw volume, append the following [document](../../../reference/configuration/block/rawvolumeconfig) to the machine configuration:
 
@@ -55,7 +55,7 @@ This volume can be referenced using a stable symlink `/dev/disk/by-partlabel/r-o
 
 > Note: Ceph will not create a partition if the partition label contains the substring `ceph`. Avoid using such names for your labels.
 
-### Removing Raw Volumes
+### Remove raw volumes
 
 Before removing a raw volume, ensure that it is not used anymore.
 

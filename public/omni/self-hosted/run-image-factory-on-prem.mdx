@@ -1,12 +1,12 @@
 ---
-title: Deploy Image Factory On-prem
+title: Run Image Factory On-Prem
 ---
 
-import { release } from '/snippets/custom-variables.mdx';
+import { release, version } from '/snippets/custom-variables.mdx';
 
 The [Image Factory](https://github.com/siderolabs/image-factory) is a way for you to dynamically create Talos Linux images. There is a public, hosted version of the Image Factory at [factory.talos.dev](https://factory.talos.dev) and it can also be run in your environment.
 
-The Image Factory is a critical component of [Omni](../../overview/what-is-omni) to generate installation media and update Talos nodes, but it is not required to use Omni to use the Image Factory. It is a web interface and API for the <a href="../../../talos/v1.12/platform-specific-installations/boot-assets#imager">`imager`</a> command which is used to customize Talos from the command line.
+The Image Factory is a critical component of Omni to generate installation media and update Talos nodes, but it is not required to use Omni to use the Image Factory. It is a web interface and API for the <a href={`../../../talos/${version}/platform-specific-installations/boot-assets#imager`}>`imager`</a> command which is used to customize Talos from the command line.
 
 ## Prerequisites
 
@@ -30,7 +30,7 @@ If you don't have a container registry available to push images to you can tempo
 
 <Tabs>
 <Tab title="Secure registry">
-  We recommend using certificates for your temporary registry you will need to provide your own certificates and mount them into the container at run time. If you do not have certificates, follow the steps in the [Omni air-gapped documentation](../install-airgapped-omni#1-generate-certificates).
+  We recommend using certificates for your temporary registry you will need to provide your own certificates and mount them into the container at run time. If you do not have certificates, follow the steps in the [Omni air-gapped documentation](./run-omni-airgapped).
 
   ```bash
   docker run -d \
@@ -272,7 +272,7 @@ done
   </Tab>
   <Tab title="Self-signed CA">
 
-If your registry is running with a self-signed CA certificate (i.e. from the [Installing Airgapped Omni](../install-airgapped-omni) guide) you need to mount the CA certificate into the cosign container for it to be trusted.
+If your registry is running with a self-signed CA certificate (i.e. from the [Installing Airgapped Omni](./run-omni-airgapped) guide) you need to mount the CA certificate into the cosign container for it to be trusted.
 
 ```bash
 for IMAGE in $(cat images.txt)
@@ -425,4 +425,4 @@ You should now be able to browse to https://registry.internal:8080 and view the 
 
 ## Run Omni
 
-After the image factory is running you can continue to the [Omni Airgapped documentation](../install-airgapped-omni).
+After the image factory is running you can continue to the [Omni Airgapped documentation](./run-omni-airgapped).

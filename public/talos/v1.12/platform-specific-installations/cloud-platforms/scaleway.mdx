@@ -15,7 +15,7 @@ The process to run a Talos cluster, on a single node in Scaleway is as follows:
 - Configure the `scw` CLI to access your account (optional - you can use the console instead)
 - Have `qemu-img` and `wget` installed for image conversion
 
-## Image Preparation
+## Image preparation
 
 1. **Download the image disk** of the Talos version you wish to run:
 
@@ -45,7 +45,7 @@ The process to run a Talos cluster, on a single node in Scaleway is as follows:
 4. **Upload to S3-compatible object storage**:
    Use the Scaleway console Object Storage interface to upload the QCOW2 file directly.
 
-## Snapshot Creation
+## Snapshot creation
 
 1. Go to the Scaleway Web console.
 
@@ -57,7 +57,7 @@ The process to run a Talos cluster, on a single node in Scaleway is as follows:
 
 4. Name the snapshot *scaleway-amd64-v{ release_v1_12 }*, and use a Local Storage snapshot type.
 
-## Instance Deployment
+## Instance deployment
 
 1. Create instance using the snapshot/image via GUI, CLI, or Infrastructure as Code tools.
 
@@ -73,7 +73,7 @@ talosctl -n $VM_IP get disks --insecure
 talosctl -n $VM_IP get links --insecure
 ```
 
-## Talos Configuration
+## Talos configuration
 
 As any other Talos instance, generate the Talos machineconfig, with the following patch :
 ```
@@ -129,7 +129,7 @@ talosctl --talosconfig=./_out/talosconfig --nodes $VM_IP -e $VM_IP version
 talosctl --talosconfig=./_out/talosconfig --nodes $VM_IP -e $VM_IP dashboard
 ```
 
-## Talos Cluster Bootstrap
+## Talos cluster bootstrap
 
 One last command to bootstrap your Talos Cluster :
 ```

@@ -16,9 +16,9 @@ Each time you download the `kubeconfig` file from a Talos Linux cluster, the cli
 
 The `talosconfig` file should be renewed at least once a year, using the `talosctl config new` command, as shown below, or by one of the other methods.
 
-## Generating New Client Configuration
+## Generating new client configuration
 
-### Using Controlplane Node
+### Using control plane node
 
 If you have a valid (not expired) `talosconfig` with `os:admin` role,
 a new client configuration file can be generated with `talosctl config new` against
@@ -30,7 +30,7 @@ talosctl -n CP1 config new talosconfig-reader --roles os:reader --crt-ttl 24h
 
 A specific [role](./rbac) and certificate lifetime can be specified.
 
-### From Secrets Bundle
+### From secrets bundle
 
 If a secrets bundle (`secrets.yaml` from `talosctl gen secrets`) was saved while
 [generating machine configuration](../getting-started/#configure-talos):
@@ -41,7 +41,7 @@ talosctl gen config --with-secrets secrets.yaml --output-types talosconfig -o ta
 
 > Note: `<cluster-name>` and `<cluster-endpoint>` arguments don't matter, as they are not used for `talosconfig`.
 
-### From Control Plane Machine Configuration
+### From control plane machine configuration
 
 In order to create a new key pair for client configuration, you will need the root Talos API CA.
 The base64 encoded CA can be found in the control plane node's configuration file.

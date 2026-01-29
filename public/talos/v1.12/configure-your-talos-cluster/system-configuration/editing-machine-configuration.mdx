@@ -1,5 +1,5 @@
 ---
-title: "Editing Machine Configuration"
+title: "Edit Machine Configuration"
 description: "How to edit and patch Talos machine configuration, with reboot, immediately, or stage update on reboot."
 aliases:
   - ../../guides/editing-machine-configuration
@@ -152,6 +152,6 @@ Patches can also be sourced from files using `file` (or `@file`) syntax:
 talosctl -n <IP> patch machineconfig -p kubelet-patch.json -p manifest-patch.json
 ```
 
-### Recovering from Node Boot Failures
+### Recover from node boot failures
 
 If a Talos node fails to boot because of wrong configuration (for example, control plane endpoint is incorrect), configuration can be updated to fix the issue.

@@ -7,7 +7,7 @@ weight: 20
 Talos Linux has a set of system volumes that are used for various purposes, such as storing the system state, ephemeral data, and more.
 This guide provides an overview of the system volumes and how to configure them.
 
-## `EPHEMERAL` Volume
+## `EPHEMERAL` volume
 
 The `EPHEMERAL` volume is a system volume that is used for storing ephemeral data, such as container data, downloaded images, logs, and `etcd` data (for controlplane nodes).
 
@@ -63,7 +63,7 @@ provisioning:
     match: disk.transport == 'nvme' && !system_disk
 ```
 
-## `IMAGECACHE` Volume
+## `IMAGECACHE` volume
 
 This system volume is not provisioned by default, and it only gets created if the [Image Cache](../../images-container-runtime/image-cache) feature is enabled.
 

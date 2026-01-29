@@ -117,7 +117,7 @@ The UI provides a way to list supported Talos Linux versions, list of system ext
 
 The UI operations are equivalent to API operations.
 
-## Find Schematic ID from Talos Installation
+## Find schematic ID from Talos installation
 
 Image Factory always appends "virtual" system extension with the version matching schematic ID used to generate the model.
 So, for any running Talos Linux instance the schematic ID can be found by looking at the list of system extensions:
@@ -146,7 +146,7 @@ should be using the same schematic as the ISO/PXE boot image.
 Some system extensions are not available for all Talos Linux versions, so an attempt to generate a model with an unsupported system extension will fail.
 List of supported Talos versions and supported system extensions for each version is available in the [Image Factory UI](#ui) and [API](https://github.com/siderolabs/image-factory#readme).
 
-## Under the Hood
+## Under the hood
 
 Image Factory is based on the Talos `imager` container which provides both the Talos base boot assets, and the ability to generate custom assets based on a configuration.
 Image Factory manages a set of `imager` container images to acquire base Talos Linux boot assets (`kernel`, `initramfs`), a set of Talos Linux system extension images, and a set of schematics.
@@ -169,7 +169,7 @@ Image Factory signs generated `installer` images, and verifies the signature of 
 Image Factory does not provide a way to list all schematics, as schematics may contain sensitive information (e.g. private kernel boot arguments).
 As the schematic ID is content-addressable, it is not possible to guess the ID of a schematic without knowing the content of the schematic.
 
-## Running your own Image Factory
+## Running your own image factory
 
 Image Factory can be deployed on-premises to provide in-house asset generation.
 

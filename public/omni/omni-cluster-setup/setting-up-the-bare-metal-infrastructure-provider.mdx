@@ -147,7 +147,7 @@ The provider will start a DHCP proxy server, responding to DHCP requests from th
 If you need to run this DHCP proxy on a different interface (so the responses are broadcast to the correct network), you can pass the `--dhcp-proxy-iface-or-ip` flag to the provider, specifying either the name of the network interface or an IP on that machine which belongs to the desired interface.
 </Info>
 
-## 3. Starting the Bare-Metal Machines
+## 3. Starting the Bare-Metal machines
 
 At this point, we can boot our bare-metal machines. Before we start, make sure that they are configured to boot over the network via PXE on the next boot, so that they can be booted by the provider.
 
@@ -177,11 +177,11 @@ At this point, these machines are booted into a special mode of Talos Linux call
 * runs the only the required services to be able to further provisioned by the provider
 </Info>
 
-## 4. Configuring and Accepting the Machines in Omni
+## 4. Configuring and accepting the machines in Omni
 
 At this point, the machines should be booted into the Agent Mode, and have established a `SideroLink` connection to our Omni instance.
 
-### 4.1. Verifying the Machines
+### 4.1. Verifying the machines
 
 Let's verify our machines:
 
@@ -224,7 +224,7 @@ Our machines have the following IDs:
 
 For security reasons, the machines cannot be provisioned in Omni before they are "_Accepted_". We will accept these machines using the Omni API.
 
-### 4.2. Optional: Providing BMC (e.g., IPMI/Redfish) Configuration Manually
+### 4.2. Optional: providing BMC (e.g., IPMI/Redfish) configuration manually
 
 Normally, when we accept a machine in Omni, the provider will auto-configure the BMC configuration, such as the IPMI IP, username and password automatically by asking the agent service running on the Talos machine.
 
@@ -261,7 +261,7 @@ We can create this resource at a later time as well and the provider would start
 However, if we want to bypass the automatic credential configuration on machine acceptance, we need to ensure that the `InfraMachineBMCConfig` resource is present before we accept the machine.
 </Info>
 
-### 4.3. Accepting the Machines
+### 4.3. Accepting the machines
 
 As the final step, we need to accept these machines in Omni.
 
@@ -330,7 +330,7 @@ infra-provider   InfraMachineStatus   cef9a5ee-71b7-48f1-8ce3-daf45e7be0a0   3  
 infra-provider   InfraMachineStatus   d3796040-2a28-4e0f-ba1a-1944f3a41dde   3         1             true
 ```
 
-## 5. Adding Machines to a Cluster
+## 5. Adding machines to a cluster
 
 We can now create a cluster using these machines. For this, simply follow the guide for [creating a cluster](../getting-started/create-a-cluster).
 
@@ -348,7 +348,7 @@ Then Omni will proceed with the regular flow of:
 
 The cluster will be provisioned as normal, and will get to the `Ready` status.
 
-## 6. Removing Machines from a Cluster
+## 6. Removing machines from a cluster
 
 When you delete a cluster and/or remove some bare-metal machines from a cluster, the following will happen:
 

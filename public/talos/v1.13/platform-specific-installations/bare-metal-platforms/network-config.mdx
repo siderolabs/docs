@@ -13,7 +13,7 @@ In this case, the recommended way is to embed the machine configuration into the
 
 If machine configuration embedding is not possible, Talos provides several ways to configure network on bare-metal platforms before the machine configuration is fetched.
 
-## Kernel Command Line
+## Kernel command line
 
 Talos supports some kernel command line parameters to configure network before the machine configuration is fetched.
 
@@ -39,7 +39,7 @@ vlan=eth0.100:eth0
 
 See [kernel parameters reference](../../reference/kernel) for more details.
 
-## Platform Network Configuration
+## Platform network configuration
 
 Some platforms (e.g. AWS, Google Cloud, etc.) have their own network configuration mechanisms, which can be used to perform the initial network configuration.
 There is no such mechanism for bare-metal platforms, so Talos provides a way to use platform network config on the `metal` platform to submit the initial network configuration.
@@ -72,7 +72,7 @@ docker run --rm -i ghcr.io/siderolabs/imager:${release_v1_13} image --platform m
 
 The platform network configuration gets merged with other sources of network configuration, the details can be found in the [network resources guide](../../learn-more/networking-resources#configuration-merging).
 
-## `nocloud` Network Configuration
+## `nocloud` network configuration
 
 Some bare-metal providers provide a way to configure network via the `nocloud` data source.
 Talos Linux can automatically pick up this [configuration](../cloud-platforms/nocloud) when `nocloud` image is used.

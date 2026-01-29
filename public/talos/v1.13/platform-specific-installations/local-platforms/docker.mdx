@@ -30,7 +30,7 @@ Due to the fact that Talos will be running in a container, certain APIs are not 
 For example `upgrade`, `reset`, and similar APIs don't apply in container mode.
 Further, when running on a Mac in docker, due to networking limitations, VIPs are not supported.
 
-## Create the Cluster
+## Create the cluster
 
 Creating a local cluster is as simple as:
 
@@ -74,7 +74,7 @@ KUBERNETES ENDPOINT   https://127.0.0.1:43083
 > sudo modprobe br_netfilter
 > ```
 
-## Using the Cluster
+## Using the cluster
 
 Once the cluster is available, you can make use of `talosctl` and `kubectl` to interact with the cluster.
 For example, to view current running containers, run `talosctl containers` for a list of containers in the `system` namespace, or `talosctl containers -k` for the `k8s.io` namespace.
@@ -88,7 +88,7 @@ To cleanup, run:
 talosctl cluster destroy
 ```
 
-## Multiple Clusters
+## Multiple clusters
 
 Multiple Talos Linux cluster can be created on the same host, each cluster will need to have:
 
@@ -114,7 +114,7 @@ talosctl --context cluster2 version
 kubectl --context admin@cluster2 get nodes
 ```
 
-## Running Talos in Docker Manually
+## Running Talos in Docker manually
 
 To run Talos in a container manually, run:
 

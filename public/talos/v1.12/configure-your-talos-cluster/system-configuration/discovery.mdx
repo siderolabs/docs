@@ -24,7 +24,7 @@ The advantage of the external registry service is that it is not dependent on et
 
 > Note: Kubernetes registry is deprecated as it is not compatible with Kubernetes 1.32 and later versions in the default configuration.
 
-## Video Walkthrough
+## Video walkthrough
 
 To see a live demo of Cluster Discovery, see the video below:
 
@@ -67,7 +67,7 @@ In these cases, discovery can be disabled or replaced with a privately operated 
 An enabled discovery service is required for [KubeSpan](../../networking/kubespan) to function.
 </Note>
 
-### Kubernetes Registry
+### Kubernetes registry
 
 The `Kubernetes` registry uses Kubernetes `Node` resource data and additional Talos annotations:
 
@@ -84,7 +84,7 @@ Annotations:        cluster.talos.dev/node-id: Utoh3O0ZneV0kT2IUBrh7TgdouRcUW2yz
 > The workaround is to disable the feature gate on the API server, but it's not recommended as it disables also other important security protections.
 > For this reason, the Kubernetes registry is deprecated and disabled by default.
 
-### Discovery Service Registry
+### Discovery service registry
 
 The `Service` registry by default uses a public external Discovery Service to exchange encrypted information about cluster members.
 
@@ -113,7 +113,7 @@ The discovery service does not have the encryption key.
 The discovery service may, with a commercial license, be operated by your organization and can be [downloaded here](https://github.com/siderolabs/discovery-service).
 In order for nodes to communicate to the discovery service, they must be able to connect to it on TCP port 443.
 
-## Resource Definitions
+## Resource definitions
 
 Talos provides resources that can be used to introspect the discovery and KubeSpan features.
 

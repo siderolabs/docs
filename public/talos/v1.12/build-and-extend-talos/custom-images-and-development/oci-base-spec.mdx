@@ -9,7 +9,7 @@ While certain aspects of this specification can be modified through Kubernetes p
 Talos Linux provides the capability to adjust the OCI base runtime specification for all containers managed by the CRI.
 However, it is important to note that the Kubernetes/CRI plugin may still override some settings, meaning changes to the base runtime specification are not always guaranteed to take effect.
 
-## Getting Current OCI Base Runtime Specification
+## Getting current OCI base runtime specification
 
 To get the current OCI base runtime specification, you can use the following command (`yq -P .` is used to pretty-print the output):
 
@@ -29,7 +29,7 @@ process:
 
 The output might depend on a specific Talos (`containerd`) version.
 
-## Adjusting OCI Base Runtime Specification
+## Adjusting OCI base runtime specification
 
 To adjust the OCI base runtime specification, the following machine configuration patch can be used:
 

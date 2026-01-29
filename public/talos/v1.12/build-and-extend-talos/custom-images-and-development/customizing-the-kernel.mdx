@@ -22,7 +22,7 @@ In order to build a custom kernel (or a custom kernel module), the following ste
 
 We will go through each step in detail.
 
-## Building a Custom Kernel
+## Building a custom kernel
 
 First, you might need to prepare the build environment, follow the [Building Custom Images](./building-images) guide.
 
@@ -66,7 +66,7 @@ make kernel REGISTRY=127.0.0.1:5005 PUSH=true PLATFORM=linux/amd64
 
 This will create a container image `127.0.0.1:5005/siderolabs/kernel:$TAG` with the kernel and modules.
 
-## Building Talos Base Artifacts
+## Building Talos base artifacts
 
 Follow the [Building Custom Images](./building-images) guide to set up the Talos source code checkout.
 
@@ -91,7 +91,7 @@ make imager PKG_KERNEL=127.0.0.1:5005/siderolabs/kernel:$TAG PLATFORM=linux/amd6
 
 > Note: if you built the kernel for both `amd64` and `arm64`, a multi-arch `imager` container can be built as well by specifying `INSTALLER_ARCH=all` and `PLATFORM=linux/amd64,linux/arm64`.
 
-## Building Talos Boot Assets
+## Building Talos boot assets
 
 Follow the [Boot Assets](../../platform-specific-installations/boot-assets) guide to build Talos boot assets you might need to boot Talos: ISO, `installer` image, etc.
 Replace the reference to the `imager` in guide with the reference to the `imager` container built above.

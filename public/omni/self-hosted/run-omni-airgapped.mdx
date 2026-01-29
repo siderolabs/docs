@@ -1,5 +1,5 @@
 ---
-title: Installing Airgapped Omni
+title: Run Omni Air-Gapped
 ---
 
 import { omni_release, version, release } from '/snippets/custom-variables.mdx';
@@ -7,7 +7,7 @@ import { omni_release, version, release } from '/snippets/custom-variables.mdx';
 This document will walk through each component to run the "Sidero stack" in an offline environment which includes the following components.
 
 * Omni
-* [Image Factory](./self-hosted/deploy-image-factory-on-prem)
+* [Image Factory](./run-image-factory-on-prem)
 * Container registry
 * Authentication service
 
@@ -84,7 +84,7 @@ AUTH_ENDPOINT=auth.internal:5556
 OMNI_ENDPOINT=omni.internal
 ```
 
-## 1. Generate Certificates
+## 1. Generate certificates
 
 In order to run services securely, even in an air gapped environment, you should run with encrypted data in transit and at rest. There are multiple certificates and keys needed to secure your infrastructure.
 
@@ -238,7 +238,7 @@ chmod 644 server*.pem
 
 ## 2. Image factory and container registry
 
-Using the certificates we just created, follow the guide [Deploy Image Factory On-prem](./self-hosted/deploy-image-factory-on-prem). This will 
+Using the certificates we just created, follow the guide [Deploy Image Factory On-prem](./run-image-factory-on-prem). This will 
 create a container registry and host the Image Factory in your environment. It will also sign container images with an offline key for verification.
 
 <Warning>If you do not have a working Image Factory with Talos images and extensions seeded do not continue with the guide. That is a pre-requisite for running Omni in an air gapped environment.</Warning>
@@ -249,7 +249,7 @@ If you have existing SAML or OIDC authentication available you can use that with
 
 For a PoC environment we will run [dex](https://dexidp.io/docs/) with static users configured. Dex can be used for static configuration or to communicate with upstream providers. For this guide we will configure static users.
 
-### Deploy Dex (optional)
+### Deploy dex (optional)
 
 Because Omni does not have any user authentication Dex will be configured so we can log in to Omni with a static user. You will need to download the dex container from a machine that has internet access and push it to your internal registry.
 

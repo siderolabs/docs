@@ -11,7 +11,7 @@ In this guide we will create an HA Kubernetes cluster 3 control plane nodes and 
 We assume some familiarity with UpCloud.
 If you need more information on UpCloud specifics, please see the [official UpCloud documentation](https://upcloud.com/resources/docs).
 
-## Create the Image
+## Create the image
 
 The best way to create an image for UpCloud, is to build one using
 [Hashicorp packer](https://www.packer.io/docs/builders/hetzner-cloud), with the
@@ -120,9 +120,9 @@ packer build .
 
 After doing this, you can find the custom image in the console interface under storage.
 
-## Creating a Cluster via the CLI
+## Creating a cluster via the CLI
 
-### Create an Endpoint
+### Create an endpoint
 
 To communicate with the Talos cluster you will need a single endpoint that is used
 to access the cluster.
@@ -136,9 +136,9 @@ Endpoint selection has been further documented [here](../../getting-started/gett
 After you decide on which endpoint to use, note down the domain name or IP, as
 we will need it in the next step.
 
-### Create the Machine Configuration Files
+### Create the machine configuration files
 
-#### Generating Base Configurations
+#### Generating base configurations
 
 Using the DNS name of the endpoint created earlier, generate the base
 configuration files for the Talos machines:
@@ -157,7 +157,7 @@ Depending on the Kubernetes version you want to run, you might need to select a 
 Optionally, you can specify [machine configuration patches](../../configure-your-talos-cluster/system-configuration/patching#configuration-patching-with-talosctl-cli)
 which will be applied during the config generation.
 
-#### Validate the Configuration Files
+#### Validate the configuration files
 
 ```bash
 $ talosctl validate --config controlplane.yaml --mode cloud
@@ -166,9 +166,9 @@ $ talosctl validate --config worker.yaml --mode cloud
 worker.yaml is valid for cloud mode
 ```
 
-### Create the Servers
+### Create the servers
 
-#### Create the Control Plane Nodes
+#### Create the control plane nodes
 
 Run the following to create three total control plane nodes:
 
@@ -192,7 +192,7 @@ done
 
 Note the IP address of the first control plane node, as we will need it later.
 
-#### Create the Worker Nodes
+#### Create the worker nodes
 
 Run the following to create a worker node:
 
@@ -209,7 +209,7 @@ upctl server create \
 `}
 </CodeBlock>
 
-### Bootstrap Etcd
+### Bootstrap etcd
 
 To configure `talosctl` we will need the first control plane node's IP, as noted earlier.
 We only add one node IP, as that is the entry into our cluster against which our commands will be run.

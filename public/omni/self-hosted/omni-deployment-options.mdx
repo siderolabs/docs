@@ -1,12 +1,14 @@
 ---
-title: Omni Deployment Options
+title: Run Omni Options
 ---
 
 import { version } from '/snippets/custom-variables.mdx';
 
-Omni can be deployed in several different environments depending on your operational requirements. This guide explains how Omni behaves in each environment and what level of availability each option provides.
+Omni can be run in several different environments depending on your operational requirements. This guide explains how Omni behaves in each environment and what level of availability each option provides.
 
 Omni is a single container service that relies on other services such as Image Factory, a container registry, and authentication. When we reference Omni in this document we are referring to a complete stack of services.
+
+<Note>Using Omni in production requires a commercial license. For more information, contact [sales@SideroLabs.com](mailto:sales@siderolabs.com). Non-production use, such as running Omni in a home lab, does not require a license.</Note>
 
 ## Hosted Omni
 
@@ -20,7 +22,7 @@ Self-hosting Omni provides more control over data locality and infrastructure bu
 
 Omni is not part of the Kubernetes control plane, and temporary unavailability does not affect how your clusters run. They continue operating normally, and Talos machines reconnect when it becomes available again. This behavior is important when deciding whether high availability is necessary.
 
-Kubernetes clusters deployed on Talos use technologies such as [KubePrism](../../../kubernetes-guides/advanced-guides/kubeprism) and a <a href={`../../../talos/${version}/configure-your-talos-cluster/system-configuration/discovery`}> discovery service</a> to make sure the cluster and workloads can run without highly available, external management such as Omni.
+Kubernetes clusters deployed on Talos use technologies such as [KubePrism](../../kubernetes-guides/advanced-guides/kubeprism) and a <a href={`../../../talos/${version}/configure-your-talos-cluster/system-configuration/discovery`}> discovery service</a> to make sure the cluster and workloads can run without highly available, external management such as Omni.
 
 Omni *is* the authentication mechanism for external access to Talos and Kubernetes. All external user (e.g., `kubectl`) and service (e.g., Infrastructure Providers) communication goes through Omni. If Omni is unavailable for extended periods of time, external communication will not work until Omni is recovered. Omni also offers an emergency “break glass” configuration to access Talos machines and Kubernetes clusters when Omni is not available.
 

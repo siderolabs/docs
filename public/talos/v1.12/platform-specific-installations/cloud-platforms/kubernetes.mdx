@@ -20,7 +20,7 @@ Some operations like upgrades and reboots are not supported.
 {`ghcr.io/siderolabs/talos:${release_v1_12}`}
 </CodeBlock>
 
-## Machine Configuration
+## Machine configuration
 
 Machine configuration can be generated using [Getting Started](../../getting-started/getting-started) guide.
 Machine install disk will ge ignored, as the install image.
@@ -38,11 +38,11 @@ machine:
 
 Talos and Kubernetes API can be exposed using Kubernetes services or load balancers, so they can be accessed from outside the cluster.
 
-## Running Talos Pods
+## Running Talos pods
 
 There might be many ways to run Talos in Kubernetes (StatefulSet, Deployment, single Pod), so we will only provide some basic guidance here.
 
-### Container Settings
+### Container settings
 
 <CodeBlock lang="yaml">
 {`
@@ -65,12 +65,12 @@ securityContext:
 `}
 </CodeBlock>
 
-### Submitting Initial Machine Configuration
+### Submitting initial machine configuration
 
 Initial machine configuration can be submitted using `talosctl apply-config --insecure` when the pod is running, or it can be submitted
 via an environment variable `USERDATA` with base64-encoded machine configuration.
 
-### Volume Mounts
+### Volume mounts
 
 Three ephemeral mounts are required for `/run`, `/system`, and `/tmp` directories:
 

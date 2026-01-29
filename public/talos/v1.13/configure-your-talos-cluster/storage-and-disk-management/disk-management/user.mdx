@@ -18,7 +18,7 @@ The volume mount location is `/var/mnt/<volume-name>`, and it gets automatically
 
 Disk encryption can be optionally enabled for user volumes.
 
-## Creating User Volumes
+## Create user volumes
 
 To create a user volume, append the following [document](../../../reference/configuration/block/uservolumeconfig) to the machine configuration:
 
@@ -79,7 +79,7 @@ spec:
 
 Please note, the path inside the container can be different from the path on the host.
 
-## Removing User Volumes
+## Remove user volumes
 
 Before removing a user volume, ensure that it is not mounted in any Kubernetes pod.
 
@@ -100,7 +100,7 @@ or from the `DiscoveredVolume` resource any time later.
 
 > Note: If the `wipe disk` command fails with `blockdevice is in use by volume`, it means the user volume has not been removed from the machine configuration.
 
-## Types of User Volumes
+## Types of user volumes
 
 `UserVolumeConfig` includes an optional `volumeType` field that controls how a user volume is created and managed.
 If omitted, the system defaults to `partition`.

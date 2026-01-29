@@ -6,20 +6,18 @@ description: "A short guide on setting up a simple Talos Linux cluster locally w
 
 import { release_v1_13, k8s_release } from '/snippets/custom-variables.mdx';
 
-<iframe width="560" 
-    height="315" 
-    src="https://www.youtube.com/embed/IO2Yo3N46nk?si=Ry7mru1X7-oSzEx0" 
-    title="YouTube video player" frameborder="0" allow="accelerometer; 
-    autoplay; clipboard-write; 
-    encrypted-media; gyroscope; 
-    picture-in-picture; 
+The easiest way to run Talos is by using the CLI (`talosctl`) to create a cluster on a machine with `docker` installed.
+
+<iframe width="560"
+    height="315"
+    src="https://www.youtube.com/embed/IO2Yo3N46nk?si=Ry7mru1X7-oSzEx0"
+    title="YouTube video player" frameborder="0" allow="accelerometer;
+    autoplay; clipboard-write;
+    encrypted-media; gyroscope;
+    picture-in-picture;
     web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen
     >
 </iframe>
-
-## Local Docker Cluster
-
-The easiest way to try Talos is by using the CLI (`talosctl`) to create a cluster on a machine with `docker` installed.
 
 ### Prerequisites
 
@@ -35,7 +33,7 @@ brew install siderolabs/tap/talosctl
 
 Download `kubectl` via one of the methods outlined in the [documentation](https://kubernetes.io/docs/tasks/tools/install-kubectl/).
 
-### Create the Cluster
+### Create the cluster
 
 Now run the following:
 
@@ -67,7 +65,7 @@ talos-default-worker-1         Ready    <none>   115s   v${k8s_release}   10.5.0
 `}
 </CodeBlock>
 
-### Destroy the Cluster
+### Destroy the cluster
 
 When you are all done, remove the cluster:
 

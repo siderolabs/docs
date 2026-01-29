@@ -11,7 +11,7 @@ DHCP client can be enabled on physical and logical links (bridges, bonds, VLANs)
 
 There are two DHCP versions supported in Talos Linux: DHCPv4 and DHCPv6.
 
-## DHCPv4 Configuration
+## DHCPv4 configuration
 
 To enable DHCPv4 on a physical link, create a [DHCPv4Config](../../reference/configuration/network/dhcpv4config) configuration document with the name of the link:
 
@@ -30,7 +30,7 @@ Additional settings can be configured:
     * `duid`: use a DUID (DHCP Unique Identifier) as the client identifier, requires `duidRaw` field to be set.
     * `off`: disable the client identifier.
 
-## DHCPv6 Configuration
+## DHCPv6 configuration
 
 To enable DHCPv6 on a physical link, create a [DHCPv6Config](../../reference/configuration/network/dhcpv6config) configuration document with the name of the link:
 
@@ -42,7 +42,7 @@ name: enp0s3
 
 Additional settings are identical to DHCPv4.
 
-## Observing Status
+## Observing status
 
 Use `talosctl` to get the list of all configured operators (which includes DHCP clients):
 

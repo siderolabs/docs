@@ -2171,22 +2171,21 @@
             ]
           },
           {
+            "group": "Self Hosted",
+            "pages": [
+              "omni/self-hosted/omni-deployment-options",
+              "omni/self-hosted/run-omni-on-prem",
+              "omni/self-hosted/run-omni-airgapped",
+              "omni/self-hosted/run-image-factory-on-prem",
+              "omni/self-hosted/configure-keycloak-for-omni",
+              "omni/self-hosted/expose-omni-with-nginx-https",
+              "omni/self-hosted/back-up-omni-db",
+              "omni/self-hosted/upgrading-omni"
+            ]
+          },
+          {
             "group": "Infrastructure and Extensions",
             "pages": [
-              {
-                "group": "Self Hosted",
-                "pages": [
-                  "omni/infrastructure-and-extensions/self-hosted/overview",
-                  "omni/infrastructure-and-extensions/self-hosted/omni-deployment-options",
-                  "omni/infrastructure-and-extensions/self-hosted/deploy-omni-on-prem",
-                  "omni/infrastructure-and-extensions/self-hosted/deploy-image-factory-on-prem",
-                  "omni/infrastructure-and-extensions/self-hosted/configure-keycloak-for-omni",
-                  "omni/infrastructure-and-extensions/self-hosted/how-to-back-up-on-prem-omni-db",
-                  "omni/infrastructure-and-extensions/self-hosted/expose-omni-with-nginx-https",
-                  "omni/infrastructure-and-extensions/self-hosted/upgrading-omni"
-                ]
-              },
-              "omni/infrastructure-and-extensions/install-airgapped-omni",
               "omni/infrastructure-and-extensions/infrastructure-providers",
               "omni/infrastructure-and-extensions/writing-infrastructure-providers",
               "omni/infrastructure-and-extensions/machine-registration",
