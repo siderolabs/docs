@@ -85,7 +85,7 @@ This will flash the firmware to the Jetson Nano SPI flash and you'll see a lot o
 If you've connected the serial console you'll also see the progress there.
 Once the flashing is done you can disconnect the USB cable and power off the Jetson Nano.
 
-## Download the Image
+## Download the image
 
 The default schematic id for "vanilla" Jetson Nano is `c7d6f36c6bdfb45fd63178b202a67cff0dd270262269c64886b43f76880ecf1e`.
 Refer to the [Image Factory](../../learn-more/image-factory) documentation for more information.
@@ -99,7 +99,7 @@ xz -d metal-arm64.raw.xz
   `}
 </CodeBlock>
 
-## Writing the Image
+## Writing the image
 
 Now `dd` the image to your SD card/USB storage:
 
@@ -109,7 +109,7 @@ sudo dd if=metal-arm64.raw of=/dev/mmcblk0 conv=fsync bs=4M status=progress
 
 | Replace `/dev/mmcblk0` with the name of your SD card/USB storage.
 
-## Bootstrapping the Node
+## Bootstrapping the node
 
 Insert the SD card/USB storage to your board, turn it on and wait for the console to show you the instructions for bootstrapping the node.
 Following the instructions in the console output to connect to the interactive installer:

@@ -21,7 +21,7 @@ Likewise, Talos may be manually rolled back via API (or `talosctl rollback`), wh
 *Note* An upgrade of the Talos Linux OS will not (since v1.0) apply an upgrade to the Kubernetes version by default.
 Kubernetes upgrades should be managed separately per [upgrading kubernetes](../../../../kubernetes-guides/advanced-guides/upgrading-kubernetes).
 
-## Supported Upgrade Paths
+## Supported upgrade paths
 
 Because Talos Linux is image based, an upgrade is almost the same as installing Talos, with the difference that the system has already been initialized with a configuration.
 The supported configuration may change between versions.
@@ -34,17 +34,17 @@ For example, if upgrading from Talos 1.0 to Talos 1.2.4, the recommended upgrade
 * upgrade from v1.0.6 to latest patch of 1.1 - to v1.1.2
 * upgrade from v1.1.2 to v1.2.4
 
-## Before Upgrade to {release_v1_13}
+## Before upgrade to {release_v1_13}
 
 There are no specific actions to be taken before an upgrade.
 
-## Video Walkthrough
+## Video walkthrough
 
 To see a live demo of an upgrade of Talos Linux, see the video below:
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/AAF6WhX0USo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-## After Upgrade to {release_v1_13}
+## After upgrade to {release_v1_13}
 
 There are no specific actions to be taken after an upgrade.
 
@@ -72,7 +72,7 @@ Because this occurs in a just rebooted system, there will be no conflict with an
 After the upgrade is applied, the node will reboot again, in order to boot into the new version.
 Note that because Talos Linux reboots via the `kexec` syscall, the extra reboot adds very little time.
 
-## Machine Configuration Changes
+## Machine configuration changes
 
 * [VolumeConfig](../../reference/configuration/block/volumeconfig) now supports encryption configuration for system volumes.
 * [VolumeConfig](../../reference/configuration/block/volumeconfig), [UserVolumeConfig](../../reference/configuration/block/uservolumeconfig) encryption configuration for TPM now supports specifying PCRs to lock the encryption key to.
@@ -111,7 +111,7 @@ Note that because Talos Linux reboots via the `kexec` syscall, the extra reboot 
   * `.machine.install.grubUseUKICmdline` to unify kernel args behavior for legacy GRUB bootloader with systemd-boot.
 
 
-## Upgrade Sequence
+## Upgrade sequence
 
 When a Talos node receives the upgrade command, it cordons
 itself in Kubernetes, to avoid receiving any new workload.

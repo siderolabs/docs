@@ -13,7 +13,7 @@ We will be using the [CloudStack Cloudmonkey](https://github.com/apache/cloudsta
 
 Please see the [official Apache CloudStack documentation](https://docs.cloudstack.apache.org/en/latest/) for information related to Apache CloudStack.
 
-### Obtain the Talos Image
+### Obtain the Talos image
 
 Download the Talos CloudStack image `cloudstack-amd64.raw.gz` from the [Image Factory](https://factory.talos.dev).
 
@@ -26,11 +26,11 @@ You might be able to use the "Register Template from URL" to download the image 
 > Note: CloudStack does not seem to like compressed images, so you might have to download the image to a local webserver, uncompress it and let CloudStack fetch the image from there instead.
 > Alternatively, you can try to remove `.gz` from URL to fetch an uncompressed image from the Image Factory.
 
-### Get Required Variables
+### Get required variables
 
 Next we will get a number of required variables and export them for later use:
 
-#### Get Image Template ID
+#### Get image template ID
 
 ```bash
 $ cmk list templates templatefilter=self | jq -r '.template[] | [.id, .name] | @tsv' | sort -k2
@@ -51,7 +51,7 @@ a8c71a6f-2e09-41ed-8754-2d4dd8783920  fsn1
 $ export ZONE_ID=a8c71a6f-2e09-41ed-8754-2d4dd8783920
 ```
 
-#### Get Service Offering ID
+#### Get service offering ID
 
 Get a list of service offerings (instance types) and select the desired offering
 
@@ -63,7 +63,7 @@ c7f5253e-e1f1-4e33-a45e-eb2ebbc65fd4  4096  2 K8S-WRK-S
 $ export SERVICEOFFERING_ID=82ac8c87-22ee-4ec3-8003-c80b09efe02c
 ```
 
-#### Get Network ID
+#### Get network ID
 
 Get a list of networks and select the relevant network for your cluster.
 
@@ -75,7 +75,7 @@ f706984f-9dd1-4cb8-9493-3fba1f0de7e3  Isolate  demo
 $ export NETWORK_ID=143ed8f1-3cc5-4ba2-8717-457ad993cf25
 ```
 
-#### Get next free Public IP address and ID
+#### Get next free public IP address and ID
 
 To create a loadbalancer for the K8S API Endpoint, find the next available public IP address in the zone.
 
@@ -91,7 +91,7 @@ $ export PUBLIC_IPADDRESS=10.0.0.102
 $ export PUBLIC_IPADDRESS_ID=1901d946-3797-48aa-a113-8fb730b0770a
 ```
 
-#### Acquire and Associate Public IP Address
+#### Acquire and associate Public IP Address
 
 Acquire and associate the public IP address with the network we selected earlier.
 
@@ -106,7 +106,7 @@ $ cmk associateIpAddress ipaddress=${PUBLIC_IPADDRESS} networkid=${NETWORK_ID}
 }
 ```
 
-#### Create LB and FW rule using the Public IP Address
+#### Create LB and FW rule using the public IP address
 
 Create a Loadbalancer for the K8S API Endpoint.
 
@@ -128,7 +128,7 @@ $ cmk create loadbalancerrule algorithm=roundrobin name="k8s-api" privateport=64
 }
 ```
 
-### Create the Talos Configuration Files
+### Create the Talos configuration files
 
 Finally it's time to generate the Talos configuration files, using the Public IP address assigned to the loadbalancer.
 
@@ -161,7 +161,7 @@ $ cmk deploy virtualmachine zoneid=${ZONE_ID} templateid=${IMAGE_ID} serviceoffe
 }
 ```
 
-#### Get Talos VM ID and Internal IP address
+#### Get Talos VM ID and internal IP address
 
 Get the ID of our newly created VM.
 (Also available in the full output of the above command.)
@@ -175,7 +175,7 @@ $ export VM_ID=d37aeca4-7d1f-45cd-9a4d-97fdbf535aa1
 $ export VM_IP=10.1.1.243
 ```
 
-#### Get Load Balancer ID
+#### Get load balancer ID
 
 Obtain the ID of the `loadbalancerrule` we created earlier.
 
@@ -186,7 +186,7 @@ ede6b711-b6bc-4ade-9e48-4b3f5aa59934  10.0.0.102  k8s-api
 $ export LB_RULE_ID=ede6b711-b6bc-4ade-9e48-4b3f5aa59934
 ```
 
-#### Assign Talos VM to Load Balancer
+#### Assign Talos VM to load balancer
 
 With the ID of the VM and the load balancer, we can assign the VM to the `loadbalancerrule`, making the K8S API endpoint available via the Load Balancer
 
@@ -194,7 +194,7 @@ With the ID of the VM and the load balancer, we can assign the VM to the `loadba
 cmk assigntoloadbalancerrule id=${LB_RULE_ID} virtualmachineids=${VM_ID}
 ```
 
-### Bootstrap Etcd
+### Bootstrap etcd
 
 Once the Talos VM has booted, it time to bootstrap etcd.
 

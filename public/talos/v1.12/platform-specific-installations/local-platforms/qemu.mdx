@@ -72,7 +72,7 @@ brew install siderolabs/tap/talosctl
 
 For manual installation and other platforms please see the [talosctl installation guide](../../getting-started/talosctl ).
 
-## Create the Cluster
+## Create the cluster
 
 For the first time, create root state directory as your user so that you can inspect the logs as non-root user:
 
@@ -106,7 +106,7 @@ The `omni-api-endpoint` flag configures nodes to connect to an Omni instance onc
 Using [SideroLink](../../networking/siderolink), the local QEMU nodes can communicate with Omni as long as the endpoint is reachable.
 This enables connections to a local Omni instance, a cloud-hosted Omni instance, or a Sidero SaaS Omni instance.
 
-## Using the Cluster
+## Using the cluster
 
 Once the cluster is available, you can make use of `talosctl` and `kubectl` to interact with the cluster.
 For example, to view current running containers, run `talosctl -n 10.5.0.2 containers` for a list of containers in the `system` namespace, or `talosctl -n 10.5.0.2 containers -k` for the `k8s.io` namespace.
@@ -136,7 +136,7 @@ talos-default-controlplane-3   ControlPlane   10.5.0.4   1.00   1.6 GB   4.3 GB
 talos-default-worker-1         Worker         10.5.0.5   1.00   1.6 GB   4.3 GB
 ```
 
-## Cleaning Up
+## Cleaning up
 
 To cleanup, run:
 
@@ -146,7 +146,7 @@ sudo --preserve-env=HOME talosctl cluster destroy --provisioner qemu
 
 > **Note**: In that case that the host machine is rebooted before destroying the cluster, you may need to manually remove `~/.talos/clusters/talos-default`.
 
-## Manual Clean Up
+## Manual clean up
 
 The `talosctl cluster destroy` command depends heavily on the clusters state directory.
 It contains all related information of the cluster.
@@ -155,7 +155,7 @@ The PIDs and network associated with the cluster nodes.
 If you happened to have deleted the state folder by mistake or you would like to cleanup
 the environment, here are the steps how to do it manually:
 
-### Remove VM Launchers
+### Remove VM launchers
 
 Find the process of `talosctl qemu-launch`:
 

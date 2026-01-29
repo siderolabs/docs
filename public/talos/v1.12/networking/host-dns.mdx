@@ -8,7 +8,7 @@ import { release_v1_12 } from '/snippets/custom-variables.mdx';
 Talos Linux starting with 1.7.0 provides a caching DNS resolver for host workloads (including host networking pods).
 Host DNS resolver is enabled by default for clusters created with Talos 1.7, and it can be enabled manually on upgrade.
 
-## Enabling Host DNS
+## Enabling host DNS
 
 Use the following machine configuration patch to enable host DNS resolver:
 
@@ -57,7 +57,7 @@ NODE         NAMESPACE   TYPE          ID        VERSION   HEALTHY   ADDRESS
 172.20.0.2   network     DNSUpstream   8.8.8.8   1         true      8.8.8.8:53
 ```
 
-## Forwarding `kube-dns` to Host DNS
+## Forwarding `kube-dns` to host DNS
 
 > Note: This feature is enabled by default for new clusters created with Talos 1.8.0 and later.
 
@@ -79,7 +79,7 @@ This configuration should be applied to all nodes in the cluster, if applied aft
 When `forwardKubeDNSToHost` is enabled, Talos Linux allocates IP address `169.254.116.108` for the host DNS server, and `kube-dns` service is configured to use this IP address as the upstream DNS server:
 This way `kube-dns` service forwards all DNS requests to the host DNS server, and the cache is shared between the host and `kube-dns`.
 
-## Resolving Talos Cluster Member Names
+## Resolving Talos cluster member names
 
 Host DNS can be configured to resolve Talos cluster member names to IP addresses, so that the host can communicate with the cluster members by name.
 Sometimes machine hostnames are already resolvable by the upstream DNS, but this might not always be the case.

@@ -76,7 +76,7 @@ Then the following flow will outline how Omni interacts with it:
 8. The controller responsible for automatic `MachineSetNode` creation assigns the machine to a cluster.
    From this point, the workflow is identical to that of manually added machines.
 
-## Provider Implementation Details
+## Provider implementation details
 
 A provider is a standalone service that must have access to the Omni API.
 It should be written in **Go** and stores its state in Omni under the namespace `infra-provider:<provider-id>`,
@@ -110,7 +110,7 @@ Each step callback receives:
 - `zap.Logger` — preconfigured with contextual fields for the current machine request.
 - `provision.Context[T]` — provides access to state and utilities needed during provisioning.
 
-#### Example: Defining Steps
+#### Example: Defining steps
 
 Suppose you have a provisioner with a client for your platform:
 
@@ -235,7 +235,7 @@ then access it later in `Deprovision`.
 `T` is available through `pctx.State` in the `provision.Step` callbacks,
 and as the third argument in the `Deprovision` call.
 
-### Machine Connection to Omni
+### Machine connection to Omni
 
 There are two main ways a machine can connect back to Omni:
 
@@ -286,7 +286,7 @@ V2 tokens allow embedding machine request IDs directly into the join token,
 enabling immediate mapping between a machine and its `MachineRequest`.
 That's enabled by `infra.WithEncodeRequestIDsIntoTokens` option in the `provider.Run`.
 
-### `provision.Context` Reference
+### `provision.Context` reference
 
 - `GetRequestID() string` — returns the `MachineRequest` ID.
 - `GetTalosVersion() string` — returns the Talos version used for the installation media.
@@ -295,13 +295,13 @@ That's enabled by `infra.WithEncodeRequestIDsIntoTokens` option in the `provider
 - `CreateConfigPatch(ctx, name, data)` — adds configuration patches for the machine.
 - `GenerateSchematicID(ctx, logger, opts...)` — invokes the image factory to create a schematic and returns its ID.
 
-### Provider Data
+### Provider data
 
 Provider data is a JSON-encoded field in the `MachineRequest` that contains provider-specific configuration parameters.
 When a provider starts, it registers its schema with Omni.
 Omni uses this schema to render UI forms and validate `MachineRequest` objects.
 
-### Best Practices
+### Best practices
 
 - Avoid generating unique images per machine.
 - Use the image factory to build base images and upload them as part of the provisioning flow.

@@ -10,14 +10,14 @@ When combined with TPM-based disk encryption, this provides a complete [Trusted 
 
 This means the disk will only unlock if SecureBoot remains enabled with the same key set when using the default PCR 7 binding. However, **PCR binding is fully configurable** via the `VolumeConfig` `tpm.pcrs` option - see the [TPM encryption options](../../reference/configuration/block/volumeconfig#VolumeConfig.encryption.keys..tpm) for details.
 
-## **PCR Binding Options**
+## PCR binding options
 
 - **Default**: PCR 7 (SecureBoot state) + PCR 11 signed policy (UKI measurements and boot phases)
 - **Configurable**: Any combination of PCRs can be specified
 - **No PCRs**: Can be disabled by passing an empty list, relying solely on PCR 11 signed policy
 - **Backward compatibility**: Existing installations continue to use their original PCR binding
 
-**Why Configurable PCRs?**
+**Why configurable PCRs?**
 
 - **Frequent Updates**: PCR 7 covers the SecureBoot policy, particularly the "dbx" denylist of revoked certificates
 - **Automatic Updates**: Tools like `fwupd` now automatically update the SecureBoot database, causing PCR 7 to change frequently
@@ -29,7 +29,7 @@ When the UKI image is generated, the UKI is measured and expected measurements a
 
 > Note: SecureBoot is not supported on x86 platforms in BIOS mode.
 
-## SecureBoot Flow
+## SecureBoot flow
 
 The SecureBoot process follows a strict verification chain from UEFI firmware to the final operating system:
 
@@ -79,7 +79,7 @@ As Talos Linux is fully contained in the UKI image, the full operating system is
 
 > Note: There is no support at the moment to upgrade non-UKI (GRUB-based) Talos installation to use UKI/SecureBoot, so a fresh installation is required.
 
-## SecureBoot with Sidero Labs Images
+## SecureBoot with Sidero Labs images
 
 [Sidero Labs](https://www.siderolabs.com/) provides Talos images signed with the [Sidero Labs SecureBoot key](https://factory.talos.dev/secureboot/signing-cert.pem) via [Image Factory](../../learn-more/image-factory).
 
@@ -93,7 +93,7 @@ The install should performed using SecureBoot installer (put it Talos machine co
 
 > Note: SecureBoot images can also be generated with [custom keys](#secureboot-with-custom-keys).
 
-## Booting Talos Linux in SecureBoot Mode
+## Booting Talos Linux in SecureBoot mode
 
 In this guide we will use the ISO image to boot Talos Linux in SecureBoot mode, followed by submitting machine configuration to the machine in maintenance mode.
 We will use one the ways to generate and submit machine configuration to the node, please refer to the [Production Notes](../../getting-started/prodnotes) for the full guide.
@@ -159,17 +159,17 @@ Once the new `installer` image is pushed to the registry, [upgrade](../../config
 
 It is important to preserve the UKI signing key and the PCR signing key, otherwise the node will not be able to boot with the new UKI and unlock the encrypted partitions.
 
-## Disk Encryption with TPM
+## Disk encryption with TPM
 
 When encrypting the disk partition for the first time, Talos Linux generates a random disk encryption key and seals (encrypts) it with the TPM device.
 The TPM unlock policy is configured to trust the expected policy signed by the PCR signing key.
 This way TPM unlocking doesn't depend on the exact [PCR measurements](https://uapi-group.org/specifications/specs/linux_tpm_pcr_registry/), but rather on the expected policy signed by the PCR signing key and the configured PCR states (by default includes PCR 7 for SecureBoot status and the list of enrolled keys, plus PCR 11 for boot integrity).
 
-### PCR Measurements in Detail
+### PCR measurements in detail
 
 The Unified Kernel Image (UKI) boot process involves several measurement stages that record cryptographic hashes into TPM Platform Configuration Registers (PCRs):
 
-#### systemd-stub UKI Measurements (PCR 11)
+#### systemd-stub UKI measurements (PCR 11)
 
 According to the [UAPI Unified Kernel Image specification](https://uapi-group.org/specifications/specs/unified_kernel_image/) and [systemd-stub documentation](https://www.freedesktop.org/software/systemd/man/latest/systemd-stub.html), systemd-stub measures the following UKI sections into **PCR 11**:
 
@@ -193,7 +193,7 @@ According to the [UAPI Unified Kernel Image specification](https://uapi-group.or
 
 The [systemd-boot bootloader](https://www.freedesktop.org/software/systemd/man/latest/systemd-boot.html) can optionally measure loaded boot entries and configuration, though this is typically not used in Talos UKI scenarios since the UKI can be loaded directly.
 
-#### Talos Boot Phase Measurements (PCR 11)
+#### Talos Boot phase measurements (PCR 11)
 
 In addition to the UKI section measurements, Talos extends **PCR 11** with its own boot phases to track the operating system initialization:
 
@@ -204,7 +204,7 @@ In addition to the UKI section measurements, Talos extends **PCR 11** with its o
 
 **Important:** The `start-the-world` phase is measured into PCR 11 *after* the encrypted disk has been unlocked. This ensures that user services and workloads cannot decrypt the disk themselves, as any attempt to access TPM-sealed keys will fail due to the changed PCR 11 value.
 
-#### TPM Unlock Policy
+#### TPM unlock policy
 
 The TPM sealed disk encryption key can only be unsealed when the system reaches the **`enter-machined`** phase. This is the critical security boundary - the disk can only be decrypted if:
 
@@ -214,7 +214,7 @@ The TPM sealed disk encryption key can only be unsealed when the system reaches 
 
 This ensures that disk decryption only occurs after the trusted boot chain has been verified, but before any potentially untrusted user workloads start.
 
-#### Configurable PCR Binding (Default: PCR 7)
+#### Configurable PCR binding (Default: PCR 7)
 
 By default, new Talos installations and upgrades maintain binding to **PCR 7**, which includes:
 
@@ -229,7 +229,7 @@ During the boot process, `systemd-stub` component of the UKI performs measuremen
 Talos Linux during the boot appends to the PCR register the measurements of the boot phases, and once the boot reaches the point of mounting the encrypted disk partition,
 the expected signed policy from the UKI is matched against measured values to unlock the TPM, and TPM unseals the disk encryption key which is then used to unlock the disk partition.
 
-## TPM PCR Measurement Chain
+## TPM PCR measurement chain
 
 The Trusted Platform Module (TPM) maintains Platform Configuration Registers (PCRs) that record measurements of boot components:
 
@@ -319,7 +319,7 @@ During the upgrade, as long as the new UKI contains PCR policy signed with the s
 
 By default, disk encryption is tied to the state of **PCR 7** (SecureBoot state) in addition to **PCR 11** (boot integrity), so that it unlocks only if both the boot chain is valid and SecureBoot is enabled with the expected key set. However, **the PCR binding is fully configurable**  via the `VolumeConfig` `tpm.pcrs` option - see the [TPM encryption options](../../reference/configuration/block/volumeconfig#VolumeConfig.encryption.keys..tpm) for details.
 
-## Other Boot Options
+## Other boot options
 
 Unified Kernel Image (UKI) is a UEFI-bootable image which can be booted directly from the UEFI firmware skipping the `systemd-boot` bootloader.
 In network boot mode, the UKI can be used directly as well, as it contains the full set of boot assets required to boot Talos Linux.
@@ -327,9 +327,9 @@ In network boot mode, the UKI can be used directly as well, as it contains the f
 When SecureBoot is enabled, the UKI image ignores any kernel command line arguments passed to it, but rather uses the kernel command line arguments embedded into the UKI image itself.
 If kernel command line arguments need to be changed, the UKI image needs to be rebuilt with the new kernel command line arguments.
 
-## SecureBoot with Custom Keys
+## SecureBoot with custom keys
 
-### Generating the Keys
+### Generating the keys
 
 Talos requires two set of keys to be used for the SecureBoot process:
 
@@ -372,7 +372,7 @@ These files can be used to enroll the keys into the UEFI firmware automatically 
 
 > **Note** : UEFI decides what Secure Boot trusts. By default, `talosctl gen secureboot ...` generates a self-signed UKI signing certificate and `PK.auth/KEK.auth/db.auth` for enrollment. You can also generate your own version of these files which uses other signing keys and certificate authorities specific to your environment.
 
-### Generating the SecureBoot Assets
+### Generating the SecureBoot assets
 
 Once the keys are generated, they can be used to sign the Talos boot assets to generate required ISO images, PXE boot assets, disk images, installer containers, etc.
 In this guide we will generate a SecureBoot ISO image and an installer image.

@@ -49,7 +49,7 @@ After applying the machine config and rebooting the node, verify the labels with
 kubectl describe node <node-name>
 ```
 
-### Role Labels
+### Role labels
 
 To assign Kubernetes role labels such as:
 
@@ -65,7 +65,7 @@ kubectl label node <node-name> node-role.kubernetes.io/worker=""
 
 Alternatively, you can use the [Talos Cloud Controller Manager](https://github.com/siderolabs/talos-cloud-controller-manager/blob/main/docs/config.md) or your own controller to translate custom domain labels into the conventional `node-role.kubernetes.io/*` form if required.
 
-## Node Taints
+## Node taints
 
 Kubernetes taints let you prevent workloads from being scheduled on a node unless they have matching tolerations. You can learn more in the official [Taints and Tolerations documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).
 
@@ -76,7 +76,7 @@ Attempting to do so results in errors such as: `<node-name> is not allowed to mo
 
 This behaviour is expected and required for Kubernetes hardening.
 
-### Apply Taints
+### Apply taints
 
 Talos supports setting initial taints only during first node registration, using the kubelet's `registerWithTaints` configuration.
 
@@ -110,7 +110,7 @@ Apply this patch to your worker node’s configuration file.
 
 The taint will be applied once, during the node’s initial registration with the Kubernetes API server. After the node has joined the cluster, updating this field will no longer have any effect.
 
-### Modify Taints After Bootstrap
+### Modify taints after bootstrap
 
 After a node has joined the cluster, taints must be managed using a cluster-admin identity:
 

@@ -293,7 +293,7 @@ The base profile can be customized with the additional flags to the imager:
 * `--system-extension-image` allows to install a system extension into the image
 * `--image-cache` allows to use a [local image cache](../configure-your-talos-cluster/images-container-runtime/image-cache)
 
-### Extension Image Reference
+### Extension image reference
 
 While Image Factory automatically resolves the extension name into a matching container image for a specific version of Talos, `imager` requires the full explicit container image reference.
 The `imager` also allows to install custom extensions which are not part of the official Talos Linux system extensions.
@@ -312,7 +312,7 @@ crane export ghcr.io/siderolabs/extensions:${release_v1_12} | \\
 
 For each Talos release, the `ghcr.io/siderolabs/extensions:VERSION` image contains a pinned reference to each system extension container image.
 
-### Overlay Image Reference
+### Overlay image reference
 
 While Image Factory automatically resolves the overlay name into a matching container image for a specific version of Talos, `imager` requires the full explicit container image reference.
 The `imager` also allows to install custom overlays which are not part of the official Talos overlays.
@@ -330,7 +330,7 @@ crane export ghcr.io/siderolabs/overlays:${release_v1_12} | \\
 
 For each Talos release, the `ghcr.io/siderolabs/overlays:VERSION` image contains a pinned reference to each overlay container image.
 
-### Pulling from Private Registries
+### Pulling from private registries
 
 Talos Linux official images are all public, but when pulling a custom image from a private registry, the `imager` might need authentication to access the images.
 

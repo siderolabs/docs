@@ -26,13 +26,13 @@ Note that the virtual IP election depends on `etcd` being up, as Talos uses `etc
 The virtual IP is not restricted by ports - you can access any port that the control plane nodes are listening on, on that IP address.
 Thus it *is* possible to access the Talos API over the VIP, but it is *not recommended*, as you cannot access the VIP when etcd is down - and then you could not access the Talos API to recover etcd.
 
-## Video Walkthrough
+## Video walkthrough
 
 To see a live demo of this writeup, see the video below:
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/BfMGInHtFBc" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-## Choose your Shared IP
+## Choose your shared IP
 
 The Virtual IP should be a reserved, unused IP address in the same subnet as
 your controlplane nodes.
@@ -49,7 +49,7 @@ We then choose our shared IP to be:
 
 - `192.168.0.15`
 
-## Configure your Talos Machines
+## Configure your Talos machines
 
 The shared IP setting is only valid for controlplane nodes.
 
@@ -71,7 +71,7 @@ alive until after you have bootstrapped Kubernetes.
 
 Don't use the VIP as the `endpoint` in the `talosconfig`, as the VIP is bound to `etcd` and `kube-apiserver` health, and you will not be able to recover from a failure of either of those components using Talos API.
 
-## VIP Failover Behavior
+## VIP failover behavior
 
 When the control plane node holding the VIP shuts down gracefully, the address is reassigned almost instantly, ensuring uninterrupted access.
 
@@ -83,7 +83,7 @@ The delay ensures that a temporary network hiccup or brief pause in communicatio
 
 By waiting out the election timeout before reassigning the VIP, Talos guarantees that only one node will advertise the shared IP, even if it means failover is slower in sudden failure scenarios.
 
-### Impact on Workloads
+### Impact on workloads
 
 A VIP failover impacts only external access to the cluster, such as when you run `kubectl` against the API server.
 

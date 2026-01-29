@@ -6,17 +6,17 @@ With an Omni managed cluster, you use `kubectl` as with any other Kubernetes clu
 
 All Kubernetes `kubectl` commands are routed through the API endpoint created by Omni, and Omni validates access through the configured OIDC provider or other user authorization mechanism. This ensures your Kubernetes cluster is safe - unlike other systems, mere possession of a `kubeconfig` grants no access - the user also has be valid in the configured authentication system of Omni.
 
-#### Download the KubeConfig file <a href="#download-the-kubeconfig-file" id="download-the-kubeconfig-file"></a>
+#### Download the KubeConfig file
 
 Navigate to the clusters page by clicking on the “Clusters” button in the sidebar.
 
 Click on the cluster and then click "Download  kubeconfig" from the cluster dashboard on the right. The downloaded file will reflect the name of the cluster.
 
-#### Install the OIDC plug in <a href="#install-the-oidc-plug-in" id="install-the-oidc-plug-in"></a>
+#### Install the OIDC plug in
 
 Install the `oidc-login` plugin per the official documentation: [https://github.com/int128/kubelogin#getting-started](https://github.com/int128/kubelogin#getting-started)
 
-#### Access the cluster with kubectl <a href="#access-the-cluster-with-kubectl" id="access-the-cluster-with-kubectl"></a>
+#### Access the cluster with kubectl
 
 ```
 kubectl --kubeconfig ./talos-default-kubeconfig.yaml get nodes
@@ -45,7 +45,7 @@ rm -rf "${KUBECACHEDIR:-$HOME/.kube/cache}/oidc-login"
 
 After doing this, the next `kubectl` command you run should trigger the OIDC login flow again, where you can authenticate as the user you need via `Switch User` option.
 
-### OIDC authentication over SSH <a href="#oidc-authentication-over-ssh" id="oidc-authentication-over-ssh"></a>
+### OIDC authentication over SSH
 
 If you need to use `kubectl` on a remote host over SSH you have two options.
 

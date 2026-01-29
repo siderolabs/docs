@@ -16,7 +16,7 @@ Swap and zswap can be used together, but they can also be configured independent
 
 Swap and zswap are disabled by default in Talos, but can be enabled through the configuration.
 
-## Swap Devices
+## Swap devices
 
 Swap devices can be configured in the [Talos machine configuration](../../reference/configuration/block/swapvolumeconfig) similar to how [User Volumes](./disk-management/user) are configured.
 As swap devices contain memory pages, it is recommended to enable disk encryption for swap devices to prevent sensitive data from being written to disk in plaintext.
@@ -84,7 +84,7 @@ NODE         NAMESPACE   TYPE          ID      VERSION   TOTAL SIZE   STORED PAG
 Removing a `ZswapConfig` document will disable zswap on the system.
 Please note that zswap requires swap to be enabled on the system to function properly.
 
-## Kubernetes and Swap
+## Kubernetes and swap
 
 Kubernetes by default [does not allow swap to be used by containers](https://kubernetes.io/blog/2025/03/25/swap-linux-improvements/), as it can lead to performance issues and unpredictable behavior.
 
@@ -136,7 +136,7 @@ NAME                                              SwapCurrent   SwapPeak   SwapH
 If `SwapMax` is set to `0 B`, it means that swap is not enabled for this cgroup (container/pod).
 Current swap and zswap usage can be seen in the `SwapCurrent` and `ZswapCurrent` columns, respectively.
 
-## Swap Tuning
+## Swap tuning
 
 Swap can benefit some workloads by evicting inactive memory pages, keeping more RAM available for caches and buffers.
 

@@ -18,7 +18,7 @@ These [Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-
 
 By default, Talos with the help of PSA, applies the `baseline` profile to all namespaces, except for the `kube-system` namespace, which uses the `privileged` profile.
 
-## Default PSA Configuration
+## Default PSA calicoonfiguration
 
 Here is the default PSA configuration on Talos:
 
@@ -43,7 +43,7 @@ This cluster-wide configuration:
 * Enforces the `baseline` security profile by default.
 * Throws a warning, if the `restricted` profile is violated, but does not enforce this profile.
 
-## Modify the Default PSA Configuraion
+## Modify the default PSA configuraion
 
 You can modify this PSA policy by updating the generated machine configuration before the cluster is created or on the fly by using the `talosctl` CLI utility.
 
@@ -82,7 +82,7 @@ spec:
             kind: PodSecurityConfiguration
 ```
 
-## Workloads That Satisfy the Different Security Profiles
+## Workloads that satisfy the different security profiles
 
 To deploy a workload that satisfies both the `baseline` and `restricted` profiles, you must ensure that your workloads:
 
@@ -96,7 +96,7 @@ To see how PSA treats workloads that violate security profiles, consider these e
 * A Deployment that meets `baseline` requirements but `violates` restricted
 * A DaemonSet that violates both `restricted` and `baseline` profiles
 
-### Deployment that Satisfies the Restricted Profile
+### Deployment that satisfies the restricted profile
 
 This Deployment complies with the `restricted` profile and does not produce any errors or warnings when applied:
 
@@ -169,7 +169,7 @@ This is because the Deployment follows Talos’ recommended security practices, 
 * **allowPrivilegeEscalation: false**: Blocks processes from gaining additional privileges.
 * **capabilities: drop: [ALL]**: Removes unnecessary Linux capabilities.
 
-### Deployment that Violates the Restricted but Meets Baseline Profile
+### Deployment that violates the restricted but meets baseline profile
 
 Run the following command to create a Deployment that complies with the `baseline` profile but violates the `restricted` profile:
 
@@ -192,7 +192,7 @@ NAME                     READY   STATUS    RESTARTS   AGE
 nginx-85b98978db-j68l8   1/1     Running   0          2m3s
 </pre>
 
-### DaemonSet that Fails Both the Restricted and Baseline Profiles
+### DaemonSet that fails both the restricted and baseline profiles
 
 This DaemonSet violates both the `baseline` and `restricted` profiles:
 
@@ -294,7 +294,7 @@ NAME              DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELE
 debug-container   2         2         0       2            0           <none>          4s
 ```
 
-## Troubleshooting Common PSA Error Messages
+## Troubleshooting common PSA error messages
 
 Here are some typical error messages you’ll run into when a pod violates a PSA policy, along with what went wrong and how to fix it.
 

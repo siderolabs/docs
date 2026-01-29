@@ -67,7 +67,7 @@ The `ingress` specifies the list of subnets that are allowed to access the host 
 > Note: incorrect configuration of the ingress firewall might result in the host becoming inaccessible over Talos API.
 > It is recommended that the configuration be [applied](../configure-your-talos-cluster/system-configuration/editing-machine-configuration) in `--mode=try` to ensure it is reverted in case of a mistake.
 
-## Recommended Rules
+## Recommended rules
 
 The following rules improve the security of the cluster and cover only standard Talos services.
 If there are additional services running with host networking in the cluster, they should be covered by additional rules.
@@ -86,7 +86,7 @@ In the examples we assume the following template variables to describe the clust
 * `$CP1`, `$CP2`, `$CP3` - the IP addresses of the controlplane nodes
 * `$VXLAN_PORT` - the UDP port used by the CNI for encapsulated traffic
 
-### Controlplane
+### Control plane
 
 In this example Ingress policy:
 
@@ -204,7 +204,7 @@ ingress:
   - subnet: $CLUSTER_SUBNET
 ```
 
-## Learn More
+## Learn more
 
 Talos Linux Ingress Firewall uses `nftables` to perform the filtering.
 

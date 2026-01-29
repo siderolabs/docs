@@ -19,7 +19,7 @@ The predictable network interface names features can be disabled by specifying `
 
 "Cloud" platforms, like AWS, still use old `eth0` naming scheme as Talos automatically adds `net.ifnames=0` to the kernel command line.
 
-## Single Network Interface
+## Single network interface
 
 When running Talos on a machine with a single network interface, predictable interface names might be confusing, as it might come up as `enxSOMETHING` which is hard to address.
 There are two ways to solve this:

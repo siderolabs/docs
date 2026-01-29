@@ -7,13 +7,13 @@ aliases:
 
 import { release_v1_13 } from '/snippets/custom-variables.mdx';
 
-## Creating a Talos Linux Cluster on Digital Ocean via the CLI
+## Creating a Talos Linux cluster on Digital Ocean via the CLI
 
 In this guide we will create an HA Kubernetes cluster with 1 worker node, in the NYC region.
 We assume an existing [Space](https://www.digitalocean.com/docs/spaces/), and some familiarity with DigitalOcean.
 If you need more information on DigitalOcean specifics, please see the [official DigitalOcean documentation](https://www.digitalocean.com/docs/).
 
-### Create the Image
+### Create the image
 
 Download the DigitalOcean image `digital-ocean-amd64.raw.gz` from the <a href={`https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_13}/digital-ocean-amd64.raw.gz`}>
   Image Factory
@@ -41,7 +41,7 @@ doctl compute image create \
 Save the image ID.
 We will need it when creating droplets.
 
-### Create a Load Balancer
+### Create a load balancer
 
 ```bash
 doctl compute load-balancer create \
@@ -63,7 +63,7 @@ doctl compute load-balancer get --format IP <load balancer ID>
 
 Note that it may take a few minutes before the load balancer is provisioned, so repeat this command until it returns with the IP address.
 
-### Create the Machine Configuration Files
+### Create the machine configuration files
 
 Using the IP address (or DNS name, if you have created one) of the loadbalancer, generate the base configuration files for the Talos machines.
 Also note that the load balancer forwards port 443 to port 6443 on the associated nodes, so we should use 443 as the port in the config definition:
@@ -89,7 +89,7 @@ doctl compute ssh-key create --public-key "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABA
 
 Note the ssh key ID that is returned - we will use it in creating the droplets.
 
-#### Create the Control Plane Nodes
+#### Create the control plane nodes
 
 Run the following commands to create three control plane nodes:
 
@@ -125,7 +125,7 @@ doctl compute droplet create \
 
 Note the droplet ID returned for the first control plane node.
 
-#### Create the Worker Nodes
+#### Create the worker nodes
 
 Run the following to create a worker node:
 
@@ -140,7 +140,7 @@ doctl compute droplet create \
     talos-worker-1
 ```
 
-### Bootstrap Etcd
+### Bootstrap etcd
 
 To configure `talosctl` we will need the first control plane node's IP:
 

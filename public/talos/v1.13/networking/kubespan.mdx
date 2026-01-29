@@ -12,7 +12,7 @@ Management of keys and discovery of peers can be completely automated, making it
 KubeSpan consists of client code in Talos Linux, as well as a [discovery service](../configure-your-talos-cluster/system-configuration/discovery) that enables clients to securely find each other.
 Sidero Labs operates a free Discovery Service, but the discovery service may, with a commercial license, be operated by your organization and can be [downloaded here](https://github.com/siderolabs/discovery-service).
 
-## Video Walkthrough
+## Video walkthrough
 
 To see a live demo of KubeSpan, see one the videos below:
 
@@ -20,7 +20,7 @@ To see a live demo of KubeSpan, see one the videos below:
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/sBKIFLhC9MQ" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-## Network Requirements
+## Network requirements
 
 KubeSpan uses **UDP port 51820** to carry all KubeSpan encrypted traffic.
 Because UDP traversal of firewalls is often lenient, and the Discovery Service communicates the apparent IP address of all peers to all other peers, KubeSpan will often work automatically, even when each nodes is behind their own firewall.
@@ -37,7 +37,7 @@ Note that if workers are in different locations, behind different firewalls, the
 
 ## Caveats
 
-### Kubernetes API Endpoint Limitations
+### Kubernetes API endpoint limitations
 
 When the K8s endpoint is an IP address that is **not** part of Kubespan, but is an address that is forwarded on to the Kubespan address of a control plane node, without changing the source address, then worker nodes will fail to join the cluster.
 In such a case, the control plane node has no way to determine whether the packet arrived on the private Kubespan address, or the public IP address.
@@ -47,7 +47,7 @@ This situation is seen, for example, when the Kubernetes API endpoint is the pub
 The control plane will receive packets on the public IP, but will reply from it's KubeSpan address.
 The workaround is to create a load balancer to terminate the Kubernetes API endpoint.
 
-### Digital Ocean Limitations
+### Digital ocean limitations
 
 Digital Ocean assigns an "Anchor IP" address to each droplet.
 Talos Linux correctly identifies this as a link-local address, and configures KubeSpan correctly, but this address will often be selected by Flannel or other CNIs as a node's private IP.
@@ -59,13 +59,13 @@ This can be worked-around by assigning a non-Anchor private IP:
 Then restarting flannel:
 `kubectl delete pods -n kube-system -l k8s-app=flannel`
 
-### Host Port Limitations
+### Host port limitations
 
 As mentioned in Network Requirements, Kubespan uses **UDP port 51820** to carry all KubeSpan encrypted traffic.
 For clusters that make heavy use of host ports for Kubernetes pods, care should be taken to ensure that this port is not given to these pods.
 Failure to do so can result in a pod being assigned the 51820 port and conflicting with Kubespan traffic.
 
-### Cilium Compatibility Limitations
+### Cilium compatibility limitations
 
 KubeSpan and [Cilium](https://cilium.io) can generally be used together.
 However, some advanced Cilium configurations are **not compatible** with KubeSpan.
@@ -88,7 +88,7 @@ We recommend the following workarounds:
 
 ## Enabling
 
-### Creating a New Cluster
+### Creating a new cluster
 
 To enable KubeSpan for a new cluster, we can use the `--with-kubespan` flag in `talosctl gen config`.
 This will enable peer discovery and KubeSpan.
@@ -111,7 +111,7 @@ cluster:
 > The default discovery service is an external service hosted by Sidero Labs at `https://discovery.talos.dev/`.
 > Contact Sidero Labs if you need to run this service privately.
 
-### Enabling for an Existing Cluster
+### Enabling for an existing cluster
 
 In order to enable KubeSpan on an existing cluster, enable `kubespan` and `discovery` settings in the machine config for each machine in the cluster (`discovery` is enabled by default):
 
@@ -170,7 +170,7 @@ extraAnnouncedEndpoints:
     - 192.168.101.3:61033
 ```
 
-## Resource Definitions
+## Resource definitions
 
 ### KubeSpanIdentities
 

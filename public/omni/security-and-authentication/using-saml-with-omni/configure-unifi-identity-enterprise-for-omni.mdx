@@ -2,8 +2,6 @@
 title: Configure Unifi Identity Enterprise for Omni
 ---
 
-### Unifi Identity Enterprise <a href="#unifi-identity-enterprise" id="unifi-identity-enterprise"></a>
-
 This section describes how to use Unifi Identity Enterprise (here forward UIIE) SSO with Omni via SAML
 
 First, login to the UIIE Manager portal and navigate to the SSO Apps section in the left menu.
@@ -61,7 +59,7 @@ A copy of this file needs to be on the host which will run the Omni container as
 
 This completes the configurations required in UIIE
 
-### Omni <a href="#omni" id="omni"></a>
+### Configure Omni for SAML with UIIE
 
 To get Omni to use UIIE as a SAML provider, the following flags should be passed to Docker & the Omni container on launch.
 

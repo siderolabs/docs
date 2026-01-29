@@ -2,11 +2,9 @@
 title: Upgrading Omni Clusters
 ---
 
-### Introduction
-
 Omni makes keeping your cluster up-to-date easy - which is good, as it is important to stay current with Talos Linux and Kubernetes releases, to ensure you are not exposed to already fixed security issues and bugs. Keeping your clusters up-to-date involves updating both the underlying operating system (Talos Linux) and Kubernetes.
 
-### Upgrading the Operating System
+### Upgrading the operating system
 
 In order to update the Talos Linux version of all nodes in a cluster, navigate to the overview of the cluster you wish to update. (For example, click the cluster name in the Clusters panel.) If newer Talos Linux versions are available, there will be an indication in the far right, where the current cluster Talos version is listed. Clicking that icon, or the "Update Talos" button in the lower right, will allow you to select the new version of Talos Linux that should be deployed across all nodes of the cluster.
 
@@ -20,7 +18,7 @@ Omni will drain and cordon each node, update the OS, and then un-cordon the node
 
 NOTE: If any of your workloads are sensitive to being shut down ungracefully, be sure to use the lifecycle.preStop Pod spec.
 
-### Kubernetes Upgrades
+### Kubernetes upgrades
 
 As with the Talos Linux version, Omni will notify you on the right hand side of the cluster overview if there is a new version of Kubernetes available. You may click either the Upgrade icon next to the Kubernetes version, or the `Update Kubernetes` button on the lower right of the cluster overview. Kubernetes upgrades are done non-disruptively to workloads and are run in several phases:
 
@@ -31,7 +29,7 @@ As with the Talos Linux version, Omni will notify you on the right hand side of 
 
 > Note: The upgrade operation never deletes any resources from the cluster: obsolete resources should be deleted manually.
 
-#### Applying changed Kubernetes Manifests
+#### Applying changed Kubernetes manifests
 
 Unlike the Talos Linux command `talosctl upgrade-k8s`, Omni does not automatically apply updates to Kubernetes bootstrap manifests on a Kubernetes upgrade. This is to prevent Omni overwriting changes to the bootstrap manifests that you applied manually. (Talos Linux has a `--dry-run` feature on the upgrade command that shows you changes before the upgrade - Omni shows you the changes _after_ the upgrade, but before they are applied.) Thus after each Kubernetes upgrade, it is recommended to examine the `BootStrap Manifests` of the cluster (as shown in the left hand navigation) and apply the changes, if they are appropriate.
 

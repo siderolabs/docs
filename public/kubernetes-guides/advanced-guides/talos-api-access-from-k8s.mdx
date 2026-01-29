@@ -9,7 +9,7 @@ import { release } from '/snippets/custom-variables.mdx';
 
 In this guide, we will enable the Talos feature to access the Talos API from within Kubernetes.
 
-## Enabling the Feature
+## Enable the feature
 
 Edit the machine configuration to enable the feature, specifying the Kubernetes namespaces from which Talos API
 can be accessed and the allowed Talos API roles.
@@ -32,7 +32,7 @@ spec:
           - default
 ```
 
-## Injecting Talos ServiceAccount into manifests
+## Inject Talos ServiceAccount into manifests
 
 Create the following manifest file `deployment.yaml`:
 
@@ -127,7 +127,7 @@ spec:
 
 As you can notice, your deployment manifest is now injected with the Talos ServiceAccount.
 
-## Testing API Access
+## Test API access
 
 Apply the new manifest into `default` namespace:
 
