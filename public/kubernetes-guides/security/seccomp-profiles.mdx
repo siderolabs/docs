@@ -12,7 +12,7 @@ Refer the [Kubernetes Seccomp Guide](https://kubernetes.io/docs/tutorials/securi
 
 In this guide we are going to configure a custom Seccomp Profile that logs all syscalls made by the workload.
 
-## Preparing the nodes
+## Prepare the nodes
 
 Create a machine config path with the contents below and save as `patch.yaml`
 
@@ -70,7 +70,7 @@ An output similar to below can be observed:
 {"defaultAction":"SCMP_ACT_LOG"}
 ```
 
-## Create a Kubernetes workload that uses the custom Seccomp Profile
+## Create a Kubernetes workload that uses the custom Seccomp profile
 
 Here we'll be using an example workload from the Kubernetes [documentation](https://kubernetes.io/docs/tutorials/security/seccomp/).
 

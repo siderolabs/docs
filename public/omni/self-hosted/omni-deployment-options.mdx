@@ -20,7 +20,7 @@ Self-hosting Omni provides more control over data locality and infrastructure bu
 
 Omni is not part of the Kubernetes control plane, and temporary unavailability does not affect how your clusters run. They continue operating normally, and Talos machines reconnect when it becomes available again. This behavior is important when deciding whether high availability is necessary.
 
-Kubernetes clusters deployed on Talos use technologies such as [KubePrism](../../../kubernetes-guides/advanced-guides/kubeprism) and a <a href={`../../../talos/${version}/configure-your-talos-cluster/system-configuration/discovery`}> discovery service</a> to make sure the cluster and workloads can run without highly available, external management such as Omni.
+Kubernetes clusters deployed on Talos use technologies such as [KubePrism](../../kubernetes-guides/advanced-guides/kubeprism) and a <a href={`../../../talos/${version}/configure-your-talos-cluster/system-configuration/discovery`}> discovery service</a> to make sure the cluster and workloads can run without highly available, external management such as Omni.
 
 Omni *is* the authentication mechanism for external access to Talos and Kubernetes. All external user (e.g., `kubectl`) and service (e.g., Infrastructure Providers) communication goes through Omni. If Omni is unavailable for extended periods of time, external communication will not work until Omni is recovered. Omni also offers an emergency “break glass” configuration to access Talos machines and Kubernetes clusters when Omni is not available.
 

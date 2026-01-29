@@ -15,7 +15,7 @@ in case of catastrophic failure.
 
 ## Backup
 
-### Snapshotting `etcd` Database
+### Snapshot `etcd` database
 
 Create a consistent snapshot of `etcd` database with `talosctl etcd snapshot` command:
 
@@ -31,7 +31,7 @@ This database snapshot can be taken on any healthy control plane node (with IP a
 as all `etcd` instances contain exactly same data.
 It is recommended to configure `etcd` snapshots to be created on some schedule to allow point-in-time recovery using the latest snapshot.
 
-### Disaster Database Snapshot
+### Disaster database snapshot
 
 If the `etcd` cluster is not healthy (for example, if quorum has already been lost), the `talosctl etcd snapshot` command might fail.
 In that case, copy the database snapshot directly from the control plane node:
@@ -43,7 +43,7 @@ talosctl -n <IP> cp /var/lib/etcd/member/snap/db .
 This snapshot might not be fully consistent (if the `etcd` process is running), but it allows
 for disaster recovery when latest regular snapshot is not available.
 
-### Machine Configuration
+### Machine configuration
 
 Machine configuration might be required to recover the node after hardware failure.
 Backup Talos node machine configuration with the command:
@@ -62,12 +62,12 @@ Before starting a disaster recovery procedure, make sure that `etcd` cluster can
 If the quorum can be restored, restoring quorum might be a better strategy than performing full disaster recovery
 procedure.
 
-### Latest Etcd Snapshot
+### Latest etcd snapshot
 
 Get hold of the latest `etcd` database snapshot.
 If a snapshot is not fresh enough, create a database snapshot (see above),  even if the `etcd` cluster is unhealthy.
 
-### Init Node
+### Init node
 
 Make sure that there are no control plane nodes with machine type `init`:
 
@@ -83,7 +83,7 @@ Init node type is deprecated, and are incompatible with `etcd` recovery procedur
 `init` node can be converted to `controlplane` type with `talosctl edit mc --mode=staged` command followed
 by node reboot with `talosctl reboot` command.
 
-### Preparing Control Plane Nodes
+### Prepare control plane nodes
 
 If some control plane nodes experienced hardware failure, replace them with new nodes.
 
@@ -102,7 +102,7 @@ At this point, all control plane nodes should boot up, and `etcd` service should
 The Kubernetes control plane endpoint should be pointed to the new control plane nodes if there were
 changes to the node addresses.
 
-### Recovering from the Backup
+### Recover from the Backup
 
 Make sure all `etcd` service instances are in `Preparing` state:
 
@@ -141,7 +141,7 @@ Now `etcd` service should become healthy on the bootstrap node, Kubernetes contr
 should start and control plane endpoint should become available.
 Remaining control plane nodes join `etcd` cluster once control plane endpoint is up.
 
-## Single Control Plane Node Cluster
+## Single control plane node cluster
 
 This guide applies to the single control plane clusters as well.
 In fact, it is much more important to take regular snapshots of the `etcd` database in single control plane node

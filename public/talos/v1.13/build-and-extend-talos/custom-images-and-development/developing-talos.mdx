@@ -91,7 +91,7 @@ sudo --preserve-env=HOME _out/talosctl-<YOUR FLAVOR> cluster create \
 >
 > `talosctl cluster create` derives Talos machine configuration version from the install image tag, so sometimes early in the development cycle (when new minor tag is not released yet), machine config version can be overridden with `--talos-version=${version_v1_13}`.
 
-## Console Logs
+## Console logs
 
 Watching console logs is easy with `tail`:
 
@@ -121,7 +121,7 @@ You can deploy some Kubernetes workloads to the cluster.
 
 You can edit machine config on the fly with `talosctl edit mc --immediate`, config patches can be applied via `--config-patch` flags, also many features have specific flags in `talosctl cluster create`.
 
-## Quick Reboot
+## Quick reboot
 
 To reboot whole cluster quickly (e.g. to pick up a change made in the code):
 
@@ -133,7 +133,7 @@ Sending `q` to a single socket allows to reboot a single node.
 
 > Note: This command performs immediate reboot (as if the machine was powered down and immediately powered back up), for normal Talos reboot use `talosctl reboot`.
 
-## Development Cycle
+## Development cycle
 
 Fast development cycle:
 
@@ -146,7 +146,7 @@ Fast development cycle:
 
 Some aspects of Talos development require to enable bootloader (when working on `installer` itself), in that case quick development cycle is no longer possible, and cluster should be destroyed and recreated each time.
 
-## Running Integration Tests
+## Running integration tests
 
 If integration tests were changed (or when running them for the first time), first rebuild the integration test binary:
 
@@ -168,7 +168,7 @@ Whole test suite can be run removing `-test.short` flag.
 
 Specfic tests can be run with `-test.run=TestIntegration/api.ResetSuite`.
 
-## Build Flavors
+## Build flavors
 
 `make <something> WITH_RACE=1` enables Go race detector, Talos runs slower and uses more memory, but memory races are detected.
 
@@ -178,7 +178,7 @@ Specfic tests can be run with `-test.run=TestIntegration/api.ResetSuite`.
 Combine with `--with-debug-shell` flag when creating cluster to obtain shell access.
 This is uncommonly used as in this case the bash shell will run in place of machined.
 
-## Destroying Cluster
+## Destroying cluster
 
 ```bash
 sudo --preserve-env=HOME ../talos/_out/talosctl-linux-amd64 cluster destroy --provisioner=qemu
@@ -218,7 +218,7 @@ Running tests as root can be done with `-exec` flag to `go test`, but this is ri
 go test -exec sudo  -v ./internal/app/machined/pkg/controllers/network/...
 ```
 
-## Go Profiling
+## Go profiling
 
 Build `initramfs` with debug enabled: `make initramfs WITH_DEBUG=1`.
 
@@ -234,7 +234,7 @@ The IP address `172.20.0.2` is the address of the Talos node, and port `:9982` d
 - 9982: `machined`
 - 9983: `trustd`
 
-## Testing Air-gapped Environments
+## Testing air-gapped environments
 
 There is a hidden `talosctl debug air-gapped` command which launches two components:
 
@@ -300,7 +300,7 @@ The following lines should appear in the output of the `talosctl debug air-gappe
 
 There might be more output depending on the registry caches being used or not.
 
-## Running Upgrade Integration Tests
+## Running upgrade integration tests
 
 Talos has a separate set of provision upgrade tests, which create a cluster on older versions of Talos, perform an upgrade,
 and verify that the cluster is still functional.

@@ -13,13 +13,13 @@ For a list of Kubernetes versions compatible with each Talos release, see the [S
 
 For upgrading the Talos Linux operating system, see [Upgrading Talos](../../talos/v1.10/configure-your-talos-cluster/lifecycle-management/upgrading-talos)
 
-## Video Walkthrough
+## Video walkthrough
 
 To see a demo of this process, watch this video:
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/uOKveKbD8MQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-## Automated Kubernetes Upgrade
+## Automated Kubernetes upgrade
 
 The recommended method to upgrade Kubernetes is to use the `talosctl upgrade-k8s` command.
 This will automatically update the components needed to upgrade Kubernetes safely.
@@ -122,7 +122,7 @@ For example if [kube-proxy](https://docs.siderolabs.com/talos/latest/reference/c
 
 Pruning can be disabled by passing the `--manifests-no-prune` flag.
 
-### Synchronize Declared and Deployed Configurations
+### Synchronize declared and deployed configurations
 
 When Kubernetes is upgraded with `talosctl upgrade-k8s`, the live machine configuration on your nodes is updated with new component image versions (API server, controller manager, scheduler, kube-proxy, etc.).
 
@@ -135,7 +135,7 @@ Version numbers for Talos, etcd, Kubernetes components, and add-ons change frequ
 
 See the [Reproducible Machine Configuration](../../talos/v1.10/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration) guide for full instructions on handling machine configurations after version bumps.
 
-## Manual Kubernetes Upgrade
+## Manual Kubernetes upgrade
 
 Kubernetes can be upgraded manually by following the steps outlined below.
 They are equivalent to the steps performed by the `talosctl upgrade-k8s` command.
@@ -149,7 +149,7 @@ If you don't already have one, you can get one by running:
 talosctl --nodes <controlplane node> kubeconfig
 ```
 
-### API Server
+### API server
 
 Patch machine configuration using `talosctl patch` command:
 
@@ -213,7 +213,7 @@ kube-apiserver-talos-default-controlplane-1   1/1     Running   0          16m
 
 Repeat this process for every control plane node, verifying that state got propagated successfully between each node update.
 
-### Controller Manager
+### Controller manager
 
 Patch machine configuration using `talosctl patch` command:
 
@@ -374,7 +374,7 @@ To edit the `DaemonSet`, run:
 kubectl edit daemonsets -n kube-system kube-proxy
 ```
 
-### Bootstrap Manifests
+### Bootstrap manifests
 
 Bootstrap manifests can be retrieved in a format which works for `kubectl` with the following command:
 

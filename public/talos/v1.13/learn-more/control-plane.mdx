@@ -27,7 +27,7 @@ Talos nodes which have `.machine.type` of `controlplane` are control plane nodes
 Control plane nodes are tainted by default to prevent workloads from being scheduled onto them.
 This is both to protect the control plane from workloads consuming resources and starving the control plane processes, and also to reduce the risk of a vulnerability exposes the control plane's credentials to a workload.
 
-## The Control Plane and Etcd
+## The control plane and etcd
 
 A critical design concept of Kubernetes (and Talos) is the `etcd` database.
 
@@ -64,7 +64,7 @@ A 5 node cluster can commit about 5% less writes per second than a 3 node cluste
   (This ensures that the failed node does not "vote" when adding in the new node, minimizing the chances of a quorum violation.)
 - If replacing a node that has not failed, add the new one, then remove the old.
 
-## Bootstrapping the Control Plane
+## Bootstrapping the control plane
 
 Every new cluster must be bootstrapped only once, which is achieved by telling a single control plane node to initiate the bootstrap.
 
@@ -78,7 +78,7 @@ configuration option or unavailable container repository), if the bootstrap API
 call returns successfully, you do NOT need to bootstrap again:
 just fix the config or let Kubernetes retry.
 
-### High-level Overview
+### High-level overview
 
 Talos cluster bootstrap flow:
 
@@ -90,7 +90,7 @@ Talos cluster bootstrap flow:
 5. The `kubelet` registers the node in the API server.
 6. Kubernetes control plane schedules pods on the nodes.
 
-### Cluster Bootstrapping
+### Cluster bootstrapping
 
 All nodes start the `kubelet` service.
 The `kubelet` tries to contact the control plane endpoint, but as it is not up yet, it keeps retrying.
@@ -120,12 +120,12 @@ Each node now runs a full set of components to make the control plane HA.
 
 The `kubelet` service on worker nodes is now able to issue the client certificate and register itself with the API server.
 
-### Scaling Up the Control Plane
+### Scale up the control plane
 
 When new nodes are added to the control plane, the process is the same as the bootstrap process above: the `etcd` service discovers existing members of the control plane via the
 control plane endpoint, joins the `etcd` cluster, and the control plane components are scheduled on the node.
 
-### Scaling Down the Control Plane
+### Scale down the control plane
 
 Scaling down the control plane involves removing a node from the cluster.
 The most critical part is making sure that the node which is being removed leaves the etcd cluster.
@@ -136,7 +136,7 @@ The recommended way to do this is to use:
 
 When using `talosctl reset` command, the targeted control plane node leaves the `etcd` cluster as part of the reset sequence, and its disks are erased.
 
-### Upgrading Talos on Control Plane Nodes
+### Upgrade Talos on control plane nodes
 
 When a control plane node is upgraded, Talos leaves `etcd`, wipes the system disk, installs a new version of itself, and reboots.
 The upgraded node then joins the `etcd` cluster on reboot.

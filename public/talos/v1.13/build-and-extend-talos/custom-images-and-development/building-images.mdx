@@ -10,7 +10,7 @@ There might be several reasons to build Talos images from source:
 * verifying the [image integrity](../../security/verifying-images)
 * building an image with custom configuration
 
-## Checkout Talos Source
+## Checkout Talos source
 
 ```bash
 git clone https://github.com/siderolabs/talos.git
@@ -20,7 +20,7 @@ If building for a specific release, checkout the corresponding tag:
 
 <CodeBlock lang="sh">{`git checkout ${release_v1_13}`}</CodeBlock>
 
-## Set up the Build Environment
+## Set up the build environment
 
 See [Developing Talos](./developing-talos) for details on setting up the buildkit builder.
 
@@ -51,7 +51,7 @@ Talos images compatible with old AMD64 CPUs:
 make <target> GOAMD64=v1
 ```
 
-## Building Kernel and Initramfs
+## Building kernel and initramfs
 
 The most basic boot assets can be built with:
 
@@ -61,7 +61,7 @@ make kernel initramfs
 
 Build result will be stored as `_out/vmlinuz-<arch>` and `_out/initramfs-<arch>.xz`.
 
-## Building Container Images
+## Building container images
 
 Talos container images should be pushed to the registry as the result of the build process.
 
@@ -108,7 +108,7 @@ If ISO image should be built with the custom `imager` image, it can be specified
 make iso IMAGE_REGISTRY=docker.io USERNAME=<username>
 ```
 
-## Building Disk Images
+## Building disk images
 
 The disk image is built with the help of `imager` container image, by default `ghcr.io/siderolabs/imager` will be used with the matching tag:
 

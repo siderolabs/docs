@@ -7,7 +7,7 @@ aliases:
 
 import { release_v1_13, version_v1_13 } from '/snippets/custom-variables.mdx';
 
-## Creating a Cluster via the CLI
+## Creating a cluster via the CLI
 
 In this guide, we will create an HA Kubernetes cluster in GCP with 1 worker node.
 We will assume an existing [Cloud Storage bucket](https://cloud.google.com/storage/docs/creating-buckets), and some familiarity with Google Cloud.
@@ -15,9 +15,9 @@ If you need more information on Google Cloud specifics, please see the [official
 
 [jq](https://stedolan.github.io/jq/) and [talosctl](../../getting-started/quickstart#talosctl) also needs to be installed
 
-## Manual Setup
+## Manual setup
 
-### Environment Setup
+### Environment setup
 
 We'll make use of the following environment variables throughout the setup.
 Edit the variables below with your correct information.
@@ -29,12 +29,12 @@ export STORAGE_BUCKET="StorageBucketName"
 export REGION="us-central1"
 ```
 
-### Create the Image
+### Create the image
 
 First, download the Google Cloud image from [Image Factory](https://factory.talos.dev/).
 These images are called `gcp-$ARCH.tar.gz`.
 
-#### Upload the Image
+#### Upload the image
 
 Once you have downloaded the image, you can upload it to your storage bucket with:
 
@@ -52,9 +52,9 @@ gcloud compute images create talos \
  --guest-os-features=VIRTIO_SCSI_MULTIQUEUE
 ```
 
-### Network Infrastructure
+### Network infrastructure
 
-#### Load Balancers and Firewalls
+#### Load balancers and firewalls
 
 Once the image is prepared, we'll want to work through setting up the network.
 Issue the following to create a firewall, load balancer, and their required components.
@@ -116,7 +116,7 @@ gcloud compute firewall-rules create talos-controlplane-talosctl \
   --allow tcp:50000
 ```
 
-### Cluster Configuration
+### Cluster configuration
 
 With our networking bits setup, we'll fetch the IP for our load balancer and create our configuration files.
 
@@ -131,7 +131,7 @@ talosctl gen config talos-k8s-gcp-tutorial https://${LB_PUBLIC_IP}:443
 
 Additionally, you can specify [machine configuration patches](../../configure-your-talos-cluster/system-configuration/patching#configuration-patching-with-talosctl-cli) which will be applied during the config generation.
 
-### Compute Creation
+### Compute creation
 
 We are now ready to create our GCP nodes.
 
@@ -162,7 +162,7 @@ gcloud compute instances create talos-worker-0 \
   --tags talos-worker-$i
 ```
 
-### Bootstrap Etcd
+### Bootstrap etcd
 
 You should now be able to interact with your cluster with `talosctl`.
 We will need to discover the public IP for our first control plane node first.
@@ -239,7 +239,7 @@ gcloud compute images delete \
   talos
 ```
 
-## Using GCP Deployment manager
+## Using GCP deployment manager
 
 Using GCP deployment manager automatically creates a Google Storage bucket and uploads the Talos image to it.
 Once the deployment is complete the generated `talosconfig` and `kubeconfig` files are uploaded to the bucket.
@@ -350,7 +350,7 @@ gcloud projects add-iam-policy-binding \
     --role roles/compute.loadBalancerAdmin
 ```
 
-### Downloading talos and kube config
+### Downloading talos and kubeconfig
 
 In addition to the `talosconfig` and `kubeconfig` files, the storage bucket contains the `controlplane.yaml` and `worker.yaml` files used to join additional nodes to the cluster.
 

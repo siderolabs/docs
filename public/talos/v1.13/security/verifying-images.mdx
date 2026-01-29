@@ -11,7 +11,7 @@ Sidero Labs signs the container images generated for the Talos release with [cos
 * `ghcr.io/siderolabs/imager` (Talos install image generator)
 * all [system extension images](https://github.com/siderolabs/extensions/)
 
-## Verifying Container Image Signatures
+## Verifying container image signatures
 
 The `cosign` tool can be used to verify the signatures of the Talos container images:
 
@@ -29,7 +29,7 @@ The following checks were performed on each of these signatures:
 
 The image should be signed using [cosign certificate authority flow](https://docs.sigstore.dev/certificate_authority/certificate-issuing-overview/) by a Sidero Labs employee with and email from `siderolabs.com` domain.
 
-## Reproducible Builds
+## Reproducible builds
 
 Talos builds for `kernel`, `initramfs`, `talosctl`, ISO image, and container images are reproducible.
 So you can verify that the build is the same as the one as provided on [GitHub releases page](https://github.com/siderolabs/talos/releases).

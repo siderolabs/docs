@@ -6,7 +6,7 @@ description: "How to configure Ethernet network link settings."
 Talos Linux allows you to configure Ethernet network link settings, such as ring configuration or disabling TCP checksum offloading.
 The settings and their values closely follow `ethtool` command line options, so you can use similar recipes.
 
-## Observing Current Status
+## Observing current status
 
 You can observe current Ethernet settings in the `EthernetStatus` resource:
 
@@ -105,7 +105,7 @@ features:
 
 For rings and channels configuration, values can be increased if they do not exceed the maximum supported by the network card (the maximum values are reported in the status with `-max` suffix).
 
-### Enable Wake-on-LAN Support
+### Enable Wake-on-LAN support
 
 Starting with 1.12, Talos Linux now supports configuring Wake-on-LAN (WOL) directly in the Ethernet configuration.
 
@@ -123,7 +123,7 @@ wakeOnLan:
   modes: ["magic", "unicast"]
 ```
 
-#### Supported Modes
+#### Supported modes
 
 Supported WOL modes depend on the NIC and driver, but common values include:
 

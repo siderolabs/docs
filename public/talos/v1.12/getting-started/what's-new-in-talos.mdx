@@ -6,9 +6,9 @@ description: "Discover the latest features and updates in Talos Linux 1.12."
 
 For critical changes, refer to the [upgrade notes](../configure-your-talos-cluster/lifecycle-management/upgrading-talos).
 
-## Important Changes
+## Important changes
 
-### Network Configuration
+### Network configuration
 
 Talos v1.12 introduces new [network configuration documents](../networking/configuration/overview).
 These changes follow the new ["multi-doc" configuration](https://github.com/siderolabs/talos/issues/10925) concept, and allow more granular machine configuration.
@@ -37,7 +37,7 @@ This change **does not** affect KubeSpan configuration, which still resides unde
 
 The previous configuration ([machine.network](../../v1.11/reference/configuration/v1alpha1/config.mdx#network)) (with the exception of KubeSpan configuration) is now deprecated, but supported for backwards compatibility.
 
-### New User Volume Types
+### New user volume types
 
 The [UserVolumeConfig](../reference/configuration/block/uservolumeconfig) document has been extended with a new `volumeType` field to specify the type of user volume.
 
@@ -62,9 +62,9 @@ When `volumeType` is set to `disk`:
 
  * Size-specific settings are not allowed in the provisioning block (`minSize`, `maxSize`, `grow`)
 
-### Disk Encryption
+### Disk encryption
 
-#### TPM Encryption
+#### TPM encryption
 
 Talos versions prior to v1.12 used PCR 7 state and signed policies locked to PCR 11 for TPM-based disk encryption.
 
@@ -75,7 +75,7 @@ This change improves compatibility with systems that may have varying PCR 7 stat
 Signed PCR policies remain bound to PCR 11.
 You can view the currently used PCRs with the `talosctl get volumestatus <volume> -o yaml` command.
 
-#### Device Mapper Names
+#### Device mapper names
 
 Talos Linux now consistently provides mapped names for encrypted volumes in the format `/dev/mapper/luks2-<volume-id>`.
 This change should not affect system or user volumes but allows for easier identification of encrypted volumes, particularly raw encrypted volumes.
@@ -86,7 +86,7 @@ The kernel log (`dmesg`) is now also available as the service log named `kernel`
 
 Talos now stores system component logs in `/var/log` with automatic log rotation, keeping the two most recent log files. This change enables collecting logs from Talos just like any other Linux system.
 
-### GRUB Kernel Command Line
+### GRUB kernel command line
 
 Talos Linux introduces a new machine configuration option, `.machine.install.grubUseUKICmdline`, to control whether GRUB should use the kernel command line provided by the boot assets (UKI) or the command line constructed by Talos itself (legacy behavior).
 
@@ -95,12 +95,12 @@ For existing installations upgrading to v1.12, this option defaults to `false` t
 
 This change unifies the kernel command line across UEFI (`systemd-boot`) and BIOS (GRUB) boot modes.
 
-### CRI Registry Configuration
+### CRI registry configuration
 
 The CRI registry configuration in v1alpha1 legacy machine configuration under `.machine.registries` is now deprecated but remains supported for backward compatibility.
 New configuration documents — [RegistryMirrorConfig](../reference/configuration/cri/registrymirrorconfig), [RegistryAuthConfig](../reference/configuration/cri/registryauthconfig), and [RegistryTLSConfig](../reference/configuration/cri/registrytlsconfig)—should be used instead.
 
-### Out of Memory (OOM) Handling
+### Out of memory (OOM) handling
 
 Talos now includes a [userspace OOM handler](../configure-your-talos-cluster/system-configuration/oom),
 which automatically evicts workloads based on memory pressure.
@@ -109,7 +109,7 @@ The OOM handler can be configured via the [OOMConfig](../reference/configuration
 
 ## Kubernetes
 
-### API Server Cipher Suites
+### API server cipher suites
 
 The Kubernetes API server in Talos has been updated to use a more secure set of TLS cipher suites by default.
 This aligns with the best practices documented in the CIS 1.12 benchmark.
@@ -120,9 +120,9 @@ You can still expand the list of supported cipher suites via the `cluster.apiSer
 
 The etcd container image is now pulled from `registry.k8s.io/etcd` instead of `gcr.io/etcd-development/etcd`.
 
-## Machine Configuration
+## Machine configuration
 
-### Ethernet Configuration
+### Ethernet configuration
 
 The [Ethernet configuration](../reference/configuration/network/ethernetconfig) now includes a `wakeOnLAN` field to enable Wake-on-LAN (WOL) support.
 This field allows you to enable WOL and specify the desired WOL modes.
@@ -137,24 +137,24 @@ Talos now ignores the following machine configuration fields:
 
 These fields were removed from the default machine configuration schema in v1.12 and are now always set to the locked values listed above.
 
-### Embedding Machine Configuration
+### Embedding machine configuration
 
 Talos Linux now supports [embedding machine configuration](../configure-your-talos-cluster/system-configuration/acquire) directly into the boot image.
 
 ## Miscellaneous
 
-### Extra Binaries
+### Extra binaries
 
 Talos Linux now includes the `nft` binary in the rootfs to support CNIs that invoke the `nft` command.
 
-### Talos Force Reboot
+### Talos force reboot
 
 Talos now supports a "force" reboot mode, which allows you to skip graceful userland termination.
 This is useful when a userland service (e.g., the kubelet) becomes stuck during graceful shutdown, preventing the regular reboot flow from completing.
 
 Additionally, `talosctl` has been updated to support this feature via the `talosctl reboot --mode force` command.
 
-### Kernel Module Signature Verification
+### Kernel module signature verification
 
 Talos now supports optionally disabling kernel module signature verification by setting the `module.sig_enforce=0` kernel parameter.
 By default, kernel module signature verification is enabled (`module.sig_enforce=1`).
@@ -162,7 +162,7 @@ When using Factory or Imager, supply the `-module.sig_enforce module.sig_enforce
 
 This change provides an easier way to load custom kernel modules, though it does reduce system security.
 
-### Kernel Security Posture Profile (KSPP)
+### Kernel security posture profile (KSPP)
 
 Talos now enables a stricter set of KSPP sysctl settings by default.
 You can view the list of overridden settings using the `talosctl get kernelparamstatus` command.
@@ -182,13 +182,13 @@ Additionally, `talosctl image cache-create` has some changes:
   * comma-separated (`--platform=linux/amd64,linux/arm64`)
   * multiple instances (`--platform=linux/amd64 --platform=linux/arm64`)
 
-### UEFI Boot
+### UEFI boot
 
 When using UEFI boot with systemd-boot as the bootloader (on new Talos installations from version 1.10 onwards), Talos will no longer modify the UEFI boot order.
 Talos 1.11 introduced a fix to create a UEFI boot entry and set it as the first boot entry; however, this behavior caused issues on some systems.
 To avoid further issues, Talos will now only create the UEFI boot entry if it does not exist and will not modify the boot order.
 
-## Component Updates
+## Component updates
 
  * Linux: 6.18.0
  * Kubernetes: 1.35.0

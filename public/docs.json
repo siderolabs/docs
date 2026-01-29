@@ -2169,22 +2169,19 @@
             ]
           },
           {
+            "group": "Self Hosted",
+            "pages": [
+              "omni/self-hosted/overview",
+              "omni/self-hosted/omni-deployment-options",
+              "omni/self-hosted/deploy-omni-on-prem",
+              "omni/self-hosted/install-airgapped-omni",
+              "omni/self-hosted/deploy-image-factory-on-prem",
+              "omni/self-hosted/how-to-back-up-on-prem-omni-db"
+            ]
+          },
+          {
             "group": "Infrastructure and Extensions",
             "pages": [
-              {
-                "group": "Self Hosted",
-                "pages": [
-                  "omni/infrastructure-and-extensions/self-hosted/overview",
-                  "omni/infrastructure-and-extensions/self-hosted/omni-deployment-options",
-                  "omni/infrastructure-and-extensions/self-hosted/deploy-omni-on-prem",
-                  "omni/infrastructure-and-extensions/self-hosted/deploy-image-factory-on-prem",
-                  "omni/infrastructure-and-extensions/self-hosted/configure-keycloak-for-omni",
-                  "omni/infrastructure-and-extensions/self-hosted/how-to-back-up-on-prem-omni-db",
-                  "omni/infrastructure-and-extensions/self-hosted/expose-omni-with-nginx-https",
-                  "omni/infrastructure-and-extensions/self-hosted/upgrading-omni"
-                ]
-              },
-              "omni/infrastructure-and-extensions/install-airgapped-omni",
               "omni/infrastructure-and-extensions/infrastructure-providers",
               "omni/infrastructure-and-extensions/writing-infrastructure-providers",
               "omni/infrastructure-and-extensions/machine-registration",
@@ -2232,11 +2229,13 @@
               "omni/cluster-management/upgrading-clusters",
               "omni/cluster-management/omni-terraform",
               "omni/cluster-management/expose-an-http-service-from-a-cluster",
+              "omni/cluster-management/expose-omni-with-nginx-https",
               "omni/cluster-management/export-a-cluster-template-from-a-cluster-created-in-the-ui",
               "omni/cluster-management/etcd-backups",
               "omni/cluster-management/restore-etcd-of-a-cluster-managed-by-cluster-templates",
               "omni/cluster-management/using-audit-log",
               "omni/cluster-management/importing-talos-clusters",
+              "omni/cluster-management/upgrading-omni",
               "omni/cluster-management/wipe-a-machine",
               "omni/cluster-management/talos-config-overrides",
               "omni/cluster-management/override-ntp-servers",
@@ -2262,6 +2261,7 @@
               },
               "omni/security-and-authentication/authentication-and-authorization",
               "omni/security-and-authentication/oidc-login-with-tailscale",
+              "omni/security-and-authentication/configure-keycloak-for-omni",
               "omni/security-and-authentication/how-to-manage-acls",
               "omni/security-and-authentication/omni-kms-disk-encryption",
               "omni/security-and-authentication/break-glass-emergency-access",

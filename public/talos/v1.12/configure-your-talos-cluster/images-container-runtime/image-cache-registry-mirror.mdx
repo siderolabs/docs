@@ -20,7 +20,7 @@ talosctl images k8s-bundle | \
     --layout=flat
 ```
 
-## Step 2. Generate Required Certificates
+## Step 2. Generate required certificates
 
 You can generate the certificates using the following command:
 
@@ -41,7 +41,7 @@ This produces:
 
 These are required for serving the cache over HTTPS.
 
-## Step 3. Start the Image Cache Registry
+## Step 3. Start the image cache registry
 
 `cache-serve` starts a lightweight, read-only registry that serves images from the cache directory.
 
@@ -53,7 +53,7 @@ talosctl image cache-serve \
   --tls-key-file=/tmp/tls.key
 ```
 
-## Step 4. Patch Talos to Trust the Registry CA
+## Step 4. Patch Talos to trust the registry CA
 
 Talos requires HTTPS to pull installer images.
 
@@ -74,7 +74,7 @@ certificates: |
   # including the BEGIN CERTIFICATE and END CERTIFICATE lines
 ```
 
-## Step 5. Configure Registry Mirrors
+## Step 5. Configure registry mirrors
 
 Talos and Kubernetes components normally pull images from public registries such as `docker.io`, `ghcr.io`, and `registry.k8s.io`.
 

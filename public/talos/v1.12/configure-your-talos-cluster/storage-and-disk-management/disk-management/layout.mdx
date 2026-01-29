@@ -6,7 +6,7 @@ weight: 10
 
 Talos Linux provides tools to observe available disks and volumes on the machine.
 
-## Listing Disks
+## Listing disks
 
 To obtain a list of all available block devices (disks) on the machine, you can use the following command:
 
@@ -55,7 +55,7 @@ spec:
         - /dev/disk/by-path/virtio-pci-0000:00:07.0
 ```
 
-## Discovered Volumes
+## Discovered volumes
 
 Talos Linux monitors all block devices and partitions on the machine.
 Details about these devices, including their type, can be found in the `DiscoveredVolume` resource.
@@ -100,7 +100,7 @@ Currently, the following filesystem types are supported:
 
 The discovered volumes can include both Talos-managed volumes and any other volumes present on the machine, such as Ceph volumes.
 
-## Disk Layout
+## Disk layout
 
 The default disk layout for Talos installation is as follows:
 
@@ -126,7 +126,7 @@ The `EPHEMERAL` partition by default consumes all unallocated space, but it can 
 The `EPHEMERAL` partition is a catch-all location for storing data, while it might be desired to segregate the data into different partitions.
 Talos supports creating additional user volumes to be used for different purposes: e.g. local storage for various applications, specific volumes per applications, etc.
 
-### Single Disk Layout
+### Single disk layout
 
 ```text
 +-------------------------------------------------------------------------------------------------------+
@@ -139,7 +139,7 @@ Talos supports creating additional user volumes to be used for different purpose
 
 In this layout, the `EPHEMERAL` partition was limited to 200GB, and two additional partitions were created for `csi-data` and `local-storage`.
 
-### Multiple Disk Layout
+### Multiple disk layout
 
 ```text
 +---------------------------------------------------------------------------------------+

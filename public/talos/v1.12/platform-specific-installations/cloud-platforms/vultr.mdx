@@ -14,9 +14,9 @@ This guide will demonstrate how to create a highly-available Kubernetes cluster 
 [Vultr](https://www.vultr.com/) have a very well documented REST API, and an open-source [CLI](https://github.com/vultr/vultr-cli) tool to interact with the API which will be used in this guide.
 Make sure to follow installation and authentication instructions for the `vultr-cli` tool.
 
-### Boot Options
+### Boot options
 
-#### Upload an ISO Image
+#### Upload an ISO image
 
 First step is to make the Talos ISO available to Vultr by uploading the latest release of the ISO to the Vultr ISO server.
 
@@ -28,7 +28,7 @@ vultr-cli iso create --url https://factory.talos.dev/image/376567988ad370138ad8b
 
 Make a note of the `ID` in the output, it will be needed later when creating the instances.met
 
-#### PXE Booting via Image Factory
+#### PXE booting via image factory
 
 Talos Linux can be PXE-booted on Vultr using [Image Factory](../../learn-more/image-factory), using the `vultr` platform: e.g.
 
@@ -41,7 +41,7 @@ Talos Linux can be PXE-booted on Vultr using [Image Factory](../../learn-more/im
 (this URL references the default schematic and `amd64` architecture).
 Make a note of the `ID` in the output, it will be needed later when creating the instances.
 
-### Create a Load Balancer
+### Create a load balancer
 
 A load balancer is needed to serve as the Kubernetes endpoint for the cluster.
 
@@ -66,9 +66,9 @@ vultr-cli load-balancer get $LOAD_BALANCER_ID | grep ^IP
 
 Make a note of the `IP` address, it will be needed later when generating the configuration.
 
-### Create the Machine Configuration
+### Create the machine configuration
 
-#### Generate Base Configuration
+#### Generate base configuration
 
 Using the IP address (or DNS name if one was created) of the load balancer created above, generate the machine configuration files for the new cluster.
 
@@ -78,16 +78,16 @@ talosctl gen config talos-kubernetes-vultr https://$LOAD_BALANCER_ADDRESS
 
 Once generated, the machine configuration can be modified as necessary for the new cluster, for instance updating disk installation, or adding SANs for the certificates.
 
-#### Validate the Configuration Files
+#### Validate the configuration files
 
 ```bash
 talosctl validate --config controlplane.yaml --mode cloud
 talosctl validate --config worker.yaml --mode cloud
 ```
 
-### Create the Nodes
+### Create the nodes
 
-#### Create the Control Plane Nodes
+#### Create the control plane nodes
 
 First a control plane needs to be created, with the example below creating 3 instances in a loop.
 The instance type (noted by the `--plan vc2-2c-4gb` argument) in the example is for a minimum-spec control plane node, and should be updated to suit the cluster being created.
@@ -118,7 +118,7 @@ talosctl --talosconfig talosconfig apply-config --insecure --nodes $CONTROL_PLAN
 talosctl --talosconfig talosconfig apply-config --insecure --nodes $CONTROL_PLANE_3_ADDRESS --file controlplane.yaml
 ```
 
-#### Create the Worker Nodes
+#### Create the worker nodes
 
 Now worker nodes can be created and configured in a similar way to the control plane nodes, the difference being mainly in the machine configuration file.
 Note that like with the control plane nodes, the instance type (here set by `--plan vc2-1-1gb`) should be changed for the actual cluster requirements.
@@ -150,7 +150,7 @@ It is important that the `talosctl bootstrap` command be executed only once and 
 talosctl --talosconfig talosconfig bootstrap --endpoints $CONTROL_PLANE_1_ADDRESS --nodes $CONTROL_PLANE_1_ADDRESS
 ```
 
-### Configure Endpoints and Nodes
+### Configure endpoints and nodes
 
 While the cluster goes through the bootstrapping process and beings to self-manage, the `talosconfig` can be updated with the [endpoints and nodes](../../learn-more/talosctl#endpoints-and-nodes).
 

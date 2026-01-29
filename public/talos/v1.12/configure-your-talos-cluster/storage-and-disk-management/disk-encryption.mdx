@@ -91,7 +91,7 @@ encryption:
       slot: 0
 ```
 
-### Encryption Keys
+### Encryption keys
 
 > Note: What the LUKS2 docs call "keys" are, in reality, a passphrase.
 > When this passphrase is added, LUKS2 runs argon2 to create an actual key from that passphrase.
@@ -125,7 +125,7 @@ encryption:
 Take a note that key order does not play any role on which key slot is used.
 Every key must always have a slot defined.
 
-### Encryption Key Kinds
+### Encryption key kinds
 
 Talos supports two kinds of keys:
 
@@ -146,7 +146,7 @@ Every key kind also supports `lockToState` option, which means that the key will
 It is recommended to use `lockToState` for the `EPHEMERAL` partition and user volumes, so that the data on these partitions is not accessible if the `STATE` partition is wiped or replaced.
 If you would like non-`STATE` volumes to survive `STATE` partition wipe, do not enable `lockToState` option.
 
-### Key Rotation
+### Key rotation
 
 In order to completely rotate keys, it is necessary to do `talosctl apply-config` a couple of times, since there is a need to always maintain a single working key while changing the other keys around it.
 
@@ -193,9 +193,9 @@ Run:
 talosctl apply-config -n <node> --mode=reboot -f config.yaml
 ```
 
-## Going from Unencrypted to Encrypted and Vice Versa
+## Going from unencrypted to encrypted and vice versa
 
-### Ephemeral Partition
+### Ephemeral partition
 
 There is no in-place encryption support for the partitions right now, so to avoid losing data only empty partitions can be encrypted.
 
@@ -226,7 +226,7 @@ That's it!
 After you run the last command, the partition will be wiped and the node will reboot.
 During the next boot the system will encrypt the partition.
 
-### State Partition
+### State partition
 
 Calling wipe against the STATE partition will make the node lose the config, so the previous flow is not going to work.
 
@@ -244,7 +244,7 @@ talosctl apply-config --insecure -n <node ip> -f config.yaml
 
 After installation is complete the node should encrypt the STATE partition.
 
-### Configuring TPM-Based Disk Encryption
+### Configuring TPM-Based disk encryption
 
 Talos supports TPM-based disk encryption by binding the LUKS2 key to one or more PCR (Platform Configuration Register) values.
 This allows you to control how tightly the encrypted volume is tied to the machine’s firmware and boot state.
@@ -261,7 +261,7 @@ pcrs: [7]
 
 PCR 7 reflects the SecureBoot state and provides backward-compatible behavior with older Talos releases.
 
-#### Binding Only to Signed PCR Policies
+#### Binding only to signed PCR policies
 
 If the user explicitly sets an empty list, Talos binds only to PCR 11, which is used for signed TPM policies:
 
@@ -273,7 +273,7 @@ tpm:
 
 This ignores SecureBoot state, which is useful on hardware where PCR 7 values differ across platforms or firmware versions.
 
-#### Binding to Multiple PCRs
+#### Binding to multiple PCRs
 
 You can bind the key to multiple PCR values for stronger protection.
 For example, to bind to both the SecureBoot state (PCR 7) and the firmware state:

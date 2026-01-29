@@ -18,7 +18,7 @@ cluster:
 
 This may be done via editing the `controlplane.yaml` file before it is applied to the control plane nodes, by [editing the machine config](../configure-your-talos-cluster/system-configuration/editing-machine-configuration), or by [patching the machine config](../configure-your-talos-cluster/system-configuration/patching).
 
-## Load Balancer configuration
+## Load balancer configuration
 
 When a load balancer such as MetalLB is used, the nodeLabel `node.kubernetes.io/exclude-from-external-load-balancers` should also be removed from the control plane nodes.
 This label is added by default and instructs load balancers to exclude the node from the list of backend servers used by external load balancers.

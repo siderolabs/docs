@@ -13,7 +13,7 @@ Some components like `kubelet` and `etcd` wait for the time to be in sync before
 By default, Talos Linux uses `time.cloudflare.com` as the NTP server, but it can be overridden in the machine configuration, or provided via DHCP, kernel args, platform sources, etc.
 Talos Linux implements SNTP protocol to sync time with the NTP server.
 
-## Observing Status
+## Observing status
 
 Current time sync status can be observed with:
 
@@ -41,7 +41,7 @@ $ talosctl logs controller-runtime | grep -i time.Sync
 172.20.0.2: 2024-04-17T18:32:16.690Z DEBUG adjtime state {"component": "controller-runtime", "controller": "time.SyncController", "constant": 7, "offset": "37.060203ms", "freq_offset": -1302069, "freq_offset_ppm": -19}
 ```
 
-## Using PTP Devices
+## Using PTP devices
 
 When running in a VM on a hypervisor, instead of doing network time sync, Talos can sync the time to the hypervisor clock (if supported by the hypervisor).
 
@@ -77,7 +77,7 @@ After setting the PTP device, Talos will sync the time to the PTP device instead
 172.20.0.2: 2024-04-17T19:11:48.817Z DEBUG adjusting time (slew) by 32.223689ms via /dev/ptp0, state TIME_OK, status STA_PLL | STA_NANO {"component": "controller-runtime", "controller": "time.SyncController"}
 ```
 
-## Additional Configuration
+## Additional configuration
 
 Talos NTP sync can be disabled with the following machine configuration patch:
 

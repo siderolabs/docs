@@ -35,7 +35,7 @@ If the machine is part of an HA cluster, a normal, graceful reset should work fi
 However, if this is a single-node cluster used for testing purposes, a graceful reset is not an option since `etcd` cannot be "left" if there is only a single member.
 In this case, use the reset command with `--graceful=false` to skip checks that would normally block the reset.
 
-## Kernel Parameter
+## Kernel parameter
 
 Another method to reset a machine is by specifying the `talos.experimental.wipe=system` kernel parameter.
 If the machine is stuck in a boot loop and you have access to the console, you can use GRUB to specify this kernel argument.

@@ -11,7 +11,7 @@ Several configuration documents share common elements for configuring volumes in
 * [`RawVolumeConfig`](../../../reference/configuration/block/rawvolumeconfig)
 * [`SwapVolumeConfig`](../../../reference/configuration/block/swapvolumeconfig)
 
-## Disk Selector
+## Disk selector
 
 The `diskSelector` field is utilized to choose the disk where the volume will be provisioned.
 It is a [Common Expression Language (CEL)](https://cel.dev/) expression that evaluates against the available disks.
@@ -66,7 +66,7 @@ Examples of disk selector expressions:
 * `disk.serial.startsWith('deadbeef') && !cdrom`: select disks with serial number starting with `deadbeef` and not of CD-ROM type
 * `'/dev/disk/by-path/pci-0000:00:1f.2-ata-1' in disk.symlinks`: select disks with a specific stable symlink
 
-### Minimum, Maximum and Grow
+### Minimum, maximum and grow
 
 The `minSize` and `maxSize` fields define the minimum and maximum size of the volume, respectively.
 Talos Linux will always ensure that the volume is at least `minSize` in size and will not exceed `maxSize`.
@@ -81,7 +81,7 @@ The `grow` flag controls what happens when the volume already exists:
 
 Setting `minSize` might influence disk selection - if the disk does not have enough free space to satisfy the minimum size requirement, it will not be selected for provisioning.
 
-## Volume Selector
+## Volume selector
 
 The `volumeSelector` field is a CEL expression that allows you to match existing volumes based on their properties.
 It is evaluated against the available volumes, and the first volume that matches the expression will be picked up.

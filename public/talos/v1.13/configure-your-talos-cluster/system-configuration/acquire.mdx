@@ -5,7 +5,7 @@ description: "How Talos Linux acquires its machine configuration."
 
 Talos Linux requires a [machine configuration](../../reference/configuration/overview) to operate. This configuration can be provided in several ways, depending on your deployment method and environment.
 
-## Methods of Acquiring Machine Configuration
+## Methods of acquiring machine configuration
 
 Talos checks for machine configuration in the following order:
 
@@ -39,7 +39,7 @@ MAINTENANCE -->|incomplete config| MAINTENANCE
 
 When Talos is installed on a disk, it creates a `STATE` partition. This partition is used to store the machine configuration and other stateful data. During the boot process, Talos checks this partition for a valid configuration file.
 
-### Platform Configuration
+### Platform configuration
 
 For cloud and virtualized environments, Talos can acquire its configuration from platform-specific metadata services. This includes:
 
@@ -51,17 +51,17 @@ For cloud and virtualized environments, Talos can acquire its configuration from
 
 For the `metal` platform, Talos can download machine configuration from a specified URL (kernel argument [`talos.config`](../../reference/kernel#talosconfig)).
 
-### Kernel Arguments
+### Kernel arguments
 
 Talos can also accept machine configuration documents directly via kernel arguments [`talos.config.early` and `talos.config.inline`](../../reference/kernel#talosconfigearly-and-talosconfiginline). This method is particularly useful for initial bootstrapping, e.g. specifying a custom set of [trusted CAs](../../security/certificate-authorities).
 
-### Embedded Configuration
+### Embedded configuration
 
 Talos supports embedding the machine configuration directly into the bootable image (ISO, USB, `installer`).
 This is done using the [Imager tool](../../platform-specific-installations/boot-assets#example-adding-embedded-machine-configuration-with-imager)
 When the system boots, it reads the embedded configuration.
 
-### Maintenance Mode
+### Maintenance mode
 
 As the last resort, if the machine configuration is still incomplete for a full boot, Talos will drop into [maintenance mode](./insecure).
 

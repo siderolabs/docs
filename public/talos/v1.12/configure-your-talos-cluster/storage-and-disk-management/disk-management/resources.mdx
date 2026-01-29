@@ -11,7 +11,7 @@ This information is useful for understanding how Talos Linux manages volumes and
 
 The configuration of volumes is defined using the `VolumeConfig` resource, while the current state of volumes is stored in the `VolumeStatus` resource.
 
-### Volume Configuration
+### Volume configuration
 
 The volume configuration is managed by Talos Linux based on machine configuration.
 To see configured volumes, use the following command:
@@ -74,7 +74,7 @@ spec:
         targetPath: /system/state
 ```
 
-### Volume Status
+### Volume status
 
 Current volume status can be obtained using the following command:
 
@@ -105,7 +105,7 @@ Each volume goes through different phases during its lifecycle:
 
 Volumes are mounted when they are ready to be used, mounts are tracked in two resources: `MountRequest` describes the desired mount, while `MountStatus` describes the current state of the mount.
 
-### Mount Request
+### Mount request
 
 Mount requests are created automatically by Talos Linux based on the volume configuration, service configuration, etc.
 
@@ -135,7 +135,7 @@ NODE         NAMESPACE   TYPE           ID                                  VERS
 172.20.0.5   runtime     MountRequest   EPHEMERAL                           2         EPHEMERAL                                                      ["sequencer"]
 ```
 
-### Mount Status
+### Mount status
 
 As the volumes are mounted, the status of the mounts is updated in the `MountStatus` resource:
 

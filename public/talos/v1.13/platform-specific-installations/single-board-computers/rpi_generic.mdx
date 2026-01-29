@@ -11,7 +11,7 @@ Talos disk image for the Raspberry Pi generic should in theory work for the boar
 This has only been officialy tested on the Raspberry Pi 4 and community tested on one variant of the Compute Module 4 using Super 6C boards.
 If you have tested this on other Raspberry Pi boards, please let us know.
 
-## Video Walkthrough
+## Video walkthrough
 
 To see a live demo of this writeup, see the video below:
 
@@ -44,7 +44,7 @@ Power off the Raspberry Pi and remove the SD card from it.
 
 > Note: Updating the bootloader only needs to be done once.
 
-## Download the Image
+## Download the image
 
 > Note: if you need to enable Broadcom VideoCore GPU support, generate a new image from the [Image Factory](../../learn-more/image-factory) with the correct [config.txt](#configtxt-information) configuration and `vc4` system extension.
 > More information can be found under the [Image Factory Example](#example-raspberry-pi-generic-with-broadcom-videocore-gpu-support-with-image-factory) below.
@@ -60,7 +60,7 @@ xz -d metal-arm64.raw.xz
   `}
 </CodeBlock>
 
-## Writing the Image
+## Writing the image
 
 Now `dd` the image to your SD card:
 
@@ -68,7 +68,7 @@ Now `dd` the image to your SD card:
 sudo dd if=metal-arm64.raw of=/dev/mmcblk0 conv=fsync bs=4M
 ```
 
-## Bootstrapping the Node
+## Bootstrapping the node
 
 Insert the SD card to your board, turn it on and wait for the console to show you the instructions for bootstrapping the node.
 Following the instructions in the console output to connect to the interactive installer:
@@ -199,7 +199,7 @@ Now we can generate the metal image with the following command:
 
 <CodeBlock lang="sh">
   {`
-$ docker run --rm -t -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release_v1_13} rpi_generic \
+ docker run --rm -t -v $PWD/_out:/out ghcr.io/siderolabs/imager:${release_v1_13} rpi_generic \
   --arch arm64 \
   --overlay-image ghcr.io/siderolabs/sbc-raspberrypi:v0.1.0@sha256:849ace01b9af514d817b05a9c5963a35202e09a4807d12f8a3ea83657c76c863 \
   --overlay-name=rpi_generic \
@@ -300,7 +300,7 @@ Now we can use the customized `installer` image to install Talos on Raspberry Pi
 When it's time to upgrade a machine, a new `installer` image can be generated using the new version of `imager`, and updating the system extension and overlay images to the matching versions.
 The custom `installer` image can now be used to upgrade Talos machine.
 
-## config.txt Information
+## config.txt information
 
 Refer to the default [config.txt](https://github.com/siderolabs/sbc-raspberrypi/blob/main/installers/rpi_generic/src/config.txt) file used by the [sbc-raspberrypi](https://github.com/siderolabs/sbc-raspberrypi) overlay.
 
@@ -363,7 +363,7 @@ The following table can be used to troubleshoot booting issues:
 | 4            |       6       |                Power failure type A |
 | 4            |       7       |                Power failure type B |
 
-### GPU Memory Issues
+### GPU memory issues
 
 The Contiguous Memory Allocator (CMA) reserves physically contiguous memory for Raspberry Pi GPU/display operations (e.g., KMS/DRM rendering).
 An error like `DRM_IOCTL_MODE_CREATE_DUMB failed: Cannot allocate memory` indicates an undersized CMA pool for graphics tasks.
@@ -381,7 +381,7 @@ The default may be too small for GPU-intensive tasks, and oversizing reduces sys
 | 512 MB   | 4K media, ML with GPU |
 | 1024 MB  | Experimental, may destabilize |
 
-#### Change CMA Size
+#### Change CMA size
 
 **Kernel Parameters**:
 

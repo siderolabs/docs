@@ -8,7 +8,7 @@ import { version } from '/snippets/custom-variables.mdx';
 Using local storage for Kubernetes workloads implies that the pod will be bound to the node where the local storage is available.
 Local storage is not replicated, so in case of a machine failure contents of the local storage will be lost.
 
-## User Volumes
+## User volumes
 
 The simplest way to use local storage is to use <a href= {`../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/disk-management/user`}>user volume</a>.
 
@@ -66,7 +66,7 @@ spec:
       type: DirectoryOrCreate
 ```
 
-## Local Path Provisioner
+## Local path provisioner
 
 [Local Path Provisioner](https://github.com/rancher/local-path-provisioner) can be used to dynamically provision local storage.
 

@@ -8,7 +8,7 @@ To make those GPUs available to Kubernetes workloads, you can deploy the ROCm GP
 
 This guide shows how to enable AMD GPU support on your Talos nodes, apply any tuning your hardware might need, and install ROCm inside your cluster.
 
-## Before You Begin
+## Before you begin
 
 You’ll need:
 
@@ -70,7 +70,7 @@ What these parameters do:
 - `amdgpu.gttsize`: Increases the GPU GTT memory size for workloads that allocate large buffers
 - `ttm.pages_limit`: Raises the TTM memory limit for large model workloads.
 
-## Deploy the ROCm GPU Operator
+## Deploy the ROCm GPU operator
 
 With GPU support enabled at the OS level, you can deploy the ROCm GPU Operator to surface GPU resources to Kubernetes workloads.
 

@@ -20,7 +20,7 @@ The SideroLink API URL format is: `https://siderolink.api/?jointoken=token&grpc_
   This is useful in environments where UDP traffic is restricted but adds significant overhead to SideroLink communication, enable this only if necessary.
   Note that the SideroLink API server might ignore this hint, and the connection might use gRPC tunneling regardless of the setting.
 
-## Connection Flow
+## Connection flow
 
 1. Talos Linux generates an ephemeral Wireguard key.
 2. Talos Linux establishes a gRPC connection to the SideroLink API server, sending its Wireguard public key, join token, and other connection settings.

@@ -50,7 +50,7 @@ cluster:
     - "https://gist.githubusercontent.com/user/gist-id/raw/manifest.yaml"
 ```
 
-## Resource Ordering Considerations
+## Resource ordering considerations
 
 Talos automatically sorts all manifests, including `inlineManifests`, `extraManifests`, and built-in manifests (such as the kubelet bootstrap token and CoreDNS), before applying them in the following order:
 
@@ -104,7 +104,7 @@ You can skip this step if you've already done it:
     kubectl get pods -n flux-system -w
     ```
 
-## Omni Patches
+## Omni patches
 
 You can also apply `inlineManifests` or `extraManifests` patches to Talos clusters managed by Omni.
 
@@ -122,7 +122,7 @@ Here’s a quick overview of the key differences between `inlineManifests` and `
 | Benefits               | No external dependencies                       | Centrally managed                                            |
 | Disadvantages          | Difficult to maintain and format embedded YAML | Requires external HTTP server                                |
 
-## How Talos Handles Manifest Resources
+## How Talos handles manifest resources
 
 Talos reconciles manifests on every boot, on every failure to apply, and on every change to the manifests in the machine config.
 When processing your `inlineManifests` and `extraManifests`, Talos follows a conservative, additive-only approach.
