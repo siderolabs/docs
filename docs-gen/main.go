@@ -85,9 +85,8 @@ type GA4Integration struct {
 }
 
 type PosthogIntegration struct {
-	ApiKey           string  `yaml:"apiKey" json:"apiKey"`
-	ApiHost          *string `yaml:"apiHost,omitempty" json:"apiHost,omitempty"`
-	SessionRecording *bool   `yaml:"sessionRecording,omitempty" json:"sessionRecording,omitempty"`
+	ApiKey  string  `yaml:"apiKey" json:"apiKey"`
+	ApiHost *string `yaml:"apiHost,omitempty" json:"apiHost,omitempty"`
 }
 
 type SEO struct {
@@ -628,15 +627,6 @@ func processIntegrations(integrations *Integrations) *Integrations {
 	processed := &Integrations{
 		GA4:     integrations.GA4,
 		Posthog: integrations.Posthog,
-	}
-
-	// Set PostHog defaults
-	if processed.Posthog != nil {
-		// Default sessionRecording to true if not specified
-		if processed.Posthog.SessionRecording == nil {
-			defaultSessionRecording := true
-			processed.Posthog.SessionRecording = &defaultSessionRecording
-		}
 	}
 
 	return processed
