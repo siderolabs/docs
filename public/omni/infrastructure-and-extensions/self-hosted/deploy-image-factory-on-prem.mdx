@@ -31,7 +31,7 @@ If you don't have a container registry available to push images to you can tempo
 <Tabs>
 <Tab title="Secure registry">
   We recommend using certificates for your temporary registry you will need to provide your own certificates and mount them into the container at run time. If you do not have certificates, follow the steps in the [Omni air-gapped documentation](../install-airgapped-omni#1-generate-certificates).
-  
+
   ```bash
   docker run -d \
     --name registry \
@@ -316,7 +316,7 @@ docker run -p 8080:8080 -d \
   --net=host \
   -v $PWD/signing-key.key:/signing-key.key:ro \
   -v $PWD/cosign.pub:/cosign.pub:ro \
-  ghcr.io/siderolabs/image-factory:v0.9.0 \
+  ghcr.io/siderolabs/image-factory:v1.0.0 \
     -external-url $FACTORY_URL \
     -image-registry $REGISTRY_ENDPOINT \
     -installer-internal-repository $REGISTRY_ENDPOINT/siderolabs \
@@ -342,14 +342,12 @@ To run the image factory with a self-signed CA certificate you need to mount the
 docker run -p 8080:8080 -d \
   --name image-factory \
   --net=host \
-  -v /dev:/dev \
-  --privileged \
   -v $PWD/signing-key.key:/signing-key.key:ro \
   -v $PWD/cosign.pub:/cosign.pub:ro \
   -v $PWD/server-chain.pem:/certs/server-chain.pem:ro \
   -v $PWD/server-key.pem:/certs/server-key.pem:ro \
   -v /etc/pki/ca-trust/source/anchors/:/etc/ssl/certs:ro \
-  ghcr.io/siderolabs/image-factory:v0.9.0 \
+  ghcr.io/siderolabs/image-factory:v1.0.0 \
     -external-url $FACTORY_URL \
     -image-registry $REGISTRY_ENDPOINT \
     -installer-internal-repository $REGISTRY_ENDPOINT/siderolabs \
@@ -369,14 +367,12 @@ docker run -p 8080:8080 -d \
 docker run -p 8080:8080 -d \
   --name image-factory \
   --net=host \
-  -v /dev:/dev \
-  --privileged \
   -v $PWD/signing-key.key:/signing-key.key:ro \
   -v $PWD/cosign.pub:/cosign.pub:ro \
   -v $PWD/server-chain.pem:/certs/server-chain.pem:ro \
   -v $PWD/server-key.pem:/certs/server-key.pem:ro \
   -v /usr/local/share/ca-certificates/:/etc/ssl/certs:ro \
-  ghcr.io/siderolabs/image-factory:v0.9.0 \
+  ghcr.io/siderolabs/image-factory:v1.0.0 \
     -external-url $FACTORY_URL \
     -image-registry $REGISTRY_ENDPOINT \
     -installer-internal-repository $REGISTRY_ENDPOINT/siderolabs \
@@ -402,11 +398,9 @@ If your image factory and container registry do not have certificates run the fo
 docker run -p 8080:8080 -d \
   --name image-factory \
   --net=host \
-  -v /dev:/dev \
-  --privileged \
   -v $PWD/signing-key.key:/signing-key.key:ro \
   -v $PWD/cosign.pub:/cosign.pub:ro \
-  ghcr.io/siderolabs/image-factory:v0.9.0 \
+  ghcr.io/siderolabs/image-factory:v1.0.0 \
     -insecure-image-registry \
     -insecure-installer-internal-repository \
     -insecure-schematic-service-repository \
