@@ -349,7 +349,6 @@
                   "talos/v1.12/reference/kernel",
                   "talos/v1.12/reference/cli",
                   "talos/v1.12/reference/api",
-                  "talos/v1.12/reference/configuration/cli",
                   {
                     "group": "Block",
                     "pages": [

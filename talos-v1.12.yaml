@@ -228,7 +228,6 @@ navigation:
             - "kernel.mdx"
             - "cli.mdx"
             - "api.mdx"
-            - "configuration/cli.mdx"
             - group: "Block"
               pages:
                 - "configuration/block/existingvolumeconfig.mdx"
