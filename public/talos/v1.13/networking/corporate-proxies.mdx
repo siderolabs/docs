@@ -11,7 +11,7 @@ See [Custom Certificate Authorities](../security/certificate-authorities) to app
 
 ## Configuring a Machine to Use the Proxy
 
-To make use of a proxy:
+To configure Talos to use an HTTP or HTTPS proxy, set the appropriate environment variables in the machine configuration:
 
 ```yaml
 machine:
@@ -21,7 +21,7 @@ machine:
     no_proxy: <no proxy>
 ```
 
-Additionally, configure the DNS `nameservers`, and NTP `servers`:
+In proxy-restricted environments, you may also need to configure DNS (`nameservers`) and NTP (`timeservers`) explicitly:
 
 ```yaml
 machine:
@@ -40,8 +40,10 @@ machine:
       - <ip n>
 ```
 
-If a proxy is required before Talos machine configuration is applied, use [kernel command line arguments](../reference/kernel):
+If proxy access is required before the machine configuration is applied (for example, during initial boot), provide the proxy settings via [kernel command line arguments](../reference/kernel):
 
 ```text
 talos.environment=http_proxy=<http-proxy> talos.environment=https_proxy=<https-proxy>
 ```
+
+DNS and NTP settings can also be managed using their dedicated configuration documents: [ResolverConfig](../reference/configuration/network/resolverconfig) and [TimeSyncConfig](../reference/configuration/network/timesyncconfig) respectively
