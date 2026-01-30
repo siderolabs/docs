@@ -26,6 +26,7 @@ type Config struct {
 	Contextual   *Contextual         `yaml:"contextual,omitempty"`
 	Logo         *Logo               `yaml:"logo,omitempty"`
 	Thumbnails   *Thumbnails         `yaml:"thumbnails,omitempty"`
+	Fonts        *Fonts              `yaml:"fonts,omitempty"`
 	SEO          *SEO                `yaml:"seo,omitempty"`
 	Search       *Search             `yaml:"search,omitempty"`
 	Errors       *Errors             `yaml:"errors,omitempty"`
@@ -62,11 +63,34 @@ type Thumbnails struct {
 	Background string `yaml:"background,omitempty" json:"background,omitempty"`
 }
 
+type Fonts struct {
+	Family  string      `yaml:"family,omitempty" json:"family,omitempty"`
+	Weight  *int        `yaml:"weight,omitempty" json:"weight,omitempty"`
+	Source  string      `yaml:"source,omitempty" json:"source,omitempty"`
+	Format  string      `yaml:"format,omitempty" json:"format,omitempty"`
+	Heading *FontStyle  `yaml:"heading,omitempty" json:"heading,omitempty"`
+	Body    *FontStyle  `yaml:"body,omitempty" json:"body,omitempty"`
+}
+
+type FontStyle struct {
+	Family string `yaml:"family,omitempty" json:"family,omitempty"`
+	Weight *int   `yaml:"weight,omitempty" json:"weight,omitempty"`
+	Source string `yaml:"source,omitempty" json:"source,omitempty"`
+	Format string `yaml:"format,omitempty" json:"format,omitempty"`
+}
+
 type Navbar struct {
-	Links []NavLink `yaml:"links" json:"links"`
+	Links   []NavLink   `yaml:"links" json:"links"`
+	Primary *NavPrimary `yaml:"primary,omitempty" json:"primary,omitempty"`
 }
 
 type NavLink struct {
+	Label string `yaml:"label" json:"label"`
+	Href  string `yaml:"href" json:"href"`
+}
+
+type NavPrimary struct {
+	Type  string `yaml:"type" json:"type"`
 	Label string `yaml:"label" json:"label"`
 	Href  string `yaml:"href" json:"href"`
 }
@@ -181,6 +205,7 @@ type MintlifyConfig struct {
 	Contextual   *Contextual        `json:"contextual,omitempty"`
 	Logo         *Logo              `json:"logo,omitempty"`
 	Thumbnails   *Thumbnails        `json:"thumbnails,omitempty"`
+	Fonts        *Fonts             `json:"fonts,omitempty"`
 	SEO          *SEO               `json:"seo,omitempty"`
 	Search       *Search            `json:"search,omitempty"`
 	Errors       *Errors            `json:"errors,omitempty"`
@@ -259,6 +284,7 @@ func main() {
 		Contextual:   mergedConfig.Contextual,
 		Logo:         mergedConfig.Logo,
 		Thumbnails:   mergedConfig.Thumbnails,
+		Fonts:        mergedConfig.Fonts,
 		SEO:          mergedConfig.SEO,
 		Search:       mergedConfig.Search,
 		Errors:       mergedConfig.Errors,
