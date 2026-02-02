@@ -77,7 +77,7 @@ After downloading the binary, rename it, make it executable, and move it into a 
     2. Move the file to a folder that’s in your `PATH`.
     3. Verify your installation:
        ```powershell
-       omnictl version
+       omnictl --version
        ```
 
   </Tab>
@@ -99,7 +99,11 @@ First, download the `omniconfig.yaml` file from your Omni dashboard to your loca
 
 - **Windows**: Uses the `%LOCALAPPDATA%` directory.
 
-<table><thead><tr><th width="119.21484375">OS</th><th>Omniconfig Path</th></tr></thead><tbody><tr><td>Linux</td><td><code>\~/.talos/omni/config</code></td></tr><tr><td>MacOS</td><td><code>~/Library/Application Support/omni/config</code></td></tr><tr><td>Windows</td><td><code>%LOCALAPPDATA%\omni\config</code>, e.g., <code>C:\Users\<USER>\AppData\Local\omni\config</code></td></tr></tbody></table>
+| OS      | Omniconfig Path                                                                |
+| ------- | ------------------------------------------------------------------------------ |
+| Linux   | `~/.talos/omni/config`                                                         |
+| MacOS   | `~/Library/Application Support/omni/config`                                    |
+| Windows | `%USERPROFILE%\.talos\omni\config`, e.g., `C:\Users\myuser\.talos\omni\config` |
 
 Copy the downloaded file to the appropriate location for your operating system:
 
