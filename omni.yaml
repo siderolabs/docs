@@ -110,6 +110,7 @@ navigation:
             - "acls.mdx"
             - "cli.mdx"
             - "cluster-templates.mdx"
+            - "manage-omni-resources-with-omnictl.mdx"
             - "generating-omnictl-cli-reference.mdx"
 
         - group: Troubleshooting and Support

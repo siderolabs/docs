@@ -1,0 +1,301 @@
+---
+title: Manage Omni Resources with omnictl
+---
+
+Omni models all objects as API resources, including clusters, machines, users, infrastructure providers, and internal system objects.
+
+The `omnictl` CLI gives you direct access to these resources, allowing you to inspect and manage them without using the UI.
+
+This document explains how Omni resources are structured and how to manage them using `omnictl`.
+
+## Resource relationships
+
+Omni resources do not exist in isolation. They are interconnected and continuously reconciled by controllers.
+
+For example:
+
+- A `link` resource is associated with a corresponding `machine` resource.
+- `machine` resources can become part of a cluster through `MachineSet` and `MachineSetNode` resources.
+- Controllers automatically create and maintain status and system resources.
+
+These relationships are maintained through reconciliation rather than simple parent–child ownership. Controllers observe the desired state and ensure the system converges toward it.
+
+To inspect any resource and its metadata, run:
+
+```bash
+omnictl get <type> <id> -o yaml
+```
+
+This command returns the complete resource definition, including metadata, status, and configuration fields.
+
+For example, to view the complete definition of a cluster named `talos-default`, run:
+
+```bash
+omnictl get cluster talos-default -o yaml
+```
+
+The output looks similar to:
+
+```yaml
+metadata:
+    namespace: default
+    type: Clusters.omni.sidero.dev
+    id: talos-default
+    version: 12
+    owner:
+    phase: running
+    created: 2026-01-23T12:06:30Z
+    updated: 2026-01-23T12:06:30Z
+    finalizers:
+        - ClusterWorkloadProxyStatusController
+        - ClusterUUIDController
+        - ClusterConfigVersionController
+        - TalosUpgradeStatusController
+        - SecretsController
+        - ClusterController
+        - ClusterEndpointController
+        - ClusterStatusController
+        - BackupDataController
+        - KubernetesUpgradeStatusController
+        - ClusterDestroyStatusController
+spec:
+    installimage: ""
+    kubernetesversion: 1.34.2
+    talosversion: 1.11.5
+    features:
+        enableworkloadproxy: false
+        diskencryption: false
+        useembeddeddiscoveryservice: false
+    backupconfiguration: null
+```
+
+A resource definition is divided into two main sections:
+
+`metadata`
+
+The `metadata` section describes the identity and lifecycle state of the resource. It includes:
+* `namespace,` `type`, and `id`, which uniquely identify the object
+* `version`, which tracks revisions of the resource
+* `owner`, which contains the name of the controller that manages this resource (for example, `ClusterStatusController`). If this field is set, the resource is controller-managed and cannot be modified directly with `omnictl`.
+* `phase`, which reflects the current lifecycle state
+* `created` and `updated` timestamps
+* `finalizers`, which list controllers that must complete cleanup work before the resource can be fully deleted
+
+`spec`
+
+The `spec` section defines the desired state of the cluster. For a cluster, this includes:
+* Installed image and version settings
+* Kubernetes and Talos versions
+* Feature flags
+* Backup configuration
+
+Once you understand this structure, you can use `omnictl` to query and manage resources confidently.
+
+## Manage resources with the CLI
+
+The CLI allows you to query existing resources, apply updates, and remove objects from your Omni instance.
+
+Keep in mind that some resources are managed entirely by controllers. These resources are read-only, changing them manually is not possible.
+
+To discover which resource types are available in your environment, run:
+
+```bash
+omnictl get resourcedefinitions
+```
+
+This command displays the available Resource Definitions in your Omni instance.
+
+### Manage a cluster
+
+You can create or update an Omni cluster using a [cluster templates](../getting-started/create-a-cluster):
+
+```bash
+omnictl cluster template sync -f cluster.yaml
+```
+
+### Cluster and machine resources
+
+Clusters and machines define the structure and runtime state of your infrastructure.
+
+**List all clusters**:
+
+```bash
+omnictl get cluster
+```
+
+**Inspect a specific cluster:**
+
+```bash
+omnictl get cluster <cluster-name> -o yaml
+```
+
+<Note>This command outputs the live cluster resource definition in YAML format. It represents the current state of the cluster in Omni. This is different from a [cluster template](../omni-cluster-setup/cluster-template#introduction-to-cluster-templates), which defines the desired configuration used to create or manage clusters. </Note>
+
+**List all machines**:
+
+```bash
+omnictl get machine
+```
+
+**Inspect a specific machine**:
+
+```bash
+omnictl get machine <machine-name> -o yaml
+```
+
+### Access and identity resources
+
+Access control and identity are also resource-driven.
+
+#### Manage users
+
+Users represent human identities that can authenticate with Omni and are assigned roles that define their permissions.
+
+You can manage users directly with `omnictl`:
+
+**List users**:
+
+```bash
+omnictl user list
+```
+
+**Create a user**:
+
+```bash
+omnictl user create <user-email> --role <user-role>
+```
+
+See [Account Role](../security-and-authentication/security-model#account-roles) for details about the available roles and their permissions.
+
+**Update a user's role**:
+
+```bash
+omnictl user set-role <user-email> --role <user-role>
+```
+
+**Inspect a specific user**:
+
+```bash
+omnictl get user <id> -o yaml
+```
+
+#### Manage service accounts
+Service accounts are intended for automation and system-to-system interactions.
+
+You can manage service accounts with the following commands:
+
+**List service accounts**:
+
+```bash
+omnictl serviceaccount list
+```
+
+**Create a service account**:
+
+```bash
+omnictl serviceaccount create <serviceaccount-name>
+```
+
+**Renew a service account access key**:
+
+```bash
+omnictl serviceaccount renew <serviceaccount-name>
+```
+
+#### Manage join tokens
+
+Join tokens allow machines or infrastructure providers to securely register with Omni.
+
+You can create and manage join tokens using `omnictl`:
+
+**List join tokens**
+
+```bash
+omnictl jointoken list
+```
+
+**Create a join token**
+
+```bash
+omnictl jointoken create <jointoken-name>
+```
+
+**Renew join token TTL**
+
+```bash
+omnictl jointoken renew <jointoken-id>
+```
+
+**Revoke a join token**
+
+```bash
+omnictl jointoken revoke <jointoken-id>
+```
+
+**Unrevoke a join token**
+
+```bash
+omnictl jointoken unrevoke <jointoken-id>
+```
+
+### Infrastructure and Integration Resources
+
+Infrastructure providers are represented as resources.
+
+**List infrastructure providers:**
+
+```bash
+omnictl infraprovider list
+```
+
+**Create an infrastructure provider**
+
+```bash
+omnictl infraprovider create <infraprovider-name>
+```
+
+**Renew an infra provider key**
+
+```bash
+omnictl infraprovider renewkey <infraprovider-name>
+```
+
+**Lists existing machine connections to Omni**:
+
+```bash
+omnictl get link
+```
+
+### Filter and watch resources for changes
+
+In addition to listing resources, you can filter results and watch for changes in real time.
+
+**Filter by label**:
+
+```bash
+omnictl get clustermachinestatus -l omni.sidero.dev/cluster=<cluster-name>
+```
+
+**Watch a resource**:
+
+```bash
+omnictl get clustermachinestatus <id> -o yaml --watch
+```
+
+### Delete resources
+
+You can remove resources using the `delete` command.
+
+**Delete a specific resource**:
+
+```bash
+omnictl delete <type> <id>
+```
+
+**Delete all resources of a type**:
+
+```bash
+omnictl delete <type> --all
+```
+
+Deletion may fail if dependent resources still exist.
