@@ -45,7 +45,7 @@ Exporting a template is often the starting point when a cluster was originally c
 To export a cluster template, replace `<name-of-cluster>` with the name of your cluster and run:
 
 ```bash
-omnictl cluster template export -c &lt;name-of-cluster> -o cluster-template.yaml
+omnictl cluster template export -c <name-of-cluster> -o cluster-template.yaml
 ```
 
 This command exports the cluster’s configuration into `cluster-template.yaml`. The resulting file captures the current state of the cluster and can be used as the basis for managing it going forward.
