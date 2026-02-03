@@ -1,10 +1,10 @@
 {
   "$schema": "https://leaves.mintlify.com/schema/docs.json",
-  "theme": "willow",
+  "theme": "aspen",
   "name": "Sidero Documentation",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
+    "primary": "#E02A5F",
+    "light": "#FF5788",
     "dark": "#FB326E"
   },
   "favicon": "/images/favicon.svg",
@@ -31,10 +31,15 @@
   "navbar": {
     "links": [
       {
-        "label": "Support",
+        "label": "Enterprise Support",
         "href": "https://www.siderolabs.com/support/"
       }
-    ]
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Try Talos Omni",
+      "href": "https://www.siderolabs.com/omni-signup"
+    }
   },
   "footer": {
     "socials": {
