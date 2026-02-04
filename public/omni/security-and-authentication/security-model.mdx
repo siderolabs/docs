@@ -3,19 +3,19 @@ title: Omni, Talos, and Kubernetes Security
 description: Understand how identity, authorization, and cluster access are enforced in Omni-managed environments.
 ---
 
-This document explains how users are authenticated, how permissions are assigned, and how access is enforced across Omni-managed resources, including Talos Linux nodes and Kubernetes clusters.
+This document explains how access is enforced in Omni-managed environments, including Talos Linux nodes and Kubernetes clusters.
 
 When clusters and machines are managed by Omni, Omni becomes the central point of access for all the resources it controls. This includes access to Talos, Kubernetes, and Omni-specific resources.
 
-Access to Omni, Talos, and Kubernetes is provided through certificates that are managed by Omni. Other sensitive data, such as Talos disk encryption keys, are also managed by Omni. However, Kubernetes resources like Secrets are managed within Kubernetes itself.
+Access is established through certificates issued and managed by Omni. Sensitive data such as Talos disk encryption keys are also managed by Omni, while Kubernetes-native resources such as Secrets remain within Kubernetes.
 
-This document focuses specifically on how users and services access each API, rather than on encryption mechanisms or system hardening.
+Omni’s security model is layered, combining authentication, authorization, scoped access policies, and API-level RBAC to enforce permissions across users and clusters.
 
-Omni’s security model is intentionally layered, with each layer building on the previous one. This approach enables fine-grained access control across multi-cluster and multi-user environments.
+The following sections describe these layers and how they work together to control access across Omni-managed environments.
 
-## High-level model
+## High-level Omni security model
 
-Access in Omni flows through four conceptual layers:
+Access in Omni flows through five conceptual layers:
 
 * **Authentication (AuthN)** – establishes who a user is.
 * **Authorization (AuthZ)** – define the user’s permissions.
@@ -51,6 +51,22 @@ Attributes provided in the SAML assertion are attached to the user’s Identity 
 
 For details on supported authentication methods and how authentication works, see the [Authentication and Authorization documentation](../security-and-authentication/authentication-and-authorization).
 
+## Access control lists (ACLs)
+
+While account roles apply globally, ACLs provide scoped, cluster-specific access control. They allow administrators to grant or restrict permissions for individual clusters without changing a user’s account role.
+
+ACLs are commonly used to grant elevated access to a staging or development cluster while keeping production access restricted. They can also be used to give users with the None role meaningful access to specific clusters.
+
+Only users with the `Admin` role can create or modify ACLs.
+
+Configuration details and examples are covered in the [Manage Access Policies (ACLs) documentation](../security-and-authentication/how-to-manage-acls).
+
+### Default behavior without ACLs
+
+When ACLs are not configured, users with write permissions in Omni are granted Kubernetes admin-level access by default. This behavior is intentional and keeps the default experience simple, but it may not be appropriate for shared or multi-tenant environments.
+
+In those cases, ACLs combined with Kubernetes RBAC should be used to enforce tighter access boundaries.
+
 ## Account roles
 
 Account roles define a user’s default level of access across an entire Omni account. They apply globally and are evaluated before any cluster-specific access policies.
@@ -81,16 +97,6 @@ The `Admin` role provides full account-level access and should be restricted to 
 
 Users with this role can view and manage users, service accounts, infrastructure providers, and other resources that affect overall account operation.
 
-## Access control lists (ACLs)
-
-While account roles apply globally, ACLs provide scoped, cluster-specific access control. They allow administrators to grant or restrict permissions for individual clusters without changing a user’s account role.
-
-ACLs are commonly used to grant elevated access to a staging or development cluster while keeping production access restricted. They can also be used to give users with the None role meaningful access to specific clusters.
-
-Only users with the `Admin` role can create or modify ACLs.
-
-Configuration details and examples are covered in the [Manage Access Policies (ACLs) documentation](../security-and-authentication/how-to-manage-acls).
-
 ## Omni authorization and Kubernetes RBAC
 
 Omni roles and ACLs control access to Omni-managed resources. Kubernetes RBAC controls what users can do inside the Kubernetes cluster itself.
@@ -101,12 +107,6 @@ Users who have the Omni role `Operator` or higher are automatically assigned the
 
 Because of this behavior, ACLs should be used carefully in environments where strict least-privilege access is required.
 
-## Default behavior without ACLs
-
-When ACLs are not configured, users with write permissions in Omni are granted Kubernetes admin-level access by default. This behavior is intentional and keeps the default experience simple, but it may not be appropriate for shared or multi-tenant environments.
-
-In those cases, ACLs combined with Kubernetes RBAC should be used to enforce tighter access boundaries.
-
 ## Service accounts
 
 Omni supports non-interactive access through a programming language or the official Omni client, `omnictl`. When user authentication is used, Omni issues short-lived credentials. Tokens can remain valid for up to eight hours, and Omni-generated public keys expire after four hours. These limits are fixed and cannot be configured.
@@ -116,3 +116,17 @@ Because credentials may expire, user authentication is not recommended for CI/CD
 A service account is a long-lived, static authentication token that can be used for the Omni API. Service account tokens can allow access to Omni, Talos, and Kubernetes. For setup instructions, see the documentation on creating an [Omni service account](../security-and-authentication/break-glass-emergency-access) and a [Kubernetes service account](../omni-cluster-setup/create-a-kubeconfig-for-a-service-account).
 
 Service accounts are different from a [“break glass” access token](../security-and-authentication/break-glass-emergency-access). Break glass tokens bypass Omni and provide direct access to the Talos and Kubernetes APIs, while service accounts authenticate through Omni’s standard mechanisms. This distinction is important because service accounts can be revoked, whereas break glass tokens cannot.
+
+## Data protection in Omni SaaS deployments
+
+When deployed as a SaaS offering, Omni encrypts all persisted customer account data in transit using TLS and at rest using AES-256. This includes cluster configuration, machine metadata, certificates, and encryption material.
+
+The master encryption key is never stored in plaintext. Instead, it is protected using two key slots:
+
+* An **instance-specific key**, generated during account creation and stored encrypted in HashiCorp Vault. Omni retrieves it using Kubernetes ServiceAccount authentication with restricted RBAC permissions.
+
+* A **break-glass recovery key**, held offline and split into encrypted shares. Multiple operators must collaborate to reconstruct this key.
+
+Omni will not start without access to at least one valid key slot.
+
+For self-hosted deployments, storage encryption and key management depend on the customer’s infrastructure and configuration.
