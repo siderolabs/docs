@@ -1,5 +1,6 @@
 ---
 title: Omni with Terraform
+description: Understand how Omni’s reconciliation model differs from Terraform.
 ---
 
 Omni is a control plane designed to manage cluster and machine lifecycle and state over time. As part of that design, Omni maintains its own authoritative state and continuously reconciles resources based on that state.
@@ -57,4 +58,4 @@ Once that infrastructure exists, responsibility should be handed off to Omni to 
 
 There may also be a need to manage external infrastructure resources as part of Omni resource management. For example, you may be submitting a cluster template to Omni that requires an external secrets resource, or load balancer. In this case it would be difficult to create some resources with terraform and others via Omni.
 
-Unfortunately, this problem exists with many infrastructure tools, even Kubernetes, and there isn’t a clear solution. Some teams have moved to Kubernetes-native infrastructure provisioning tools like [Crossplane](https://www.crossplane.io/) and others have used terraform to "shell out" to local CLI tools
+Unfortunately, this problem exists with many infrastructure tools, even Kubernetes, and there isn’t a clear solution. Some teams have moved to Kubernetes-native infrastructure provisioning tools like [Crossplane](https://www.crossplane.io/) and others have used terraform to "shell out" to local CLI tools.

@@ -1,5 +1,6 @@
 ---
 title: Omni KMS Disk Encryption
+description: Enable KMS-backed disk encryption in Talos with keys sealed and lifecycle-managed by Omni.
 ---
 
 Starting from 1.5.0, Talos supports KMS (Key Management Server) disk encryption key types. KMS keys are randomly generated on the Talos node and then sealed using the KMS server. A sealed key is stored in the `luks2` metadata. To decrypt a disk, Talos node needs to communicate with the KMS server and decrypt the sealed key. The KMS server endpoint is defined in the key configuration.
