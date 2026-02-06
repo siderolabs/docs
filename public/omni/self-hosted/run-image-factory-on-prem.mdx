@@ -3,7 +3,7 @@ title: Run Image Factory On-Prem
 description: Run Image Factory on-prem to generate Talos images locally
 ---
 
-import { release, version } from '/snippets/custom-variables.mdx';
+import { release, version, image_factory_release } from '/snippets/custom-variables.mdx';
 
 The [Image Factory](https://github.com/siderolabs/image-factory) is a way for you to dynamically create Talos Linux images. There is a public, hosted version of the Image Factory at [factory.talos.dev](https://factory.talos.dev) and it can also be run in your environment.
 
@@ -37,8 +37,8 @@ If you don't have a container registry available to push images to you can tempo
   docker run -d \
     --name registry \
     -p 5000:5000 \
-    -v ${PWD}/server-key.pem:/certs/server-key.pem:ro \
-    -v ${PWD}/server-chain.pem:/certs/server-chain.pem:ro \
+    -v ${PWD}/server-key.pem:/certs/server-key.pem:ro,Z \
+    -v ${PWD}/server-chain.pem:/certs/server-chain.pem:ro,Z \
     -e REGISTRY_HTTP_ADDR=0.0.0.0:5000 \
     -e REGISTRY_HTTP_TLS_KEY=/certs/server-key.pem \
     -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/server-chain.pem \
@@ -57,23 +57,25 @@ docker run -d -p 5000:5000 --name registry registry:2
 
 Without internet access you will need to download the container image, transfer it internally, and load it on the target machine.
 
-```bash
-docker save -o registry.tar registry:2
-```
-Transfer the `registry.tar` file to an internal system.
-```
-docker load -i registry.tar
-```
-Run the registry with certificates.
+<CodeBlock language="bash">
+{`docker save -o registry.tar registry:2 \ndocker save -o image-factory.tar ghcr.io/siderolabs/image-factory:${image_factory_release}`}
+</CodeBlock>
 
-<Info>If SELinux is enabled replace `:ro` with `:Z`.</Info>
+Transfer the `registry.tar` and `image-factory.tar` files to an internal system.
+
+```bash
+docker load -i registry.tar
+docker load -i image-factory.tar
+```
+
+Run the registry with certificates.
 
 ```bash
 docker run -d \
   --name registry \
   -p 5000:5000 \
-  -v ${PWD}/server-key.pem:/certs/server-key.pem:ro \
-  -v ${PWD}/server-chain.pem:/certs/server-chain.pem:ro \
+  -v ${PWD}/server-key.pem:/certs/server-key.pem:ro,Z \
+  -v ${PWD}/server-chain.pem:/certs/server-chain.pem:ro,Z \
   -e REGISTRY_HTTP_ADDR=0.0.0.0:5000 \
   -e REGISTRY_HTTP_TLS_KEY=/certs/server-key.pem \
   -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/server-chain.pem \
@@ -113,30 +115,46 @@ There are two supported methods to run the Image Factory:
 A custom container registry is required for air-gapped environments or custom Talos builds.
 
 <Tabs>
-  <Tab title="Image factory conneted to upstream">
+  <Tab title="Image factory connected">
 
 <Note>Run with the official, upstream container registry if your machine is connected to the internet and you don't need custom Talos images.</Note>
 
 The official Sidero Labs registry has all of the required Talos installation containers, extensions, and tools.
-If you want to run image factory connected to the upstream container registry you can do it with:
 
-```shell
-docker run -p 8080:8080 -d \
-  --name image-factory \
-  -v $PWD/signing-key.key:/signing-key.key:ro \
-  ghcr.io/siderolabs/image-factory:v0.9.0 \
-    -cache-signing-key-path /signing-key.key \
-    -schematic-service-repository $REGISTRY_ENDPOINT/siderolabs/image-factory/schematic
+Export the URl for where you will be hosting the Image Factory.
+
+```bash
+export FACTORY_URL="http://factory.internal:8080"
 ```
 
-<Warning>If your system has SELinux enabled you will need to mount the signing key with the :Z option so the image factory has access to the file.</Warning>
+You need to provide a registry where image schematics can be stored. Create a config file.
+
+```bash
+cat <<EOF > image-factory.yaml
+artifacts:
+  schematic:
+    registry: $REGISTRY_ENDPOINT
+cache:
+  signingKeyPath: "/signing-key.key"
+http:
+  externalURL: $FACTORY_URL
+EOF
+```
+
+If you want to run image factory connected to the upstream container registry you can do it with:
+
+<CodeBlock language="bash">
+{`
+docker run -p 8080:8080 -d \\\n  --name image-factory \\\n  -v $PWD/image-factory.yaml:/image-factory.yaml:ro,Z \\\n  -v $PWD/signing-key.key:/signing-key.key:ro,Z \\\n  ghcr.io/siderolabs/image-factory:${image_factory_release} \\\n    --config image-factory.yaml
+`}
+</CodeBlock>
 
 This will run the image factory on your machine on port 8080 and automatically pull container images from Sidero's registry. It will also validate image signatures using [`cosign`](https://edu.chainguard.dev/open-source/sigstore/cosign/an-introduction-to-cosign/) to validate pulled images.
 
 This will not allow you to create or publish custom system extensions.
 To do that you will need to run your own container registry with the necessary images. See the **disconnected** instructions for Image Factory.
 </Tab>
-<Tab title="Image Factory with custom registry or air-gapped">
+<Tab title="Image Factory air-gapped">
 
 <Note>Run with an internal container registry if your machine is not connected to the internet, or you need custom Talos images and extensions.</Note>
 
@@ -179,43 +197,40 @@ done
 </Tab>
 <Tab title="Air-gapped">
 
-If you don't have direct access to an internal container registry (e.g. air gapped environment) you need to download the container images while connected to the internet with this command:
+If you don't have direct access to an internal container registry (e.g. air gapped environment) you need to download the container images while connected to the internet. This command will download every image to a tar file stored in `/images`:
+
+Create a folder for downloading the images.
 
 ```bash
-cat images.txt \
-  | talosctl images cache-create \
-      --layout flat \
-      --image-cache-path ./image-cache \
-      --images=-
+mkdir images
 ```
 
-Move the `image-cache` folder to an air gapped machine and serve the images on a read only, temporary container registry with:
+Download all images from `images.txt`. Create file names that don't contain special characters.
+
+<Info>If you run this from macOS please make sure to use [GNU sed](https://www.gnu.org/software/sed/) because the built-in BSD sed has different behavior. You can install it with `brew install gnu-sed` and you should have a `gsed` binary available.</Info>
 
 ```bash
-IP=$(hostname -I | awk '{print $1}')
-
-talosctl image cache-cert-gen \
-  --advertised-address $IP
-
-talosctl image cache-serve \
-  --address $IP:5000 \
-  --image-cache-path ./image-cache \
-  --tls-cert-file tls.crt \
-  --tls-key-file tls.key
+while read -r IMAGE; do
+    FILE_NAME=$(echo "$IMAGE" | sed 's/[\/ :@]/_/g').tar
+    echo "Pulling $IMAGE to $FILE_NAME"
+    crane pull "$IMAGE" "./images/$FILE_NAME"
+done < images.txt
 ```
 
-A temporary image registry will run on your local machine IP address port 5000 with self-signed certificates. Copy the images to an internal, permanent container registry.
+Move the `images` folder and `images.txt` file to an air gapped machine or a network where you have `push` access to the `$REGISTRY_ENDPOINT` and push them to the registry.
 
 ```bash
-for SOURCE_IMAGE in $(cat images.txt)
-  do
-    IMAGE_WITHOUT_DIGEST=${SOURCE_IMAGE%%@*}
-    IMAGE_WITH_NEW_REG="${REGISTRY_ENDPOINT}/${IMAGE_WITHOUT_DIGEST#*/}"
-    LOCALHOST_IMAGE="localhost:5000/${IMAGE_WITHOUT_DIGEST#*/}"
-    crane copy \
-      $LOCALHOST_IMAGE \
-      $IMAGE_WITH_NEW_REG
-done
+while read -r IMAGE; do
+    [ -z "$IMAGE" ] && continue
+
+    # construct new registry/image name
+    FILE_NAME="./images/$(echo "$IMAGE" | sed 's/[\/ :@]/_/g').tar"
+    IMAGE_PATH=$(echo "$IMAGE" | cut -d'/' -f2-)
+    DEST_PATH=$(echo "$IMAGE_PATH" | sed 's/@sha256:.*//')
+    DEST_IMAGE="${REGISTRY_ENDPOINT}/${DEST_PATH}"
+
+    crane push "$FILE_NAME" "$DEST_IMAGE"
+done < images.txt
 ```
 </Tab>
 </Tabs>
@@ -227,7 +242,7 @@ The Image Factory verifies container image signatures when being used. Generate 
 
 <Note>Image factory currently only supports `cosign` v2 signatures.</Note>
 
-Generate a cosign key
+Generate a cosign key.
 
 ```bash
 docker run --rm -it \
@@ -247,10 +262,8 @@ export COSIGN_PASSWORD="" # Leave empty for empty password
 Sign all of the images using the `images.txt` file as a list.
 
 {/* Sign container images */}
-<Tabs>
-<Tab title="Trusted CA">
 
-If your registry is running with a globally trusted certificate (e.g. signed by lets encrypt) you can sign the images with the following command:
+>If your registry is running with a self-signed CA certificate (i.e. from the [Installing Airgapped Omni](./run-omni-airgapped) guide) you need to mount the CA certificate into the cosign container for it to be trusted.
 
 ```bash
 for IMAGE in $(cat images.txt)
@@ -261,6 +274,7 @@ for IMAGE in $(cat images.txt)
     fi
     docker run --rm -it --net=host \
       -v $PWD:/keys -w /keys \
+      -v "$PWD/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro,Z" \
       -e COSIGN_PASSWORD="" \
       -e COSIGN_YES=true \
       --user $(id -u):$(id -g) \
@@ -270,159 +284,112 @@ for IMAGE in $(cat images.txt)
         $NEW_IMAGE
 done
 ```
-  </Tab>
-  <Tab title="Self-signed CA">
-
-If your registry is running with a self-signed CA certificate (i.e. from the [Installing Airgapped Omni](./run-omni-airgapped) guide) you need to mount the CA certificate into the cosign container for it to be trusted.
-
-```bash
-for IMAGE in $(cat images.txt)
-  do
-    NEW_IMAGE="${REGISTRY_ENDPOINT}/${IMAGE#*/}"
-    if [[ "$NEW_IMAGE" != *"@sha256:"* ]]; then
-      NEW_IMAGE="${NEW_IMAGE}@$(crane digest $NEW_IMAGE)"
-    fi
-    docker run --rm -it --net=host \
-      -v $PWD:/keys -w /keys \
-      -v "$PWD/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro" \
-      -e COSIGN_PASSWORD="" \
-      -e COSIGN_YES=true \
-      --user $(id -u):$(id -g) \
-      ghcr.io/sigstore/cosign/cosign:v2.6.1 \
-        sign --key /keys/$KEY_FILE \
-        --tlog-upload=false \
-        $NEW_IMAGE
-done
-```
-</Tab>
-</Tabs>
 {/* Sign container images */}
 
-With a populated container registry and signed images you are ready to run the Image Factory.
+<Info>This guide assumes the container registry and image factory are running on the same machine. Because of this we will run the Image Factory with `--net=host` which is not recommended for a production, multi-host deployment.</Info>
+
+<Tabs>
+
+  <Tab title="Self-signed CA">
 
 Set a internal factory endpoint.
 ```bash
 FACTORY_URL=https://factory.internal:8080
 ```
 
-<Info>This guide assumes the container registry and image factory are running on the same machine. Because of this we will run the Image Factory with `--net=host` which is not recommended for a production, multi-host deployment.</Info>
+Create a configuration file for the Image Factory.
 
-<Tabs>
-  <Tab title="Trusted CA">
-
-To run the image factory with a trusted certificate you can use the following command.
 ```bash
-docker run -p 8080:8080 -d \
-  --name image-factory \
-  --net=host \
-  -v $PWD/signing-key.key:/signing-key.key:ro \
-  -v $PWD/cosign.pub:/cosign.pub:ro \
-  ghcr.io/siderolabs/image-factory:v1.0.0 \
-    -external-url $FACTORY_URL \
-    -image-registry $REGISTRY_ENDPOINT \
-    -installer-internal-repository $REGISTRY_ENDPOINT/siderolabs \
-    -installer-internal-repository $REGISTRY_ENDPOINT/siderolabs \
-    -schematic-service-repository $REGISTRY_ENDPOINT/siderolabs/image-factory/schematic \
-    -cache-repository $REGISTRY_ENDPOINT/siderolabs/cache \
-    -cache-signing-key-path /signing-key.key \
-    -container-signature-pubkey /cosign.pub \
-    -cache-cdn-enabled=false \
-    -cache-s3-enabled=false
+cat <<EOF > image-factory.yaml
+artifacts:
+  core:
+    registry: $REGISTRY_ENDPOINT
+  schematic:
+    registry: $REGISTRY_ENDPOINT
+  installer:
+    internal:
+      registry: $REGISTRY_ENDPOINT
+    external:
+      registry: $REGISTRY_ENDPOINT
+containerSignature:
+  publicKeyFile: /cosign.pub
+  subjectRegExp: ""
+cache:
+  oci:
+    registry: $REGISTRY_ENDPOINT
+  signingKeyPath: "/signing-key.key"
+http:
+  externalURL: $FACTORY_URL
+  certFile: "/certs/server-chain.pem"
+  keyFile: "/certs/server-key.pem"
+EOF
 ```
-
-  </Tab>
-  <Tab title="Self-signed CA">
 
 To run the image factory with a self-signed CA certificate you need to mount them into the container image at run time.
 
-<Tabs>
-<Tab title="Red Hat">
+<CodeBlock language="bash">
+{`
+docker run -p 8080:8080 -d \\\n  --name image-factory \\\n  --net=host \\\n  -v $PWD/image-factory.yaml:/image-factory.yaml:ro,Z \\\n  -v $PWD/signing-key.key:/signing-key.key:ro,Z \\\n  -v $PWD/cosign.pub:/cosign.pub:ro,Z \\\n  -v $PWD/server-chain.pem:/certs/server-chain.pem:ro,Z \\\n  -v $PWD/server-key.pem:/certs/server-key.pem:ro,Z \\\n  -v $PWD/ca.pem:/etc/ssl/certs/ca.pem:ro,Z \\\n  ghcr.io/siderolabs/image-factory:${image_factory_release} \\\n    --config /image-factory.yaml
+`}
+</CodeBlock>
 
-<Info>If you are running on a server with SELinux enabled and enforcing then volumes mounted into the container will not be available unless you append `:Z` to the volume mounts.</Info>
-```bash
-docker run -p 8080:8080 -d \
-  --name image-factory \
-  --net=host \
-  -v $PWD/signing-key.key:/signing-key.key:ro \
-  -v $PWD/cosign.pub:/cosign.pub:ro \
-  -v $PWD/server-chain.pem:/certs/server-chain.pem:ro \
-  -v $PWD/server-key.pem:/certs/server-key.pem:ro \
-  -v /etc/pki/ca-trust/source/anchors/:/etc/ssl/certs:ro \
-  ghcr.io/siderolabs/image-factory:v1.0.0 \
-    -external-url $FACTORY_URL \
-    -image-registry $REGISTRY_ENDPOINT \
-    -installer-internal-repository $REGISTRY_ENDPOINT/siderolabs \
-    -installer-internal-repository $REGISTRY_ENDPOINT/siderolabs \
-    -schematic-service-repository $REGISTRY_ENDPOINT/siderolabs/image-factory/schematic \
-    -cache-repository $REGISTRY_ENDPOINT/siderolabs/cache \
-    -cache-signing-key-path /signing-key.key \
-    -container-signature-pubkey /cosign.pub \
-    -cache-cdn-enabled=false \
-    -cache-s3-enabled=false \
-    -http-key-file=/certs/server-key.pem \
-    -http-cert-file=/certs/server-chain.pem
-```
-    </Tab>
-    <Tab title="Ubuntu">
-```bash
-docker run -p 8080:8080 -d \
-  --name image-factory \
-  --net=host \
-  -v $PWD/signing-key.key:/signing-key.key:ro \
-  -v $PWD/cosign.pub:/cosign.pub:ro \
-  -v $PWD/server-chain.pem:/certs/server-chain.pem:ro \
-  -v $PWD/server-key.pem:/certs/server-key.pem:ro \
-  -v /usr/local/share/ca-certificates/:/etc/ssl/certs:ro \
-  ghcr.io/siderolabs/image-factory:v1.0.0 \
-    -external-url $FACTORY_URL \
-    -image-registry $REGISTRY_ENDPOINT \
-    -installer-internal-repository $REGISTRY_ENDPOINT/siderolabs \
-    -installer-internal-repository $REGISTRY_ENDPOINT/siderolabs \
-    -schematic-service-repository $REGISTRY_ENDPOINT/siderolabs/image-factory/schematic \
-    -cache-repository $REGISTRY_ENDPOINT/siderolabs/cache \
-    -cache-signing-key-path /signing-key.key \
-    -container-signature-pubkey /cosign.pub \
-    -cache-cdn-enabled=false \
-    -cache-s3-enabled=false \
-    -http-key-file=/certs/server-key.pem \
-    -http-cert-file=/certs/server-chain.pem
-```
-    </Tab>
-</Tabs>
+You should now be able to browse to https://registry.internal:8080 and view the Image Factory web interface. If your server or network has any firewall rules you may need to allow TCP traffic to the host.
 
   </Tab>
   <Tab title="Insecure">
 
-If your image factory and container registry do not have certificates run the following command:
+Set a internal factory endpoint.
+```bash
+FACTORY_URL=http://factory.internal:8080
+```
+
+Create a configuration for the Image Factory
 
 ```bash
-docker run -p 8080:8080 -d \
-  --name image-factory \
-  --net=host \
-  -v $PWD/signing-key.key:/signing-key.key:ro \
-  -v $PWD/cosign.pub:/cosign.pub:ro \
-  ghcr.io/siderolabs/image-factory:v1.0.0 \
-    -insecure-image-registry \
-    -insecure-installer-internal-repository \
-    -insecure-schematic-service-repository \
-    -external-url $FACTORY_URL \
-    -image-registry $REGISTRY_ENDPOINT \
-    -installer-internal-repository $REGISTRY_ENDPOINT/siderolabs \
-    -installer-internal-repository $REGISTRY_ENDPOINT/siderolabs \
-    -schematic-service-repository $REGISTRY_ENDPOINT/siderolabs/image-factory/schematic \
-    -cache-repository $REGISTRY_ENDPOINT/siderolabs/cache \
-    -cache-signing-key-path /signing-key.key \
-    -container-signature-pubkey /cosign.pub \
-    -cache-cdn-enabled=false \
-    -cache-s3-enabled=false
+cat <<EOF > image-factory.yaml
+artifacts:
+  core:
+    registry: $REGISTRY_ENDPOINT
+    insecure: true
+  schematic:
+    registry: $REGISTRY_ENDPOINT
+    insecure: true
+  installer:
+    internal:
+      registry: $REGISTRY_ENDPOINT
+      insecure: true
+    external:
+      registry: $REGISTRY_ENDPOINT
+      insecure: true
+containerSignature:
+  publicKeyFile: /cosign.pub
+  subjectRegExp: ""
+cache:
+  oci:
+    registry: $REGISTRY_ENDPOINT
+    insecure: true
+  signingKeyPath: "/signing-key.key"
+http:
+  externalURL: $FACTORY_URL
+EOF
 ```
+
+If your image factory and container registry do not have certificates run the following command:
+
+<CodeBlock language="bash">
+{`
+docker run -p 8080:8080 -d \\\n  --name image-factory \\\n  --net=host \\\n  -v $PWD/image-factory.yaml:/image-factory.yaml:ro,Z \\\n  -v $PWD/signing-key.key:/signing-key.key:ro,Z \\\n  -v $PWD/cosign.pub:/cosign.pub:ro,Z \\\n ghcr.io/siderolabs/image-factory:${image_factory_release} \\\n    --config /image-factory.yaml
+`}
+</CodeBlock>
+
+You should now be able to browse to http://registry.internal:8080 and view the Image Factory web interface. If your server or network has any firewall rules you may need to allow TCP traffic to the host.
+
   </Tab>
 </Tabs>
 
+
 </Tab>
 </Tabs>
-
-You should now be able to browse to https://registry.internal:8080 and view the Image Factory web interface. If your server or network has any firewall rules you may need to allow TCP traffic to the host.
 
 ## Run Omni
 
