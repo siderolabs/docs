@@ -2282,6 +2282,7 @@
               "omni/reference/cli",
               "omni/reference/cluster-templates",
               "omni/reference/manage-omni-resources-with-omnictl",
+              "omni/reference/image-factory-configuration",
               "omni/reference/generating-omnictl-cli-reference"
             ]
           },
