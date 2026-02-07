@@ -58,6 +58,18 @@ Set the following command to the `install-multus-binary` container.
             - "thick"
 ```
 
+As of February 03, 2025, Multus has a [bug](https://github.com/k8snetworkplumbingwg/multus-cni/issues/1346) when deployed with the default resource limits. The issue can lead to primary CNI plugin getting OOM-killed in the kube-multus-ds DaemonSet pod because the 50Mi memory limit is too low. To mitigate this issue, increase the resource limits on the daemonset:
+
+```yaml
+  resources:
+    limits:
+      cpu: 300m
+      memory: 150Mi
+    requests:
+      cpu: 200m
+      memory: 100Mi
+```
+
 ### Creating your `NetworkAttachmentDefinition`
 
 The `NetworkAttachmentDefinition` configuration is used to define your bridge where your second pod interface needs to be attached to.
