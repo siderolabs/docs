@@ -104,15 +104,15 @@ Verify which resources are retrievable in `--insecure` mode by following these s
     | jq -r 'select(.spec.sensitivity != null) | .spec.aliases[0]'
     ```
 
-`talosctl meta`
+`talosctl meta` (only with Omni)
 
 Manages key-value pairs in the META partition.
 
-`talosctl reset`
+`talosctl reset` (only with Omni)
 
 Resets the nodes in Omni.
 
-`talosctl wipe disk`
+`talosctl wipe disk` (only with Omni)
 
 Erase data from disk partitions on a Talos node.
 
