@@ -209,6 +209,7 @@ navigation:
             - "configuration/v1alpha1/config.mdx"
             - "kernel.mdx"
             - "cli.mdx"
+            - "talosconfig.mdx"
             - "api.mdx"
             - "configuration/extensions/extensionserviceconfig.mdx"
             - "configuration/hardware/pcidriverrebindconfig.mdx"

@@ -356,6 +356,7 @@
                   "talos/v1.12/reference/configuration/v1alpha1/config",
                   "talos/v1.12/reference/kernel",
                   "talos/v1.12/reference/cli",
+                  "talos/v1.12/reference/talosconfig",
                   "talos/v1.12/reference/api",
                   {
                     "group": "Block",
@@ -703,6 +704,7 @@
                   "talos/v1.11/reference/configuration/v1alpha1/config",
                   "talos/v1.11/reference/kernel",
                   "talos/v1.11/reference/cli",
+                  "talos/v1.11/reference/talosconfig",
                   "talos/v1.11/reference/api",
                   "talos/v1.11/reference/configuration/extensions/extensionserviceconfig",
                   "talos/v1.11/reference/configuration/hardware/pcidriverrebindconfig",
