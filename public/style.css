@@ -29,7 +29,6 @@ table {
 
   th,
   td {
-    padding: 0.5rem 1rem;
     text-align: left;
   }
 
@@ -50,6 +49,11 @@ table {
       }
     }
   }
+}
+
+.prose table th,
+.prose table td {
+  padding: 0.5rem 1rem 0.5rem 1.5rem;
 }
 
 /* Large Screen Max Width */
