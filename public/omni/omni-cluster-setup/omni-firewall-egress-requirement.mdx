@@ -1,0 +1,96 @@
+---
+title: Omni Firewall and Egress Requirements
+description: Network access required for Omni on-prem and SaaS deployments.
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+This document describes the network requirements for Omni deployments. Requirements differ depending on whether Omni is deployed on-prem or used as a SaaS service.
+
+## Omni on-prem
+
+When Omni is deployed on-prem, network access is required in three areas:
+
+- Outbound access from Omni to external services (e.g. Image Factory and authentication service)
+- Connectivity from Talos nodes to Omni
+- Optional outbound access from Talos nodes, depending on configuration
+
+### Outbound access from Omni
+
+Omni can be deployed in a [fully air-gapped environment](../self-hosted/run-omni-airgapped). In such setups, external dependencies (container images, install media, and factory builds) must be mirrored internally.
+
+When Omni has outbound internet access, network access is required in three areas:
+
+- Pull the Omni container image
+- Download Talos install media
+- Generate factory builds
+
+The following domains must be accessible from the host where Omni is running:
+
+| Domain | Purpose | Port |
+|--------|----------|------|
+| `ghcr.io` | Download Omni container image | 443 |
+| `*.githubusercontent.com` | Backing blob storage for images | 443 |
+| `factory.talos.dev` | Talos install media | 443 |
+| `*.factory.talos.dev` | Talos factory builds | 443 |
+| `*.r2.cloudflarestorage.com` | CDN / object storage for install media | 443 |
+
+All traffic uses TCP port 443.
+
+### Connectivity from Talos nodes to Omni
+
+Talos nodes must be able to connect to Omni for cluster management and SideroLink.
+
+Talos uses two endpoints exposed by Omni:
+
+- The **API Endpoint**, used for HTTPS management traffic
+- The **SideroLink Endpoint**, used for WireGuard connectivity
+
+Both endpoints are shown in the Omni UI under **Home → General Information**.
+
+The following ports must be allowed between Talos nodes and the Omni endpoint:
+
+| Port | Protocol | Purpose |
+|------|----------|----------|
+| 443 | TCP | HTTPS API |
+| 51820* | UDP | WireGuard (SideroLink) |
+
+The WireGuard port may vary depending on deployment configuration.
+
+### SideroLink internal address
+
+When SideroLink is established, Talos communicates with Omni over a WireGuard tunnel.
+
+Inside this tunnel, Omni is reachable at the fixed IPv6 address:
+
+```
+fd00:41e4:649b:9303::1
+```
+
+This address is internal to the tunnel and does not need to be exposed externally.
+
+### Optional outbound access from Talos nodes
+
+In some deployments, Talos nodes download install media directly.
+
+If this is required, see the <a href={`../../talos/${version}/networking/egress-domains`}>Talos Egress Requirements documentation</a> for the list of required domains.
+
+If Omni handles install media downloads, direct outbound access from Talos nodes may not be required.
+
+## Omni SaaS
+
+When using Omni SaaS, Talos nodes must be able to reach the Omni endpoints provided during cluster registration.
+
+These include:
+
+- The API endpoint (HTTPS)
+- The SideroLink endpoint (WireGuard)
+
+Required ports:
+
+| Port | Protocol |
+|------|----------|
+| 443 | TCP |
+| 51820 | UDP |
+
+The exact hostname and WireGuard endpoint are displayed in the Omni UI.

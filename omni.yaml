@@ -59,7 +59,7 @@ navigation:
             - "create-an-omni-service-account.mdx"
             - "how-to-set-initial-machine-labels.mdx"
             - "setting-up-the-bare-metal-infrastructure-provider.mdx"
-
+            - "omni-firewall-egress-requirement.mdx"
         - group: "Cluster Management"
           folder: "omni/cluster-management"
           pages:
