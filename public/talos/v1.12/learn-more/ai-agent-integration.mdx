@@ -1,0 +1,119 @@
+---
+title: AI Agent Integration
+description: Integrate Talos and Omni documentation with AI agents using llms.txt, skill.md, or MCP.
+---
+
+SideroLabs publishes machine-readable documentation metadata that allows AI agents and developer tools to understand Talos Linux and Omni capabilities programmatically.
+
+These integration points can be used by agent frameworks, MCP-compatible tools, IDE extensions, or custom automation.
+
+## Available integration endpoints
+
+Depending on your tooling and integration model, you can use one or more of the following endpoints.
+
+### The `llms.txt` file
+
+The `llms.txt` file is a structured documentation index.
+
+It lists all the available documentation pages so agents can discover relevant content before answering questions.
+
+You can see the `llms.txt` file at:
+
+```url
+https://docs.siderolabs.com/llms.txt
+```
+
+### The `skill.md` file
+
+The `skill.md` file is a capability definition that describes supported operations, workflows, architectural constraints, and expected inputs and outputs.
+
+Agents can use this file to understand:
+
+- Supported actions
+- Required configuration inputs
+- Workflow sequencing
+- Operational constraints
+
+You can download the `skill.md` file in your personal Claude skills directory:
+
+```bash
+mkdir -p ~/.claude/skills/siderolabs
+curl -L https://docs.siderolabs.com/skill.md \
+  -o ~/.claude/skills/siderolabs/SKILL.md
+```
+
+Restart Claude Code after downloading the file.
+
+**Alternatively**, if your agent supports the [Skills CLI](https://www.npmjs.com/package/skills), you can install the skill using:
+
+```bash
+npx skills add https://docs.siderolabs.com
+```
+
+This command loads the SideroLabs capability definition into the agent’s context.
+
+### MCP endpoint
+
+SideroLabs exposes its documentation through a remote Model Context Protocol (MCP) server.
+
+This enables MCP-compatible clients to query the documentation dynamically using the standard MCP interface.
+
+To connect, register the following URL as a remote MCP server in your client configuration:
+
+```url
+https://docs.siderolabs.com/mcp
+```
+
+**For example:**
+
+To register the SideroLabs documentation as an MCP server in OpenCode or Claude Code:
+
+<Tabs>
+  <Tab title="OpenCode">
+
+  Add the MCP server configuration to your OpenCode config file located at `~/.opencode/opencode.json`:
+
+  ```json
+  {
+    "mcp": {
+      "siderolabs-docs": {
+        "type": "remote",
+        "url": "https://docs.siderolabs.com/mcp",
+        "enabled": true
+      }
+    }
+  }
+  ```
+  </Tab>
+  <Tab title="Claude code (user-level configuration)">
+  Add the MCP server to your [personal Claude configuration](https://code.claude.com/docs/en/settings#configuration-scopes) file located at `~/.claude.json`:
+    ```json
+    {
+      "mcpServers": {
+        "siderolabs-docs": {
+          "type": "remote",
+          "url": "https://docs.siderolabs.com/mcp"
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Claude code (project-level)">
+
+  To share the MCP configuration with your team, create or update the `.mcp.json` file in the root of your repository:
+
+  ```json
+  {
+    "mcpServers": {
+      "siderolabs-docs": {
+        "type": "remote",
+        "url": "https://docs.siderolabs.com/mcp"
+      }
+    }
+  }
+
+  ```
+  </Tab>
+</Tabs>
+
+For other MCP-compatible clients, refer to your client’s documentation for instructions on adding a remote server.
