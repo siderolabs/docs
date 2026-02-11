@@ -298,3 +298,4 @@ navigation:
             - "talos-network-connectivity.mdx"
             - "talos-platform-configuration.mdx"
             - "talosctl.mdx"
+            - "ai-agent-integration.mdx"
