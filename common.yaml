@@ -11,6 +11,10 @@ colors:
   light: "#FF5788"
   dark: "#FB326E"
 
+banner:
+  content: "You are viewing an older version of the docs. See the [latest version](https://docs.siderolabs.com/talos/latest)."
+  dismissible: false
+
 favicon: "/images/favicon.svg"
 
 contextual:
