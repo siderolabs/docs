@@ -286,7 +286,7 @@ There are several built-in profiles:
 The base profile can be customized with the additional flags to the imager:
 
 * `--arch` specifies the architecture of the image to be generated (default: host architecture)
-* `--meta` allows to set initial `META` values
+* `--meta` sets initial `META` values using the format `--meta <key>=<value>`. If the value contains structured data, it must be properly quoted JSON (or YAML). For example: `--meta 12='{"machineLabels":{"key":"value"}}'`.
 * `--extra-kernel-arg` allows to customize the kernel command line arguments.
   Default kernel arg can be removed by prefixing the argument with a `-`.
   For example `-console` removes all `console=<value>` arguments, whereas `-console=tty0` removes the `console=tty0` default argument.
