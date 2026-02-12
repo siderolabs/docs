@@ -1,0 +1,115 @@
+---
+title: Omni On-Prem Hardware Requirements
+description: CPU, memory, disk, and network requirements for running Omni in on-prem environments.
+---
+
+This document describes the hardware requirements and sizing guidance for running Omni on-prem.
+
+Omni itself has relatively low resource requirements. In most environments, disk performance (primarily for etcd) and storage capacity for images are more important than raw CPU.
+
+The numbers below are practical starting points based on internal guidance and etcd recommendations. As always, test with workloads representative of your environment before production use.
+
+## Deployment models
+
+A typical Omni on-prem deployment includes:
+
+- Omni
+- etcd
+- (Optional) Image Factory
+- (Optional) Local container registry
+
+For more details, see the [Run Omni On-Prem](./run-omni-on-prem) documentation.
+
+In small and medium environments, all components can run on a single VM. For larger deployments, you can separate components onto multiple machines.
+
+## Full stack on a single VM
+
+If you run Omni and all supporting services (etcd, image factory, and container registry) on a single VM, the following is a reasonable baseline for up to ~200 managed nodes:
+
+- 4 vCPUs
+- 8–16 GB RAM
+- 500 GB SSD storage
+- 1 Gbps network (2.5 Gbps recommended for heavy WireGuard traffic)
+
+For environments with fewer than 50 managed nodes, you can typically provision about half of these resources:
+
+- 2 vCPUs
+- 8 GB RAM
+- 200–250 GB SSD storage
+
+These estimates assume moderate usage and that image caching is enabled.
+
+## Component breakdown
+
+The following sections describe the resource requirements and sizing considerations for each component individually.
+
+### Omni
+
+Omni is lightweight. Scaling from tens to hundreds of managed nodes does not significantly increase its CPU or memory requirements.
+
+For small and medium deployments, Omni can safely share a host with etcd, as long as etcd’s storage requirements are met and the disk provides good performance.
+
+### etcd
+
+Omni uses etcd to store cluster state. Disk performance is critical for stability and responsiveness.
+
+General guidance (based on [etcd recommendations](https://etcd.io/docs/v3.5/op-guide/hardware/)):
+
+- **CPU:** 2–4 cores for typical clusters
+- **Memory:** 8 GB is sufficient for most deployments
+- **Disk:** Fast SSD strongly recommended
+
+#### Disk performance
+
+etcd is sensitive to disk write latency. Slow disks can lead to:
+
+- Increased request latency
+- Leader election instability
+- Overall cluster performance degradation
+
+Recommended minimums:
+
+- SSD-backed storage
+- At least ~500 sequential IOPS for moderate workloads
+- Higher IOPS for large or heavily loaded environments
+
+Avoid slow spinning disks whenever possible. If HDD must be used, choose the fastest available option and validate performance using disk benchmarking tools.
+
+RAID 0 can be used to improve disk throughput. When running three or more etcd members, additional RAID mirroring is typically unnecessary, since etcd already provides replication at the application level.
+
+### Container Registry
+
+If you are running a local container registry for Talos and Kubernetes releases:
+
+- Plan for **3–4 GB per Talos and Kubernetes release**
+- Include additional space for extensions and system containers
+- Size storage based on how many versions you plan to retain
+
+For example, retaining 10 releases requires approximately **30–40 GB** at minimum. Allocate additional headroom for future growth.
+
+### Image Factory
+
+Storage requirements depend on:
+
+- The number of images you build
+- Whether caching is enabled
+
+In most setups:
+
+- Fewer than 10 installation images are maintained
+- Images are cached to avoid rebuilding during installs or upgrades
+
+In practice, **1–2 GB** of total storage is typically sufficient for a single Omni deployment.
+Allocate additional space if you frequently rebuild images or support multiple image variants.
+
+## Network requirements
+
+For most deployments:
+
+- A **1 Gbps** network connection is sufficient
+- Maintain **low latency** between Omni and etcd
+- Keep components in the same data center whenever possible
+
+For larger environments or deployments with heavy WireGuard traffic:
+
+- Use **2.5 Gbps or higher** to improve throughput

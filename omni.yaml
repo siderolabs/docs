@@ -22,6 +22,7 @@ navigation:
           folder: "omni/self-hosted"
           pages:
             - "omni-deployment-options.mdx"
+            - "omni-on-prem-hardware-requirements.mdx"
             - "run-omni-on-prem.mdx"
             - "run-omni-airgapped.mdx"
             - "run-image-factory-on-prem.mdx"
