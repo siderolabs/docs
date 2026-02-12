@@ -15,18 +15,19 @@ You can add extra kernel arguments to Talos when creating the installation media
 
 ## Add additional kernel arguments during installation media creation
 
-On the overview page, click **Download installation media** on the right.
+To include additional kernel arguments when creating installation media:
 
-Add the kernel arguments you want to pass to Talos Linux in the **Additional kernel arguments** field:
+1. Click **Download Installation Media**.
 
-<img src="./images/modify-kernel-arguments-download-installation-media.png" alt="Download installation media"/>
+2. Choose the options to customize your installation media.
 
-Click **Download**.
+3. On the **Customization** page, enter the kernel arguments you want Talos Linux to use in the **Extra kernel command line arguments** field.
 
-When a machine boots from that installation media, it includes the additional kernel arguments in its kernel command line.
+4. Complete the download process to generate the installation media with the specified kernel arguments included.
 
-If the additional arguments are not empty, Omni creates a `KernelArgs` resource for that machine.
-This resource can be viewed and modified later to update the kernel arguments.
+When a machine boots from this installation media, the specified arguments are added to its kernel command line.
+
+If additional arguments are provided, Omni automatically creates a `KernelArgs` resource for that machine. You can view and modify this resource later to update the kernel arguments.
 
 For example:
 
@@ -34,7 +35,7 @@ For example:
 omnictl get kernelargs $MACHINE_ID -o yaml
 ```
 
-Example output:
+**Example output:**
 
 ```yaml
 metadata:
@@ -54,38 +55,39 @@ spec:
 
 ## Update kernel arguments on existing machines
 
-<Warning>
-  Modifying kernel arguments on existing machines triggers an upgrade and reboots the machine.
-</Warning>
+You can update kernel arguments on existing machines using either the Omni UI or the CLI.
 
-<Note>
-  Some conditions must be met for kernel argument updates to take effect.
-  If these conditions are not met, they appear in the `unmetconditions` field of the `KernelArgsStatus` resource and in the UI.
-</Note>
+<Warning>Modifying kernel arguments on existing machines triggers an upgrade and causes the machine to reboot..</Warning>
 
 <Tabs>
   <Tab title="UI">
-    1. Go to the **Machines** tab.
 
-    2. Click the three dots next to the machine you want to modify and select **Update kernel args**.
+    To update kernel arguments using the Omni UI:
+
+    1. Select the **Machines** tab.
+
+    2. Click the three dots next to the machine you want to modify, then select **Update kernel args**.
 
     <img src="./images/modify-kernel-arguments-update-kernel-args.png" alt="Update kernel args" style={{width: "30%"}}/>
 
-    3. In the popup, click the pencil icon to edit the current kernel arguments.
+    3. In the popup window, click the pencil icon to edit the current kernel arguments.
 
-    4. Click **Update**.
+    4. Click **Update** to apply the changes.
 
     <img src="./images/modify-kernel-arguments-update.png" alt="Update kernel args popup" style={{width: "60%"}}/>
+
   </Tab>
 
   <Tab title="CLI">
-    1. Save the existing arguments to a file:
+    To update kernel arguments using the CLI:
 
-       ```bash
-       omnictl get kernelargs $MACHINE_ID -o yaml > kernel-args.yaml
-       ```
+    1. Save the existing kernel arguments to a file:
 
-    *Alternatively, you can create a new file manually.*
+    ```bash
+    omnictl get kernelargs $MACHINE_ID -o yaml > kernel-args.yaml
+    ```
+
+    **Alternatively**, create a new file manually.
 
     2. Modify the file as needed. For example, to set `talos.environment=foo=bar`, update the `spec.args` section:
 
@@ -135,3 +137,5 @@ spec:
        ```
   </Tab>
 </Tabs>
+
+<Note>Some conditions must be met for kernel argument updates to take effect. If these conditions are not met, they appear in the `unmetconditions` field of the `KernelArgsStatus` resource and in the UI.</Note>

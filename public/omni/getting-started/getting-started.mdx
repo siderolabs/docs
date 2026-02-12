@@ -61,24 +61,35 @@ You must have the following to create a cluster with Omni:
 
 ## Step 1: Download installation media
 
-Omni is a Bring Your Own Machine platform. You only need to boot a machine from a Talos image configured to connect to your Omni instance.
+Omni is a Bring Your Own Machine platform. You only need to boot a machine from a Talos Omni image configured to connect to your Omni instance.
 
-You can download this Omni image from either the Omni UI or the CLI:
+You can download this Talos Omni image from either the Omni UI or the CLI:
 
 <Tabs>
 <Tab title="Omni UI">
-To download the Omni image from the Omni dashboard:
+To download the Talos Omni image from the Omni dashboard:
 
 1. Log in to your Omni dashboard.
-2. Click the **Download Installation Media** button to open its modal.
 
-![Download Installation Media](./images/getting-started-installation-media.png)
+2. Click **Download Installation Media** to open the <a href={`../../talos/${version}/learn-more/image-factory`}>Image Factory</a>.
 
-3. Choose the appropriate image for your machine.
+![image]()
 
-![Appropriate Omni image](./images/getting-started-appropriate-image.png)
+3. In the Image Factory, choose the options required to build the image for your machine.
 
-4. Click **Download** to begin downloading the Omni image.
+    You can configure:
+
+      - Talos version
+
+      - Machine architecture
+
+      - System extensions or other customizations
+
+4. Download the image that matches your configuration.
+
+![image]()
+
+<Note>Click **Save** in the bottom-right corner to store your selected options as a preset for future use.</Note>
 
 </Tab>
 <Tab title="CLI">
