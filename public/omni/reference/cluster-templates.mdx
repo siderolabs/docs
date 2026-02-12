@@ -121,6 +121,8 @@ kernelArgs:
   - talos.dashboard.disabled=1
 ```
 
+<Warning>Cluster templates that use `machineClass` do not support `kernelArgs`. Defining them at the cluster or machine set level will cause validation errors.</Warning>
+
 | Field                                   | Type                     | Description                                                                                                                                                                                                                 |
 |:----------------------------------------|:-------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `kind`                                  | string                   | `Cluster`                                                                                                                                                                                                                   |
