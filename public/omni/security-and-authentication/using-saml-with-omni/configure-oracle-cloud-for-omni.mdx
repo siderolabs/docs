@@ -31,7 +31,7 @@ Only update the fields mentioned in the table below.
 | Name ID Value               | Primary email                          |
 | Enable single logout        | Disabled                               |
 
-At the bottom of this section, you’ll see an “Attibute configuration" block, here the mappings from Oracle to Omni fields needs to be entered as below. Use the “Add attribute" button to create new ones.
+At the bottom of this section, you’ll see an "Attribute configuration" block, here the mappings from Oracle to Omni fields needs to be entered as below. Use the “Add attribute" button to create new ones.
 
 | Name      | Name Format | Value      | Description              |
 | --------- | ----------- | ---------- | ------------------------ |
@@ -45,7 +45,7 @@ Once saved, head to the "Users" configuration section.
 
 Add any users that you wish to have access to Omni.
 
-Once complete, head back to the "SAML SSO Configuation" tab and hit "Download" on the "Identity Provider Metadata" field.
+Once complete, head back to the "SAML SSO Configuration" tab and hit "Download" on the "Identity Provider Metadata" field.
 
 A copy of this file needs to be on the host which will run the Omni container as we’ll feed it in to the container at runtime. You can copy paste contents or download/upload the file whichever is easiest. For the remainder of this guide, we’ll assume this file ends up at the following location on your container host: `~/oraclemetadata.xml`
 

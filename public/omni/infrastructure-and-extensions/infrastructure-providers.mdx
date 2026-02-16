@@ -45,7 +45,7 @@ When a static machine is not actively being used in a cluster it is turned off t
 
 ## Dynamic providers
 
-Dynamic providers create and destroy machines as needed. These are created using other VM platforms such as AWS, VMware and OpenStack. They can also use other infrastructure management solutions such as [Forman](https://theforeman.org/) or [RackN](http://rackn.com/rebar/) which have their own APIs and can provision machines out of a pool of resources.
+Dynamic providers create and destroy machines as needed. These are created using other VM platforms such as AWS, VMware and OpenStack. They can also use other infrastructure management solutions such as [Foreman](https://theforeman.org/) or [RackN](http://rackn.com/rebar/) which have their own APIs and can provision machines out of a pool of resources.
 
 Dynamic providers make a request to a resource API and expect machines to be created dynamically and connected to Omni. A [machine class](../omni-cluster-setup/create-a-machine-class) is automatically created for the request which keeps the machines organized and automatically provisioned to a cluster.
 

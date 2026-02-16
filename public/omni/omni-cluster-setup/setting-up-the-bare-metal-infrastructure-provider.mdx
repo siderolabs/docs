@@ -109,7 +109,7 @@ Sample output:
 Start tailing its logs in a separate shell:
 
 ```bash
-docker logs -f omni-bare-metal-infra-Provider
+docker logs -f omni-bare-metal-infra-provider
 ```
 
 Sample output:
@@ -175,7 +175,7 @@ At this point, these machines are booted into a special mode of Talos Linux call
 * does not allow a configuration to be applied to it
 * establishes a secure [SideroLink](https://www.talos.dev/v1.9/talos-guides/network/siderolink) connection to the Omni instance
 * runs the [Metal Agent](https://github.com/siderolabs/extensions/tree/v1.9.0/guest-agents/metal-agent) extension which establishes a connection to the provider
-* runs the only the required services to be able to further provisioned by the provider
+* runs only the required services to be able to further provisioned by the provider
 </Info>
 
 ## 4. Configuring and accepting the machines in Omni

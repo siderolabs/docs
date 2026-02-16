@@ -11,7 +11,7 @@ First of all, check the current overall status of the cluster backup subsystem:
 omnictl get etcdbackupoverallstatus
 ```
 
-If you have freshly created Omni instance, the output will be similar to this:
+If you have a freshly created Omni instance, the output will be similar to this:
 
 ```shell
 NAMESPACE   TYPE                      ID                          VERSION   CONFIGURATION NAME   CONFIGURATION ERROR   LAST BACKUP STATUS   LAST BACKUP ERROR   LAST BACKUP TIME   CONFIGURATION ATTEMPT
@@ -22,7 +22,7 @@ The combination of the `CONFIGURATION NAME` and `CONFIGURATION ERROR` fields dis
 Currently, Omni supports two backup stores: `local` and `s3`.
 These are configured during Omni initialization.
 The output above indicates that the backup store is set to use the `s3` store.
-However, the s3 configuration itself has not yet been added, so the` CONFIGURATION ERROR` field shows `not initialized`.
+However, the s3 configuration itself has not yet been added, so the `CONFIGURATION ERROR` field shows `not initialized`.
 The rest of the fields show as empty because no backups have been created yet.
 
 ### S3-compatible providers
@@ -108,7 +108,7 @@ In a few seconds, you can check the status of the backup:
 omnictl get etcdbackupstatus -o yaml
 ```
 
-This command print per-cluster backup status. The output will be similar to this:
+This command prints per-cluster backup status. The output will be similar to this:
 
 ```yaml
 metadata:
