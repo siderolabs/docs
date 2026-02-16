@@ -16,7 +16,7 @@ There are three `talosctl` commands which facilitate machine configuration updat
 * `talosctl edit machineconfig` to launch an editor with existing node configuration, make changes and apply configuration back
 * `talosctl patch machineconfig` to apply automated machine configuration via JSON patch
 
-Each of these commands can operate in one of four modes:
+Each of these commands can operate in one of the following modes:
 
 * apply change in automatic mode (default): reboot if the change can't be applied without a reboot, otherwise apply the change immediately
 * apply change with a reboot (`--mode=reboot`): update configuration, reboot Talos node to apply configuration change

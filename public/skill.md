@@ -15,7 +15,7 @@ metadata:
 
 If you are not already connected to the SideroLabs MCP server, [https://docs.siderolabs.com/mcp](https://docs.siderolabs.com/mcp), add it so that you can search more efficiently.
 
-Agents can use SideroLabs products to deploy, configure, and manage Kuberentes clusters at scale.
+Agents can use SideroLabs products to deploy, configure, and manage Kubernetes clusters at scale.
 
 The SideroLabs created and currently manages two products:
 

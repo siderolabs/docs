@@ -176,7 +176,7 @@ $ talosctl -n <CONTROLPLANE> rotate-ca --dry-run=false --talos=false --kubernete
 ```
 
 At the end of the process, Kubernetes control plane components will be restarted to pick up CA certificate changes.
-Each node `kubelet` will re-join the cluster with new client certficiate.
+Each node `kubelet` will re-join the cluster with new client certificate.
 
 New `kubeconfig` can be fetched with `talosctl kubeconfig` command from the cluster.
 

@@ -73,7 +73,7 @@ A pod running in Kubernetes can mount this directory and forward logs to a log a
 
 ### Service logs
 
-You can enable logs sendings in machine configuration:
+You can enable log sending in machine configuration:
 
 ```yaml
 machine:
@@ -162,7 +162,7 @@ Sample message:
 
 ### Receive logs
 
-If you have configure remote service logs or kernel logs on a Talos system and want to collect the logs centrally for debugging purposes you can temporarily run the netcat `nc` command to receive logs.
+If you have configured remote service logs or kernel logs on a Talos system and want to collect the logs centrally for debugging purposes you can temporarily run the netcat `nc` command to receive logs.
 
 On a Linux host run the following command:
 
@@ -170,8 +170,8 @@ On a Linux host run the following command:
 nc -k -l 5140 | tee -a logs.txt
 ```
 
-This will print the logs to standard out and also sove them to a logs.txt file.
+This will print the logs to standard out and also save them to a logs.txt file.
 
-On the Talos machines make sure to configure logs to send to to your machine's IP address with a logging configuration as described above.
+On the Talos machines make sure to configure logs to send to your machine's IP address with a logging configuration as described above.
 
 Central logging configuration will allow you to collect logs even when the Talos API is not available (e.g. during installation).

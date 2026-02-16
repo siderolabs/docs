@@ -60,8 +60,8 @@ Verify that you can reach Kubernetes:
 kubectl get nodes -o wide
 
 NAME                           STATUS   ROLES    AGE    VERSION          INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                 KERNEL-VERSION   CONTAINER-RUNTIME
-talos-default-controlplane-1   Ready    master   115s   v${k8s_release}   10.5.0.2      <none>        Talos ${release_v1_13}   <host kernel>    containerd://1.5.5
-talos-default-worker-1         Ready    <none>   115s   v${k8s_release}   10.5.0.3      <none>        Talos ${release_v1_13}   <host kernel>    containerd://1.5.5
+talos-default-controlplane-1   Ready    master   115s   v${k8s_release}   10.5.0.2      <none>        Talos ${release_v1_13}   <host kernel>    containerd://2.1.5
+talos-default-worker-1         Ready    <none>   115s   v${k8s_release}   10.5.0.3      <none>        Talos ${release_v1_13}   <host kernel>    containerd://2.1.5
 `}
 </CodeBlock>
 
