@@ -11,7 +11,7 @@ The Image Factory is a critical component of Omni to generate installation media
 
 ## Prerequisites
 
-* Machine to run Image Factory
+* [`talosctl`](../../talos/latest/getting-started/talosctl)
 * [`crane`](https://github.com/google/go-containerregistry/blob/main/cmd/crane/README.md)
 * `docker` or `podman`
 
@@ -197,41 +197,51 @@ done
 </Tab>
 <Tab title="Air-gapped">
 
-If you don't have direct access to an internal container registry (e.g. air gapped environment) you need to download the container images while connected to the internet. This command will download every image to a tar file stored in `/images`:
-
-Create a folder for downloading the images.
-
-```bash
-mkdir images
-```
+If you don't have direct access to an internal container registry (e.g. air gapped environment) you need to download the container images while connected to the internet.
 
 Download all images from `images.txt`. Create file names that don't contain special characters.
 
-<Info>If you run this from macOS please make sure to use [GNU sed](https://www.gnu.org/software/sed/) because the built-in BSD sed has different behavior. You can install it with `brew install gnu-sed` and you should have a `gsed` binary available.</Info>
-
 ```bash
-while read -r IMAGE; do
-    FILE_NAME=$(echo "$IMAGE" | sed 's/[\/ :@]/_/g').tar
-    echo "Pulling $IMAGE to $FILE_NAME"
-    crane pull "$IMAGE" "./images/$FILE_NAME"
-done < images.txt
+cat images.txt \
+  | talosctl images cache-create \
+      --layout flat \
+      --image-cache-path ./image-cache \
+      --images=-
 ```
 
-Move the `images` folder and `images.txt` file to an air gapped machine or a network where you have `push` access to the `$REGISTRY_ENDPOINT` and push them to the registry.
+Move to a network that has access to the `$REGISTRY_ENDPOINT` endpoint and push the local images to the registry.
+This serves the container layers on your local admin machine port `:5000` so you can push them with crane.
+Run this command command from your admin machine so you do not have port conflicts with the `$REGISTRY_ENDPOINT`.
+
+<Info>This method of copying containers is important because Talos releases pin to a container digest which needs to match in your internal registry</Info>
 
 ```bash
-while read -r IMAGE; do
-    [ -z "$IMAGE" ] && continue
+export IP=$(hostname -I | awk '{print $1}')
 
-    # construct new registry/image name
-    FILE_NAME="./images/$(echo "$IMAGE" | sed 's/[\/ :@]/_/g').tar"
-    IMAGE_PATH=$(echo "$IMAGE" | cut -d'/' -f2-)
-    DEST_PATH=$(echo "$IMAGE_PATH" | sed 's/@sha256:.*//')
-    DEST_IMAGE="${REGISTRY_ENDPOINT}/${DEST_PATH}"
+talosctl image cache-cert-gen \
+  --advertised-address $IP
 
-    crane push "$FILE_NAME" "$DEST_IMAGE"
-done < images.txt
+talosctl image cache-serve \
+  --address $IP:5000 \
+  --image-cache-path ./image-cache \
+  --tls-cert-file tls.crt \
+  --tls-key-file tls.key &
 ```
+
+Push the container images with `crane`.
+
+```bash
+for SOURCE_IMAGE in $(cat images.txt)
+  do
+    IMAGE_WITHOUT_DIGEST=${SOURCE_IMAGE%%@*}
+    IMAGE_WITH_NEW_REG="${REGISTRY_ENDPOINT}/${IMAGE_WITHOUT_DIGEST#*/}"
+    LOCALHOST_IMAGE="${IP}:5000/${IMAGE_WITHOUT_DIGEST#*/}"
+    crane copy --insecure \
+      $LOCALHOST_IMAGE \
+      $IMAGE_WITH_NEW_REG
+done
+```
+
 </Tab>
 </Tabs>
 
@@ -246,7 +256,7 @@ Generate a cosign key.
 
 ```bash
 docker run --rm -it \
-  -v $PWD:/keys -w /keys \
+  -v $PWD:/keys:ro,Z -w /keys \
   -e COSIGN_PASSWORD="" \
   --user $(id -u):$(id -g) \
   ghcr.io/sigstore/cosign/cosign:v2.6.1 \
@@ -311,6 +321,8 @@ artifacts:
       registry: $REGISTRY_ENDPOINT
     external:
       registry: $REGISTRY_ENDPOINT
+      repository: "talos"
+      namespace: "siderolabs"
 containerSignature:
   publicKeyFile: /cosign.pub
   subjectRegExp: ""

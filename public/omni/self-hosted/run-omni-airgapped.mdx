@@ -3,7 +3,7 @@ title: Run Omni Air-Gapped
 description: Set up the full Sidero stack in a fully offline environment
 ---
 
-import { omni_release, version, release } from '/snippets/custom-variables.mdx';
+import { omni_release, version, release, k8s_release } from '/snippets/custom-variables.mdx';
 
 This document will walk through each component to run the "Sidero stack" in an offline environment which includes the following components.
 
@@ -78,12 +78,49 @@ chmod +x crane
 
 To make this guide easier to follow we will set global variables for each of the endpoints and ports we will use. Update the hostnames and ports if you change any of them from the defaults.
 
+If you don't have DNS on your network it will be easiest to set these endpoints to the IP address of the machine running the services.
+
 ```bash
-REGISTRY_ENDPOINT=registry.internal:5000
-FACTORY_ENDPOINT=factory.internal:8080
-AUTH_ENDPOINT=auth.internal:5556
-OMNI_ENDPOINT=omni.internal
+export REGISTRY_ENDPOINT=registry.internal:5000
+export FACTORY_ENDPOINT=factory.internal:8080
+export AUTH_ENDPOINT=auth.internal:5556
+export OMNI_ENDPOINT=omni.internal
 ```
+
+### Open firewall ports
+
+You'll need to open all of the above firewall ports on the machine you'll be running them on.
+
+<Tabs>
+  <Tab title="Linux (RHEL)">
+
+  Red Hat and enterprise linux derivatives use `firewall-cmd`
+
+  ```bash
+sudo firewall-cmd --permanent --add-port=8100/tcp
+sudo firewall-cmd --permanent --add-port=5000/tcp
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --permanent --add-port=5556/tcp
+sudo firewall-cmd --permanent --add-port=443/tcp
+sudo firewall-cmd --permanent --add-port=8090/udp
+sudo firewall-cmd --permanent --add-port=8091/tcp
+  ```
+
+  </Tab>
+  <Tab title="Linux (Ubuntu)">
+  Debian and Ubuntu use `ufw` for firewall commands.
+
+  ```bash
+sudo ufw allow 8100/tcp
+sudo ufw allow 5000/tcp
+sudo ufw allow 8080/tcp
+sudo ufw allow 5556/tcp
+sudo ufw allow 443/tcp
+sudo ufw allow 8090/udp
+sudo ufw allow 8091/tcp
+  ```
+  </Tab>
+</Tabs>
 
 ## 1. Generate certificates
 
@@ -329,9 +366,9 @@ Run dex with the provided configuration and certificate.
 docker run -d \
   --name dex \
   -p 5556:5556 \
-  -v $(pwd)/dex.yaml:/etc/dex/dex.yaml \
-  -v $(pwd)/server-key.pem:/etc/dex/tls/server-key.pem \
-  -v $(pwd)/server-chain.pem:/etc/dex/tls/server-chain.pem \
+  -v $(pwd)/dex.yaml:/etc/dex/dex.yaml:ro,Z \
+  -v $(pwd)/server-key.pem:/etc/dex/tls/server-key.pem:ro,Z \
+  -v $(pwd)/server-chain.pem:/etc/dex/tls/server-chain.pem:ro,Z \
   ${REGISTRY_ENDPOINT}/dexidp/dex:v2.41.1 \
     dex serve /etc/dex/dex.yaml
 ```
@@ -354,9 +391,13 @@ Data in Omni's database is encrypted and we need an encryption key to provide to
 Generate a GPG key:
 
 ```bash
-gpg --quick-generate-key "Omni (Used for etcd data encryption) how-to-guide@siderolabs.com" rsa4096 cert never
-FINGERPRINT=$(gpg --with-colons --list-keys "how-to-guide@siderolabs.com" | awk -F: '$1 == "fpr" {print $10; exit}')
-gpg --quick-add-key ${FINGERPRINT} rsa4096 encr never
+gpg --batch --passphrase '' \
+  --quick-generate-key "Omni (Used for etcd data encryption) how-to-guide@siderolabs.com" \
+  rsa4096 cert never
+FINGERPRINT=$(gpg --with-colons --list-keys "how-to-guide@siderolabs.com" \
+  | awk -F: '$1 == "fpr" {print $10; exit}')
+gpg --batch --passphrase '' \
+  --quick-add-key ${FINGERPRINT} rsa4096 encr never
 gpg --export-secret-key --armor how-to-guide@siderolabs.com > omni.asc
 ```
 
@@ -379,7 +420,7 @@ If your machine has access to the internal registry you can push the image direc
 If you need to send the image to a remote machine or transfer it via an offline method you can export the container image.
 
 <CodeBlock lang="sh">
-{`docker save -o omni.tar \${REGISTRY_ENDPOINT}/siderolabs/omni:${omni_release}`}
+{`docker save -o omni.tar ghcr.io/siderolabs/omni:${omni_release}`}
 </CodeBlock>
 
 On the remote machine load the archive into the local image storage and then push it to the registry.
@@ -392,13 +433,17 @@ On the remote machine load the archive into the local image storage and then pus
 
 This will run Omni with an embedded etcd database mounted to the host. It is not recommended for production use cases. The command assumes the certificates generated earlier are available in the local directory where you run this command.
 
+<Info>If running Omni with podman you'll need to use `sudo` so the wireguard endpoints and low level ports can be mapped</Info>
+
 <CodeBlock lang="sh">
-{`docker run \\\n  --name omni \\\n  -d --net=host \\\n  --cap-add=NET_ADMIN \\\n  --device /dev/net/tun:/dev/net/tun \\\n  -v "\${PWD}/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro" \\\n  -v "\${PWD}/etcd:/_out/etcd" \\\n  -v "\${PWD}/sqlite:/_out/sqlite:rw" \\\n  -v "\${PWD}/server-key.pem:/server-key.pem:ro" \\\n  -v "\${PWD}/server-chain.pem:/server-chain.pem:ro" \\\n  -v "\${PWD}/omni.asc:/omni.asc:ro" \\\n  \${REGISTRY_ENDPOINT}/siderolabs/omni:${omni_release} \\\n    --name=air-gap-omni \\\n    --cert=/server-chain.pem \\\n    --key=/server-key.pem \\\n    --siderolink-api-cert=/server-chain.pem \\\n    --siderolink-api-key=/server-key.pem \\\n    --private-key-source=file:///omni.asc \\\n    --event-sink-port=8091 \\\n    --bind-addr=0.0.0.0:443 \\\n    --siderolink-api-bind-addr=0.0.0.0:8090 \\\n    --k8s-proxy-bind-addr=0.0.0.0:8100 \\\n    --advertised-api-url=https://omni.internal \\\n    --siderolink-api-advertised-url=https://omni.internal:8090 \\\n    --siderolink-wireguard-advertised-addr=\$(hostname -I | awk '{print \$1}'):50180 \\\n    --advertised-kubernetes-proxy-url=https://omni.internal:8100 \\\n    --auth-auth0-enabled=false \\\n    --auth-oidc-enabled=true \\\n    --auth-oidc-client-secret=aW50ZXJuYWwtc2lkZXJvLXN0YWNrCg== \\\n    --auth-oidc-provider-url=https://\${AUTH_ENDPOINT} \\\n    --auth-oidc-client-id=omni \\\n    --auth-oidc-scopes=openid,profile,email \\\n    --image-factory-address=https://\${FACTORY_ENDPOINT} \\\n    --initial-users=admin@omni.internal \\\n    --kubernetes-registry=\${REGISTRY_ENDPOINT}/siderolabs/kubelet \\\n    --sqlite-storage-path=/_out/sqlite/omni.db \\\n    --talos-installer-registry=\${REGISTRY_ENDPOINT}/siderolabs/installer \\\n    --workload-proxying-enabled=false \\\n    --metrics-bind-addr=0.0.0.0:2123`}
+{`docker run \\\n  --name omni \\\n  -d --net=host \\\n  --cap-add=NET_ADMIN \\\n  --device /dev/net/tun:/dev/net/tun \\\n  -v "\${PWD}/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro,Z" \\\n  -v "\${PWD}/etcd:/_out/etcd:rw,Z" \\\n  -v "\${PWD}/sqlite:/_out/sqlite:rw,Z" \\\n  -v "\${PWD}/server-key.pem:/server-key.pem:ro,Z" \\\n  -v "\${PWD}/server-chain.pem:/server-chain.pem:ro,Z" \\\n  -v "\${PWD}/omni.asc:/omni.asc:ro,Z" \\\n  \${REGISTRY_ENDPOINT}/siderolabs/omni:${omni_release} \\\n    --name=air-gap-omni \\\n    --cert=/server-chain.pem \\\n    --key=/server-key.pem \\\n    --siderolink-api-cert=/server-chain.pem \\\n    --siderolink-api-key=/server-key.pem \\\n    --private-key-source=file:///omni.asc \\\n    --event-sink-port=8091 \\\n    --bind-addr=0.0.0.0:443 \\\n    --siderolink-api-bind-addr=0.0.0.0:8090 \\\n    --k8s-proxy-bind-addr=0.0.0.0:8100 \\\n    --advertised-api-url=https://omni.internal \\\n    --siderolink-api-advertised-url=https://omni.internal:8090 \\\n    --siderolink-wireguard-advertised-addr=\$(hostname -I | awk '{print \$1}'):50180 \\\n    --advertised-kubernetes-proxy-url=https://omni.internal:8100 \\\n    --auth-auth0-enabled=false \\\n    --auth-oidc-enabled=true \\\n    --auth-oidc-client-secret=aW50ZXJuYWwtc2lkZXJvLXN0YWNrCg== \\\n    --auth-oidc-provider-url=https://\${AUTH_ENDPOINT} \\\n    --auth-oidc-client-id=omni \\\n    --auth-oidc-scopes=openid,profile,email \\\n    --image-factory-address=https://\${FACTORY_ENDPOINT} \\\n    --initial-users=admin@omni.internal \\\n    --kubernetes-registry=\${REGISTRY_ENDPOINT}/siderolabs/kubelet \\\n    --sqlite-storage-path=/_out/sqlite/omni.db \\\n    --talos-installer-registry=\${REGISTRY_ENDPOINT}/siderolabs/installer \\\n    --workload-proxying-enabled=false \\\n    --metrics-bind-addr=0.0.0.0:2123`}
 </CodeBlock>
 
 >We changed the `--metrics-bind-addr` to use port `:2123` to avoid port conflicts with Image Factory (if it's running on the same host).
 
 These flags mount the files and directories needed by Omni (e.g. certificates, etcd storage) and set flags to connect Omni to the upstream services (e.g. factory, authentication).
+
+<Info>If you are running with SELinux enforcing you'll need to use `audit2allow` to allow the Omni container to create wireguard tunnels. Something like `sudo ausearch -m avc -ts recent | grep -v mlsconstrain | audit2allow -M omni-container` should work.</Info>
 
 ## 5. Create a cluster
 
@@ -420,7 +465,7 @@ Download the images and push them into the internal registry.
 If your machine can reach the public internet and the internal registry at the same time you can copy the images internally with this command.
 
 ```bash
-for SOURCE_IMAGE in $(cat images.txt)
+for SOURCE_IMAGE in $(cat k8s-images.txt)
   do
     IMAGE_WITHOUT_DIGEST=${SOURCE_IMAGE%%@*}
     IMAGE_WITH_NEW_REG="${REGISTRY_ENDPOINT}/${IMAGE_WITHOUT_DIGEST#*/}"
@@ -435,24 +480,24 @@ done
 If you don't have direct access to an internal container registry (e.g. air gapped environment) you need to download the container images while connected to the internet with this command:
 
 ```bash
-cat images.txt \
+cat k8s-images.txt \
   | talosctl images cache-create \
       --layout flat \
-      --image-cache-path ./image-cache \
+      --image-cache-path ./k8s-image-cache \
       --images=-
 ```
 
 Move the `image-cache` folder to an air gapped machine and serve the images on a read only, temporary container registry with:
 
 ```bash
-IP=$(hostname -I | awk '{print $1}')
+export IP=$(hostname -I | awk '{print $1}')
 
 talosctl image cache-cert-gen \
   --advertised-address $IP
 
 talosctl image cache-serve \
   --address $IP:5000 \
-  --image-cache-path ./image-cache \
+  --image-cache-path ./k8s-image-cache \
   --tls-cert-file tls.crt \
   --tls-key-file tls.key
 ```
@@ -460,12 +505,12 @@ talosctl image cache-serve \
 A temporary image registry will run on your local machine IP address port 5000 with self-signed certificates. Copy the images to an internal, permanent container registry.
 
 ```bash
-for SOURCE_IMAGE in $(cat images.txt)
+for SOURCE_IMAGE in $(cat k8s-images.txt)
   do
     IMAGE_WITHOUT_DIGEST=${SOURCE_IMAGE%%@*}
     IMAGE_WITH_NEW_REG="${REGISTRY_ENDPOINT}/${IMAGE_WITHOUT_DIGEST#*/}"
-    LOCALHOST_IMAGE="localhost:5000/${IMAGE_WITHOUT_DIGEST#*/}"
-    crane copy \
+    LOCALHOST_IMAGE="${IP}:5000/${IMAGE_WITHOUT_DIGEST#*/}"
+    crane copy --insecure \
       $LOCALHOST_IMAGE \
       $IMAGE_WITH_NEW_REG
 done
@@ -499,35 +544,30 @@ You can use this config two different ways. Use kernel arguments for Talos 1.11 
   mkdir _out
   mv trustedrootsconfig.yaml _out/machine-config.yaml
   echo "---" >> _out/machine-config.yaml
+  yq eval --null-input '
+.apiVersion = "v1alpha1" |
+.kind = "TimeSyncConfig" |
+.enabled = false
+' >> _out/machine-config.yaml
+  echo "---" >> _out/machine-config.yaml
   ```
 
   Download machine join configuration from Omni. You can do this from the Omni web interface home page by clicking on the **Download Machine Join Config** button or if you have `omnictl` installed you can download it with
+
+> If your `omni.internal` endpoint is not resolvable via DNS, update your machine config to set the SideroLink endpoint to the IP address of the Omni machine instead of a hostname.
+
+>If you're shell still has `$OMNI_ENDPOINT` configured you may need to `unset OMNI_ENDPOINT` for `omnictl` commands to work
 
   ```bash
   omnictl jointoken machine-config >> _out/machine-config.yaml
   ```
 
-  Create a static hosts configuration for Omni and the registry.
-
-  ```bash
-  yq --null-input '
-  .apiVersion = "v1alpha1" |
-  .kind = "StaticHostConfig" |
-  .name = "'$(hostname -I | awk '{print $1}')'" |
-  .hostnames = ["'${OMNI_ENDPOINT%:*}'", "'${REGISTRY_ENDPOINT%:*}'"]
-' > hosts-config.yaml
-  ```
-  Append this configuration to the others.
-
-  ```bash
-  echo "---" >> _out/machine-config.yaml
-  cat hosts-config.yaml >> _out/machine-config.yaml
-  ```
-
   Embed both configurations and create an installation ISO with `imager`.
+  
+  <Warning>Imager cannot be run with SELinux in enforcing mode.</Warning>
 
   <CodeBlock lang="sh">
-  {`docker run --rm -t \\\n  -v "\${PWD}/_out:/out" \\\n  --privileged \\\n  \${REGISTRY_ENDPOINT}/siderolabs/imager:${release} \\\n    iso \\\n    --embedded-config-path=/out/machine-config.yaml`}
+  {`docker run --rm -t \\\n  -v "\${PWD}/_out:/out" \\\n   \${REGISTRY_ENDPOINT}/siderolabs/imager:${release} \\\n    iso \\\n    --embedded-config-path=/out/machine-config.yaml`}
   </CodeBlock>
 
   </Tab>
@@ -535,9 +575,13 @@ You can use this config two different ways. Use kernel arguments for Talos 1.11 
 
   Get the kernel arguments from Omni with `omnictl`. You can also copy them from the Omni web interface with the **Copy Kernel Parameters** button on the home page.
 
+>If you're shell still has `$OMNI_ENDPOINT` configured you may need to `unset OMNI_ENDPOINT` for `omnictl` commands to work
+
   ```bash
   OMNI_KERNEL_ARGS=$(omnictl jointoken kernel-args)
   ```
+
+> If your `omni.internal` endpoint is not resolvable via DNS, update your machine config to set the SideroLink endpoint to the IP address of the Omni machine instead of a hostname.
 
   Compress and base64 encode the configuration for a kernel argument.
 
@@ -546,6 +590,8 @@ You can use this config two different ways. Use kernel arguments for Talos 1.11 
   ```
 
   Create an ISO with `imager` with both of the kernel arguments.
+
+  <Warning>Imager cannot be run with SELinux in enforcing mode.</Warning>
 
   <CodeBlock lang="sh">
   {`docker run --rm -t \\\n  -v "\${PWD}/_out:/out" \\\n  --privileged \\\n  \${REGISTRY_ENDPOINT}/siderolabs/imager:${release} \\\n    iso \\\n    --extra-kernel-arg "talos.config.early=\$TRUSTED_ROOT_CONFIG $OMNI_KERNEL_ARGS"`}
@@ -564,34 +610,52 @@ Because we're working in an airgapped environment we will need the following val
 
 > **NOTE:** In this example, cluster discovery is also disabled. You may also configure cluster discovery via Omni. More information on the Discovery Service can be found <a href="../../talos/v1.12/configure-your-talos-cluster/system-configuration/discovery">here</a>.
 
-```yaml
-machine:
-  registries:
-    mirrors:
-    docker.io:
-      endpoints:
-      - https://${REGISTRY_ENDPOINT}
-    gcr.io:
-      endpoints:
-      - https://${REGISTRY_ENDPOINT}
-    ghcr.io:
-      endpoints:
-      - https://${REGISTRY_ENDPOINT}
-    registry.k8s.io:
-      endpoints:
-      - https://${REGISTRY_ENDPOINT}
-cluster:
-  discovery:
-    enabled: false
----
-apiVersion: v1alpha1
-kind: RegistryTLSConfig
-name: ${REGISTRY_ENDPOINT}
-ca: |-
-  -----BEGIN CERTIFICATE-----
-  MIID...IDAQAB
-  -----END CERTIFICATE-----
+Export the air-gap configuration patch to a file:
+
+```bash
+(yq eval --null-input '
+.machine.registries.mirrors."docker.io".endpoints = ["https://" + env(REGISTRY_ENDPOINT)] |
+.machine.registries.mirrors."gcr.io".endpoints = ["https://" + env(REGISTRY_ENDPOINT)] |
+.machine.registries.mirrors."ghcr.io".endpoints = ["https://" + env(REGISTRY_ENDPOINT)] |
+.machine.registries.mirrors."registry.k8s.io".endpoints = ["https://" + env(REGISTRY_ENDPOINT)]
+' && echo "---" && yq eval --null-input '
+.apiVersion = "v1alpha1" |
+.kind = "TimeSyncConfig" |
+.enabled = false
+' && echo "---" && yq eval --null-input '
+.apiVersion = "v1alpha1" |
+.kind = "RegistryTLSConfig" |
+.name = env(REGISTRY_ENDPOINT) |
+.ca = load_str("ca.pem")
+' && echo "---" && yq eval --null-input '
+.apiVersion = "v1alpha1" |
+.kind = "TrustedRootsConfig" |
+.name = "internal-ca" |
+.certificates = load_str("ca.pem")
+') > air-gap-patch.yaml
 ```
 
-The machine patch should be added to the cluster during cluster creation and should be applied cluster wide.
+Get the first machine UUID from Omni:
+
+
+```bash
+export OMNI_CP_MACHINE=$(omnictl get machines -o yaml \
+  | yq '.metadata.id')
+```
+
+This will list all available machine UUIDs. Note down the UUIDs you want to use for your cluster (you'll need at least one control plane node and optionally worker nodes).
+
+Generate a cluster template using the patch file and machine UUIDs:
+
+<CodeBlock lang="bash">
+{`cat <<EOF > cluster-template.yaml\nkind: Cluster\nname: air-gap-cluster\nkubernetes:\n  version: v${k8s_release}\ntalos:\n  version: ${release}\npatches:\n  - file: air-gap-patch.yaml\n---\nkind: ControlPlane\nmachines:\n  - $OMNI_CP_MACHINE\nEOF`}
+</CodeBlock>
+
+Create the cluster using the template:
+
+```bash
+omnictl cluster template sync --file cluster-template.yaml
+```
+
+The machine patch will be applied cluster-wide to all nodes.
 
