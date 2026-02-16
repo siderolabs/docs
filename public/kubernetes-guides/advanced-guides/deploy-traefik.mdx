@@ -67,7 +67,7 @@ helm upgrade --install traefik traefik/traefik \
 
 The Gateway defines the entry point for external traffic into your Kubernetes cluster and tells Traefik which ports and protocols to listen on.
 
-Here, we will create a simple HTTP listener on port 8000;
+Here, we will create a simple HTTP listener on port 8000:
 
 ```bash
 kubectl apply -f - <<'EOF'

@@ -40,7 +40,7 @@ machine:
 Talos spins up a TCP loadbalancer on every machine on the `localhost` on the specified port which automatically picks up one of the endpoints:
 
 * the external cluster endpoint as specified in the machine configuration
-* for controlplane machines: `https://localhost:<api-server-local-port>` (`http://localhost:6443` in the default configuration)
+* for controlplane machines: `https://localhost:<api-server-local-port>` (`https://localhost:6443` in the default configuration)
 * `https://<controlplane-address>:<api-server-port>` for every controlplane machine (based on the information from <a href={`/talos/${version}/configure-your-talos-cluster/system-configuration/discovery`}>
   Cluster Discovery
 </a>)

@@ -58,7 +58,7 @@ Talos automatically sorts all manifests, including `inlineManifests`, `extraMani
 2. CustomResourceDefinitions (CRDs)
 3. All other resources, sorted alphabetically by their `metadata.name` property
 
-## Example Usecase: Install a GitOps controller with extraManifests
+## Example Use Case: Install a GitOps controller with extraManifests
 
 A common use case for `inlineManifests` or `extraManifests` is to install a GitOps controller like Flux or ArgoCD.
 Once the controller is running, it connects to your Git repository and automatically applies the rest of your Kubernetes configuration.
@@ -70,7 +70,7 @@ Here's how to install the Flux GitOps controller using an `extraManifest`:
     ```shell
     cat << EOF > flux-extra-manifest.yaml
     cluster:
-    extraManifests:
+      extraManifests:
         - "https://github.com/fluxcd/flux2/releases/latest/download/install.yaml"
     EOF
     ```
@@ -128,7 +128,7 @@ Talos reconciles manifests on every boot, on every failure to apply, and on ever
 When processing your `inlineManifests` and `extraManifests`, Talos follows a conservative, additive-only approach.
 
 This means that Talos automatically only creates new resources.
-Once created Talos never edits or deletes resources even if they are modified or removed from the machine configuration.
+Once created, Talos never edits or deletes resources, even if they are modified or removed from the machine configuration.
 
 If you need to prune unwanted resources (supported from Talos v1.13 onward) or update the resources, use the [Kubernetes upgrade](./upgrading-kubernetes) process.
-Specify the same Kubernetes version that’s currently running in your cluster to skip performing a kubernetes version upgrade and only synchronize manifests.
+Specify the same Kubernetes version that's currently running in your cluster to skip performing a Kubernetes version upgrade and only synchronize manifests.

@@ -44,7 +44,7 @@ Important Notes:
 - Any disk devices you add to the cluster in the 'CephCluster' must be empty (no filesystem and no partitions).
 ```
 
-Default PodSecurity configuration prevents execution of priviledged pods.
+Default PodSecurity configuration prevents execution of privileged pods.
 Adding a label to the namespace will allow ceph to start.
 
 ```shell
@@ -86,7 +86,7 @@ NAME        DATADIRHOSTPATH   MONCOUNT   AGE   PHASE         MESSAGE            
 rook-ceph   /var/lib/rook     3          57s   Progressing   Configuring Ceph Mons
 ```
 
-Depending on the size of the Ceph cluster and the availability of resources the Ceph cluster should become available, and with it the storage classes that can be used with Kubernetes Physical Volumes.
+Depending on the size of the Ceph cluster and the availability of resources the Ceph cluster should become available, and with it the storage classes that can be used with Kubernetes Persistent Volumes.
 
 ```shell
 $ kubectl --namespace rook-ceph get cephcluster rook-ceph
@@ -102,7 +102,7 @@ ceph-filesystem        rook-ceph.cephfs.csi.ceph.com   Delete          Immediate
 
 ## Talos Linux considerations
 
-By default, Rook configues Ceph to have 3 `mon` instances, in which case the data stored in `dataDirHostPath` can be regenerated from the other `mon` instances.
+By default, Rook configures Ceph to have 3 `mon` instances, in which case the data stored in `dataDirHostPath` can be regenerated from the other `mon` instances.
 So when performing maintenance on a Talos Linux node with a Rook Ceph cluster (e.g. upgrading the Talos Linux version), it is imperative that care be taken to maintain the health of the Ceph cluster.
 Before upgrading, you should always check the health status of the Ceph cluster to ensure that it is healthy.
 

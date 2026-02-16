@@ -1,6 +1,6 @@
 ---
 title: "Multus CNI"
-description: "A brief instruction on howto use Multus on Talos Linux"
+description: "A brief instruction on how to use Multus on Talos Linux"
 ---
 
 [Multus CNI](https://github.com/k8snetworkplumbingwg/multus-cni) is a container network interface (CNI) plugin for Kubernetes that enables attaching multiple network interfaces to pods.
@@ -22,8 +22,8 @@ This can be used to specify your network configuration.
 
 ### Patching the `DaemonSet`
 
-For Multus to properly work with Talos a change need to be made to the `DaemonSet`.
-Instead of of mounting the volume called `host-run-netns` on `/run/netns` it has to be mounted on `/var/run/netns`.
+For Multus to properly work with Talos a change needs to be made to the `DaemonSet`.
+Instead of mounting the volume called `host-run-netns` on `/run/netns` it has to be mounted on `/var/run/netns`.
 
 Edit the `DaemonSet` and change the volume `host-run-netns` from `/run/netns` to `/var/run/netns`.
 
@@ -43,7 +43,7 @@ Running pods will remain running but new pods and deployments will give you the 
 ': StdinData: {"capabilities":{"portMappings":true},"clusterNetwork":"/host/etc/cni/net.d/10-flannel.conflist","cniVersion":"0.3.1","logLevel":"verbose","logToStderr":true,"name":"multus-cni-network","type":"multus-shim"}
 ```
 
-As of March 21, 2025, Multus has a [bug](https://github.com/k8snetworkplumbingwg/multus-cni/issues/1221) in the `install-multus-binary` container that can be lead to race problems after a node reboot.
+As of March 21, 2025, Multus has a [bug](https://github.com/k8snetworkplumbingwg/multus-cni/issues/1221) in the `install-multus-binary` container that can lead to race problems after a node reboot.
 To prevent this issue, it is necessary to patch this container.
 Set the following command to the `install-multus-binary` container.
 
@@ -128,7 +128,7 @@ More information about the configuration of bridges can be found [here](https://
 
 ## Attaching the `NetworkAttachmentDefinition` to your `Pod` or `Deployment`
 
-After the `NetworkAttachmentDefinition` is configured, you can attach that interface to your your `Deployment` or `Pod`.
+After the `NetworkAttachmentDefinition` is configured, you can attach that interface to your `Deployment` or `Pod`.
 In this example we use a pod:
 
 ```yaml

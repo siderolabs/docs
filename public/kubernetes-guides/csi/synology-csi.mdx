@@ -9,7 +9,7 @@ aliases:
 
 Synology is a company that specializes in Network Attached Storage (NAS) devices.
 They provide a number of features within a simple web OS, including an LDAP server, Docker support, and (perhaps most relevant to this guide) function as an iSCSI host.
-The focus of this guide is to allow a Kubernetes cluster running on Talos to provision Kubernetes storage (both dynamic or static) on a Synology NAS using a direct integration, rather than relying on an intermediary layer like Rook/Ceph or Maystor.
+The focus of this guide is to allow a Kubernetes cluster running on Talos to provision Kubernetes storage (both dynamic or static) on a Synology NAS using a direct integration, rather than relying on an intermediary layer like Rook/Ceph or Mayastor.
 
 This guide assumes a very basic familiarity with iSCSI terminology (LUN, iSCSI target, etc.).
 
@@ -25,7 +25,7 @@ The `synology-csi` controller interacts with your NAS in two different ways: via
 Actions such as creating a new iSCSI target or deleting an old one are accomplished via the Synology API, and require administrator access.
 On the other hand, mounting the disk to a pod and reading from / writing to it will utilize iSCSI.
 Because you can only authenticate with one account per DSM configured, that account needs to have admin privileges.
-In order to minimize access in the case of these credentials being compromised, you should configure the account with the lease possible amount of access – explicitly specify "No Access" on all volumes when configuring the user permissions.
+In order to minimize access in the case of these credentials being compromised, you should configure the account with the least possible amount of access – explicitly specify "No Access" on all volumes when configuring the user permissions.
 
 ## Setting up the Synology CSI
 

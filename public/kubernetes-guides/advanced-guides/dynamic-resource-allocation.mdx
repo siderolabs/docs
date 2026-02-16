@@ -9,7 +9,7 @@ import { version } from '/snippets/custom-variables.mdx';
 These resources include GPU devices, high performance networking, and other hardware that a workload may need access to.
 
 DRA is enabled by default as a beta feature in Kubernetes 1.34 and can also be enabled in Kubernetes 1.33.
-DRA replaces [devices plugins](./device-plugins.mdx) for accesing resources from workloads.
+DRA replaces [device plugins](./device-plugins.mdx) for accessing resources from workloads.
 
 ## Enable DRA in the cluster
 
@@ -32,7 +32,7 @@ cluster:
       feature-gates: DynamicResourceAllocation=true
 ```
 
-You should have at least one node in the cluster with NVIDIA hardware and configured via the <a href={`../../talos/${version}/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary`}>NVIDIA system extension and patch</a>
+You should have at least one node in the cluster with NVIDIA hardware and configured via the <a href={`../../talos/${version}/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary`}>NVIDIA system extension and patch</a>.
 
 ## 1. Deploy the NVIDIA DRA plugin via Helm
 

@@ -1,6 +1,6 @@
 ---
 title: "Deploy Calico CNI"
-description: "In this guide you will learn how to set up Calico CNI on Talos in two mode eBPF and NFtables."
+description: "In this guide you will learn how to set up Calico CNI on Talos in two modes: eBPF and NFTables."
 ---
 
 This documentation is designed to get you up and running with Talos and Calico CNI. Since both Calico and Talos support multiple networking technologies, you will learn how to run your environment with both the [Calico eBPF dataplane](https://docs.tigera.io/calico/latest/operations/ebpf/enabling-ebpf) and [NFTables](https://docs.tigera.io/calico/latest/getting-started/kubernetes/nftables). Optionally, you can also enable Calico's network [observability stack](https://docs.tigera.io/calico/latest/observability/) to gain insights into your cluster networking and policy behavior.
@@ -8,7 +8,7 @@ This documentation is designed to get you up and running with Talos and Calico C
 ## Configuring Talos
 
 To install Calico, you first need to disable the default CNI. This can be done by applying a patch file during cluster creation.
-The store the following YAML template in a file (`patch.yaml`).
+Store the following YAML template in a file (`patch.yaml`).
 
 ```yaml
 cluster:
@@ -97,7 +97,7 @@ EOF
 There are three values that we need to set for eBPF in the installation manifest
 1. `linuxDataplane` needs to be set to `BPF`.
 2. `bpfNetworkBootstrap` needs to be set to `Enabled`.
-3. kubeProxyManagement to `Enabled` so that the Tigera opreator automatically disables the kube-proxy.
+3. kubeProxyManagement to `Enabled` so that the Tigera operator automatically disables the kube-proxy.
 
 
 Next, you have to configure Calico:

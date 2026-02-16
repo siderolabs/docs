@@ -14,7 +14,7 @@ In this guide we are going to configure a custom Seccomp Profile that logs all s
 
 ## Prepare the nodes
 
-Create a machine config path with the contents below and save as `patch.yaml`
+Create a machine config patch with the contents below and save as `patch.yaml`
 
 ```yaml
 machine:
@@ -30,9 +30,9 @@ Apply the machine config to all the nodes using talosctl:
 talosctl -e <endpoint ip/hostname> -n <node ip/hostname> patch mc -p @patch.yaml
 ```
 
-This would create a seccomp profile name `audit.json` on the node at `/var/lib/kubelet/seccomp/profiles`.
+This would create a seccomp profile named `audit.json` on the node at `/var/lib/kubelet/seccomp/profiles`.
 
-The profiles can be used by Kubernetes pods by specfying the pod `securityContext` as below:
+The profiles can be used by Kubernetes pods by specifying the pod `securityContext` as below:
 
 ```yaml
 spec:
@@ -45,7 +45,7 @@ spec:
 > Note that the `localhostProfile` uses the name of the profile created under `profiles` directory.
 > So make sure to use path as `profiles/<profile-name.json>`
 
-This can be verfied by running the below commands:
+This can be verified by running the below commands:
 
 ```bash
 talosctl -e <endpoint ip/hostname> -n <node ip/hostname> get seccompprofiles

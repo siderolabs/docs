@@ -7,7 +7,7 @@ import { version } from '/snippets/custom-variables.mdx';
 
 The Horizontal Pod Autoscaler (HPA) automatically scales Kubernetes workloads based on resource utilization or other defined metrics.
 
-HPA relies on the [Metrics Server](../monitoring-and-observability/deploy-metrics-server)to collect data from the kubelets in your cluster. It then uses these metrics to decide when and how to scale your workloads.
+HPA relies on the [Metrics Server](../monitoring-and-observability/deploy-metrics-server) to collect data from the kubelets in your cluster. It then uses these metrics to decide when and how to scale your workloads.
 
 This guide walks you through how to use HPA to scale workloads on a Talos cluster.
 
@@ -68,7 +68,7 @@ EOF
 
 This HPA automatically scales the `example-workload` Deployment based on CPU usage.
 
-It monitors the average CPU utilization across all pods and tries to keep it around 50%.
+It monitors the average CPU utilization across all pods and tries to keep it around 20%.
 
 If CPU usage goes above that target, the HPA increases the number of replicas (up to 10).
 

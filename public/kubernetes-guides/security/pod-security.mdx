@@ -18,7 +18,7 @@ These [Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-
 
 By default, Talos with the help of PSA, applies the `baseline` profile to all namespaces, except for the `kube-system` namespace, which uses the `privileged` profile.
 
-## Default PSA calicoonfiguration
+## Default PSA configuration
 
 Here is the default PSA configuration on Talos:
 
@@ -43,7 +43,7 @@ This cluster-wide configuration:
 * Enforces the `baseline` security profile by default.
 * Throws a warning, if the `restricted` profile is violated, but does not enforce this profile.
 
-## Modify the default PSA configuraion
+## Modify the default PSA configuration
 
 You can modify this PSA policy by updating the generated machine configuration before the cluster is created or on the fly by using the `talosctl` CLI utility.
 
@@ -278,7 +278,7 @@ You can override the Pod Security Admission configuration at the namespace level
 
 This is especially useful for applications like Prometheus node exporter or storage solutions that require more relaxed Pod Security Standards.
 
-Using the DaemonSet workload example, you can update the enforced policy to `privilege` for its namespace, which is the default namespace.
+Using the DaemonSet workload example, you can update the enforced policy to `privileged` for its namespace, which is the default namespace.
 
 ```bash
 kubectl label ns default pod-security.kubernetes.io/enforce=privileged
@@ -304,7 +304,7 @@ Here are some typical error messages you’ll run into when a pod violates a PSA
 Error from server (Forbidden): error when creating “pod.yaml”: pods “nginx” is forbidden: violates PodSecurity “baseline:latest”: privileged (container “nginx” must not set securityContext.privileged=true)
 ```
 
-**What’s happening**: Your pod does not comply with the `restricted` profile. For example, the pod either allows privilege escalation or doesn’t force non-root user.
+**What’s happening**: Your pod does not comply with the `baseline` profile. For example, the pod either allows privilege escalation or doesn’t force non-root user.
 
 **Fix**: In the pod’s spec, make sure the container is set to run as a non-root user and cannot escalate its privileges. For example:
 
