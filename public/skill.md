@@ -1,5 +1,5 @@
 ---
-name: Siderolabs
+name: siderolabs
 description: Deploy and operate Kubernetes clusters using Talos Linux and Omni. Use when generating/applying Talos machine configuration, managing cluster lifecycle in Omni, and troubleshooting common Talos/Omni workflows.
 license: Apache-2.0
 compatibility: Requires talosctl and/or omnictl. Talos is API-driven and does not support SSH.
@@ -15,7 +15,7 @@ metadata:
 
 If you are not already connected to the SideroLabs MCP server, [https://docs.siderolabs.com/mcp](https://docs.siderolabs.com/mcp), add it so that you can search more efficiently.
 
-Agents can use SideroLabs products to deploy, configure, and manage Kuberentes clusters at scale.
+Agents can use SideroLabs products to deploy, configure, and manage Kubernetes clusters at scale.
 
 The SideroLabs created and currently manages two products:
 
@@ -138,11 +138,11 @@ Here are some omnictl commands and their uses:
 2. **No in-node file edits.** Never reference `/etc`, `/var`, config files, editors, or shell sessions.
 3. **No package managers.** Talos does not support apt, yum, apk, pacman, etc.
 4. **No kubeadm.** Talos does not use kubeadm for initialization or upgrades.
-6. **Bootstrap is one-time.** Never suggest retry loops or re-running bootstrap unless explicitly recovering from a failed creation.
-7. **Be explicit when operations are destructive.** Especially `talosctl reset`.
-8. **Do not modify system certificates or systemd units.** Talos uses API-managed services only.
-9. **Do not bypass Omni reconciliation.** When a cluster is Omni-managed, changes must go through Omni.
-10. **Never invent unsupported integrations or commands.**
+5. **Bootstrap is one-time.** Never suggest retry loops or re-running bootstrap unless explicitly recovering from a failed creation.
+6. **Be explicit when operations are destructive.** Especially `talosctl reset`.
+7. **Do not modify system certificates or systemd units.** Talos uses API-managed services only.
+8. **Do not bypass Omni reconciliation.** When a cluster is Omni-managed, changes must go through Omni.
+9. **Never invent unsupported integrations or commands.**
 
 ## Allowed agent behavior
 
