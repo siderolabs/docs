@@ -38,7 +38,7 @@ machine:
 cluster:
   etcd:
     advertisedSubnets: # listenSubnets defaults to advertisedSubnets if not set explicitly
-      - 192.168.0.0/16`
+      - 192.168.0.0/16
 ```
 
 This way we ensure that the `etcd` cluster will use the private network for communication and the kubelets will use the private network for communication with the control plane.

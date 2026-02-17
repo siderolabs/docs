@@ -23,7 +23,7 @@ To see a live demo of KubeSpan, see one the videos below:
 ## Network requirements
 
 KubeSpan uses **UDP port 51820** to carry all KubeSpan encrypted traffic.
-Because UDP traversal of firewalls is often lenient, and the Discovery Service communicates the apparent IP address of all peers to all other peers, KubeSpan will often work automatically, even when each nodes is behind their own firewall.
+Because UDP traversal of firewalls is often lenient, and the Discovery Service communicates the apparent IP address of all peers to all other peers, KubeSpan will often work automatically, even when each node is behind its own firewall.
 However, when both ends of a KubeSpan connection are behind firewalls, it is possible the connection may not be established correctly - it depends on each end sending out packets in a limited time window.
 
 Thus best practice is to ensure that one end of all possible node-node communication allows UDP port 51820, inbound.

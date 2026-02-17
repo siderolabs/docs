@@ -10,7 +10,7 @@ To remove nodes from a Talos Linux cluster:
 - `talosctl -n <IP.of.node.to.remove> reset`
 - `kubectl delete node <nodename>`
 
-The command `talosctl reset`will cordon and drain the node, leaving `etcd` if required, and then erase its disks and power down the system.
+The command `talosctl reset` will cordon and drain the node, leaving `etcd` if required, and then erase its disks and power down the system.
 
 This command will also remove the node from registration with the discovery service, so it will no longer show up in `talosctl get members`.
 

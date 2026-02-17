@@ -4,7 +4,7 @@ description: "Configuring raw volumes to allocate unformatted storage."
 weight: 40
 ---
 
-Raw Volumes allow allocate an unformatted partition, label it, and make it available for use by advanced storage drivers like Container Storage Interface (CSI) drivers.
+Raw Volumes allow allocating an unformatted partition, label it, and make it available for use by advanced storage drivers like Container Storage Interface (CSI) drivers.
 
 When a raw volume configuration is applied, Talos Linux will either locate an existing volume or provision a new one.
 The volume will be created on the disk which satisfies the `diskSelector` expression and has enough free space to satisfy the `minSize` requirement.

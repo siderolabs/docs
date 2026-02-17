@@ -49,7 +49,7 @@ Sidero Labs maintains a [repository of overlays](https://github.com/siderolabs/o
 ### Develop an overlay
 
 Let's assume that you would like to contribute an overlay for a specific board, e.g. by contributing to the [`sbc-rockchip` repository](https://github.com/siderolabs/sbc-rockchip).
-Clone the repositry and insepct the existing overlays to understand the structure.
+Clone the repository and inspect the existing overlays to understand the structure.
 
 Usually an overlay consist of a few key components:
 
@@ -111,5 +111,5 @@ docker run --rm -t -v ./_out:/out ghcr.io/siderolabs/imager:${TALOS_VERSION} \
 
 #### Troubleshooting
 
-> **IMPORTANT:** If this does not succeed, have a look at the documentation of the external dependecies you are pulling in and make sure that the `pkg.yaml` files are correctly configured.
+> **IMPORTANT:** If this does not succeed, have a look at the documentation of the external dependencies you are pulling in and make sure that the `pkg.yaml` files are correctly configured.
 > In some cases it may be required to update the dependencies to an appropriate version via the `Pkgfile`.
