@@ -68,6 +68,7 @@ navigation:
               pages:
                 - "scale-your-cluster/scale-a-cluster-up-or-down"
                 - "scale-your-cluster/cluster-autoscaler"
+                - "scale-your-cluster/cluster-autoscaler-aws"
                 - "scale-your-cluster/karpenter"
             - "create-a-hybrid-cluster.mdx"
             - "upgrading-clusters.mdx"
