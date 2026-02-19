@@ -5,6 +5,10 @@ aliases:
   - ../guides/customizing-the-kernel
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 import { release_branch_v1_13 } from '/snippets/custom-variables.mdx';
 
 Talos Linux configures the kernel to allow loading only cryptographically signed modules.

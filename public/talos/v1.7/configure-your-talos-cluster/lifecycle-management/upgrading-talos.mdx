@@ -5,6 +5,10 @@ aliases:
   - ../guides/upgrading-talos
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 OS upgrades are effected by an API call, which can be sent via the `talosctl` CLI utility.
 
 The upgrade API call passes a node the installer image to use to perform the upgrade.
@@ -63,7 +67,6 @@ as:
 talosctl upgrade --nodes 10.20.30.40 \
   --image ghcr.io/siderolabs/installer:${release_v1_7}
 `}</CodeBlock>
-
 
 There is an option to this command: `--preserve`, which will explicitly tell Talos to keep ephemeral data intact.
 In most cases, it is correct to let Talos perform its default action of erasing the ephemeral data.

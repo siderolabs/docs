@@ -5,6 +5,10 @@ aliases:
   - ../../guides/vip
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 One of the pain points when building a high-availability controlplane
 is giving clients a single IP or URL at which they can reach any of the controlplane nodes.
 The most common approaches - reverse proxy, load

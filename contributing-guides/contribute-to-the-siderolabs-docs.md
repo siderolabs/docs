@@ -44,14 +44,11 @@ To make contributions, you’ll first need to fork the repository and clone it l
 
 ![Fork icon in the SideroLabs Docs repository](../public/images/contribute-to-the-siderolabs-fork.png)
 
-
 3. Clone your fork to your local machine.
 
     ```bash
     git clone https://github.com/<your-username>/docs.git
     ```
-
-
 
 4. Create a new branch for your changes:	
 
@@ -65,7 +62,6 @@ Now that you’re inside the cloned repository, run the following command to ver
 ```bash
 make help
 ```
-
 
 ## Step 3: Make a change
 
@@ -117,8 +113,6 @@ To add a new page to the docs:
 
 	> This step compiles all the YAML sidebar files into one `docs.json` file that Mintlify uses to render navigation.
 
-
-
 4. Preview your work locally:
 
     ```bash
@@ -146,7 +140,6 @@ git add .
 git commit -m "docs: improve &lt;topic> section"
 git push -u origin HEAD
 ```
-
 
 ## Step 5: Open a Pull Request
 

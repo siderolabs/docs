@@ -3,6 +3,10 @@ title: "Time Synchronization"
 description: "Configuring time synchronization."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos Linux itself does not require time to be synchronized across the cluster, but as Talos Linux and Kubernetes components issue certificates
 with expiration dates, it is recommended to have time synchronized across the cluster.
 Some workloads (e.g. Ceph) might require to be in sync across the machines in the cluster due to the design of the application.

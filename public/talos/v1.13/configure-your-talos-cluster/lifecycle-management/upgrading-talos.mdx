@@ -5,6 +5,10 @@ aliases:
   - ../guides/upgrading-talos
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 import { release_v1_13 } from '/snippets/custom-variables.mdx';
 
 OS upgrades are effected by an API call, which can be sent via the `talosctl` CLI utility.
@@ -109,7 +113,6 @@ Note that because Talos Linux reboots via the `kexec` syscall, the extra reboot 
   * `.machine.install.extraKernelArgs` (use Image Factory instead)
 * new `v1alpha` config fields:
   * `.machine.install.grubUseUKICmdline` to unify kernel args behavior for legacy GRUB bootloader with systemd-boot.
-
 
 ## Upgrade sequence
 

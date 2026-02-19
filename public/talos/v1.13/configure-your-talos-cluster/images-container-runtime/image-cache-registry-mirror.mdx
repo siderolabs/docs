@@ -3,6 +3,10 @@ title: "Use Image Cache as a Registry Mirror"
 description: "Serve a Talos image cache over HTTPS and use it as a registry mirror in air-gapped or restricted environments."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos can bundle container images into an image cache and use it locally on each node.
 In air-gapped or restricted environments, you can also serve this cache over HTTPS and configure Talos to use it as a registry mirror.
 

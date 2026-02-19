@@ -5,6 +5,10 @@ aliases:
   - ../../guides/nvidia-gpu
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 > Enabling NVIDIA GPU support on Talos is bound by [NVIDIA EULA](https://www.nvidia.com/en-us/drivers/nvidia-license/).
 > The Talos published NVIDIA OSS drivers are bound to a specific Talos release.
 > The extensions versions also needs to be updated when upgrading Talos.
@@ -190,7 +194,6 @@ ARCH=<node-architecture>
 Replace the placeholders `<nvidia-driver-version>` and `<node-architecture>` with your actual values:
     - `<nvidia-driver-version>`: The nvidia driver version running on your talos nodes, which you found in step 3a.
     - `<node-architecture>`: The architecture of the node.
-
 
 c. Download the nvidia driver bundle, and extract the bug report script:
 

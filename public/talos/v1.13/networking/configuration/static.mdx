@@ -3,6 +3,10 @@ title: "Static Addressing"
 description: "Learn how to configure static addresses and routes on the link."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Static addressing allows you to assign fixed IP addresses to network interfaces in Talos Linux.
 Static configuration is available for physical and logical links (bridges, bonds, VLANs).
 For physical links, configuration is attached to the `LinkConfig` document, while for logical links, configuration is attached directly to the logical link document.

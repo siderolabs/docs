@@ -5,6 +5,10 @@ aliases:
   - ../guides/upgrading-talos
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 import { release_v1_6  } from '/snippets/custom-variables.mdx';
 
 OS upgrades are effected by an API call, which can be sent via the `talosctl` CLI utility.
@@ -94,7 +98,6 @@ Updates in [v1alpha1 Config](../../reference/configuration/v1alpha1/config):
 * `.machine.network.kubespan.harvestExtraEndpoints` to disable harvesting extra endpoints
 * `.cluster.cni.flannel` provides customization for the default Flannel CNI manifest
 * `.cluster.scheduler.config` provides custom `kube-scheduler` configuration
-
 
 ## Upgrade Sequence
 

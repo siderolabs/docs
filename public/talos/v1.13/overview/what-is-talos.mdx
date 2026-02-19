@@ -4,6 +4,10 @@ weight: 10
 description: "Talos Linux is the best OS for Kubernetes."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos Linux is a Kubernetes optimized Linux distro.
 It does one thing and it does it better than any general purpose Linux distribution.
 Boot it on [bare metal](../getting-started/getting-started) or [in a VM](../platform-specific-installations/cloud-platforms/aws) and have a Kubernetes cluster in minutes.
@@ -41,7 +45,6 @@ That didn't have fragile cloud-init scripts that wrap `bash` scripts in yaml.
 
 Talos ships with a network API for all configuration and troubleshooting needs.
 You can [read more about the philosophy behind Talos and Sidero products](../learn-more/philosophy).
-
 
 ## Community & support
 

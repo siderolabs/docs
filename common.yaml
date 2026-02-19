@@ -11,6 +11,10 @@ colors:
   light: "#FF5788"
   dark: "#FB326E"
 
+errors:
+  404:
+    redirect: true
+
 favicon: "/images/favicon.svg"
 
 contextual:

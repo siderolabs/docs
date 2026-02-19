@@ -4,6 +4,10 @@ weight: 30
 description: "A guide to setting up a Talos cluster"
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 This guide walks you through creating a simple Talos cluster with one control plane node and one or more worker nodes.
 
 If you're looking to set up a cluster with multiple control plane nodes, see [Production Notes](./prodnotes).
@@ -13,7 +17,6 @@ If you're looking to set up a cluster with multiple control plane nodes, see [Pr
 **Planning for production?** See [Production Notes](./prodnotes) for additional requirements and best practices.
 
 **Installing on cloud or virtualized platforms?** Check out the [platform-specific guides](../platform-specific-installations) for installation methods tailored to different environments.
-
 
 <iframe
   className="w-full aspect-video rounded-xl"

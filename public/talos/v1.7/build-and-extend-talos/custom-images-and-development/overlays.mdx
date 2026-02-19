@@ -2,7 +2,12 @@
 title: "Overlays"
 description: "Overlays"
 ---
+
 import { release_v1_7  } from '/snippets/custom-variables.mdx';
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
 
 Overlays provide a way to customize Talos Linux boot image.
 Overlays hook into the Talos install steps and can be used to provide additional boot assets (in the case of single board computers),
@@ -27,7 +32,6 @@ The process of generating boot assets with overlays is described in the [boot as
 Follow the board specific guide for [Raspberry Pi](../../platform-specific-installations/single-board-computers/rpi_generic) to download or generate the metal disk image and write to an SD card.
 
 Boot the machine with the boot media and apply the machine configuration with the installer image that has the overlay applied.
-
 
 <CodeBlock lang="sh">
 {`# Talos machine configuration patch

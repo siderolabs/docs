@@ -5,6 +5,10 @@ aliases:
   - ../../../bare-metal-platforms/equinix-metal
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 import { release_v1_8 } from '/snippets/custom-variables.mdx';
 
 You can create a Talos Linux cluster on Equinix Metal in a variety of ways, such as through the EM web UI, or the `metal` command line tool.
@@ -63,7 +67,6 @@ It is required to add a shebang to the top of the configuration file.
 
 The convention we use is `#!talos`.
 
-
 ## Provision the machines in Equinix Metal
 
 Talos Linux can be PXE-booted on Equinix Metal using [Image Factory](../../learn-more/image-factory), using the `equinixMetal` platform: e.g. 
@@ -94,7 +97,6 @@ If you did not pass in the machine configuration as User Data, you need to provi
 This guide assumes the user has a working API token,and the [Equinix Metal CLI](https://github.com/equinix/metal-cli/) installed.
 
 > Note: Ensure you have prepended `#!talos` to the `controlplane.yaml` file.
-
 
 <CodeBlock lang="sh">
 {`

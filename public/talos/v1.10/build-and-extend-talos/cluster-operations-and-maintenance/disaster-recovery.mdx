@@ -5,6 +5,10 @@ aliases:
   - ../guides/disaster-recovery
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 `etcd` database backs Kubernetes control plane state, so if the `etcd` service is unavailable,
  the Kubernetes control plane goes down, and the cluster is not recoverable until `etcd` is recovered.
 `etcd` builds around the consensus protocol Raft, so highly-available control plane clusters can tolerate the loss of nodes so long as more than half of the members are running and reachable.

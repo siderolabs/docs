@@ -5,6 +5,10 @@ aliases:
 
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 By default, Talos Linux taints control plane nodes so that workloads are not schedulable on them.
 
 In order to allow workloads to run on the control plane nodes (useful for single node clusters, or non-production clusters), follow the procedure below.

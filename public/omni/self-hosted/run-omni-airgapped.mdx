@@ -135,7 +135,6 @@ In order to run services securely, even in an air gapped environment, you should
 * Container signing certificate
 * Omni database encryption key
 
-
 ### Create Root CA certificate (optional)
 
 <Note>If you already have a trusted, internal root CA you can skip generating the CA (root of trust). You will need to use your existing CA to create certificates for the services in this guide. Skip to [Generate endpoint certificates](#generate-endpoint-certificates)</Note>
@@ -518,7 +517,6 @@ done
 </Tab>
 </Tabs>
 
-
 ### Create installation media
 
 The first step to create a cluster is to boot machines and connect them to Omni. In order to do that we will need to embed the self-signed CA certificate into Talos.
@@ -636,7 +634,6 @@ Export the air-gap configuration patch to a file:
 ```
 
 Get the first machine UUID from Omni:
-
 
 ```bash
 export OMNI_CP_MACHINE=$(omnictl get machines -o yaml \

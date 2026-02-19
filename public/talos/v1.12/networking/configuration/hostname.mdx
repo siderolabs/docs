@@ -3,6 +3,10 @@ title: "Hostname"
 description: "Learn how to configure the hostname for your Talos nodes."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 By default, the Talos Linux generates a default stable hostname for each machine based on machine ID like `talos-2ld-dvw`.
 This default hostname can be overridden by DHCP-provided hostname, platform (cloud) metadata, or manually configured hostname.
 

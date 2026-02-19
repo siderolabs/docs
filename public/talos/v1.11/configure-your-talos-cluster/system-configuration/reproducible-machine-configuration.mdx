@@ -3,6 +3,10 @@ title: "Reproducible Machine Configuration"
 description: "How to reliably and consistently regenerate Talos machine configs from source inputs over time."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos uses declarative configuration for clusters, but upgrades can cause drift between the declared machine configuration (files you keep in Git) and the deployed configuration (what’s actually running on your nodes).
 
 To prevent this drift, we recommend discarding full declared configuration files and instead using a patch-based workflow to regenerate machine configuration whenever you need them.

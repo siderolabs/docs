@@ -24,7 +24,6 @@ public/
 
 The documentation is written in MDX format. You can learn more about[ MDX syntax from the Mintlify documentation](https://mintlify.com/docs) and the [official MDX website](https://mdxjs.com/docs/). 
 
-
 ## Docs GitHub issues
 
 The [Docs repository issues](https://github.com/siderolabs/docs/issues) page lists known gaps or inaccuracies in the documentation. These issues are open for anyone to contribute to, whether you’re part of the SideroLabs team or a member of the community.
@@ -34,7 +33,6 @@ Sometimes, users also share doc-related feedback or questions directly in the [T
 Issues with the `Docs_improvement` label might be resolved in the Talos repo or migrated to the docs repo for further updates.
 
 To understand how a `Docs_improvement` issue moves from open to merged, check out the [Documentation Labeling and Workflow guide](./contributing-guides/documentation-labeling-and-workflow.md).
-
 
 ## Writing and style standards
 

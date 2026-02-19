@@ -5,6 +5,10 @@ aliases:
   - ../../../cloud-platforms/nocloud
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos supports [nocloud](https://cloudinit.readthedocs.io/en/latest/reference/datasources/nocloud.html) data source implementation.
 
 On bare-metal, Talos Linux was tested to correctly parse `nocloud` configuration from the following providers:

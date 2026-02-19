@@ -5,6 +5,10 @@ aliases:
   - ../../guides/disk-encryption
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 It is possible to enable encryption for system disks at the OS level.
 Currently, only [STATE](../../learn-more/architecture#file-system-partitions) and [EPHEMERAL](../../learn-more/architecture#file-system-partitions) partitions can be encrypted.
 STATE contains the most sensitive node data: secrets and certs.

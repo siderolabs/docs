@@ -2,6 +2,10 @@
 title: Talos platform configuration
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos is designed to run consistently across many environments, including public clouds, virtualized platforms, and bare metal. While Talos provides a consistent provisioning and management API, some environments have unique requirements.
 
 To account for these differences, Talos needs to understand the environment it is running in. The `platform` argument provides this context and tells Talos how to:

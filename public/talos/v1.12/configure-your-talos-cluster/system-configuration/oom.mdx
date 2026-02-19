@@ -3,6 +3,10 @@ title: "OOM handler"
 description: "Configuring userspace out-of-memory handler."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos Linux includes a configurable userspace low-memory monitor supplementing Linux kernel built-in OOM killer.
 This controller enables early detection of heavy memory use and helps prevent machine lock-up due to out-of-memory,
 which is especially important to enhance the stability of some special cases making the control plane more prone to OOM,

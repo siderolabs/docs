@@ -3,6 +3,10 @@ title: "Bond"
 description: "Learn how to configure network bonding."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 A bond (also known as link aggregation or NIC teaming) is a method of combining multiple physical network interfaces into a single logical interface to increase bandwidth and provide redundancy.
 When one of the physical interfaces in the bond fails, the traffic is automatically redistributed among the remaining interfaces, ensuring continuous network connectivity.
 

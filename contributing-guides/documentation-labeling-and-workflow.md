@@ -17,7 +17,6 @@ Even after the pull request that addresses the documentation issue has been crea
 
 Keeping the label provides a clear historical record of all documentation updates.
 
-
 ### Answered issues that cannot be documented
 
 Sometimes users raise issues that are resolved with a workaround but don’t need to be added to the docs. Most of the time, it’s because the user is really asking for a new feature or an improvement.

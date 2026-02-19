@@ -89,7 +89,6 @@ docker run -d \
 
 You need to create a Cache Signing Key to sign cached Talos image artifacts, ensuring they haven’t been tampered with before being served.
 
-
 ```shell
 openssl ecparam -name prime256v1 -genkey -noout -out signing-key.key
 ```
@@ -159,7 +158,6 @@ To do that you will need to run your own container registry with the necessary i
 <Note>Run with an internal container registry if your machine is not connected to the internet, or you need custom Talos images and extensions.</Note>
 
 Running the image factory in an air-gapped environment has more requirements than running in a connected mode. Make sure you have a registry running from the [Internal container registry](#container-registry) section. You will need to download container images and seed them into the internal registry and sign the container images.
-
 
 >This is just an example and should not be used in a production environment. If you want to test locally on your machine you can also see the [developer documentation](https://github.com/siderolabs/image-factory#air-gapped-mode) in the repository.
 
@@ -244,7 +242,6 @@ done
 
 </Tab>
 </Tabs>
-
 
 ### Sign container images
 
@@ -398,7 +395,6 @@ You should now be able to browse to http://registry.internal:8080 and view the I
 
   </Tab>
 </Tabs>
-
 
 </Tab>
 </Tabs>

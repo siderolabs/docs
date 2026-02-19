@@ -3,6 +3,10 @@ title: "Dynamic Addressing (DHCP)"
 description: "Learn how to configure dynamic addresses and routes on the link using DHCP."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos Linux runs by default a DHCP client on all physical network interfaces to obtain IP addresses and other network settings automatically.
 Once any explicit link configuration is applied, the default DHCP behavior is disabled, and DHCP must be explicitly enabled on the desired link(s).
 

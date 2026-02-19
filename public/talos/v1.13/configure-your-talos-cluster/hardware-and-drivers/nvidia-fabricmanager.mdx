@@ -5,6 +5,10 @@ aliases:
   - ../../guides/nvidia-fabricmanager
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 import { release_v1_13, nvidia_driver_release_v1_13, nvidia_container_toolkit_release_v1_13 } from '/snippets/custom-variables.mdx';
 
 NVIDIA GPUs that have nvlink support (for eg: A100) will need the [nvidia-fabricmanager](https://github.com/siderolabs/extensions/pkgs/container/nvidia-fabricmanager) system extension also enabled in addition to the [NVIDIA drivers](./nvidia-gpu).

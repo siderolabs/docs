@@ -3,6 +3,10 @@ title: AMD GPU Support (ROCm)
 description: Enable AMD GPUs on Talos and expose them to Kubernetes using the ROCm GPU Operator.
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos supports AMD GPUs by loading the standard Linux `amdgpu` driver at boot.
 
 To make those GPUs available to Kubernetes workloads, you can deploy the ROCm GPU Operator.
@@ -45,7 +49,6 @@ customization:
 ```
 
 Once you have applied your configurations and the node reboots, the kernel will load the AMDGPU modules and make the GPU available to the operating system
-
 
 ## Optional: GPU tuning
 

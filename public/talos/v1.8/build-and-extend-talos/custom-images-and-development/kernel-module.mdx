@@ -3,6 +3,10 @@ title: "Adding a Kernel Module"
 description: "Create a system extension that includes kernel modules."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 [System extensions](./system-extensions) in Talos provide ways to add files to the root filesystem and make it possible to run privileged containers as services.
 But Talos still requires that kernel modules be signed with a trusted signing key to be loaded at run time.
 

@@ -4,6 +4,10 @@ weight: 105
 description: "Understand the Linux process capabilities restrictions with Talos Linux."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Linux defines a set of [process capabilities](https://man7.org/linux/man-pages/man7/capabilities.7.html) that can be used to fine-tune the process permissions.
 
 Talos Linux for security reasons restricts any process from gaining the following capabilities:

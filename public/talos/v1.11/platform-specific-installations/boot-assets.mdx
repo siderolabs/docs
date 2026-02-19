@@ -3,6 +3,10 @@ title: "Boot Assets"
 description: "Creating customized Talos boot assets, disk images, ISO and installer images."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 import { release_v1_11 } from '/snippets/custom-variables.mdx';
 
 Talos Linux provides boot images via [Image Factory](#image-factory), but these images
@@ -87,7 +91,6 @@ Now we have two options to boot our bare-metal machine:
 * <a href={`https://factory.talos.dev/pxe/b8e8fbbe1b520989e6c52c8dc8303070cb42095997e76e812fa8892393e1d176/${release_v1_11}/metal-amd64`}>
     PXE booting via iPXE script
   </a>
-
 
 > The Image Factory URL contains both schematic ID and Talos version, and both can be changed to generate different boot assets.
 
@@ -444,7 +447,6 @@ docker run --rm -t \\
 
 `}
 </CodeBlock>
-
 
 Now the `_out/kernel-amd64` and `_out/initramfs-amd64` contain the customized Talos kernel and initramfs images.
 

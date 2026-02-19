@@ -4,6 +4,10 @@ description: "Configuring user volumes to allocate local storage for Kubernetes 
 weight: 30
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 User Volumes allow to treat available disk space as a pool of allocatable resource, which can be dynamically allocated to different applications.
 The user volumes are supposed to be used mostly for `hostPath` mounts in Kubernetes, but they can be used for other purposes as well.
 

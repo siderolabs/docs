@@ -5,6 +5,10 @@ aliases:
   - ../../guides/configuring-pull-through-cache
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 In this guide we will create a set of local caching Docker registry proxies to minimize local cluster startup time.
 
 When running Talos locally, pulling images from container registries might take a significant amount of time.

@@ -3,6 +3,10 @@ title: "Link Aliases"
 description: "Learn how to provide alternative names for network interfaces."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos Linux by default names physical network interfaces based on [predictable interface naming conventions](../predictable-interface-names) (e.g., `ens3`, `enp0s31f6`, etc.).
 In some scenarios, it might be desirable to provide alternative, more user-friendly names for network interfaces.
 This can be achieved using [LinkAliasConfig](../../reference/configuration/network/linkaliasconfig) configuration documents.
