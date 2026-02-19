@@ -143,8 +143,6 @@ See all Redfish related flags via the `--help` flag.
 <Info>
 The provider will start a DHCP proxy server, responding to DHCP requests from the interface that the `--api-advertise-address`resides in. This DHCP proxy server is only responsible for generating PXE-boot responses for the machines configured to PXE boot. It does not affect the existing DHCP infrastructure otherwise.
 
-
-
 If you need to run this DHCP proxy on a different interface (so the responses are broadcast to the correct network), you can pass the `--dhcp-proxy-iface-or-ip` flag to the provider, specifying either the name of the network interface or an IP on that machine which belongs to the desired interface.
 </Info>
 

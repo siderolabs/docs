@@ -3,6 +3,10 @@ title: "The insecure flag"
 description: "Learn how to use the insecure flag."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 The `--insecure` flag is a per-command argument that allows the `talosctl` client to communicate with the Talos API when a node is in maintenance mode, that is, before it has been configured with a machine configuration.
 
 Talos normally uses mutual TLS (mTLS) for all API communications.

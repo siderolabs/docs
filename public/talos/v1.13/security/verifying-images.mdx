@@ -3,6 +3,10 @@ title: "Verifying Images"
 description: "Verifying Talos container image signatures."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Sidero Labs signs the container images generated for the Talos release with [cosign](https://docs.sigstore.dev/cosign/overview/):
 
 * `ghcr.io/siderolabs/installer` (Talos installer)

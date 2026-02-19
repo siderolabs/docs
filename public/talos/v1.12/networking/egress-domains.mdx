@@ -5,6 +5,10 @@ aliases:
   - ../guides/egress-domains
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 For some more constrained environments, it is important to whitelist only specific domains for outbound internet access.
 These rules will need to be updated to allow for certain domains if the user wishes to still install and bootstrap Talos from public sources.
 That said, users should also note that all of the following components can be mirrored locally with an internal registry, as well as a self-hosted [discovery service](https://github.com/siderolabs/discovery-service) and [image factory](https://github.com/siderolabs/image-factory).

@@ -5,6 +5,10 @@ aliases:
   - ../../../cloud-platforms/scaleway
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 import { release_v1_11, version_v1_11 } from '/snippets/custom-variables.mdx';
 
 The process to run a Talos cluster, on a single node in Scaleway is as follows:
@@ -102,7 +106,6 @@ Generate the Talos config :
 ```
 talosctl gen config talos-cluster https://$VM_IP:6443 --config-patch=@controlplane.patch.yaml --output-dir _out/ --with-docs=false --with-examples=false
 ```
-
 
 Also add a VolumeConfig for the EPHEMERAL partition of Talos :
 ```

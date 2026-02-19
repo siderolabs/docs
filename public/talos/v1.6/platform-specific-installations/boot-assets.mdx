@@ -3,6 +3,10 @@ title: "Boot Assets"
 description: "Creating customized Talos boot assets, disk images, ISO and installer images."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 import { release_v1_6  } from '/snippets/custom-variables.mdx';
 
 Talos Linux provides boot images via [Image Factory](#image-factory), but these images
@@ -78,7 +82,6 @@ Now we have two options to boot our bare-metal machine:
     PXE booting via iPXE script
   </a>
 
-
 > The Image Factory URL contains both schematic ID and Talos version, and both can be changed to generate different boot assets.
 
 Once the bare-metal machine is booted up for the first time, it will require Talos Linux `installer` image to be installed on the disk.
@@ -98,7 +101,6 @@ Once installed, the machine can be upgraded to a new version of Talos by referen
 ```shell
 talosctl upgrade --image factory.talos.dev/installer/b8e8fbbe1b520989e6c52c8dc8303070cb42095997e76e812fa8892393e1d176:<new_version>
 ```
-
 
 Same way upgrade process can be used to transition to a new set of system extensions: generate new schematic with the new set of system extensions, and upgrade the machine to the new schematic ID:
 
@@ -258,7 +260,6 @@ ISO ready
 output asset path: /out/metal-amd64.iso
 `}
 </CodeBlock>
-
 
 Now the `_out/metal-amd64.iso` contains the customized Talos ISO image.
 

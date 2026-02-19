@@ -3,6 +3,10 @@ title: "Ingress Firewall"
 description: "Learn to use Talos Linux Ingress Firewall to limit access to the host services."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos Linux Ingress Firewall is a simple and effective way to limit network access to the services running on the host, which includes both Talos standard
 services (e.g. `apid` and `kubelet`), and any additional workloads that may be running on the host.
 Talos Linux Ingress Firewall doesn't affect the traffic between the Kubernetes pods/services, please use CNI Network Policies for that.

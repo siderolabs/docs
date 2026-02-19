@@ -5,6 +5,10 @@ aliases:
   - ../guides/static-pods
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 ## Static Pods
 
 Static pods are run directly by the `kubelet` bypassing the Kubernetes API server checks and validations.

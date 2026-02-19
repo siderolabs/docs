@@ -4,6 +4,10 @@ aliases:
 
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos Linux automatically manages and rotates all server side certs for etcd, Kubernetes, and the Talos API.
 Note however that the kubelet needs to be restarted at least once a year in order for the certificates to be rotated.
 Any upgrade/reboot of the node will suffice for this effect.

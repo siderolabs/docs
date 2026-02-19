@@ -5,6 +5,10 @@ aliases:
   - ../../../single-board-computers/rockpi_4c
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 import { release_v1_13 } from '/snippets/custom-variables.mdx';
 
 ## Prerequisites
@@ -23,7 +27,6 @@ chmod +x /usr/local/bin/talosctl
   `}
 </CodeBlock>
 
-
 ## Download the image
 
 The default schematic id for "vanilla" RockPi 4 is `25d2690bb48685de5939edd6dee83a0e09591311e64ad03c550de00f8a521f51`.
@@ -37,7 +40,6 @@ curl -LO https://factory.talos.dev/image/25d2690bb48685de5939edd6dee83a0e0959131
 xz -d metal-arm64.raw.xz
   `}
 </CodeBlock>
-
 
 ## Writing the image
 

@@ -6,6 +6,10 @@ aliases:
   - ../guides/configuring-network-connectivity
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 ## Configuring network connectivity
 
 The simplest way to deploy Talos is by ensuring that all the remote components of the system (`talosctl`, the control plane nodes, and worker nodes) all have layer 2 connectivity.

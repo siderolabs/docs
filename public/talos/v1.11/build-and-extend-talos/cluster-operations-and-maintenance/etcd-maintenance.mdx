@@ -3,6 +3,10 @@ title: "etcd Maintenance"
 description: "Operational instructions for etcd database."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 `etcd` database backs Kubernetes control plane state, so `etcd` health is critical for Kubernetes availability.
 
 > Note: Commands from `talosctl etcd` namespace are functional only on the Talos control plane nodes.

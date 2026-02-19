@@ -5,6 +5,10 @@ aliases:
   - ../../guides/configuring-certificate-authorities
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 ## Appending the Certificate Authority (CA)
 
 Append additional certificate authorities to the system's trusted certificate store by [patching](../configure-your-talos-cluster/system-configuration/patching) the machine configuration with the following

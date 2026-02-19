@@ -3,6 +3,10 @@ title: "Configuration Patches"
 description: "In this guide, we'll patch the generated machine configuration."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos generates machine configuration for two types of machines: controlplane and worker machines.
 Many configuration options can be adjusted using `talosctl gen config` but not all of them.
 Configuration patching allows modifying machine configuration to fit it for the cluster or a specific machine.

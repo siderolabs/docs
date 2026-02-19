@@ -3,6 +3,10 @@ title: "SELinux"
 description: "SELinux security module support (experimental)."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos Linux 1.10 introduces initial SELinux support.
 Talos currently contains a basic SELinux policy that is designed to protect the OS from workloads, including privileged pods.
 The policy denies access to machine configuration, prevents debuggers from attaching to system processes, however it is out of its scope to secure the Kubernetes components themselves.

@@ -3,6 +3,10 @@ title: "Machine Configuration OAuth2 Authentication"
 description: "How to authenticate Talos machine configuration download (`talos.config=`) on `metal` platform using OAuth."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos Linux when running on the `metal` platform can be configured to authenticate the machine configuration download using OAuth2 device flow.
 The machine configuration is fetched from the URL specified with `talos.config` kernel argument, and by default this HTTP request is not authenticated.
 When the OAuth2 authentication is enabled, Talos will authenticate the request using OAuth device flow first, and then pass the token to the machine configuration download endpoint.

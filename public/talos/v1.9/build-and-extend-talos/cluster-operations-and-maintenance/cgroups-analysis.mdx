@@ -3,6 +3,10 @@ title: "Cgroups Resource Analysis"
 description: "How to use `talosctl cgroups` to monitor resource usage on the node."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos provides a way to monitor resource usage of the [control groups](https://docs.kernel.org/admin-guide/cgroup-v2.html) on the machine.
 This feature is useful to understand how much resources are being used by the containers and processes running on the machine.
 

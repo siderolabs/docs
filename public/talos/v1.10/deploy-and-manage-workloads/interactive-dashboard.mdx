@@ -3,6 +3,10 @@ title: "Interactive Dashboard"
 description: "A tool to inspect the running Talos machine state on the physical video console."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Interactive dashboard is enabled for all Talos platforms except for SBC images.
 The dashboard can be disabled with kernel parameter `talos.dashboard.disabled=1`.
 

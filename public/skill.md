@@ -9,6 +9,10 @@ metadata:
   mintlify-proj: siderolabs
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 # SideroLabs best practices
 
 **Always consult the [Talos](https://docs.siderolabs.com/talos/v1.12/overview/what-is-talos) and [Omni](https://docs.siderolabs.com/omni/getting-started/getting-started) docs for configuration, latest features and best practices**

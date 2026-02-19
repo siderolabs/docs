@@ -78,7 +78,6 @@ EOF
   </Tab>
   <Tab title="eBPF">
 
-
 By default, Calico uses the `/var` directory to mount cgroups. However, since this path is not writable in Talos Linux, you need to change it to `/sys/fs/cgroup`.
 
 Use the following command to update the cgroup mount path:
@@ -98,7 +97,6 @@ There are three values that we need to set for eBPF in the installation manifest
 1. `linuxDataplane` needs to be set to `BPF`.
 2. `bpfNetworkBootstrap` needs to be set to `Enabled`.
 3. kubeProxyManagement to `Enabled` so that the Tigera operator automatically disables the kube-proxy.
-
 
 Next, you have to configure Calico:
 

@@ -3,6 +3,10 @@ title: "Multihoming"
 description: "How to handle multihomed machines"
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 When a machine has multiple IPv4 or IPv6 addresses, it is important to control which addresses Talos components use for communication.
 Without explicit configuration, services like etcd or the kubelet may select different addresses across reboots or workloads, leading to unstable networking.
 

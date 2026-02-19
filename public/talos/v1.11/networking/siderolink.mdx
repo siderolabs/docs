@@ -3,6 +3,10 @@ title: "SideroLink"
 description: "Point-to-point management overlay Wireguard network."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 SideroLink offers a secure point-to-point management overlay network for Talos clusters using Wireguard.
 Each Talos machine configured with SideroLink establishes a secure Wireguard connection to the SideroLink API server.
 This overlay network utilizes ULA IPv6 addresses, enabling the management of Talos Linux machines even when direct access to their IP addresses is not feasible.

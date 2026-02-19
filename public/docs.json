@@ -28,6 +28,11 @@
       "canonical": "https://docs.siderolabs.com"
     }
   },
+  "errors": {
+    "404": {
+      "redirect": true
+    }
+  },
   "navbar": {
     "links": [
       {

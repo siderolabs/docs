@@ -5,6 +5,10 @@ aliases:
   - ../../guides/configuring-containerd
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 The base containerd configuration expects to merge in any additional configs present in `/etc/cri/conf.d/20-customization.part`.
 
 ## Examples

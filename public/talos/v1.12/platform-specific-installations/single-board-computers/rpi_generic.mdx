@@ -5,6 +5,10 @@ aliases:
   - ../../../single-board-computers/rpi_generic
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 import { release_v1_12 } from '/snippets/custom-variables.mdx';
 
 Talos disk image for the Raspberry Pi generic should in theory work for the boards supported by [u-boot](https://github.com/u-boot/u-boot/blob/master/doc/board/broadcom/raspberrypi.rst#64-bit) `rpi_arm64_defconfig`.

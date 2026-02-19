@@ -5,6 +5,10 @@ aliases:
   - ../../../virtualized-platforms/proxmox
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 import { release_v1_13 } from '/snippets/custom-variables.mdx';
 
 In this guide we will create a Kubernetes cluster using Proxmox.
@@ -94,7 +98,6 @@ Select the ISO you downloaded previously, then hit "Upload"
 Before starting, familiarise yourself with the
 [system requirements](../../getting-started/system-requirements) for Talos and assign VM
 resources accordingly.
-
 
 ### Recommended baseline VM configuration
 

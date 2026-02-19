@@ -3,6 +3,10 @@ title: "OCI Base Runtime Specification"
 description: "Adjusting OCI base runtime specification for CRI containers."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Every container initiated by the Container Runtime Interface (CRI) adheres to the [OCI runtime specification](https://github.com/opencontainers/runtime-spec/blob/main/spec.md).
 While certain aspects of this specification can be modified through Kubernetes pod and container configurations, others remain fixed.
 

@@ -5,6 +5,10 @@ aliases:
   - ../../../local-platforms/qemu
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 import { release_v1_10 } from '/snippets/custom-variables.mdx';
 
 In this guide we will create a Kubernetes cluster using QEMU.
@@ -70,7 +74,6 @@ For example version {release_v1_10}:
   curl https://github.com/siderolabs/talos/releases/download/${release_v1_10}/initramfs-amd64.xz -L -o _out/initramfs-amd64.xz
   `}
 </CodeBlock>
-
 
 ## Create the Cluster
 

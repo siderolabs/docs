@@ -5,6 +5,10 @@ aliases:
   - ../../guides/editing-machine-configuration
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 import { release_v1_6 , k8s_release } from '/snippets/custom-variables.mdx';
 
 Talos node state is fully defined by [machine configuration](../../reference/configuration/overview).

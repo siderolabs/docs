@@ -3,6 +3,10 @@ title: "Watchdog Timers"
 description: "Using hardware watchdogs to workaround hardware/software lockups."
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 Talos Linux now supports hardware watchdog timers configuration.
 Hardware watchdog timers allow to reset (reboot) the system if the software stack becomes unresponsive.
 Please consult your hardware/VM documentation for the availability of the hardware watchdog timers.

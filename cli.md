@@ -3,6 +3,10 @@ title: omnictl CLI
 description: omnictl CLI tool reference.
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 <!-- markdownlint-disable -->
 
 ## omnictl apply
@@ -817,7 +821,6 @@ To load completions for every new session, execute once:
 
 You will need to start a new shell for this setup to take effect.
 
-
 ```
 omnictl completion bash
 ```
@@ -860,7 +863,6 @@ To load completions for every new session, execute once:
 
 You will need to start a new shell for this setup to take effect.
 
-
 ```
 omnictl completion fish [flags]
 ```
@@ -899,7 +901,6 @@ To load completions in your current shell session:
 
 To load completions for every new session, add the output of the above command
 to your powershell profile.
-
 
 ```
 omnictl completion powershell [flags]
@@ -954,7 +955,6 @@ To load completions for every new session, execute once:
 
 You will need to start a new shell for this setup to take effect.
 
-
 ```
 omnictl completion zsh [flags]
 ```
@@ -987,7 +987,6 @@ Generate the autocompletion script for the specified shell
 
 Generate the autocompletion script for omnictl for the specified shell.
 See each sub-command's help for details on how to use the generated script.
-
 
 ### Options
 
@@ -1341,7 +1340,6 @@ To download the latest Vultr image, run:
 To download the latest Radxa ROCK PI 4 image, run:
 
     omnictl download "rpi_generic"
-
 
 ```
 omnictl download <image name> [flags]

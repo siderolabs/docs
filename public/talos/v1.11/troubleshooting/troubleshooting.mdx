@@ -6,6 +6,10 @@ aliases:
   - ../advanced/troubleshooting-control-plane
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 import { k8s_release } from '/snippets/custom-variables.mdx';
 
 In this guide we assume that Talos is configured with default features enabled, such as [Discovery Service](../configure-your-talos-cluster/system-configuration/discovery) and [KubePrism](../../../kubernetes-guides/advanced-guides/kubeprism).

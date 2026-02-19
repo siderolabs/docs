@@ -5,6 +5,10 @@ aliases:
   - ../../../cloud-platforms/azure
 ---
 
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
 ## Creating a cluster via the CLI
 
 In this guide we will create an HA Kubernetes cluster with 1 worker node.
@@ -171,7 +175,6 @@ for i in $( seq 0 1 2 ); do
     --resource-group $GROUP \
     --name talos-controlplane-public-ip-$i \
     --allocation-method static
-
 
   # Create nic
   az network nic create \
