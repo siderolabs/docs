@@ -23,8 +23,6 @@ You might also benefit from having [`talosctl`](../getting-started/how-to-instal
 
 `omnictl` needs to be able to reach your Omni instance, Image Factory (Omni uses the default [Image Factory](https://factory.talos.dev/) if not configured otherwise) and Talos nodes over the network.
 
-Also, your Omni instance needs to be able to reach the Talos nodes over the network. If your nodes are behind a firewall, in a private network, or otherwise not directly reachable, you would need to configure a load balancer to forward TCP port 50000 to reach the nodes for Talos API access.
-
 ### Authorization
 
 You will need to have `os:admin` role for the Talos cluster you want to import.
@@ -198,3 +196,8 @@ kind: KmsgLogConfig
 name: omni-kmsg
 $patch: delete
 ```
+
+### Next steps
+
+All imported clusters are labeled with `tainted-by-importing`, which indicates that you still have access to the cluster secrets and have Admin privileges on the cluster.
+To remove this label, you need to rotate the CA certificates for both Talos and Kubernetes APIs. See [CA Rotation](../cluster-management/ca-rotation) for details.
