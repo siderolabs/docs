@@ -1,0 +1,694 @@
+---
+title: Autoscale Your Cluster with Cluster AutoScaler in AWS
+description: Configure Cluster Autoscaler for Talos Linux clusters running on AWS using Omni
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+This guide shows you how to enable automatic scaling for your Talos Linux cluster on AWS using Cluster Autoscaler and Omni.
+
+## Prerequisites
+
+Before you begin you must have:
+
+- `kubectl` and `talosctl` installed
+- A cloud provider supported by Cluster Autoscaler and configured to create new worker nodes
+
+To view all supported providers, see the [Cluster Autoscaler GitHub repository](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler).
+
+## Step 1: Download your Talos installation media
+
+You’ll need two Talos images: one for your control plane machines and one for your worker machines.
+
+To download each image:
+
+1. Click **Download Installation Media** in the Omni dashboard.
+2. Select the **AWS AMI** option to match your AWS environment.
+3. Add a **Machine User Label** that identifies the machine’s role. For example, for a control plane machine: `role:autoscaler-controlplane-machine`.
+4. Click **Download** to generate the image.
+
+Repeat these steps for the worker image, using a worker-specific label (e.g. `role:autoscaler-worker-machine`).
+
+## Step 2: Create AWS AMIs
+
+Follow the AWS guide:  <a href={`../../../talos/${version}/platform-specific-installations/cloud-platforms/aws#create-your-own-amis`}>Create your own AMIs</a>
+
+You should create two AMIs:
+
+- One from the control plane image
+- One from the worker image
+
+## Step 3: Create control plane machines from your images
+
+Use the control plane AMI to create your control plane machines in AWS.
+
+For high availability, we recommend creating at least three control plane machines.
+
+<Note>
+We do not recommend horizontally autoscaling control plane machines.
+If your control plane needs more capacity, scale vertically by using larger machine types rather than adding more control plane nodes.
+
+Adding additional nodes increases the number of etcd replicas, which can slow down write performance.
+</Note>
+
+After creating the machines, they should appear in the **Machines** section of the Omni dashboard.
+
+## Step 4: Create Machine Classes
+
+[Machine Classes](../../omni-cluster-setup/create-a-machine-class) group machines by labels and act as the pool description for clusters.
+
+You’ll create two Machine Classes:
+
+- One for control plane machines
+- One for worker machines
+
+### 4.1: Control plane Machine Class
+
+To create a machine class for your control plane machines:
+
+1. Create the control plane machine class definition:
+
+```yaml
+cat <<EOF > controlplane-machine-class.yaml
+metadata:
+  namespace: default
+  type: MachineClasses.omni.sidero.dev
+  id: cluster-autoscaler-controlplane
+spec:
+  matchlabels:
+    # This must match the label applied to your control plane AMI
+    - role = autoscaler-controlplane-machine
+EOF
+```
+
+This creates a `cluster-autoscaler-controlplane` machine class with your control plane AMI label ( e.g., `role:autoscaler-controlplane-machine`).
+
+2. Apply it:
+
+```bash
+omnictl apply -f controlplane-machine-class.yaml
+```
+
+3. Verify it exists:
+
+```bash
+omnictl get machineclasses
+```
+
+### 4.2: Worker Machine Class
+
+Repeat the process for the worker machines:
+
+1. Create the worker machine class definition::
+
+```bash
+cat <<EOF > worker-machine-class.yaml
+metadata:
+  namespace: default
+  type: MachineClasses.omni.sidero.dev
+  id: cluster-autoscaler-worker
+spec:
+  matchlabels:
+    # This must match the label applied to your worker AMI
+    - role = autoscaler-worker-machine
+EOF
+```
+
+2. Apply it:
+
+```bash
+omnictl apply -f worker-machine-class.yaml
+```
+
+3. Verify:
+
+```bash
+omnictl get machineclasses
+```
+
+## Step 5: Create a cluster using a template
+
+Next, create a cluster that uses the Machine Classes you defined in Step 3.
+
+1. Create a cluster template with this command, updating each placeholder:
+
+```yaml
+cat <<EOF > cluster-template.yaml
+kind: Cluster
+name: <cluster-name> # Replace with your cluster name
+kubernetes:
+  version: v1.34.1    # Replace with your desired Kubernetes version
+talos:
+  version: v1.11.3   # Replace with your desired Talos version
+
+---
+kind: ControlPlane
+machineClass:
+  name: <controlplane-class-name> # e.g. cluster-autoscaler-controlplane
+  size: <controlplane-count>      # e.g. 3
+
+---
+kind: Workers
+machineClass:
+  name: <worker-class-name>       # e.g. cluster-autoscaler-worker
+  size: unlimited
+EOF
+```
+
+Replace:
+
+- `<cluster-name>` — your cluster name
+- `<controlplane-class-name>` — the Machine Class from Step 3.1
+- `<controlplane-count>` — number of control plane nodes (for example, 3)
+- `<worker-class-name>` — the Machine Class from Step 3.2
+
+2. Apply the template:
+
+```bash
+omnictl cluster template sync -f cluster-template.yaml
+```
+
+3. In Omni, wait for the cluster to become healthy, then download and export its `kubeconfig`. Replace `<cluster-name>` with the name of your cluster:
+
+  ```bash
+  omnictl kubeconfig -c <cluster-name>
+  ```
+
+4. Monitor your cluster status from your Omni dashboard or by running:
+
+```bash
+kubectl get nodes --watch
+```
+
+## Step 6: Create and attach IAM role for Cluster Autoscaler
+
+Cluster Autoscaler uses the IAM role attached to the EC2 instances where it runs. In this guide, Cluster Autoscaler is configured to run on control plane nodes, so the IAM role must be attached to the control plane instances.
+
+This setup includes:
+
+- An IAM policy that defines the permissions required by Cluster Autoscaler
+- An IAM role that uses the policy
+- An instance profile that allows EC2 instances to assume the IAM role
+
+The instance profile is attached to EC2 instances so that Cluster Autoscaler can securely access AWS APIs. It is also included in the Launch Template to ensure that any worker nodes created by the Auto Scaling Group receive the correct permissions.
+
+### 6.1: Define environment variables
+
+```bash
+CLUSTER_NAME=<cluster-name> # Replace with the name of your cluster
+ACCOUNT_ID=$(aws sts get-caller-identity \
+  --query Account \
+  --output text)
+
+AUTOSCALER_ROLE_NAME="${CLUSTER_NAME}-autoscaler-role"
+AUTOSCALER_POLICY_NAME="${CLUSTER_NAME}-ClusterAutoscalerPolicy"
+AUTOSCALER_INSTANCE_PROFILE_NAME="${CLUSTER_NAME}-autoscaler-instance-profile"
+```
+
+### 6.2: Create the IAM policy
+
+This policy grants Cluster Autoscaler permission to discover and manage your Auto Scaling Group.
+
+```bash
+cat <<EOF | aws iam create-policy \
+  --policy-name $AUTOSCALER_POLICY_NAME \
+  --policy-document file:///dev/stdin
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "autoscaling:SetDesiredCapacity",
+        "autoscaling:TerminateInstanceInAutoScalingGroup"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/k8s.io/cluster-autoscaler/enabled": "true",
+          "aws:ResourceTag/k8s.io/cluster-autoscaler/$CLUSTER_NAME": "true"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "autoscaling:DescribeAutoScalingGroups",
+        "autoscaling:DescribeAutoScalingInstances",
+        "autoscaling:DescribeScalingActivities",
+        "autoscaling:DescribeTags",
+        "ec2:DescribeInstances",
+        "ec2:DescribeLaunchTemplateVersions",
+        "ec2:DescribeInstanceTypes",
+        "ec2:DescribeImages"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+```
+
+### 6.3: Create the IAM role
+
+First, create a trust policy that allows EC2 instances to assume the role:
+
+```bash
+cat <<EOF > trust-policy.json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": { "Service": "ec2.amazonaws.com" },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+```
+
+Next, create the IAM role using the trust policy:
+
+```bash
+aws iam create-role \
+  --role-name $AUTOSCALER_ROLE_NAME \
+  --assume-role-policy-document file://trust-policy.json
+```
+
+### 6.4: Attach the policy to the role
+
+Attach the Cluster Autoscaler policy to the IAM role:
+
+```bash
+aws iam attach-role-policy \
+  --role-name $AUTOSCALER_ROLE_NAME \
+  --policy-arn arn:aws:iam::$ACCOUNT_ID:policy/$AUTOSCALER_POLICY_NAME
+```
+
+### 6.5: Create the instance profile
+
+Create an instance profile to associate the IAM role with EC2 instances:
+
+```bash
+aws iam create-instance-profile \
+  --instance-profile-name $AUTOSCALER_INSTANCE_PROFILE_NAME
+
+aws iam add-role-to-instance-profile \
+  --instance-profile-name $AUTOSCALER_INSTANCE_PROFILE_NAME \
+  --role-name $AUTOSCALER_ROLE_NAME
+
+echo "Waiting for IAM instance profile propagation..."
+sleep 20
+```
+
+### 6.6: Automatically attach IAM role to control plane instances
+
+Retrieve the EC2 instance IDs of your control plane nodes and attach the IAM instance profile to each instance.
+
+This allows Cluster Autoscaler running on the control plane nodes to securely access AWS APIs.
+
+```bash
+CONTROL_PLANE_INSTANCE_IDS=$(kubectl get nodes \
+  -l node-role.kubernetes.io/control-plane \
+  -o jsonpath='{.items[*].status.addresses[?(@.type=="InternalIP")].address}' \
+| xargs -I {} aws ec2 describe-instances \
+    --filters Name=private-ip-address,Values={} \
+    --query "Reservations[].Instances[].InstanceId" \
+    --output text)
+
+for INSTANCE_ID in $CONTROL_PLANE_INSTANCE_IDS; do
+  aws ec2 associate-iam-instance-profile \
+    --instance-id $INSTANCE_ID \
+    --iam-instance-profile Name=$AUTOSCALER_INSTANCE_PROFILE_NAME
+done
+```
+
+### 6.7: Verify that the IAM role is attached to the profile
+
+Confirm that the IAM instance profile is successfully attached to your control plane instances.
+
+```bash
+echo "Verifying IAM instance profile attachment..."
+
+aws ec2 describe-instances \
+  --instance-ids $CONTROL_PLANE_INSTANCE_IDS \
+  --query "Reservations[].Instances[].IamInstanceProfile.Arn" \
+  --output text
+```
+
+If the command returns an instance profile ARN, the IAM role is correctly attached and Cluster Autoscaler can authenticate with AWS.
+
+IAM permissions are now correctly configured.
+
+## Step 7: Create Launch Template and Auto Scaling Group
+
+Cluster Autoscaler scales your worker nodes by adjusting the size of an AWS Auto Scaling Group (ASG). To enable this, you must create:
+
+- A Launch Template, which defines how worker nodes are configured and launched
+- An Auto Scaling Group, which uses the Launch Template to create and terminate worker nodes
+- Tags, which allow Cluster Autoscaler to automatically discover and manage the Auto Scaling Group
+
+The commands in this section will use your Talos worker AMI and AWS networking configuration to create these resources.
+
+### 7.1: Define environment variables
+
+```bash
+AWS_REGION=$(aws configure get region)
+
+LAUNCH_TEMPLATE_NAME=<launch-template>
+AUTO_SCALING_GROUP_NAME=<auto-scaling-group>
+
+INSTANCE_TYPE="<instance-type>"          # Example: t3.large
+AMI_ID="<talos-worker-ami-id>"           # The AMI ID of your Talos worker image
+
+MIN_SIZE=<minimum-node-count>            # Example: 1
+DESIRED_SIZE=<desired-node-count>       # Example: 1
+MAX_SIZE=<maximum-node-count>           # Example: 5
+```
+
+Here are the variable description:
+
+- `LAUNCH_TEMPLATE_NAME` — Preferred name for the AWS Launch Template
+- `AUTO_SCALING_GROUP_NAME` — Preferred name for the Auto Scaling Group
+- `INSTANCE_TYPE` — The EC2 instance type for worker nodes
+- `AMI_ID` — The Talos worker AMI ID
+- `MIN_SIZE` — Minimum number of worker nodes
+- `DESIRED_SIZE` — Number of worker nodes to start with
+- `MAX_SIZE` — Maximum number of worker nodes Cluster Autoscaler can create
+
+<Accordion title="Get your worker node AMI ID">
+
+Cluster Autoscaler must use the worker AMI you created from the Omni installation media in Step 1.
+
+To find the AMI ID:
+
+1. Open the AWS Console
+2. Go to **EC2 → AMIs**
+3. Locate the AMI created from your **worker installation media**
+4. Copy the **AMI ID** (for example: `ami-0abc1234def567890`)
+
+Then set the variable:
+
+```bash
+AMI_ID="<your-worker-ami-id>"
+```
+
+This ensures that new worker nodes are created using the correct Talos image and can join your cluster.
+
+</Accordion>
+
+### 7.2: Automatically detect your AWS subnets
+
+Cluster Autoscaler needs subnet IDs to know where to launch worker nodes. Run this command to automatically retrieve them:
+
+```bash
+VPC_ID=$(aws ec2 describe-instances \
+  --instance-ids $CONTROL_PLANE_INSTANCE_IDS \
+  --query "Reservations[0].Instances[0].VpcId" \
+  --output text)
+
+SUBNET_IDS=$(aws ec2 describe-subnets \
+  --filters Name=vpc-id,Values=$VPC_ID \
+  --query 'Subnets[*].SubnetId' \
+  --output text | tr '\t' ',')
+```
+
+### 7.3: Create the AWS Launch Template
+
+The Launch Template defines which AMI and instance type your worker nodes will use.
+
+```bash
+aws ec2 create-launch-template \
+  --launch-template-name $LAUNCH_TEMPLATE_NAME \
+  --launch-template-data "{
+    \"ImageId\":\"$AMI_ID\",
+    \"InstanceType\":\"$INSTANCE_TYPE\",
+    \"IamInstanceProfile\": {
+      \"Name\": \"$AUTOSCALER_INSTANCE_PROFILE_NAME\"
+    }
+  }"
+```
+
+### 7.4: Create the Auto Scaling Group
+
+The Auto Scaling Group creates and manages worker nodes.
+
+Cluster Autoscaler will increase or decrease nodes in this group automatically.
+
+```bash
+aws autoscaling create-auto-scaling-group \
+  --auto-scaling-group-name $AUTO_SCALING_GROUP_NAME \
+  --launch-template LaunchTemplateName=$LAUNCH_TEMPLATE_NAME \
+  --min-size $MIN_SIZE \
+  --max-size $MAX_SIZE \
+  --desired-capacity $DESIRED_SIZE \
+  --vpc-zone-identifier "$SUBNET_IDS"
+```
+
+### 7.5: Tag the Auto Scaling Group for Cluster Autoscaler
+
+These tags allow Cluster Autoscaler to discover and manage the node group:
+
+```bash
+aws autoscaling create-or-update-tags \
+  --tags \
+  ResourceId=$AUTO_SCALING_GROUP_NAME,ResourceType=auto-scaling-group,Key=k8s.io/cluster-autoscaler/enabled,Value=true,PropagateAtLaunch=true \
+  ResourceId=$AUTO_SCALING_GROUP_NAME,ResourceType=auto-scaling-group,Key=k8s.io/cluster-autoscaler/$CLUSTER_NAME,Value=true,PropagateAtLaunch=true
+```
+
+### 7.6: Verify the Auto Scaling Group created a worker node
+
+Once the Auto Scaling Group is up, it would automaticlly create one worker node to match its desired capacity.
+
+Check that AWS created a worker node:
+
+```bash
+aws autoscaling describe-auto-scaling-groups \
+  --auto-scaling-group-names $AUTO_SCALING_GROUP_NAME \
+  --query 'AutoScalingGroups[0].Instances[*].InstanceId' \
+  --output table
+```
+
+Then verify the node joins the Kubernetes cluster:
+
+```bash
+kubectl get nodes --watch
+```
+
+You should see a worker node as a part of your cluster.
+
+## Step 8: Install Cluster Autoscaler using Helm
+
+Cluster Autoscaler runs as a Kubernetes Deployment inside your cluster and continuously monitors pod scheduling.
+
+In this step, you will install Cluster Autoscaler using Helm and configure it to automatically discover and manage your AWS Auto Scaling Group.
+
+### 8.1: Add the Cluster Autoscaler Helm repository
+
+Add the official Cluster Autoscaler Helm repository and update your local Helm index:
+
+```bash
+helm repo add autoscaler https://kubernetes.github.io/autoscaler
+helm repo update
+```
+
+### 8.2: Install Cluster Autoscaler configured for AWS
+
+Install Cluster Autoscaler into the `kube-system` namespace and configure it for your AWS environment:
+
+```bash
+helm install cluster-autoscaler autoscaler/cluster-autoscaler \
+  -n kube-system \
+  --set cloudProvider=aws \
+  --set awsRegion=$AWS_REGION \
+  --set autoDiscovery.clusterName=$CLUSTER_NAME \
+  --set rbac.create=true \
+  --set extraArgs.balance-similar-node-groups=true \
+  --set extraArgs.skip-nodes-with-system-pods=false \
+  --set extraArgs.skip-nodes-with-local-storage=false \
+  --set nodeSelector."node-role\.kubernetes\.io/control-plane"="" \
+  --set "tolerations[0].key=node-role.kubernetes.io/control-plane" \
+  --set "tolerations[0].operator=Exists" \
+  --set "tolerations[0].effect=NoSchedule"
+```
+
+This configuration:
+
+- Configures Cluster Autoscaler to use the AWS cloud provider
+- Automatically discovers Auto Scaling Groups tagged for your cluster
+- Uses the IAM role attached to your control plane nodes to access AWS APIs
+- Runs Cluster Autoscaler on control plane nodes for reliability
+- Enables scaling decisions based on unschedulable pods and node utilization
+
+## Step 9: Verify Cluster Autoscaler is working
+
+Check that the Cluster Autoscaler is running:
+
+```bash
+kubectl -n kube-system get pods \
+  -l "app.kubernetes.io/instance=cluster-autoscaler"
+```
+
+Check logs:
+
+```bash
+kubectl -n kube-system logs \
+  -l app.kubernetes.io/instance=cluster-autoscaler
+```
+
+You should see messages similar to:
+
+```
+Discovered Auto Scaling Group: talos-worker-asg
+```
+
+This confirms Cluster Autoscaler detected your worker node group.
+
+## Step 10: Test automatic scaling
+
+Deploy a workload that requires additional capacity:
+
+```yaml
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autoscaler-demo
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: autoscaler-demo
+  template:
+    metadata:
+      labels:
+        app: autoscaler-demo
+    spec:
+      containers:
+      - name: app
+        image: nginx
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+EOF
+```
+
+Scale the deployment:
+
+```bash
+kubectl scale deployment autoscaler-demo --replicas=10
+```
+
+Watch scaling activity:
+
+```bash
+kubectl get pods -w
+kubectl get nodes -w
+```
+
+You should observe:
+
+- Pods entering Pending state
+- Cluster Autoscaler increasing Auto Scaling Group capacity
+- New worker nodes joining the cluster
+- Pods transitioning to Running
+
+## Cleanup
+
+This section removes the resources created in this guide, including the test workload, Cluster Autoscaler, and AWS infrastructure.
+
+These steps are optional, but recommended if you no longer need autoscaling enabled.
+
+### Cleanup the test workload
+
+Scale down and remove the demo deployment:
+
+```bash
+kubectl scale deployment autoscaler-demo --replicas=0
+kubectl delete deployment autoscaler-demo
+```
+
+Verify all pods are removed:
+
+```bash
+kubectl get pods
+```
+
+### Uninstall Cluster Autoscaler
+
+Remove the Cluster Autoscaler deployment from your cluster:
+
+```bash
+helm uninstall cluster-autoscaler -n kube-system
+```
+
+Verify it has been removed:
+
+```bash
+kubectl -n kube-system get deployment cluster-autoscaler
+```
+
+### Scale down the Auto Scaling Group
+
+Reduce worker node capacity to zero:
+
+```bash
+aws autoscaling update-auto-scaling-group \
+  --auto-scaling-group-name $AUTO_SCALING_GROUP_NAME \
+  --min-size 0 \
+  --desired-capacity 0
+```
+
+Wait for worker nodes to terminate, then verify:
+
+```bash
+kubectl get nodes
+```
+
+Only control plane nodes should remain.
+
+### Delete the Auto Scaling Group
+
+Delete the Auto Scaling Group:
+
+```bash
+aws autoscaling delete-auto-scaling-group \
+  --auto-scaling-group-name $AUTO_SCALING_GROUP_NAME \
+  --force-delete
+```
+
+### Delete the Launch Template
+
+Delete the AWS Launch Template:
+
+```bash
+aws ec2 delete-launch-template \
+  --launch-template-name $LAUNCH_TEMPLATE_NAME
+```
+
+### Remove IAM policy (optional)
+
+If you created a dedicated IAM policy for Cluster Autoscaler, delete it:
+
+```bash
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+
+aws iam delete-policy \
+  --policy-arn arn:aws:iam::$ACCOUNT_ID:policy/$AUTOSCALER_POLICY_NAME
+```
+
+### Delete the Omni cluster (optional)
+
+If you want to remove the cluster entirely:
+
+```bash
+omnictl delete cluster $CLUSTER_NAME
+```
+
+Verify removal:
+
+```bash
+omnictl get clusters
+```
