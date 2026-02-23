@@ -24,6 +24,7 @@ navigation:
             - "omni-deployment-options.mdx"
             - "omni-on-prem-hardware-requirements.mdx"
             - "run-omni-on-prem.mdx"
+            - "run-omni-on-k8s.mdx"
             - "run-omni-airgapped.mdx"
             - "run-image-factory-on-prem.mdx"
             - "configure-keycloak-for-omni.mdx"
