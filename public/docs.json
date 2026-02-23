@@ -2190,6 +2190,7 @@
               "omni/self-hosted/omni-deployment-options",
               "omni/self-hosted/omni-on-prem-hardware-requirements",
               "omni/self-hosted/run-omni-on-prem",
+              "omni/self-hosted/run-omni-on-k8s",
               "omni/self-hosted/run-omni-airgapped",
               "omni/self-hosted/run-image-factory-on-prem",
               "omni/self-hosted/configure-keycloak-for-omni",
