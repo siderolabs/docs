@@ -32,3 +32,18 @@ Please see documents:
 * [Deploy Image Factory on-prem](../self-hosted/run-image-factory-on-prem.mdx)
 * [Deploy Omni on-prem](../self-hosted/run-omni-on-prem)
 
+## Why do multiple Omni clusters appear as the same cluster in ArgoCD?
+
+When using Omni-managed clusters behind the Omni kubeapi proxy, ArgoCD may treat multiple clusters as the same cluster if they share the same kubeapi server URL.
+
+This happens because ArgoCD identifies clusters primarily by their `server` URL, not by their cluster name or credentials. Since Omni exposes clusters through a shared kubeapi proxy endpoint, different clusters can appear identical from ArgoCD’s perspective.
+
+This is a limitation of ArgoCD and is not specific to Omni.
+
+To ensure clusters are treated separately, each cluster must have a unique `server` value in ArgoCD. You can do this by:
+
+- Appending a unique query parameter to the server URL (for example: `?cluster=cluster-a`)
+- Exposing each cluster through a distinct API endpoint (via DNS, reverse proxy, or ingress)
+- Running a separate ArgoCD instance per cluster
+
+As long as the `server` URL is different, ArgoCD will treat the clusters as separate clusters.
