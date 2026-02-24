@@ -18,6 +18,18 @@ If you already have services such as a container registry, authentication servic
 
 <Note>Omni is licensed under the [Business Source License](https://github.com/siderolabs/omni/blob/main/LICENSE) and requires a support contract for production use.</Note>
 
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/ExpIWRdrKEQ"
+  title="Talos Omni, Airgapped"
+  frameborder="0"
+  allow="accelerometer;
+  autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerpolicy="strict-origin-when-cross-origin"
+  allowfullscreen>
+</iframe>
+
 ## Prerequisites
 
 There are some expectations your environment has the following supporting services for the services to run. These include:
@@ -275,7 +287,7 @@ chmod 644 server*.pem
 
 ## 2. Image factory and container registry
 
-Using the certificates we just created, follow the guide [Deploy Image Factory On-prem](./run-image-factory-on-prem). This will 
+Using the certificates we just created, follow the guide [Deploy Image Factory On-prem](./run-image-factory-on-prem). This will
 create a container registry and host the Image Factory in your environment. It will also sign container images with an offline key for verification.
 
 <Warning>If you do not have a working Image Factory with Talos images and extensions seeded do not continue with the guide. That is a pre-requisite for running Omni in an air gapped environment.</Warning>
@@ -561,7 +573,7 @@ You can use this config two different ways. Use kernel arguments for Talos 1.11 
   ```
 
   Embed both configurations and create an installation ISO with `imager`.
-  
+
   <Warning>Imager cannot be run with SELinux in enforcing mode.</Warning>
 
   <CodeBlock lang="sh">

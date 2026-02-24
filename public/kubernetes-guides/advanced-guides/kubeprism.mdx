@@ -8,6 +8,18 @@ import { version } from '/snippets/custom-variables.mdx';
 Kubernetes pods running in CNI mode can use the `kubernetes.default.svc` service endpoint to access the Kubernetes API server,
 however pods running in host networking mode can only use the external cluster endpoint to access the Kubernetes API server.
 
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/VNRE64R5akM"
+  title="Talos Linux KubePrism"
+  frameborder="0"
+  allow="accelerometer;
+  autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerpolicy="strict-origin-when-cross-origin"
+  allowfullscreen>
+</iframe>
+
 Because Kubernetes controlplane and CNI components run in host networking mode, they can only use the external cluster endpoint to access the Kubernetes API server.
 If the external cluster endpoint is unavailable (due to misconfiguration, network issues, etc), this will cause issues in the cluster: pods will not be scheduled, service IPs stop working, etc.
 
