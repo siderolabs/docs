@@ -1,0 +1,238 @@
+---
+title: Run Spegel Image Mirroring on Talos
+description: Use Spegel to enable peer-to-peer container image distribution on Talos Linux clusters
+---
+
+This guide shows you how to configure Spegel on a Talos Linux Kubernetes cluster.
+
+[Spegel](https://github.com/spegel-org/spegel) is a stateless OCI registry mirror that enables Kubernetes nodes to share container images with each other. This reduces external registry pulls, improves performance, and enables efficient image distribution across your cluster.
+
+## Prerequisites
+
+Before you begin, you must have:
+
+- A running Talos Linux Kubernetes cluster
+- `kubectl` configured to access your cluster
+- `talosctl` configured to access your nodes
+- `helm` installed (version 3.8 or newer)
+
+Verify cluster access:
+
+```bash
+kubectl get nodes
+```
+
+All nodes should be in the `Ready` state.
+
+## Step 1: Configure Talos containerd to preserve unpacked layers
+
+By default, Talos configures containerd to discard unpacked image layers after an image is pulled. This behavior helps conserve disk space, but it prevents Spegel from serving images to other nodes, because there are no local layers available to share.
+
+Spegel relies on these unpacked layers to function as a peer-to-peer registry mirror. To enable this capability, you must configure containerd to retain unpacked layers. This is done by applying a machine configuration patch to each node.
+
+### 1.1: Create the machine configuration patch
+
+Create a patch file named `spegel-machine-patch.yaml` with the following contents:
+
+```yaml
+cat <<EOF > spegel-machine-patch.yaml
+machine:
+  files:
+    - path: /var/etc/cri/conf.d/20-spegel.part
+      op: create
+      permissions: 0o000
+      content: |
+        [plugins."io.containerd.cri.v1.images"]
+          discard_unpacked_layers = false
+EOF
+```
+
+This patch creates a containerd configuration fragment that instructs containerd to preserve unpacked image layers, making them available for Spegel to serve to other nodes.
+
+### 1.2: Apply the patch to all nodes
+
+Next, apply this configuration to every node in your cluster.
+
+<Tabs>
+<Tab title="Apply patch directly to Talos machines">
+
+To apply the patch directly to Talos machines:
+
+1. Retrieve the internal IP addresses of all nodes:
+
+```bash
+NODE_IPS=$(
+  kubectl get nodes \
+  -o jsonpath='{.items[*].status.addresses[?(@.type=="InternalIP")].address}'
+)
+
+echo $NODE_IPS
+```
+
+This command collects the node IP addresses that `talosctl` will use to connect to each machine.
+
+2. Apply the patch to each node:
+
+```bash
+for NODE_IP in $NODE_IPS; do
+  talosctl patch machineconfig \
+    --nodes $NODE_IP \
+    --patch @spegel-machine-patch.yaml
+done
+```
+This updates the machine configuration on each node, but the change will not take effect until the nodes are rebooted.
+
+3. Reboot each node so containerd loads the updated configuration:
+
+```bash
+for NODE_IP in $NODE_IPS; do
+  talosctl reboot --nodes $NODE_IP
+  kubectl wait --for=condition=Ready node \
+    --field-selector metadata.name=$(kubectl get nodes -o wide | grep $NODE_IP | awk '{print $1}')
+done
+```
+
+Each node is rebooted one at a time to avoid disrupting the cluster. During the reboot, the node will be temporarily unavailable.
+
+4. Monitor their status and wait until they return to the `Ready` state:
+
+```bash
+kubectl get nodes --watch
+```
+
+Proceed once all nodes report `Ready`.
+
+</Tab>
+<Tab title="Apply patch through Omni">
+
+If your cluster is managed by Omni, apply the patch by adding it to the patches section of each machine definition in your [cluster template](../../omni/reference/cluster-templates#patches):
+
+```yaml
+patches:
+  - name: spegel-containerd-config
+    inline:
+      machine:
+        files:
+          - path: /var/etc/cri/conf.d/20-spegel.part
+            op: create
+            permissions: 0o000
+            content: |
+              [plugins."io.containerd.cri.v1.images"]
+                discard_unpacked_layers = false
+```
+
+After updating the template, sync the changes to your cluster:
+
+```bash
+omnictl cluster template sync -f cluster-template.yaml
+```
+
+Omni will apply the update and reconcile the affected machines automatically.
+</Tab>
+</Tabs>
+
+## Step 2: Configure Spegel to use Talos containerd registry settings
+
+Talos stores containerd registry configuration in a non-default location. In order for Spegel to correctly configure itself as a registry mirror, it must be explicitly pointed to this path.
+
+You will do this by creating a Helm values file that tells Spegel where to write its registry configuration.
+
+Create a file named `spegel-values.yaml` with the following contents:
+
+```bash
+cat <<EOF > spegel-values.yaml
+spegel:
+  containerdRegistryConfigPath: /etc/cri/conf.d/hosts
+EOF
+```
+
+## Step 3: Install Spegel using Helm
+
+Spegel is distributed as an OCI-based Helm chart and runs as a DaemonSet, deploying one instance on each node. This allows every node to serve and retrieve container images from its peers.
+
+Install Spegel using the Helm values file you created:
+
+```bash
+helm upgrade \
+  --install spegel \
+  --namespace spegel \
+  --create-namespace \
+  oci://ghcr.io/spegel-org/helm-charts/spegel \
+  -f spegel-values.yaml
+```
+
+Expected output:
+
+```text
+STATUS: deployed
+```
+
+## Step 4: Allow Spegel to run with privileged access
+
+Talos enables Pod Security Admission with restrictive defaults to improve cluster security. Because Spegel interacts directly with the container runtime and host filesystem, it requires privileged access.
+
+To allow Spegel to function correctly, label the `spegel` namespace to use the privileged security profile:
+
+```bash
+kubectl label namespace spegel \
+  pod-security.kubernetes.io/enforce=privileged \
+  --overwrite
+```
+
+## Step 5: Verify Spegel is running
+
+After installation, confirm that the Spegel pods are running on all nodes:
+
+```bash
+kubectl get pods -n spegel -o wide
+```
+
+Expected output:
+
+```txt
+NAME           READY   STATUS    NODE
+spegel-xxxxx   1/1     Running   node-1
+spegel-yyyyy   1/1     Running   node-2
+```
+
+Spegel runs as a DaemonSet, so there should be exactly one pod per node. Once these pods are in the `Running` state, Spegel is active and ready to configure containerd.
+
+## Step 6: Test peer-to-peer image distribution
+
+Deploy a test workload to trigger an image pull:
+
+```bash
+kubectl run spegel-test \
+  --image=nginx:latest \
+  --restart=Never \
+  --image-pull-policy=Always
+```
+
+Verify that the pod starts successfully:
+
+```bash
+kubectl get pods spegel-test -o wide
+```
+
+This confirms that containerd can pull images using the configured registry mirrors.
+
+## Step 7: Verify Spegel activity
+
+Check the Spegel logs to confirm it is serving registry traffic:
+
+```bash
+kubectl logs -n spegel \
+  -l app.kubernetes.io/name=spegel \
+  --tail=50
+```
+
+You should see registry and peer routing activity. This confirms that Spegel is actively participating in image distribution.
+
+## How Spegel integrates with Talos
+
+With Spegel installed, containerd pulls images using this order:
+1. Spegel registry on the local node
+2. Spegel registry on peer nodes
+3. Upstream container registry (for example, Docker Hub)
+
+When an image is pulled, it is cached locally and made available to other nodes through Spegel. This reduces external registry usage, improves pull performance, and enables efficient peer-to-peer image distribution across the cluster.

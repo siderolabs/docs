@@ -48,5 +48,6 @@ navigation:
             - "kuberay.mdx"
             - "kueue.mdx"
             - "node-labels.mdx"
+            - "spegel.mdx"
             - "talos-api-access-from-k8s.mdx"
             - "upgrading-kubernetes.mdx"

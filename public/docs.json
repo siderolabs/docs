@@ -2362,6 +2362,7 @@
               "kubernetes-guides/advanced-guides/kuberay",
               "kubernetes-guides/advanced-guides/kueue",
               "kubernetes-guides/advanced-guides/node-labels",
+              "kubernetes-guides/advanced-guides/spegel",
               "kubernetes-guides/advanced-guides/talos-api-access-from-k8s",
               "kubernetes-guides/advanced-guides/upgrading-kubernetes"
             ]
