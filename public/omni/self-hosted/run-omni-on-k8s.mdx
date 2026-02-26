@@ -11,38 +11,51 @@ For SAML integration sections, this guide assumes Azure AD will be the provider 
 
 Omni is available via a [Business Source License](https://github.com/siderolabs/omni/blob/main/LICENSE) which allows free installations in non-production environments. If you would like to deploy Omni for production use please contact [Sidero sales](mailto:sales@siderolabs.com?subject=Omni%20license%20inquiry\&body=Hello,%20I%20would%20like%20to%20purchase%20an%20on-prem%20license%20for%20Omni.). If you would like to subscribe to the hosted version of Omni please see the [SaaS pricing](https://www.siderolabs.com/pricing/);
 
-## Prerequisites
+## 1 Prerequisites
 
 There are several prerequisites for deploying Omni on Kubernetes. We will assume you have an Kubernetes cluster available with a CNI and CSI plugin installed.
 
-### Certificates
+<Warning>You should not run Omni on a Talos cluster that is managed by Omni. It can be deployed on a standalone Talos cluster or another managed Kubernetes offering.</Warning>
 
-We need to have a component that will manage SSL certificates for Omni. In this example, we are using cert-manager. You can install cert-manager with `kubectl apply` or `helm install`.
+### 1.1 Certificates
 
-```bash
-# Kubectl
-## Create the cert-manager namespace
-kubectl create namespace cert-manager
+We need to have a component that will manage SSL certificates for Omni. In this example, we are using [cert-manager](http://cert-manager.io/). You can install cert-manager with `kubectl apply` or `helm install`.
 
-## Install cert-manager
-kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.19.2/cert-manager.yaml
+<Tabs>
+  <Tab title="kubectl">
+  ```bash
+  ## Create the cert-manager namespace
+  kubectl create namespace cert-manager
+
+  ## Install cert-manager
+  kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.19.2/cert-manager.yaml
 ```
-```bash
-# Helm
-helm install \
-  cert-manager oci://quay.io/jetstack/charts/cert-manager \
-  --version v1.19.2 \
-  --namespace cert-manager \
-  --create-namespace \
-  --set crds.enabled=true \
-  --set global.leaderElection.namespace=cert-manager \
-  --set enableCertificateOwnerRef=true \
-  --set "extraArgs[0]=--dns01-recursive-nameservers-only" \
-  --set-string "extraArgs[1]=--dns01-recursive-nameservers=1.1.1.1:53\,8.8.8.8:53"
-```
-#### Issuers
+  </Tab>
+
+  <Tab title="Helm">
+  ```bash
+  helm install \
+    cert-manager oci://quay.io/jetstack/charts/cert-manager \
+    --version v1.19.2 \
+    --namespace cert-manager \
+    --create-namespace \
+    --set crds.enabled=true \
+    --set global.leaderElection.namespace=cert-manager \
+    --set enableCertificateOwnerRef=true \
+    --set "extraArgs[0]=--dns01-recursive-nameservers-only" \
+    --set-string "extraArgs[1]=--dns01-recursive-nameservers=1.1.1.1:53\,8.8.8.8:53"
+  ```
+  </Tab>
+</Tabs>
+
+### 1.2 Issuers
 
 We also need to have issuers in order to request certificates. These can be a `Issuer` or a `ClusterIssuer`. In this example we're using [DNS Challenge with CloudFlare](https://cert-manager.io/docs/configuration/acme/dns01/cloudflare/) and a `ClusterIssuer`.
+
+```bash
+export CLOUDFLARE_API_TOKEN=<Cloudflare API token>
+export YOUR_EMAIL=<Your Email>
+```
 
 ```bash
 cat <<'EOF' | kubectl apply -f -
@@ -53,7 +66,7 @@ metadata:
   namespace: cert-manager
 type: Opaque
 stringData:
-  api-token: <Cloudflare API token>
+  api-token: ${CLOUDFLARE_API_TOKEN}
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -61,40 +74,49 @@ metadata:
   name: letsencrypt
 spec:
   acme:
-    email: <Your Email>
+    email: ${YOUR_EMAIL}
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: cluster-issuer-account-key
     solvers:
     - dns01:
         cloudflare:
-          email: <Your Email>
+          email: ${YOUR_EMAIL}
           apiTokenSecretRef:
             name: cloudflare-api-token
             key: api-token
 EOF
 ```
 
-### LoadBalancer (optional)
+### 1.3 LoadBalancer (optional)
 If you want to expose Omni with a LoadBalancer service, you will need to have a LoadBalancer available in your cluster. If you do not have a LoadBalancer available, you can still expose Omni with an Ingress and a NodePort service.
 
 In this example, we are using [MetalLB](https://metallb.universe.tf/) as a LoadBalancer in on-prem Kubernetes clusters. You can install MetalLB with `kubectl apply` or `helm install`.
 
-```bash
-# Kubectl
-kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.15.3/config/manifests/metallb-native.yaml
-```
-```bash
-# Helm
-helm repo add metallb https://metallb.github.io/metallb --force-update
-helm install \
-  metallb metallb/metallb \
-  --version v0.15.3 \
-  --namespace metallb-system \
-  --create-namespace
-```
+<Tabs>
+  <Tab title="kubectl">
+  ```bash
+  kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.15.3/config/manifests/metallb-native.yaml
+  ```
+  </Tab>
+
+  <Tab title="Helm">
+  ```bash
+  helm repo add metallb https://metallb.github.io/metallb --force-update
+  helm install \
+    metallb metallb/metallb \
+    --version v0.15.3 \
+    --namespace metallb-system \
+    --create-namespace
+  ```
+  </Tab>
+</Tabs>
 
 We also need to configure an address pool and a L2 advertisement for MetalLB to use. This can be done with the following manifest:
+
+```bash
+export METALLB_IP_RANGE=192.168.1.5-192.168.1.10
+```
 
 ```bash
 cat <<'EOF' | kubectl apply -f -
@@ -105,7 +127,7 @@ metadata:
   namespace: metallb-system
 spec:
   addresses:
-  - 10.10.75.5-10.10.75.5
+  - ${METALLB_IP_RANGE}
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
@@ -115,13 +137,12 @@ metadata:
 EOF
 ```
 
-<Note>If you used Helm to install MetalLB and are running a Kubernetes version that enforces Pod Security Admission Policies, the namespace for MetalLB must be labeled to allow privileged containers. Click [here](https://metallb.universe.tf/installation/#installation-with-helm). for more info.</Note>
+<Note>If you used Helm to install MetalLB and are running a Kubernetes version that enforces [Pod Security Admission Policies](https://docs.siderolabs.com/kubernetes-guides/security/pod-security#override-the-pod-security-admission-configuration), the namespace for MetalLB must be labeled to allow privileged containers. Click [here](https://metallb.universe.tf/installation/#installation-with-helm). for more info.</Note>
 
-### Ingress Controller
+### 1.4 Ingress Controller
 You will also need to have an ingress controller installed in your cluster. In this example, we are using [Traefik](https://traefik.io/traefik/), but any ingress controller should work.
 
 ```bash
-# Helm
 helm repo add traefik https://helm.traefik.io/traefik --force-update
 helm install \
   traefik traefik/traefik \
@@ -131,9 +152,9 @@ helm install \
   --set ingressClass.enabled=true
 ```
 
-## Configure authentication
+## 2 Configure authentication
 
-### Auth0
+### 2.1 Auth0
 
 Create an [Auth0 account](https://auth0.com/signup).
 
@@ -158,7 +179,7 @@ Take note of the following information from the Auth0 application:
 * Domain
 * Client ID
 
-### SAML Identity Providers
+### 2.2 SAML Identity Providers
 
 Other identity providers also work with Omni. Configuring these should be similar to Auth0.
 
@@ -168,39 +189,112 @@ Other identity providers also work with Omni. Configuring these should be simila
 * [Workspace ONE Access](../security-and-authentication/using-saml-with-omni/configure-workspace-one-access-for-omni)
 * [Unifi Identity Enterprise](../security-and-authentication/using-saml-with-omni/configure-unifi-identity-enterprise-for-omni)
 
-## Omni
 
-### Create etcd encryption key
+### 2.3 Local Authentication
+
+Because Omni does not have any user authentication we need to add a additional component.
+In this example, we'er using [Dex](https://dexidp.io/). Dex will be configured so we can log in to Omni with a static user.
+
+First we need to export some environment variables that will be used in the Helm chart values.
+
+The most important one is `OMNI_USER_PASSWORD` which will be used to create a password hash for the user we want to create. Make sure you remember this password for logging in later.
+
+```bash
+export DOMAIN_SUFFIX=example.com
+export OMNI_USER_NAME=admin
+export OMNI_USER_PASSWORD=$(htpasswd -BnC 15 admin | cut --delimiter=: --fields=1 --complement)
+export OMNI_CLIENT_SECRET=$(echo -n "internal-sidero-stack" | base64)
+```
+
+Now we can install Dex with Helm.
+
+```bash
+helm repo add dex https://charts.dexidp.io --force-update > /dev/null 2>&1
+helm template dex dex/dex \
+  --version 0.24.0 \
+  --namespace dex \
+  --set ingress.enabled=false \
+  --set https.enabled=false \
+  --set config.issuer=https://dex.${DOMAIN_SUFFIX} \
+  --set config.storage.type=kubernetes \
+  --set config.storage.config.inCluster=true \
+  --set config.oauth2.skipApprovalScreen=false \
+  --set config.web.http=0.0.0.0:5556 \
+  --set config.enablePasswordDB=true \
+  --set config.staticClients[0].name=Omni \
+  --set config.staticClients[0].id=omni \
+  --set config.staticClients[0].secret=${OMNI_CLIENT_SECRET} \
+  --set config.staticClients[0].redirectURIs[0]=https://omni.${DOMAIN_SUFFIX}/oidc/consume \
+  --set config.staticPasswords[0].email=${OMNI_USER_NAME}@${DOMAIN_SUFFIX} \
+  --set config.staticPasswords[0].username=${OMNI_USER_NAME} \
+  --set config.staticPasswords[0].preferredUsername=${OMNI_USER_NAME} \
+  --set config.staticPasswords[0].hash=${OMNI_USER_PASSWORD}
+```
+
+We also need to create an Ingress resource to expose Dex.
+
+```bash
+cat <<'EOF' | kubectl apply -f -
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+  name: dex
+  namespace: dex
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: dex.{{.DOMAIN_SUFFIX}}
+    http:
+      paths:
+      - backend:
+          service:
+            name: dex
+            port:
+              number: 5556
+        path: /
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - dex.{{.DOMAIN_SUFFIX}}
+    secretName: dex-tls
+EOF
+```
+
+<Note>Make sure that the DNS records for Dex are correctly configured and pointing to the LoadBalancer IP of the Ingress controller.</Note>
+<Note>Dex can also be configured with other connectors such as LDAP, SAML, OIDC, etc. For more information on how to configure Dex with these connectors, please see the [Dex documentation](https://dexidp.io/docs/connectors/).</Note>
+
+
+## 3 Run Omni on Kubernetes
+
+### 3.1 Create etcd encryption key
 
 Generate a GPG key:
 
 ```bash
-gpg --quick-generate-key "Omni (Used for etcd data encryption) how-to-guide@siderolabs.com" rsa4096 cert never
-```
-
-Find the fingerprint of the generated key:
-
-```bash
-gpg --list-secret-keys
-```
-
-Using the fingerprint, add an encryption subkey and export:
-
-```bash
-gpg --quick-add-key <fingerprint> rsa4096 encr never
+gpg --batch --passphrase '' \
+  --quick-generate-key "Omni (Used for etcd data encryption) how-to-guide@siderolabs.com" \
+  rsa4096 cert never
+FINGERPRINT=$(gpg --with-colons --list-keys "how-to-guide@siderolabs.com" \
+  | awk -F: '$1 == "fpr" {print $10; exit}')
+gpg --batch --passphrase '' \
+  --quick-add-key ${FINGERPRINT} rsa4096 encr never
 gpg --export-secret-key --armor how-to-guide@siderolabs.com > omni.asc
 ```
 
 <Note>Do not add passphrases to keys during creation.</Note>
 
-### Deploy Omni
+### 3.2 Deploy Omni
 
 First we need to create a namespace for Omni to run in.
 ```bash
 kubectl create namespace omni
+```
 
-# If you are running a Kubernetes version that enforces Pod Security Admission Policies.
-# The namespace for Omni must be labeled to allow privileged containers.
+If you are running a Kubernetes version that enforces [Pod Security Admission Policies](https://docs.siderolabs.com/kubernetes-guides/security/pod-security#override-the-pod-security-admission-configuration).
+The namespace for Omni must be labeled to allow privileged containers.
+```bash
 kubectl label namespace omni pod-security.kubernetes.io/enforce=privileged
 ```
 Now that we have out namespace created, we need to create a secret with the GPG key we just generated. This will be used by Omni to encrypt data in etcd.
@@ -213,67 +307,232 @@ kubectl create secret generic omni-gpg-key \
 
 You can install Omni with Helm, but before we can do that we need to create a values file with the necessary configuration. You can use the following template as a starting point. For the full list of configuration options, please see the [Helm chart documentation](https://github.com/siderolabs/omni/tree/main/deploy/helm/omni).
 
-```yaml
-config:
-  account:
-    # ID is the unique identifier of the Omni account. It can be generated with `uuidgen`.
-    id: "063db99b-2c77-4b30-bb17-24bd1707312a"
-    name: my-omni
-  auth:
-    auth0:
-      enabled: true
-      clientID: <your-auth0-client-id>
-      domain: <your-auth0-domain>
-    initialUsers:  # Initial users are created on the first startup of Omni. They are created with the "admin" role.
-      - initial-user-1@siderolabs.com
-  services:
-    api:
-      advertisedURL: https://omni.siderolabs.com
-    kubernetesProxy:
-      advertisedURL: https://kubernetes.siderolabs.com
-    machineAPI:
-      advertisedURL: https://siderolink.siderolabs.com
-    siderolink:
-      wireGuard:
-        # The externally accessible IP:port for WireGuard connections.
-        # If using an externally accessible node IP, the port should match
-        # service.wireguard.nodePort (default: 30180).
-        advertisedEndpoint: "10.10.75.10:30180"
-etcdEncryptionKey:
-  existingSecret: "omni-gpg-key"
+<Tabs>
+  <Tab title="Auth0">
 
-ingress:
-  main:
-    enabled: true
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt
-    className: traefik
-    host: omni.siderolabs.com
-    tls:
-      - secretName: omni-tls
-        hosts:
-          - omni.siderolabs.com
-  kubernetesProxy:
-    enabled: true
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt
-    className: traefik
-    host: kubernetes.siderolabs.com
-    tls:
-      - secretName: omni-k8s-tls
-        hosts:
-          - kubernetes.siderolabs.com
-  siderolinkApi:
-    enabled: true
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt
-    className: traefik
-    host: siderolink.siderolabs.com
-    tls:
-      - secretName: omni-siderolink-tls
-        hosts:
-          - siderolink.siderolabs.com
-```
+  ```bash
+  export AUTH0_CLIENT_ID=<your-auth0-client-id>
+  export AUTH0_DOMAIN=<your-auth0-domain>
+  export INITIAL_USER=user@example.com
+  export DOMAIN_SUFFIX=example.com
+  export WIREGUARD_ADVERTISED_ENDPOINT=192.168.1.5
+  ```
+
+  ```bash
+  cat <<'EOF' > values.yaml
+  config:
+    account:
+      id: $(uuidgen)
+      name: my-omni
+    auth:
+      auth0:
+        enabled: true
+        clientID: ${AUTH0_CLIENT_ID}
+        domain: ${AUTH0_DOMAIN}
+      initialUsers:  # Initial users are created on the first startup of Omni. They are created with the "admin" role.
+        - ${INITIAL_USER}
+    services:
+      api:
+        advertisedURL: https://omni.${DOMAIN_SUFFIX}
+      kubernetesProxy:
+        advertisedURL: https://kubernetes.${DOMAIN_SUFFIX}
+      machineAPI:
+        advertisedURL: https://siderolink.${DOMAIN_SUFFIX}
+      siderolink:
+        wireGuard:
+          # The externally accessible IP:port for WireGuard connections.
+          # If using an externally accessible node IP, the port should match
+          # service.wireguard.nodePort (default: 30180).
+          advertisedEndpoint: "${WIREGUARD_ADVERTISED_ENDPOINT}:30180"
+  etcdEncryptionKey:
+    existingSecret: "omni-gpg-key"
+
+  ingress:
+    main:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+      className: traefik
+      host: omni.${DOMAIN_SUFFIX}
+      tls:
+        - secretName: omni-tls
+          hosts:
+            - omni.${DOMAIN_SUFFIX}
+    kubernetesProxy:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+      className: traefik
+      host: kubernetes.${DOMAIN_SUFFIX}
+      tls:
+        - secretName: omni-k8s-tls
+          hosts:
+            - kubernetes.${DOMAIN_SUFFIX}
+    siderolinkApi:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+      className: traefik
+      host: siderolink.${DOMAIN_SUFFIX}
+      tls:
+        - secretName: omni-siderolink-tls
+          hosts:
+            - siderolink.${DOMAIN_SUFFIX}
+  EOF
+  ```
+  </Tab>
+
+  <Tab title="SAML (Azure AD)">
+
+  ```bash
+  export DOMAIN_SUFFIX=example.com
+  export TENANT_ID=<your-azure-ad-tenant-id>
+  export SAML_METADATA_URL=https://login.microsoftonline.com/${TENANT_ID}/federationmetadata/2007-06/federationmetadata.xml
+  ```
+
+  ```bash
+  cat <<'EOF' > values.yaml
+  config:
+    account:
+      id: $(uuidgen)
+      name: my-omni
+    auth:
+      auth0:
+        enabled: false
+      saml:
+        enabled: true
+        url: ${SAML_METADATA_URL}
+      initialUsers:  # Initial users are created on the first startup of Omni. They are created with the "admin" role.
+        - ${INITIAL_USER}
+    services:
+      api:
+        advertisedURL: https://omni.${DOMAIN_SUFFIX}
+      kubernetesProxy:
+        advertisedURL: https://kubernetes.${DOMAIN_SUFFIX}
+      machineAPI:
+        advertisedURL: https://siderolink.${DOMAIN_SUFFIX}
+      siderolink:
+        wireGuard:
+          # The externally accessible IP:port for WireGuard connections.
+          # If using an externally accessible node IP, the port should match
+          # service.wireguard.nodePort (default: 30180).
+          advertisedEndpoint: "${WIREGUARD_ADVERTISED_ENDPOINT}:30180"
+  etcdEncryptionKey:
+    existingSecret: "omni-gpg-key"
+
+  ingress:
+    main:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+      className: traefik
+      host: omni.${DOMAIN_SUFFIX}
+      tls:
+        - secretName: omni-tls
+          hosts:
+            - omni.${DOMAIN_SUFFIX}
+    kubernetesProxy:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+      className: traefik
+      host: kubernetes.${DOMAIN_SUFFIX}
+      tls:
+        - secretName: omni-k8s-tls
+          hosts:
+            - kubernetes.${DOMAIN_SUFFIX}
+    siderolinkApi:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+      className: traefik
+      host: siderolink.${DOMAIN_SUFFIX}
+      tls:
+        - secretName: omni-siderolink-tls
+          hosts:
+            - siderolink.${DOMAIN_SUFFIX}
+  EOF
+  ```
+  </Tab>
+
+  <Tab title="Local Authentication (Dex)">
+  ```bash
+  export INITIAL_USER=user@example.com
+  export DOMAIN_SUFFIX=example.com
+  export WIREGUARD_ADVERTISED_ENDPOINT=192.168.1.5
+  ```
+
+  ```bash
+  cat <<'EOF' > values.yaml
+  config:
+    account:
+      id: $(uuidgen)
+      name: my-omni
+    auth:
+      auth0:
+        enabled: false
+      oidc:
+        enabled: true
+        clientID: omni
+        clientSecret: ${OMNI_CLIENT_SECRET}
+        providerURL=https://dex.{{.DOMAIN_SUFFIX}}
+        scopes:
+          - openid
+          - profile
+          - email
+      initialUsers:  # Initial users are created on the first startup of Omni. They are created with the "admin" role.
+        - ${INITIAL_USER}
+    services:
+      api:
+        advertisedURL: https://omni.${DOMAIN_SUFFIX}
+      kubernetesProxy:
+        advertisedURL: https://kubernetes.${DOMAIN_SUFFIX}
+      machineAPI:
+        advertisedURL: https://siderolink.${DOMAIN_SUFFIX}
+      siderolink:
+        wireGuard:
+          # The externally accessible IP:port for WireGuard connections.
+          # If using an externally accessible node IP, the port should match
+          # service.wireguard.nodePort (default: 30180).
+          advertisedEndpoint: "${WIREGUARD_ADVERTISED_ENDPOINT}:30180"
+  etcdEncryptionKey:
+    existingSecret: "omni-gpg-key"
+
+  ingress:
+    main:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+      className: traefik
+      host: omni.${DOMAIN_SUFFIX}
+      tls:
+        - secretName: omni-tls
+          hosts:
+            - omni.${DOMAIN_SUFFIX}
+    kubernetesProxy:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+      className: traefik
+      host: kubernetes.${DOMAIN_SUFFIX}
+      tls:
+        - secretName: omni-k8s-tls
+          hosts:
+            - kubernetes.${DOMAIN_SUFFIX}
+    siderolinkApi:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+      className: traefik
+      host: siderolink.${DOMAIN_SUFFIX}
+      tls:
+        - secretName: omni-siderolink-tls
+          hosts:
+            - siderolink.${DOMAIN_SUFFIX}
+  EOF
+  ```
+  </Tab>
+</Tabs>
 
 With the values file created, we can now install the Helm chart.
 
@@ -285,25 +544,30 @@ helm install \
   --values values.yaml
 ``` 
 
-Congratulations! You have now deployed Omni on Kubernetes. You can access the web UI at `https://omni.siderolabs.com`.
+Congratulations! You have now deployed Omni on Kubernetes.
 
-### Workload Proxy (Optional)
+### 3.3 Workload Proxy (Optional)
 Workload Proxy allows you to expose HTTP services running in your managed clusters through Omni. Once configured, you can annotate Kubernetes Services to make them accessible, protected by Omni's authentication.
 
 For details on exposing services, see [Expose an HTTP Service from a Cluster](https://docs.siderolabs.com/omni/cluster-management/expose-an-http-service-from-a-cluster).
 
 The workload proxy domain is not a subdomain of Omni—it exists alongside it. For example:
-* Omni: omni.siderolabs.com
-* Workload Proxy: *.omni-workload.siderolabs.com
+* Omni: omni.example.com
+* Workload Proxy: *.omni-workload.example.com
 
 To enable the workload proxy, you need to enable the `workloadProxy` component in the Helm chart values and create an additional Ingress resource with the help of extraObjects section.
+
+```bash
+export DOMAIN_SUFFIX=example.com
+export WORKLOAD_PROXY_SUBDOMAIN=omni-workload
+```
 
 ```yaml
 config:
   services:
     workloadProxy:
       enabled: true
-      subdomain: omni-workload
+      subdomain: ${WORKLOAD_PROXY_SUBDOMAIN}
 
 extraObjects:
   - apiVersion: networking.k8s.io/v1
@@ -317,11 +581,11 @@ extraObjects:
     spec:
       tls:
         - hosts:
-            - omni-workload.siderolabs.com
-            - "*.omni-workload.siderolabs.com"
+            - ${WORKLOAD_PROXY_SUBDOMAIN}.${DOMAIN_SUFFIX}
+            - "*.${WORKLOAD_PROXY_SUBDOMAIN}.${DOMAIN_SUFFIX}"
           secretName: omni-workload-proxy-wildcard-tls
       rules:
-        - host: "*.omni-workload.siderolabs.com"
+        - host: "*.${WORKLOAD_PROXY_SUBDOMAIN}.${DOMAIN_SUFFIX}"
           http:
             paths:
               - path: /
