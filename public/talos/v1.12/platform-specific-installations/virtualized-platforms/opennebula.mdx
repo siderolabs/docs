@@ -1,9 +1,279 @@
 ---
 title: "OpenNebula"
+description: "Creating a Talos Kubernetes cluster on OpenNebula."
+aliases:
+  - ../../../virtualized-platforms/opennebula
 ---
 
 import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 <VersionWarningBanner />
 
-Talos is known to work on [OpenNebula](https://opennebula.io/).
+In this guide you will create a Kubernetes cluster on [OpenNebula](https://opennebula.io/).
+
+## Overview
+
+Talos boots into **maintenance mode** on first start, waiting for a machine configuration to be pushed via the Talos API.
+OpenNebula provides network configuration to the VM through context variables (sourced from `/mnt/context/context.sh` inside the VM).
+Talos reads these variables to configure networking before entering maintenance mode, so `talosctl apply-config` can reach the node.
+
+## Prerequisites
+
+- An OpenNebula cluster with at least one hypervisor node
+- The OpenNebula CLI tools (`onevm`, `onetemplate`, etc.) or access to the Sunstone web UI
+- `talosctl` installed locally ([installation guide](../../getting-started/talosctl))
+- `kubectl` installed locally
+
+## Download the Talos disk image
+
+Talos provides pre-built OpenNebula disk images via [Image Factory](https://factory.talos.dev/).
+
+```bash
+curl -L https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/v1.9.5/opennebula-amd64.qcow2 \
+  -o talos-opennebula-amd64.qcow2
+```
+
+Upload the image to your OpenNebula datastore:
+
+```bash
+oneimage create --name talos-v1.9.5 \
+  --path talos-opennebula-amd64.qcow2 \
+  --driver qcow2 \
+  --datastore default
+```
+
+## Configure network context
+
+OpenNebula passes network configuration to VMs via context variables in `context.sh`.
+Talos reads the `ETH0_*` (and `ETH1_*`, etc.) variables to configure each network interface at boot time.
+
+### Using manual ETH variables (recommended)
+
+The recommended approach is to set `NETWORK = "NO"` in the VM context and define the interface parameters manually.
+This gives you full control and works regardless of whether the address pool type is `FIXED`, `RANGED`, or `ETHER`.
+
+In a VM template, configure the context section as follows:
+
+```bash
+CONTEXT = [
+  NETWORK = "NO",
+  ETH0_MAC = "$NIC[MAC]",
+  ETH0_IP = "$NIC[IP]",
+  ETH0_GATEWAY = "192.168.1.1",
+  ETH0_DNS = "1.1.1.1 8.8.8.8",
+  ETH0_SEARCH_DOMAIN = "example.com",
+  ETH0_MTU = "1500"
+]
+```
+
+Replace the gateway, DNS, and search domain with values appropriate for your network.
+The `$NIC[MAC]` and `$NIC[IP]` expressions are resolved by OpenNebula at instantiation time from the NIC definition.
+
+For multiple interfaces, add a corresponding set of `ETH1_*`, `ETH2_*`, etc. variables for each additional NIC.
+
+### Why not NETWORK=YES
+
+Setting `NETWORK = "YES"` tells the OpenNebula server to automatically populate `ETH*_` variables from NIC definitions.
+However, when the address pool type is `ETHER` (no IP data — MAC-only pools), the server overwrites all IP-related variables with **empty strings**, leaving only `ETH*_MAC` populated.
+Talos previously had a bug where the entire network parsing was gated on `NETWORK == "YES"`, which caused it to skip configuration entirely when that flag was absent.
+
+This bug was fixed in Talos v1.10 ([PR #12867](https://github.com/siderolabs/talos/pull/12867)).
+After that fix, Talos uses `ETH*_MAC` presence as the sole trigger for parsing interface configuration, consistent with the [one-apps reference implementation](https://github.com/OpenNebula/one-apps).
+
+**Summary:**
+
+| Approach | Works with FIXED/RANGED pools | Works with ETHER pools | Recommended |
+|---|---|---|---|
+| `NETWORK=YES` (auto) | Yes | No (IP vars cleared) | Only for non-ETHER pools, Talos >= v1.10 |
+| `NETWORK=NO` + manual `ETH*_` vars | Yes | Yes | **Yes** |
+
+## Create a VM template
+
+Below is a minimal VM template that boots Talos in maintenance mode with a static IP.
+Adjust resource values, disk size, and network names for your environment.
+
+```bash
+onetemplate create --name talos-node << 'EOF'
+NAME = "talos-node"
+
+CPU = "2"
+VCPU = "2"
+MEMORY = "4096"
+
+DISK = [
+  IMAGE = "talos-v1.9.5",
+  SIZE = "20480"
+]
+
+NIC = [
+  NETWORK = "my-network",
+  IP = "192.168.1.100"
+]
+
+CONTEXT = [
+  NETWORK = "NO",
+  ETH0_MAC = "$NIC[MAC]",
+  ETH0_IP = "$NIC[IP]",
+  ETH0_GATEWAY = "192.168.1.1",
+  ETH0_DNS = "1.1.1.1"
+]
+
+GRAPHICS = [
+  LISTEN = "0.0.0.0",
+  TYPE = "VNC"
+]
+
+OS = [
+  BOOT = "disk0"
+]
+EOF
+```
+
+## Boot the VMs
+
+Start a control plane VM:
+
+```bash
+onevm create --name talos-cp-1 talos-node
+```
+
+And a worker VM:
+
+```bash
+onevm create --name talos-worker-1 talos-node
+```
+
+Wait for each VM to reach the `RUNNING` state:
+
+```bash
+onevm list
+```
+
+Talos will boot and enter maintenance mode.
+You can observe the boot progress from the VNC console in Sunstone, or via `onevm show talos-cp-1`.
+
+## Apply machine configuration
+
+Set shell variables for the node IPs:
+
+```bash
+export CONTROL_PLANE_IP=192.168.1.100
+export WORKER_IP=192.168.1.101
+```
+
+Generate machine configurations:
+
+```bash
+talosctl gen config talos-opennebula-cluster https://$CONTROL_PLANE_IP:6443 \
+  --output-dir _out
+```
+
+This creates `_out/controlplane.yaml`, `_out/worker.yaml`, and `_out/talosconfig`.
+
+> **Note:** Check the install disk name before applying config.
+> Run `talosctl get disks --insecure --nodes $CONTROL_PLANE_IP` and update `install.disk` in the generated YAML if needed (e.g., `/dev/vda`).
+
+Apply the configuration to the control plane:
+
+```bash
+talosctl apply-config --insecure --nodes $CONTROL_PLANE_IP --file _out/controlplane.yaml
+```
+
+Apply the configuration to the worker:
+
+```bash
+talosctl apply-config --insecure --nodes $WORKER_IP --file _out/worker.yaml
+```
+
+After applying, each node installs Talos to disk and reboots into the configured state.
+
+## Bootstrap the cluster
+
+Configure `talosctl` to use your new cluster:
+
+```bash
+export TALOSCONFIG="_out/talosconfig"
+talosctl config endpoint $CONTROL_PLANE_IP
+talosctl config node $CONTROL_PLANE_IP
+```
+
+Bootstrap etcd on the control plane node:
+
+```bash
+talosctl bootstrap
+```
+
+Wait for the control plane to become healthy (this may take a few minutes):
+
+```bash
+talosctl health
+```
+
+## Retrieve kubeconfig
+
+```bash
+talosctl kubeconfig _out/kubeconfig
+export KUBECONFIG=_out/kubeconfig
+kubectl get nodes -o wide
+```
+
+## Alternative: machine config via USER_DATA
+
+Instead of pushing config via the Talos API after boot, you can embed the machine configuration directly in the VM context using the `USER_DATA` variable.
+Talos reads `USER_DATA` from the context and applies it automatically on first boot, bypassing maintenance mode.
+
+```bash
+CONTEXT = [
+  NETWORK = "NO",
+  ETH0_MAC = "$NIC[MAC]",
+  ETH0_IP = "$NIC[IP]",
+  ETH0_GATEWAY = "192.168.1.1",
+  ETH0_DNS = "1.1.1.1",
+  USER_DATA = "<base64-encoded machine config>",
+  USER_DATA_ENCODING = "base64"
+]
+```
+
+To generate and encode a machine config:
+
+```bash
+talosctl gen config talos-opennebula-cluster https://$CONTROL_PLANE_IP:6443 --output-dir _out
+base64 -w0 _out/controlplane.yaml
+```
+
+Paste the output as the `USER_DATA` value.
+
+> **Security note:** The `USER_DATA` variable is stored in the OpenNebula database and visible via the OpenNebula API to any user with access to the VM template or instance.
+> Machine configurations contain sensitive data including cluster CA keys and bootstrap tokens.
+> Using `talosctl apply-config` (the default approach above) avoids storing secrets in OpenNebula context entirely.
+
+## Troubleshooting
+
+### Node does not reach maintenance mode
+
+- Verify the context variables are set correctly by opening a VNC console in Sunstone and running:
+
+  ```bash
+  cat /mnt/context/context.sh
+  ```
+
+  Confirm the `ETH0_MAC`, `ETH0_IP`, and `ETH0_GATEWAY` variables are present and non-empty.
+
+- If using `NETWORK=YES` with an ETHER-type address pool, the IP variables will be empty.
+  Switch to `NETWORK=NO` with manual `ETH0_IP` / `ETH0_GATEWAY` values.
+
+### talosctl apply-config times out
+
+- Confirm the node's IP is reachable from your workstation.
+- Check that the Talos maintenance mode API port (TCP 50000) is not blocked by a firewall.
+- Verify the IP in the context matches what you expect by running `onevm show <vm-id>`.
+
+### Disk not found during install
+
+Run the following to list available disks while the node is in maintenance mode:
+
+```bash
+talosctl get disks --insecure --nodes $CONTROL_PLANE_IP
+```
+
+Update `install.disk` in your `controlplane.yaml` (or `worker.yaml`) to match the correct device path, then re-apply the config.
