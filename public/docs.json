@@ -2242,6 +2242,7 @@
                 "pages": [
                   "omni/cluster-management/scale-your-cluster/scale-a-cluster-up-or-down",
                   "omni/cluster-management/scale-your-cluster/cluster-autoscaler",
+                  "omni/cluster-management/scale-your-cluster/cluster-autoscaler-aws",
                   "omni/cluster-management/scale-your-cluster/karpenter"
                 ]
               },
