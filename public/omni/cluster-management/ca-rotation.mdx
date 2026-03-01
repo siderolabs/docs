@@ -1,0 +1,76 @@
+---
+title: "CA Rotation"
+description: "How to rotate Talos and Kubernetes API root certificate authorities."
+---
+
+In general, you almost never need to rotate the root CA certificate and key for the Talos API and Kubernetes API.
+Talos sets up root certificate authorities with the lifetime of 10 years, and all Talos and Kubernetes API certificates are issued by these root CAs.
+So the rotation of the root CA is only needed if:
+
+- You want to revoke access to the cluster for a leaked break-glass `kubeconfig` or `talosconfig`;
+- You have imported a Talos cluster into Omni and want to remove the label `tainted-by-importing`;
+- The root CA certificate is approaching its 10-year expiration.
+
+## Overview
+
+There are some details which make Talos and Kubernetes API root CA rotation a bit different, but the general flow is the same:
+
+- Generate new CA certificate and key;
+- Add new CA certificate as 'accepted', so new certificates will be accepted as valid;
+- Swap issuing CA to the new one, old CA as accepted;
+- Refresh all certificates in the cluster;
+- Remove old CA from 'accepted'.
+
+At the end of the flow, old CA is completely removed from the cluster, so all certificates issued by it will be considered invalid.
+
+Omni internally handles all these steps in three stages:
+- **PRE-ROTATE**: Add a new CA certificate as 'accepted',
+- **ROTATE**: Swap issuing CA to the new one,
+- **POST-ROTATE**: Remove old CA from 'accepted'.
+
+Both rotation flows are described in detail below.
+
+## Talos API CA rotation
+
+Talos API CA rotation doesn't interrupt connections within the cluster, and it doesn't require a reboot of the nodes.
+
+Run the following command to rotate the Talos API CA:
+
+```shell
+omnictl cluster -n <cluster-name> secret rotate talos-ca
+```
+
+This command will start the rotation process and wait until the rotation is done or the timeout (can be specified with the `--wait-timeout` flag) is reached.
+To return immediately without waiting for completion, use `--wait=false`.
+
+<Note>
+If using the [Talos API access from Kubernetes](../../kubernetes-guides/advanced-guides/talos-api-access-from-k8s) feature, pods might need to be restarted manually to pick up the new `talosconfig`.
+</Note>
+
+## Kubernetes API CA rotation
+
+The automated process only rotates Kubernetes API CA, used by the `kube-apiserver`, `kubelet`, etc. The rotation doesn't require a reboot of the nodes.
+<Warning>
+Kubernetes pods might need to be restarted to handle changes, and communication within the cluster might be disrupted during the rotation process.
+</Warning>
+
+Run the following command to rotate the Kubernetes API CA:
+
+```shell
+omnictl cluster -n <cluster-name> secret rotate kubernetes-ca
+```
+
+This command will start the rotation process and wait until the rotation is done or the timeout (can be specified with the `--wait-timeout` flag) is reached.
+To return immediately without waiting for completion, use `--wait=false`.
+
+At the end of the process, Kubernetes control plane components will be restarted to pick up CA certificate changes.
+Each node `kubelet` will re-join the cluster with a new client certificate.
+
+Kubernetes pods might need to be restarted manually to pick up changes to the Kubernetes API CA.
+
+## CA rotation status
+
+Only one rotation can be in progress at a time. Rotation status can be monitored using the Omni UI or the command:
+```shell
+omnictl cluster -n <cluster-name> secret rotate status
+```

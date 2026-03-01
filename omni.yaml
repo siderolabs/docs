@@ -82,6 +82,7 @@ navigation:
             - "talos-config-overrides.mdx"
             - "override-ntp-servers.mdx"
             - "support-bundle.mdx"
+            - "ca-rotation.mdx"
 
         - group: "Security and Authentication"
           folder: "omni/security-and-authentication"

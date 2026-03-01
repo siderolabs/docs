@@ -2257,7 +2257,8 @@
               "omni/cluster-management/wipe-a-machine",
               "omni/cluster-management/talos-config-overrides",
               "omni/cluster-management/override-ntp-servers",
-              "omni/cluster-management/support-bundle"
+              "omni/cluster-management/support-bundle",
+              "omni/cluster-management/ca-rotation"
             ]
           },
           {
