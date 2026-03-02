@@ -131,9 +131,9 @@ cluster:
 
 ## Configuration
 
-KubeSpan will automatically discover all cluster members, exchange Wireguard public keys and establish a full mesh network.
+KubeSpan automatically discovers cluster members, exchanges WireGuard public keys, and establishes a full mesh network between nodes.
 
-There are configuration options available which are not usually required:
+In most cases, no additional configuration is required. However, the following options are available for advanced use cases:
 
 ```yaml
 machine:
@@ -149,29 +149,94 @@ machine:
           - ::/0
 ```
 
-The setting `advertiseKubernetesNetworks` controls whether the node will advertise Kubernetes service and pod networks to other nodes in the cluster over KubeSpan.
-It defaults to being disabled, which means KubeSpan only controls the node-to-node traffic, while pod-to-pod traffic is routed and encapsulated by CNI.
-This setting should not be enabled with Calico and Cilium CNI plugins, as they do their own pod IP allocation which is not visible to KubeSpan.
+`advertiseKubernetesNetworks`
 
-The setting `allowDownPeerBypass` controls whether the node will allow traffic to bypass WireGuard if the destination is not connected over KubeSpan.
-If enabled, there is a risk that traffic will be routed unencrypted if the destination is not connected over KubeSpan, but it allows a workaround
-for the case where a node is not connected to the KubeSpan network, but still needs to access the cluster.
+Controls whether the node advertises Kubernetes service and pod networks to other nodes over KubeSpan.
 
-The `mtu` setting configures the Wireguard MTU, which defaults to 1420.
-This default value of 1420 is safe to use when the underlying network MTU is 1500, but if the underlying network MTU is smaller, the KubeSpanMTU should be adjusted accordingly:
-`KubeSpanMTU = UnderlyingMTU - 80`.
+By default, this setting is disabled. When disabled, KubeSpan handles only node-to-node traffic, while pod-to-pod traffic is routed and encapsulated by the CNI plugin.
 
-The `filters` setting allows hiding some endpoints from being advertised over KubeSpan.
-This is useful when some endpoints are known to be unreachable between the nodes, so that KubeSpan doesn't try to establish a connection to them.
-Another use-case is hiding some endpoints if nodes can connect on multiple networks, and some of the networks are more preferable than others.
+`allowDownPeerBypass`
 
-To include additional announced endpoints, such as inbound NAT mappings, you can add the [machine config document](../reference/configuration/network/kubespanendpointsconfig).
+Controls whether a node can bypass WireGuard when the destination is not connected through KubeSpan.
+
+If this option is enabled, traffic may be routed without encryption when the destination is outside the KubeSpan network. However, it provides a workaround for situations where a node is not connected to KubeSpan but still needs access to the cluster.
+
+`mtu`
+
+Configures the WireGuard MTU. The default value is 1420.
+
+This value is safe when the underlying network MTU is 1500.
+If the underlying MTU is smaller, adjust accordingly:
+
+```bash
+KubeSpan MTU = Underlying MTU - 80
+```
+
+### Filters
+
+The `filters` setting provides fine-grained control over what this node advertises over KubeSpan.
+
+Filters apply only to the local node.
+
+`filters.endpoints`
+
+Controls which node addresses are advertised as WireGuard endpoints.
+
+By default, all detected addresses are advertised, and KubeSpan cycles through them until it finds one that works.
+
+This is useful when:
+
+- Some node IPs are unreachable from peers
+
+- Nodes have multiple network paths and one should be preferred
+
+**Example:**
+
+```yaml
+machine:
+  network:
+    kubespan:
+      filters:
+        endpoints:
+          - 0.0.0.0/0
+          - ::/0
+```
+
+`filters.excludeAdvertisedNetworks`
+
+Excludes specific networks from being advertised over KubeSpan.
+
+By default, all eligible networks (such as host addresses and, if enabled, Kubernetes pod CIDRs) are advertised to other cluster members.
+
+Use this setting to prevent certain CIDR ranges from being announced.
+
+Excluded networks will not be reachable over KubeSpan.
+
+**Example:**
+
+```yaml
+machine:
+  network:
+    kubespan:
+      enabled: true
+      filters:
+        excludeAdvertisedNetworks:
+          - 172.16.64.0/20
+```
+
+In this example, the `172.16.64.0/20` subnet will not be advertised to other cluster members.
+
+> **Note**: Excluded networks must remain reachable via another route (for example, direct L2/L3 routing). Otherwise, they will become unreachable from other nodes.
+
+#### Additional Announced Endpoints
+
+To announce additional endpoints (for example, inbound NAT mappings), use the separate machine configuration document:
 
 ```yaml
 apiVersion: v1alpha1
 kind: KubespanEndpointsConfig
 extraAnnouncedEndpoints:
-    - 192.168.101.3:61033
+  - 192.168.101.3:61033
 ```
 
 ## Resource definitions
