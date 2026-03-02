@@ -22,7 +22,21 @@ public/
 
 ```
 
-The documentation is written in MDX format. You can learn more about[ MDX syntax from the Mintlify documentation](https://mintlify.com/docs) and the [official MDX website](https://mdxjs.com/docs/). 
+The documentation is written in MDX format. You can learn more about[ MDX syntax from the Mintlify documentation](https://mintlify.com/docs) and the [official MDX website](https://mdxjs.com/docs/).
+
+## Documentation versioning policy
+
+When updating versioned documentation (for example, Talos), we generally expect changes to be applied to:
+
+- The current version
+- The previous version (if applicable)
+- The upcoming version
+
+Contributors are **not expected** to backport documentation changes across many older releases.
+
+However, if you would like to update additional historical versions you are also welcome to do so.
+
+If you are unsure which versions should be updated, please ask in the issue before opening a pull request.
 
 ## Docs GitHub issues
 
