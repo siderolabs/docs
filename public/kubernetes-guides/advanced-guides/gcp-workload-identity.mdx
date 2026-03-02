@@ -3,7 +3,7 @@ title: "GCP Workload Identity Federation"
 description: "Guide on how to configure Google Cloud Workload Identity Federation on Talos Linux"
 ---
 
-This guide provides a step-by-step walkthrough for configuring Google Cloud Workload Identity Federation on a Talos Kubernetes cluster. 
+This guide provides a step-by-step walkthrough for configuring Google Cloud Workload Identity Federation on a Talos Kubernetes cluster.
 It covers setting up the necessary GCP infrastructure (buckets, pools, providers), patching the Talos API server with RSA keys for OIDC compatibility, and binding Kubernetes Service Accounts to Google Service Accounts for secure authentication.
 
 ## Environment setup
@@ -23,7 +23,7 @@ export REGION="us-east1"
 
 ### Create the OIDC Storage Bucket
 
-GCP needs a way to fetch the public keys from your cluster to verify signatures. 
+GCP needs a way to fetch the public keys from your cluster to verify signatures.
 We use a public GCS bucket to host these keys.
 
 ```bash
@@ -63,17 +63,15 @@ gcloud iam workload-identity-pools providers create-oidc ${PROVIDER_NAME} \
 
 ### RSA key
 
-Now we will patch the Talos Kubernetes cluster api-server to use this OIDC provider as api-audiences alongside the default API server audience. 
-Talos by default generates ECDSA keys for Kubernetes service account verification which don’t work with Google’s IAM Workload Identity Pool OIDC provider. 
-Instead, we need to generate an RSA key and replace the default service account signing key
+Google Workload Identity Federation requires service account tokens to be signed with RSA.
 
-```bash
-RSA_KEY_ENCODED=$(openssl genrsa 4096 2> /dev/null | base64 -w 0)
-```
+Starting with **Talos v1.7**, the Kubernetes service account signing key uses RSA by default, so no additional configuration is required.
+
+With that in place, the next step is to configure the API server to expose the correct OIDC issuer and audiences for Google Cloud.
 
 ### Retrieve OIDC provider URL
 
-Retrieve the URL of the OIDC provider for configuring external authentication.
+First, retrieve the full resource name of the OIDC provider. This value will be used when configuring the API server audiences.
 
 ```bash
 OIDC_PROVIDER_URL=$(gcloud iam workload-identity-pools providers list --location="global" --workload-identity-pool="${POOL_NAME}" --filter="name:${PROVIDER_NAME}" --format json | jq -r '.[0].name')
@@ -81,14 +79,11 @@ OIDC_PROVIDER_URL=$(gcloud iam workload-identity-pools providers list --location
 
 ### Generate a Talos patch
 
-Create a patch file to configure the Talos cluster with the RSA key and OIDC settings for Google Workload Identity authentication.
+Next, create a patch file to configure the Talos cluster with the required OIDC settings for Google Workload Identity Federation.
 
 ```bash
 cat <<EOF > oidc-patch.yaml
 cluster:
-  serviceAccount:
-    # Replace the default ECDSA key with your RSA key
-    key: "${RSA_KEY_ENCODED}"
   apiServer:
     extraArgs:
       # This must match the GCS bucket URL exactly
