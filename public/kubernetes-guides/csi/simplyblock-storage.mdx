@@ -74,8 +74,8 @@ machine:
 Apply it with a reboot to activate the reservation, then restart kubelet:
 
 ```bash
-talosctl apply-config --nodes <WORKER_NODE_IP> --file huge-pages-config.yaml -m reboot
-talosctl service kubelet restart --nodes <WORKER_NODE_IP>
+talosctl patch mc --nodes <WORKER_NODE_IP> --patch @huge-pages-config.yaml
+talosctl reboot --nodes <WORKER_NODE_IP>
 ```
 
 Verify the reservation from Kubernetes:
