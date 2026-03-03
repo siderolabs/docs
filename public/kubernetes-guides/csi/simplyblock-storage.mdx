@@ -1,0 +1,270 @@
+---
+title: "Simplyblock Storage Cluster"
+description: "Guide on how to install simplyblock's control plane, storage plane, and CSI driver on Talos Linux"
+---
+
+## Preparation
+
+Simplyblock is a distributed software-defined storage engine that provides high-performance block storage for Kubernetes and other platforms. It is composed of three main components:
+
+The **control plane** provides the management layer. It exposes the management API and tooling, handles cluster and volume lifecycle workflows, and keeps the metadata and orchestration state required to operate the platform.
+
+The **storage plane** provides the data layer. It runs the storage nodes that serve I/O and expose logical volumes, and it is where scale-out capacity and performance are delivered.
+
+The **CSI driver** is the Kubernetes integration layer. It maps Kubernetes storage operations, such as provisioning and attaching volumes, to Simplyblock control-plane actions and coordinates node-side publishing so pods can consume storage.
+
+Simplyblock is a highly versatile storage platform that can be deployed on Kubernetes and other platforms. That means that not all components must be installed on Talos. In this guide, we will focus on a full installation of simplyblock into Talos. For all options, see the [simplyblock documentation](https://docs.simplyblock.io/latest/).
+
+Before installing these components on Talos, you must prepare Talos worker nodes with the required kernel modules, huge page allocation, and namespace security settings.
+
+### Load required kernel modules on Talos worker nodes
+
+Create a machine configuration patch (for example `kernel-module-config.yaml`):
+
+```yaml
+machine:
+  kernel:
+    modules:
+      - name: nbd
+      - name: uio_pci_generic
+      - name: vfio_pci
+      - name: vfio_iommu_type1
+```
+
+Apply the patch to the worker nodes:
+
+```bash
+talosctl patch mc --nodes <WORKER_NODE_IP> --patch @kernel-module-config.yaml
+```
+
+### Reserve huge pages on Talos worker nodes
+
+Simplyblock requires pre-reserved huge pages and expects the `hugepages-2Mi` pool (2 MiB page size).
+The required amount depends on your planned storage-node sizing (for example, CPU count, number of volumes, and expected provisioned capacity per node), so decide the target huge page memory first, then convert it into page count.
+
+After installing the control plane, run this command from the admin control pod to calculate the required huge pages on the host:
+
+```bash
+sbctl storage-node configure --calculate-hp-only --max-lvol <MAX_LVOL> --number-of-devices <NUMBER_OF_DEVICES>
+```
+
+Optional flags that also affect the result:
+
+- `--nodes-per-socket` (default: `1`)
+- `--sockets-to-use` (default: `0`)
+- `--cores-percentage` (default: `0` / unset)
+
+Use the `The required number of huge pages on this host is: ...` value from the command output as your `vm.nr_hugepages` setting.
+
+Use this conversion:
+
+- `nr_hugepages = (target_hugepage_memory_in_MiB) / 2`
+- Example: `8192 MiB` of huge page memory requires `4096` pages.
+
+Round up to avoid under-allocation. If your sizing output is fractional, always choose the next whole page count.
+
+Create a machine configuration patch (for example `huge-pages-config.yaml`):
+
+```yaml
+machine:
+  sysctls:
+    vm.nr_hugepages: "<NUMBER_OF_PAGES>"
+```
+
+Apply it with a reboot to activate the reservation, then restart kubelet:
+
+```bash
+talosctl apply-config --nodes <WORKER_NODE_IP> --file huge-pages-config.yaml -m reboot
+talosctl service kubelet restart --nodes <WORKER_NODE_IP>
+```
+
+Verify the reservation from Kubernetes:
+
+```bash
+kubectl describe node <WORKER_NODE_NAME> | grep hugepages-2Mi
+```
+
+You should see non-zero `Capacity`/`Allocatable` values for `hugepages-2Mi`.
+
+### Create a privileged namespace for Simplyblock
+
+Simplyblock components (storage plane and CSI driver) require privileged execution on Talos worker nodes because they need host-level storage access that is blocked in restricted namespaces. This includes native access to NVMe devices, establishing and managing NVMe/TCP multipathing sessions, and performing required block-device operations such as discovery, attach, format, and mount for Kubernetes volumes.
+
+Create `simplyblock-namespace.yaml`:
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: simplyblock
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: privileged
+    pod-security.kubernetes.io/warn-version: latest
+```
+
+Apply it:
+
+```bash
+kubectl apply -f simplyblock-namespace.yaml
+```
+
+## Install Simplyblock Control Plane into Talos
+
+Install the `sbctl` CLI:
+
+```bash
+pip install sbctl --upgrade
+```
+
+Find the Helm chart bundled with `sbctl`, then deploy the control plane:
+
+```bash
+CHART_DIR="$(python3 -c 'import simplyblock_core, pathlib; print(pathlib.Path(simplyblock_core.__file__).parent / "scripts/charts")')"
+cd "${CHART_DIR}"
+helm dependency build ./
+helm upgrade --install simplyblock-cp --namespace simplyblock --create-namespace ./
+```
+
+Create the simplyblock cluster from the admin control pod:
+
+```bash
+kubectl -n simplyblock exec -it simplyblock-admin-control-<UUID> -- bash
+sbctl cluster create --mgmt-ip <WORKER_IP> --ha-type ha --mode kubernetes
+```
+
+If you want to use a load balancer for the Management API endpoint (highly recommended for highly available production
+environments), include:
+
+```bash
+--ingress-host-source loadbalancer --dns-name <LB_INGRESS_DNS>
+```
+
+## Install Simplyblock Storage Plane into Talos
+
+Inside the control plane pod, retrieve the cluster UUID and secret:
+
+```bash
+kubectl -n simplyblock exec -it simplyblock-admin-control-<UUID> -- bash
+sbctl cluster list
+sbctl cluster get-secret <CLUSTER_UUID>
+```
+
+And create a storage pool. The storage pool is a logical grouping for logical volumes.
+
+```bash
+sbctl pool add <POOL_NAME> <CLUSTER_UUID>
+```
+
+Label Talos nodes that should run simplyblock storage nodes:
+
+```bash
+kubectl label nodes <NODE_NAME> io.simplyblock.node-type=simplyblock-storage-plane
+```
+
+Install storage plane nodes (and CSI) via Helm:
+
+```bash
+CLUSTER_UUID="<UUID>"
+CLUSTER_SECRET="<SECRET>"
+CNTR_ADDR="<CONTROL-PLANE-ADDR>"
+POOL_NAME="<POOL-NAME>"
+
+helm repo add simplyblock-csi https://install.simplyblock.io/helm/csi
+helm repo add simplyblock-controller https://install.simplyblock.io/helm/controller
+helm repo update
+
+helm install -n simplyblock \
+  --create-namespace simplyblock \
+  simplyblock-csi/spdk-csi \
+  --set csiConfig.simplybk.uuid=${CLUSTER_UUID} \
+  --set csiConfig.simplybk.ip=${CNTR_ADDR} \
+  --set csiSecret.simplybk.secret=${CLUSTER_SECRET} \
+  --set logicalVolume.pool_name=${POOL_NAME} \
+  --set storagenode.create=true
+```
+
+Verify pods:
+
+```bash
+kubectl --namespace=simplyblock get pods --selector="release=simplyblock-csi" --watch
+```
+
+## Install Simplyblock CSI Driver into Talos
+
+If you installed the storage plane into Talos, the CSI driver is already deployed as part of the storage plane. If you
+want to connect to an external simplyblock storage cluster, install the CSI driver manually as described below.
+
+For CSI driver-only installations, no huge page reservation is required.
+
+Install the CSI driver only:
+
+```bash
+CLUSTER_UUID="<UUID>"
+CLUSTER_SECRET="<SECRET>"
+CNTR_ADDR="<CONTROL-PLANE-ADDR>"
+POOL_NAME="<POOL-NAME>"
+
+helm repo add simplyblock-csi https://install.simplyblock.io/helm/csi
+helm repo update
+
+helm install -n simplyblock --create-namespace simplyblock simplyblock-csi/spdk-csi \
+  --set csiConfig.simplybk.uuid=${CLUSTER_UUID} \
+  --set csiConfig.simplybk.ip=${CNTR_ADDR} \
+  --set csiSecret.simplybk.secret=${CLUSTER_SECRET} \
+  --set logicalVolume.pool_name=${POOL_NAME}
+```
+
+Verify CSI controller/node pods:
+
+```bash
+kubectl --namespace=simplyblock get pods --selector="release=simplyblock-csi"
+```
+
+## Cleaning up Simplyblock
+
+To remove simplyblock from the cluster, uninstall the Helm releases first, then clean up any remaining namespace resources.
+
+Uninstall the storage plane and CSI driver chart:
+
+```bash
+helm uninstall simplyblock -n simplyblock
+```
+
+If you installed the control plane with Helm as `simplyblock-cp`, uninstall it as well:
+
+```bash
+helm uninstall simplyblock-cp -n simplyblock
+```
+
+Check for leftovers in the namespace:
+
+```bash
+kubectl get all -n simplyblock
+kubectl get pvc,pv,secret,configmap,sa,role,rolebinding -n simplyblock
+```
+
+If resources remain, delete them before removing the namespace:
+
+```bash
+kubectl delete all --all -n simplyblock
+kubectl delete pvc --all -n simplyblock
+kubectl delete secret,configmap,sa,role,rolebinding --all -n simplyblock
+```
+
+Finally, remove the namespace:
+
+```bash
+kubectl delete namespace simplyblock
+```
+
+## References
+
+- [Install Simplyblock Control Plane on Kubernetes](https://docs.simplyblock.io/latest/deployments/kubernetes/k8s-control-plane/)
+- [Install Simplyblock Storage Plane on Kubernetes](https://docs.simplyblock.io/latest/deployments/kubernetes/k8s-storage-plane/)
+- [Install Simplyblock CSI](https://docs.simplyblock.io/latest/deployments/kubernetes/install-csi/)
+- [Simplyblock Architecture](https://docs.simplyblock.io/latest/architecture/simplyblock-architecture/)
+- [Talos-Specific Notes](https://docs.simplyblock.io/latest/deployments/kubernetes/talos/)
