@@ -15,6 +15,8 @@ The **CSI driver** is the Kubernetes integration layer. It maps Kubernetes stora
 
 Simplyblock is a highly versatile storage platform that can be deployed on Kubernetes and other platforms. That means that not all components must be installed on Talos. In this guide, we will focus on a full installation of simplyblock into Talos. For all options, see the [simplyblock documentation](https://docs.simplyblock.io/latest/).
 
+Installing simplyblock into Talos requires the minimum version of Kubernetes to be `v1.26` or later, Talos `v1.11.0` or later, and Helm `v3.12.0` or later.
+
 Before installing these components on Talos, you must prepare Talos worker nodes with the required kernel modules, huge page allocation, and namespace security settings.
 
 ### Load required kernel modules on Talos worker nodes
