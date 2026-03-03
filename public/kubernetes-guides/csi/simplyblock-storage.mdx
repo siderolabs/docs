@@ -177,8 +177,8 @@ helm repo add simplyblock-csi https://install.simplyblock.io/helm/csi
 helm repo add simplyblock-controller https://install.simplyblock.io/helm/controller
 helm repo update
 
-helm install -n simplyblock \
-  --create-namespace simplyblock \
+helm upgrade --install simplyblock -n simplyblock \
+  --create-namespace \
   simplyblock-csi/spdk-csi \
   --set csiConfig.simplybk.uuid=${CLUSTER_UUID} \
   --set csiConfig.simplybk.ip=${CNTR_ADDR} \
@@ -211,7 +211,9 @@ POOL_NAME="<POOL-NAME>"
 helm repo add simplyblock-csi https://install.simplyblock.io/helm/csi
 helm repo update
 
-helm install -n simplyblock --create-namespace simplyblock simplyblock-csi/spdk-csi \
+helm upgrade --install simplyblock -n simplyblock \
+  --create-namespace \
+  simplyblock-csi/spdk-csi \
   --set csiConfig.simplybk.uuid=${CLUSTER_UUID} \
   --set csiConfig.simplybk.ip=${CNTR_ADDR} \
   --set csiSecret.simplybk.secret=${CLUSTER_SECRET} \
