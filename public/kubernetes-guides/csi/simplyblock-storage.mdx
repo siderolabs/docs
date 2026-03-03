@@ -45,7 +45,10 @@ The required amount depends on your planned storage-node sizing (for example, CP
 After installing the control plane, run this command from the admin control pod to calculate the required huge pages on the host:
 
 ```bash
-sbctl storage-node configure --calculate-hp-only --max-lvol <MAX_LVOL> --number-of-devices <NUMBER_OF_DEVICES>
+sbctl storage-node configure \
+  --calculate-hp-only \
+  --max-lvol <MAX_LVOL> \
+  --number-of-devices <NUMBER_OF_DEVICES>
 ```
 
 Optional flags that also affect the result:
