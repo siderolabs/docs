@@ -5,6 +5,8 @@ aliases:
   - ../../guides/configuring-ceph-with-rook
 ---
 
+import { version } from '/snippets/custom-variables.mdx';
+
 ## Preparation
 
 Talos Linux reserves an entire disk for the OS installation, so machines with multiple available disks are needed for a reliable Ceph cluster with Rook and Talos Linux.
@@ -257,29 +259,17 @@ pod "disk-clean" deleted
 ```
 
 Lastly, the disks themselves need the partition and filesystem data wiped before they can be reused.
-Again, the following as to be repeated for each node **and** disk used in the Rook Ceph cluster, updating `nodeName` and `of=` in the `command` as needed.
 
-```shell
-$ cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: disk-wipe
-spec:
-  restartPolicy: Never
-  nodeName: <storage-node-name>
-  containers:
-  - name: disk-wipe
-    image: busybox
-    securityContext:
-      privileged: true
-    command: ["/bin/sh", "-c", "dd if=/dev/zero bs=1M count=100 oflag=direct of=<device>"]
-EOF
-pod/disk-wipe created
+On Talos Linux, <a href={`../../talos/${version}/reference/cli#talosctl-wipe`}> disks can be wiped directly</a> using `talosctl`.
 
-$ kubectl wait --timeout=900s --for=jsonpath='{.status.phase}=Succeeded' pod disk-wipe
-pod/disk-wipe condition met
+Run the following command for each disk on each node used in the Rook Ceph cluster.
 
-$ kubectl delete pod disk-wipe
-pod "disk-wipe" deleted
+```bash
+talosctl wipe disk <device> -n <node-ip>
+```
+
+**Example:**
+
+```bash
+talosctl wipe disk sdb -n 192.168.1.10
 ```
