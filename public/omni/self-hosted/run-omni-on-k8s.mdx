@@ -19,34 +19,20 @@ There are several prerequisites for deploying Omni on Kubernetes. We will assume
 
 ### 1.1 Certificates
 
-We need to have a component that will manage SSL certificates for Omni. In this example, we are using [cert-manager](http://cert-manager.io/). You can install cert-manager with `kubectl apply` or `helm install`.
+We need to have a component that will manage SSL certificates for Omni. In this example, we are using [cert-manager](http://cert-manager.io/). The best way to install cert-manager is with Helm.
 
-<Tabs>
-  <Tab title="kubectl">
-  ```bash
-  ## Create the cert-manager namespace
-  kubectl create namespace cert-manager
-
-  ## Install cert-manager
-  kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.19.2/cert-manager.yaml
+```bash
+helm install \
+  cert-manager oci://quay.io/jetstack/charts/cert-manager \
+  --version v1.19.2 \
+  --namespace cert-manager \
+  --create-namespace \
+  --set crds.enabled=true \
+  --set global.leaderElection.namespace=cert-manager \
+  --set enableCertificateOwnerRef=true \
+  --set "extraArgs[0]=--dns01-recursive-nameservers-only" \
+  --set-string "extraArgs[1]=--dns01-recursive-nameservers=1.1.1.1:53\,8.8.8.8:53"
 ```
-  </Tab>
-
-  <Tab title="Helm">
-  ```bash
-  helm install \
-    cert-manager oci://quay.io/jetstack/charts/cert-manager \
-    --version v1.19.2 \
-    --namespace cert-manager \
-    --create-namespace \
-    --set crds.enabled=true \
-    --set global.leaderElection.namespace=cert-manager \
-    --set enableCertificateOwnerRef=true \
-    --set "extraArgs[0]=--dns01-recursive-nameservers-only" \
-    --set-string "extraArgs[1]=--dns01-recursive-nameservers=1.1.1.1:53\,8.8.8.8:53"
-  ```
-  </Tab>
-</Tabs>
 
 ### 1.2 Issuers
 
@@ -58,7 +44,7 @@ export YOUR_EMAIL=<Your Email>
 ```
 
 ```bash
-cat <<'EOF' | kubectl apply -f -
+cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Secret
 metadata:
@@ -119,7 +105,7 @@ export METALLB_IP_RANGE=192.168.1.5-192.168.1.10
 ```
 
 ```bash
-cat <<'EOF' | kubectl apply -f -
+cat <<EOF | kubectl apply -f -
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
@@ -136,7 +122,7 @@ metadata:
   namespace: metallb-system
 EOF
 ```
-
+<Note>If you try to create the IPAddressPool and L2Advertisement resources immediately after installing MetalLB, you might encounter an error. If that happens, please wait until the MetalLB pods are running and try creating the resources again.</Note>
 <Note>If you used Helm to install MetalLB and are running a Kubernetes version that enforces [Pod Security Admission Policies](https://docs.siderolabs.com/kubernetes-guides/security/pod-security#override-the-pod-security-admission-configuration), the namespace for MetalLB must be labeled to allow privileged containers. Click [here](https://metallb.universe.tf/installation/#installation-with-helm). for more info.</Note>
 
 ### 1.4 Ingress Controller
@@ -154,117 +140,119 @@ helm install \
 
 ## 2 Configure authentication
 
-### 2.1 Auth0
+Because Omni does not have any user authentication we need to add a additional component that handles authentication. Omni supports OIDC and SAML providers, so we can use a variety of different components for this.
 
-Create an [Auth0 account](https://auth0.com/signup).
+<Tabs>
+  <Tab title="Auth0">
+    Create an [Auth0 account](https://auth0.com/signup).
 
-On the account level, configure "Authentication - Social" to allow GitHub and Google login.
+    On the account level, configure "Authentication - Social" to allow GitHub and Google login.
 
-Create an Auth0 application of the type "single page web application".
+    Create an Auth0 application of the type "single page web application".
 
-Configure the Auth0 application with the following:
+    Configure the Auth0 application with the following:
 
-* Allowed callback URLs: `https://<domain name for omni on k8s>`
-* Allowed web origins: `https://<domain name for omni on k8s>`
-* Allowed logout URLs: `https://<domain name for omni on k8s>`
+    * Allowed callback URLs: `https://<domain name for omni on k8s>`
+    * Allowed web origins: `https://<domain name for omni on k8s>`
+    * Allowed logout URLs: `https://<domain name for omni on k8s>`
 
-Disable username/password auth on "Authentication - Database - Applications" tab.
+    Disable username/password auth on "Authentication - Database - Applications" tab.
 
-Enable GitHub and Google login on the "Authentication - Social" tab.
+    Enable GitHub and Google login on the "Authentication - Social" tab.
 
-Enable email access in the GitHub settings.
+    Enable email access in the GitHub settings.
 
-Take note of the following information from the Auth0 application:
+    Take note of the following information from the Auth0 application:
 
-* Domain
-* Client ID
+    * Domain
+    * Client ID
+  </Tab>
 
-### 2.2 SAML Identity Providers
+  <Tab title="SAML Identity Providers">
+    Other identity providers also work with Omni. Configuring these should be similar to Auth0.
 
-Other identity providers also work with Omni. Configuring these should be similar to Auth0.
+    * [EntraID/Azure AD](../security-and-authentication/using-saml-with-omni/how-to-configure-entraid-for-omni)
+    * [Keycloak](./configure-keycloak-for-omni)
+    * [Okta](../security-and-authentication/using-saml-with-omni/configure-okta-for-omni)
+    * [Workspace ONE Access](../security-and-authentication/using-saml-with-omni/configure-workspace-one-access-for-omni)
+    * [Unifi Identity Enterprise](../security-and-authentication/using-saml-with-omni/configure-unifi-identity-enterprise-for-omni)
+  </Tab>
 
-* [EntraID/Azure AD](../security-and-authentication/using-saml-with-omni/how-to-configure-entraid-for-omni)
-* [Keycloak](./configure-keycloak-for-omni)
-* [Okta](../security-and-authentication/using-saml-with-omni/configure-okta-for-omni)
-* [Workspace ONE Access](../security-and-authentication/using-saml-with-omni/configure-workspace-one-access-for-omni)
-* [Unifi Identity Enterprise](../security-and-authentication/using-saml-with-omni/configure-unifi-identity-enterprise-for-omni)
+  <Tab title="Local Authentication">
+    In this example, we are using [Dex](https://dexidp.io/). Dex will be configured so we can log in to Omni with a static user.
 
+    First we need to export some environment variables that will be used in the Helm chart values.
 
-### 2.3 Local Authentication
+    The most important one is `OMNI_USER_PASSWORD` which will be used to create a password hash for the user we want to create. Make sure you remember this password for logging in later.
 
-Because Omni does not have any user authentication we need to add a additional component.
-In this example, we'er using [Dex](https://dexidp.io/). Dex will be configured so we can log in to Omni with a static user.
+    ```bash
+    export DOMAIN_SUFFIX=example.com
+    export OMNI_CLIENT_SECRET=$(echo -n "internal-sidero-stack" | base64)
+    export OMNI_USER_NAME=admin
+    export OMNI_USER_PASSWORD=$(htpasswd -BnC 15 admin | cut --delimiter=: --fields=1 --complement)
+    ```
 
-First we need to export some environment variables that will be used in the Helm chart values.
+    Now we can install Dex with Helm.
 
-The most important one is `OMNI_USER_PASSWORD` which will be used to create a password hash for the user we want to create. Make sure you remember this password for logging in later.
+    ```bash
+    helm repo add dex https://charts.dexidp.io --force-update
+    helm install dex dex/dex \
+      --version 0.24.0 \
+      --create-namespace \
+      --namespace dex \
+      --set ingress.enabled=false \
+      --set https.enabled=false \
+      --set config.issuer="https://dex.${DOMAIN_SUFFIX}" \
+      --set config.storage.type=kubernetes \
+      --set config.storage.config.inCluster=true \
+      --set config.oauth2.skipApprovalScreen=false \
+      --set config.web.http=0.0.0.0:5556 \
+      --set config.enablePasswordDB=true \
+      --set "config.staticClients[0].name=Omni" \
+      --set "config.staticClients[0].id=omni" \
+      --set "config.staticClients[0].secret=${OMNI_CLIENT_SECRET}" \
+      --set "config.staticClients[0].redirectURIs[0]=https://omni.${DOMAIN_SUFFIX}/oidc/consume" \
+      --set "config.staticPasswords[0].email=${OMNI_USER_NAME}@${DOMAIN_SUFFIX}" \
+      --set "config.staticPasswords[0].username=${OMNI_USER_NAME}" \
+      --set "config.staticPasswords[0].preferredUsername=${OMNI_USER_NAME}" \
+      --set "config.staticPasswords[0].hash=${OMNI_USER_PASSWORD}"
+    ```
 
-```bash
-export DOMAIN_SUFFIX=example.com
-export OMNI_USER_NAME=admin
-export OMNI_USER_PASSWORD=$(htpasswd -BnC 15 admin | cut --delimiter=: --fields=1 --complement)
-export OMNI_CLIENT_SECRET=$(echo -n "internal-sidero-stack" | base64)
-```
+    We also need to create an Ingress resource to expose Dex.
 
-Now we can install Dex with Helm.
+    ```bash
+    cat <<EOF | kubectl apply -f -
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+      name: dex
+      namespace: dex
+    spec:
+      ingressClassName: traefik
+      rules:
+      - host: dex.${DOMAIN_SUFFIX}
+        http:
+          paths:
+          - backend:
+              service:
+                name: dex
+                port:
+                  number: 5556
+            path: /
+            pathType: ImplementationSpecific
+      tls:
+      - hosts:
+        - dex.${DOMAIN_SUFFIX}
+        secretName: dex-tls
+    EOF
+    ```
 
-```bash
-helm repo add dex https://charts.dexidp.io --force-update > /dev/null 2>&1
-helm template dex dex/dex \
-  --version 0.24.0 \
-  --namespace dex \
-  --set ingress.enabled=false \
-  --set https.enabled=false \
-  --set config.issuer=https://dex.${DOMAIN_SUFFIX} \
-  --set config.storage.type=kubernetes \
-  --set config.storage.config.inCluster=true \
-  --set config.oauth2.skipApprovalScreen=false \
-  --set config.web.http=0.0.0.0:5556 \
-  --set config.enablePasswordDB=true \
-  --set config.staticClients[0].name=Omni \
-  --set config.staticClients[0].id=omni \
-  --set config.staticClients[0].secret=${OMNI_CLIENT_SECRET} \
-  --set config.staticClients[0].redirectURIs[0]=https://omni.${DOMAIN_SUFFIX}/oidc/consume \
-  --set config.staticPasswords[0].email=${OMNI_USER_NAME}@${DOMAIN_SUFFIX} \
-  --set config.staticPasswords[0].username=${OMNI_USER_NAME} \
-  --set config.staticPasswords[0].preferredUsername=${OMNI_USER_NAME} \
-  --set config.staticPasswords[0].hash=${OMNI_USER_PASSWORD}
-```
-
-We also need to create an Ingress resource to expose Dex.
-
-```bash
-cat <<'EOF' | kubectl apply -f -
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-  name: dex
-  namespace: dex
-spec:
-  ingressClassName: traefik
-  rules:
-  - host: dex.{{.DOMAIN_SUFFIX}}
-    http:
-      paths:
-      - backend:
-          service:
-            name: dex
-            port:
-              number: 5556
-        path: /
-        pathType: ImplementationSpecific
-  tls:
-  - hosts:
-    - dex.{{.DOMAIN_SUFFIX}}
-    secretName: dex-tls
-EOF
-```
-
-<Note>Make sure that the DNS records for Dex are correctly configured and pointing to the LoadBalancer IP of the Ingress controller.</Note>
-<Note>Dex can also be configured with other connectors such as LDAP, SAML, OIDC, etc. For more information on how to configure Dex with these connectors, please see the [Dex documentation](https://dexidp.io/docs/connectors/).</Note>
-
+    <Note>Make sure that the DNS records for Dex are correctly configured and pointing to the LoadBalancer IP of the Ingress controller.</Note>
+    <Note>Dex can also be configured with other connectors such as LDAP, SAML, OIDC, etc. For more information on how to configure Dex with these connectors, please see the [Dex documentation](https://dexidp.io/docs/connectors/).</Note>
+  </Tab>
+</Tabs>
 
 ## 3 Run Omni on Kubernetes
 
@@ -319,7 +307,7 @@ You can install Omni with Helm, but before we can do that we need to create a va
   ```
 
   ```bash
-  cat <<'EOF' > values.yaml
+  cat <<EOF > values.yaml
   config:
     account:
       id: $(uuidgen)
@@ -391,7 +379,7 @@ You can install Omni with Helm, but before we can do that we need to create a va
   ```
 
   ```bash
-  cat <<'EOF' > values.yaml
+  cat <<EOF > omni-values.yaml
   config:
     account:
       id: $(uuidgen)
@@ -463,7 +451,7 @@ You can install Omni with Helm, but before we can do that we need to create a va
   ```
 
   ```bash
-  cat <<'EOF' > values.yaml
+  cat <<EOF > values.yaml
   config:
     account:
       id: $(uuidgen)
@@ -475,7 +463,7 @@ You can install Omni with Helm, but before we can do that we need to create a va
         enabled: true
         clientID: omni
         clientSecret: ${OMNI_CLIENT_SECRET}
-        providerURL=https://dex.{{.DOMAIN_SUFFIX}}
+        providerURL: https://dex.${DOMAIN_SUFFIX}
         scopes:
           - openid
           - profile
@@ -494,7 +482,7 @@ You can install Omni with Helm, but before we can do that we need to create a va
           # The externally accessible IP:port for WireGuard connections.
           # If using an externally accessible node IP, the port should match
           # service.wireguard.nodePort (default: 30180).
-          advertisedEndpoint: "${WIREGUARD_ADVERTISED_ENDPOINT}:30180"
+          advertisedEndpoint: ${WIREGUARD_ADVERTISED_ENDPOINT}:30180
   etcdEncryptionKey:
     existingSecret: "omni-gpg-key"
 
@@ -541,7 +529,7 @@ helm install \
   omni oci://ghcr.io/siderolabs/charts/omni \
   --version v2.1.1 \
   --namespace omni \
-  --values values.yaml
+  --values omni-values.yaml
 ``` 
 
 Congratulations! You have now deployed Omni on Kubernetes.
@@ -562,7 +550,8 @@ export DOMAIN_SUFFIX=example.com
 export WORKLOAD_PROXY_SUBDOMAIN=omni-workload
 ```
 
-```yaml
+```bash
+cat <<EOF > omni-workload-values.yaml
 config:
   services:
     workloadProxy:
@@ -595,6 +584,7 @@ extraObjects:
                     name: omni
                     port:
                       name: omni
+EOF
 ```
 You can then upgrade the updated Helm chart with this command.
 
@@ -603,5 +593,6 @@ helm upgrade \
   omni oci://ghcr.io/siderolabs/charts/omni \
   --version v2.1.1 \
   --namespace omni \
-  --values values.yaml
+  --values omni-workload-values.yaml \
+  --reuse-values
 ```
