@@ -261,7 +261,8 @@
                       "talos/v1.12/build-and-extend-talos/custom-images-and-development/kernel-module",
                       "talos/v1.12/build-and-extend-talos/custom-images-and-development/oci-base-spec",
                       "talos/v1.12/build-and-extend-talos/custom-images-and-development/overlays",
-                      "talos/v1.12/build-and-extend-talos/custom-images-and-development/system-extensions"
+                      "talos/v1.12/build-and-extend-talos/custom-images-and-development/system-extensions",
+                      "talos/v1.12/build-and-extend-talos/custom-images-and-development/talos-development-tools"
                     ]
                   },
                   {
@@ -613,7 +614,8 @@
                       "talos/v1.11/build-and-extend-talos/custom-images-and-development/kernel-module",
                       "talos/v1.11/build-and-extend-talos/custom-images-and-development/oci-base-spec",
                       "talos/v1.11/build-and-extend-talos/custom-images-and-development/overlays",
-                      "talos/v1.11/build-and-extend-talos/custom-images-and-development/system-extensions"
+                      "talos/v1.11/build-and-extend-talos/custom-images-and-development/system-extensions",
+                      "talos/v1.11/build-and-extend-talos/custom-images-and-development/talos-development-tools"
                     ]
                   },
                   {
