@@ -3,267 +3,372 @@ title: Register an AWS EC2 Instance
 description: Launch and connect an AWS EC2 instance to Omni using a custom Talos AMI.
 ---
 
-### Set your AWS region <a href="#set-your-aws-region" id="set-your-aws-region"></a>
+import { release } from '/snippets/custom-variables.mdx';
 
+
+This guide walks through creating a Talos AMI for AWS, importing it into your AWS account, and launching EC2 instances that can be registered with Omni.
+
+## Step 1: Set your AWS region
+
+Define the AWS region where you want to create your Omni machines.
+
+```bash
+REGION=<your-aws-region> # e.g. us-east-1
 ```
-REGION="us-west-2"
-```
 
-### Creating the subnet <a href="#creating-the-subnet" id="creating-the-subnet"></a>
+## Step 2: Identify the VPC
 
-First, we need to know what VPC to create the subnet on, so let’s describe the VPCs in the region where we want to create the Omni machines.
+Your EC2 instances must run inside a VPC. Most AWS accounts have a default VPC available.
 
-```
+First list the VPCs in your region:
+
+```bash
 aws ec2 describe-vpcs --region $REGION
 ```
 
-Output:
-
-```
-
-{
-    "Vpcs": [
-        {
-            "CidrBlock": "172.31.0.0/16",
-            "DhcpOptionsId": "dopt-0238fea7541672af0",
-            "State": "available",
-            "VpcId": "vpc-04ea926270c55d724",
-            "OwnerId": "753518523373",
-            "InstanceTenancy": "default",
-            "CidrBlockAssociationSet": [
-                {
-                    "AssociationId": "vpc-cidr-assoc-0e518f7ac9d02907d",
-                    "CidrBlock": "172.31.0.0/16",
-                    "CidrBlockState": {
-                        "State": "associated"
-                    }
-                }
-            ],
-            "IsDefault": true
-        }
-    ]
-}
-```
-
-Note the `VpcId` (`vpc-04ea926270c55d724`).
-
-Now, create a subnet on that VPC with a CIDR block that is within the CIDR block of the VPC. In the above example, as the VPC has a CIDR block of 172.31.0.0/16, we can use 172.31.128.0/20.
-
-```
-$ aws ec2 create-subnet \
-    --vpc-id vpc-04ea926270c55d724 \
-    --region us-west-2 \
-    --cidr-block 172.31.128.0/20
-```
-
-Output:
-
-```
-{
-    "Subnet": {
-        "AvailabilityZone": "us-west-2c",
-        "AvailabilityZoneId": "usw2-az3",
-        "AvailableIpAddressCount": 4091,
-        "CidrBlock": "172.31.192.0/20",
-        "DefaultForAz": false,
-        "MapPublicIpOnLaunch": false,
-        "State": "available",
-        "SubnetId": "subnet-04f4d6708a2c2fb0d",
-        "VpcId": "vpc-04ea926270c55d724",
-        "OwnerId": "753518523373",
-        "AssignIpv6AddressOnCreation": false,
-        "Ipv6CidrBlockAssociationSet": [],
-        "SubnetArn": "arn:aws:ec2:us-west-2:753518523373:subnet/subnet-04f4d6708a2c2fb0d",
-        "EnableDns64": false,
-        "Ipv6Native": false,
-        "PrivateDnsNameOptionsOnLaunch": {
-            "HostnameType": "ip-name",
-            "EnableResourceNameDnsARecord": false,
-            "EnableResourceNameDnsAAAARecord": false
-        }
-    }
-}
-```
-
-Note the `SubnetID` (`subnet-04f4d6708a2c2fb0d`).
-
-### Create the security group
+Then capture the default VPC:
 
 ```bash
-aws ec2 create-security-group \
-    --region $REGION \
-    --group-name omni-aws-sg \
-    --description "Security Group for Omni EC2 instances"
+VPC_ID=$(aws ec2 describe-vpcs \
+  --region $REGION \
+  --query "Vpcs[?IsDefault].VpcId" \
+  --output text)
 
+echo $VPC_ID
 ```
 
-Output
+This command stores the VPC ID in the `VPC_ID` variable.
 
+## Step 3: Create a subnet
+
+Next, create a subnet within the VPC.
+
+The subnet CIDR must fall within the VPC CIDR range. For example, if the VPC uses `172.31.0.0/16`, you can create a subnet such as `172.31.128.0/20`.
+
+```bash
+SUBNET_ID=$(aws ec2 create-subnet \
+  --region $REGION \
+  --vpc-id $VPC_ID \
+  --cidr-block 172.31.128.0/20 \
+  --query "Subnet.SubnetId" \
+  --output text)
+
+echo $SUBNET_ID
 ```
-{   
-     "GroupId": "sg-0b2073b72a3ca4b03"
-}
+
+The subnet ID will be used later when launching EC2 instances.
+
+## Step 4: Create a security group
+
+First, create a security group that will be attached to the EC2 instances.
+
+```bash
+SECURITY_GROUP=$(aws ec2 create-security-group \
+  --region $REGION \
+  --group-name omni-aws-sg \
+  --description "Security group for Omni EC2 instances" \
+  --query "GroupId" \
+  --output text)
+
+echo $SECURITY_GROUP
 ```
 
-Note the `GroupId` (`sg-0b2073b72a3ca4b03`).
-
-Allow all internal traffic within the same security group, so that Kubernetes applications can talk to each other on different machines:
+Next, update the security group to allow all internal traffic within the same group. This allows Kubernetes applications running on different machines to communicate with each other:
 
 ```bash
 aws ec2 authorize-security-group-ingress \
-    --region $REGION \
-    --group-name omni-aws-sg \
-    --protocol all \
-    --port 0 \
-    --source-group omni-aws-sg
+  --region $REGION \
+  --group-id $SECURITY_GROUP \
+  --protocol all \
+  --port -1 \
+  --source-group $SECURITY_GROUP
 ```
 
-### Creating the bootable AMI <a href="#creating-the-bootable-ami" id="creating-the-bootable-ami"></a>
+## Step 5: Register machines to your Omni account
 
-To do so, log in to your Omni account, and, from the Omni overview page, select “Download Installation Media”. Select “AWS AMI (amd64)” or “AWS AMI (arm64)”, as appropriate for your desired EC2 instances. (Most are amd64.) Click “Download”, and the AMI will be downloaded to you local machine.
+Talos provides an official AWS AMI that you can use directly. However, if you need to customize the AMI, for example by adding custom labels or system extensions, you must create a custom Talos AMI and bake those customizations into the image.
 
-Extract the downloaded `aws-amd64.tar.gz` Then copy the `disk.raw` file to S3. We need to create a bucket, copy the image file to it, import it as a snapshot, then register an AMI image from it.
+If you plan to create a custom Talos AMI, skip this step and continue to **Step 6**.
 
-#### Create S3 bucket <a href="#create-s3-bucket" id="create-s3-bucket"></a>
+<Note>The official Talos AWS AMI includes the `ecr-credential-provider` system extension by default.</Note>
 
+To register AWS EC2 instances to your Omni account using the official Talos AMI, you must add a [join config](./join-machines-to-omni) to the EC2 instance user data and boot the instance with the Talos Omni AMI. This ensures the machine automatically joins your Omni account when it starts.
+
+To register your AWS EC2 instances:
+
+1. Define environment variables that specify the machines you want to register.
+
+These are example values. Adjust them to match your machine specifications.
+
+<CodeBlock lang='sh'>
+{`
+AWS_REGION=$(aws configure get region)\nTALOS_VERSION=${release}\nARCH=amd64\nINSTANCE_TYPE=t3.small\nCOUNT=1
+`}
+</CodeBlock>
+
+2. Retrieve the official Talos AWS AMI:
+
+```bash
+AMI=$(curl -sL https://github.com/siderolabs/talos/releases/download/${TALOS_VERSION}/cloud-images.json \
+  | jq -r '.[] | select(.region == "'"$AWS_REGION"'") | select(.arch == "'"$ARCH"'") | .id')
+
+echo "Using AMI: $AMI"
 ```
-REGION="us-west-2"
+
+3.  Generate the join configuration. This configuration allows the Talos machines to register with Omni when they boot:
+
+```bash
+USER_DATA=$(omnictl jointoken machine-config)
+```
+
+4. Launch the EC2 instances:
+
+```bash
+aws ec2 run-instances \
+  --region $AWS_REGION \
+  --image-id $AMI \
+  --instance-type $INSTANCE_TYPE \
+  --count $CONTROL_PLANE_NO  \
+  --iam-instance-profile Name=$AUTOSCALER_INSTANCE_PROFILE_NAME \
+  --user-data "$USER_DATA" \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=role,Value=autoscaler-controlplane-machine}]'
+```
+
+## Step 6: Create a custom Talos AWS AMI 
+
+If you need to customize the Talos AMI (for example by adding custom labels or system extensions), you must build a custom image with those extensions included.
+
+In this step, you will:
+
+1. Download the Talos AWS disk image from Omni
+2. Upload it to Amazon S3
+3. Import it into EC2 as a snapshot
+4. Register the snapshot as an AMI
+
+### 6.1: Download the Talos AWS image
+
+You can download the Talos AWS image from the CLI or the UI:
+
+<Tabs>
+<Tab title="UI">
+
+To download the Talos AWS image from the UI:
+
+1. Log into your Omni account.
+2. Go to the **Overview** page.
+3. Click **Download Installation Media**.
+4. Select **AWS AMI (amd64)** or **AWS AMI (arm64)** depending on your instance architecture.
+5. Add any required system extensions or labels.
+5. Click **Download**.
+
+</Tab>
+<Tab title="CLI">
+
+Run the following command to download the Talos AWS image:
+
+```bash
+omnictl download aws
+```
+
+To see available options for adding custom labels or system extensions:
+
+```bash
+omnictl download aws --help
+```
+</Tab>
+</Tabs>
+
+The downloaded Talos AWS image will contain a compressed archive similar to:
+
+```bash
+aws-amd64.tar.gz
+```
+
+Extract the archive:
+
+```bash
+tar -xzf aws-amd64.tar.gz
+```
+
+This command will produce a disk image similar to `disk.raw`:
+
+### 6.2: Create S3 bucket
+
+The disk image must be uploaded to an S3 bucket before it can be imported into EC2.
+
+Bucket names must be globally unique. The following command creates a bucket with a globally unique name using a timestamp.
+
+```bash
+BUCKET="omni-aws-$(date +%s)"
+
 aws s3api create-bucket \
-    --bucket <bucket name> \
-    --create-bucket-configuration LocationConstraint=$REGION \
-    --acl private
+  --bucket $BUCKET \
+  --region $REGION \
+  --create-bucket-configuration LocationConstraint=$REGION
 ```
 
-#### Copy image file to the bucket <a href="#copy-image-file-to-the-bucket" id="copy-image-file-to-the-bucket"></a>
+### 6.3: Upload the disk image to S3
+
+Upload the extracted disk image to the S3 bucket:
 
 ```
-aws s3 cp disk.raw s3://<bucket name>/omni-aws.raw
+aws s3 cp disk.raw s3://$BUCKET/omni-aws.raw
 ```
 
-#### Import the image as a snapshot <a href="#import-the-image-as-a-snapshot" id="import-the-image-as-a-snapshot"></a>
+### 6.4: Import the disk image as an EC2 snapshot
 
-```
-aws ec2 import-snapshot \
-    --region $REGION \
-    --description "Omni AWS" \
-    --disk-container "Format=raw,UserBucket={S3Bucket=<bucket name>,S3Key=omni-aws.raw}"
+Next, import the uploaded disk image into EC2 as a snapshot.
 
-```
+```bash
+IMPORT_TASK=$(aws ec2 import-snapshot \
+  --region $REGION \
+  --description "Omni AWS" \
+  --disk-container "Format=raw,UserBucket={S3Bucket=$BUCKET,S3Key=omni-aws.raw}" \
+  --query "ImportTaskId" \
+  --output text)
 
-Output:
-
-```
-{
-    "Description": "Omni AWS",
-    "ImportTaskId": "import-snap-1234567890abcdef0",
-    "SnapshotTaskDetail": {
-        "Description": "Omni AWS",
-        "DiskImageSize": "0.0",
-        "Format": "RAW",
-        "Progress": "3",
-        "Status": "active",
-        "StatusMessage": "pending"
-        "UserBucket": {
-            "S3Bucket": "<bucket name>",
-            "S3Key": "omni-aws.raw"
-        }
-    }
-}
+echo $IMPORT_TASK
 ```
 
-Check the status of the import with:
+### 6.5: Monitor the snapshot import
 
-```
+You can check the status of the import task using:
+
+```bash
 aws ec2 describe-import-snapshot-tasks \
-    --region $REGION \
-    --import-task-ids
+  --region $REGION \
+  --import-task-ids $IMPORT_TASK
 ```
 
-Output:
+Once the import completes, retrieve the snapshot ID:
 
-```json
-While the import is in progress:
-{
-    "ImportSnapshotTasks": [
-        {
-            "Description": "Omni AWS",
-            "ImportTaskId": "import-snap-1234567890abcdef0",
-            "SnapshotTaskDetail": {
-                "Description": "Omni AWS",
-                "DiskImageSize": "705638400.0",
-                "Format": "RAW",
-                "Progress": "42",
-                "Status": "active",
-                "StatusMessage": "downloading/converting",
-                "UserBucket": {
-                    "S3Bucket": "<bucket name>",
-                    "S3Key": "omni-aws.raw"
-                }
-            }
-        }
-    ]
-}
+```bash
+SNAPSHOT=$(aws ec2 describe-import-snapshot-tasks \
+  --region $REGION \
+  --import-task-ids $IMPORT_TASK \
+  --query "ImportSnapshotTasks[0].SnapshotTaskDetail.SnapshotId" \
+  --output text)
 
-Once completed:
-{
-    "ImportSnapshotTasks": [
-        {
-            "Description": "Omni AWS",
-            "ImportTaskId": "import-snap-1234567890abcdef0",
-            "SnapshotTaskDetail": {
-                "DiskImageSize": 8589934592.0,
-                "Format": "raw",
-                "SnapshotId": "snap-056a7e086ecf7b452",
-                "Status": "completed",
-                "UserBucket": {
-                    "S3Bucket": "<bucket name>",
-                    "S3Key": "omni-aws.raw"
-                }
-            },
-            "Tags": []
-        }
-    ]
-}
+echo $SNAPSHOT
 ```
 
-Once the `Status` is `completed` note the `SnapshotId` (snap-056a7e086ecf7b452).
+You will use this snapshot in the next step to register the AMI.
 
-### Register the Image <a href="#register-the-image" id="register-the-image"></a>
+## Step 7: Register the AMI
 
-```
-aws ec2 register-image \
-    --region $REGION \
-    --block-device-mappings "DeviceName=/dev/xvda,VirtualName=talos,Ebs={DeleteOnTermination=true,SnapshotId=$SNAPSHOT,VolumeSize=8,VolumeType=gp2}" \
-    --root-device-name /dev/xvda \
-    --virtualization-type hvm \
-    --architecture x86_64 \
-    --ena-support \
-    --name omni-aws-ami
-```
+Create an AMI from the snapshot.
 
-Output:
+```bash
+AMI_ID=$(aws ec2 register-image \
+  --region $REGION \
+  --block-device-mappings "DeviceName=/dev/xvda,Ebs={DeleteOnTermination=true,SnapshotId=$SNAPSHOT,VolumeSize=14,VolumeType=gp2}" \
+  --root-device-name /dev/xvda \
+  --virtualization-type hvm \
+  --architecture x86_64 \
+  --ena-support \
+  --name omni-aws-ami \
+  --query "ImageId" \
+  --output text)
 
-```
-{
-    "ImageId": "ami-07961b424e87e827f"
-}
+echo $AMI_ID
 ```
 
-Note the `ImageId` (`ami-07961b424e87e827f`).
+## Step 8: Launch EC2 instances
 
-### Create EC2 instances from the AMI <a href="#create-ec2-instances-from-the-ami" id="create-ec2-instances-from-the-ami"></a>
+Finally, create EC2 instances using the AMI.
 
-Now, using the AMI we created, along with the security group created above, provision EC2 instances:
-
+```bash
+aws ec2 run-instances \
+  --region $REGION \
+  --image-id $AMI_ID \
+  --count 1 \
+  --instance-type t3.small \
+  --subnet-id $SUBNET_ID \
+  --security-group-ids $SECURITY_GROUP \
+  --associate-public-ip-address \
+  --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=omni-aws-ami}]"
 ```
- aws ec2 run-instances \
-    --region  $REGION \
-    --image-id ami-07961b424e87e827f \
-    --count 1 \
-    --instance-type t3.small   \
-    --subnet-id subnet-0a7f5f87f62c301ea \
-    --security-group-ids $SECURITY_GROUP   \
-    --associate-public-ip-address \
-    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=omni-aws-ami}]" \
-    --instance-market-options '{"MarketType":"spot"}'
+
+## Cleanup
+
+If you no longer need the resources created in this guide, remove them to avoid unnecessary AWS charges.
+
+### Terminate the EC2 instance
+
+First, terminate the EC2 instance created from the AMI.
+
+You can find the instance ID with:
+
+```bash
+INSTANCE_ID=$(aws ec2 describe-instances \
+  --region $REGION \
+  --filters "Name=image-id,Values=$AMI_ID" \
+  --query "Reservations[*].Instances[*].InstanceId" \
+  --output text)
+
+echo $INSTANCE_ID
+```
+
+Terminate the instance:
+
+```bash
+aws ec2 terminate-instances \
+  --region $REGION \
+  --instance-ids $INSTANCE_ID
+```
+
+### Deregister the AMI
+
+Next, deregister the AMI created earlier:
+
+```bash
+aws ec2 deregister-image \
+  --region $REGION \
+  --image-id $AMI_ID
+```
+
+### Delete the snapshot
+
+After deregistering the AMI, delete the snapshot used to create it:
+
+```bash
+aws ec2 delete-snapshot \
+  --region $REGION \
+  --snapshot-id $SNAPSHOT
+```
+
+### Remove the disk image from S3
+
+Delete the uploaded disk image:
+
+```bash
+aws s3 rm s3://$BUCKET/omni-aws.raw
+```
+
+### Delete the S3 bucket
+
+After removing the object, delete the bucket:
+
+```bash
+aws s3 rb s3://$BUCKET
+```
+
+### Delete the security group
+
+Remove the security group created for the EC2 instances:
+
+```bash
+aws ec2 delete-security-group \
+  --region $REGION \
+  --group-id $SECURITY_GROUP
+```
+
+### Delete the subnet
+
+Finally, delete the subnet created earlier:
+
+```bash
+aws ec2 delete-subnet \
+  --region $REGION \
+  --subnet-id $SUBNET_ID
 ```
