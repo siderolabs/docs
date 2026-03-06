@@ -155,6 +155,7 @@ navigation:
                 - "custom-images-and-development/oci-base-spec"
                 - "custom-images-and-development/overlays"
                 - "custom-images-and-development/system-extensions"
+                - "custom-images-and-development/talos-development-tools"
             - group: "Cluster Operations & Maintenance"
               folder: "talos/v1.12/build-and-extend-talos"
               pages:
