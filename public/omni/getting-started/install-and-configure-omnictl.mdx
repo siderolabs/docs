@@ -94,18 +94,12 @@ First, download the `omniconfig.yaml` file from your Omni dashboard to your loca
 
 ![Download Omnictl button](./images/install-and-configure-omnictl-omniconfig.png)
 
-`omnictl` stores its configuration in a standard location depending on your operating system:
+`omnictl` stores its configuration under `~/.talos/omni/config`.
 
-| OS      | Omniconfig Path                                                                |
-| ------- | ------------------------------------------------------------------------------ |
-| Linux   | `~/.talos/omni/config`                                                         |
-| MacOS   | `~/Library/Application Support/omni/config`                                    |
-| Windows | `%USERPROFILE%\.talos\omni\config`, e.g., `C:\Users\myuser\.talos\omni\config` |
-
-Copy the downloaded file to the appropriate location for your operating system:
+Copy the downloaded file to that location:
 
 ```bash
-cp omniconfig.yaml <LOCATION_FOR_YOUR_OS_ABOVE>
+cp omniconfig.yaml ~/.talos/omni/config
 ```
 
 If you already have an existing Omni configuration and want to merge the new file into it, run:
