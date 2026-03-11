@@ -139,7 +139,8 @@ Simplyblock components (storage plane and CSI driver) require privileged executi
 
 Create `simplyblock-namespace.yaml`:
 
-```yaml
+```bash
+cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -151,12 +152,7 @@ metadata:
     pod-security.kubernetes.io/audit-version: latest
     pod-security.kubernetes.io/warn: privileged
     pod-security.kubernetes.io/warn-version: latest
-```
-
-Apply it:
-
-```bash
-kubectl apply -f simplyblock-namespace.yaml
+EOF
 ```
 
 ### Installation via Helm Chart
@@ -179,7 +175,7 @@ sbctl pool add <POOL_NAME> <CLUSTER_UUID>
 Label Talos nodes that should run simplyblock storage nodes:
 
 ```bash
-kubectl label nodes <NODE_NAME> ^\
+kubectl label nodes <NODE_NAME> \
   io.simplyblock.node-type=simplyblock-storage-plane
 ```
 
@@ -190,7 +186,10 @@ CLUSTER_UUID="<UUID>"
 CLUSTER_SECRET="<SECRET>"
 CNTR_ADDR="<CONTROL-PLANE-ADDR>"
 POOL_NAME="<POOL-NAME>"
+```
+Install the helm chart
 
+```bash
 helm repo add simplyblock-csi https://install.simplyblock.io/helm/csi
 helm repo update
 
@@ -225,7 +224,10 @@ CLUSTER_UUID="<UUID>"
 CLUSTER_SECRET="<SECRET>"
 CNTR_ADDR="<CONTROL-PLANE-ADDR>"
 POOL_NAME="<POOL-NAME>"
+```
+Install the helm chart
 
+```bash
 helm repo add simplyblock-csi https://install.simplyblock.io/helm/csi
 helm repo update
 
