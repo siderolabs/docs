@@ -40,7 +40,12 @@ For example, if upgrading from Talos 1.0 to Talos 1.2.4, the recommended upgrade
 
 ## Before upgrade to {release_v1_13}
 
-There are no specific actions to be taken before an upgrade.
+Talos v1.13 onwards now supports NVIDIA GPU via the gpu-operator.
+
+### NVIDIA GPU users
+
+Talos 1.13 now supports configuring NVIDIA GPU via the gpu-operator.
+It's recommended to uninstall the nvidia-device-plugin helm chart and follow the instructions in [NVIDIA GPU (OSS drivers)](../hardware-and-drivers/nvidia-gpu) or [NVIDIA GPU (Proprietary drivers)](../hardware-and-drivers/nvidia-gpu-proprietary) guide to switch to the new gpu-operator based configuration.
 
 ## Video walkthrough
 
