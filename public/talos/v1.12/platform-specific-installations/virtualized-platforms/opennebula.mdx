@@ -49,6 +49,9 @@ Use the following command to upload the image to OpenNebula:
 
 OpenNebula passes network configuration to VMs via context variables in `context.sh`.
 Talos reads the `ETH0_*` (and `ETH1_*`, etc.) variables to configure each network interface at boot time.
+Talos triggers interface configuration on `ETH*_MAC` key presence, regardless of the `NETWORK` variable.
+
+### Using automatic network context (FIXED and RANGED pools)
 
 Set `NETWORK` to `"YES"` in the VM context so that OpenNebula automatically populates the `ETH*_` variables from the NIC definitions.
 This requires the address pool to carry IP data (i.e. `FIXED` or `RANGED` type, not `ETHER`).
@@ -58,6 +61,24 @@ CONTEXT = [
   NETWORK = "YES"
 ]
 ```
+
+### Using manual network variables for MAC-only pools
+
+If the address pool type is `ETHER` (MAC-only, no IP data), set `NETWORK` to `"NO"` and specify the interface parameters manually.
+This prevents OpenNebula from overwriting the `ETH*_` variables with empty strings.
+
+```bash
+CONTEXT = [
+  NETWORK = "NO",
+  ETH0_MAC = "$NIC[MAC]",
+  ETH0_IP = "YOUR_STATIC_IP",
+  ETH0_GATEWAY = "YOUR_GATEWAY_IP",
+  ETH0_DNS = "YOUR_DNS_IP"
+]
+```
+
+Replace `YOUR_STATIC_IP`, `YOUR_GATEWAY_IP`, and `YOUR_DNS_IP` with values appropriate for your network.
+The `$NIC[MAC]` expression is resolved by OpenNebula at instantiation time from the NIC definition.
 
 ## Create a virtual machine template
 
@@ -194,6 +215,7 @@ kubectl get nodes -o wide
 
 Instead of pushing config via the Talos API after boot, you can embed the machine configuration directly in the VM context using the `USER_DATA` variable.
 Talos reads `USER_DATA` from the context and applies it automatically on first boot, bypassing maintenance mode.
+This method works with any address pool type, including `ETHER`.
 
 ```bash
 CONTEXT = [
@@ -227,10 +249,9 @@ Paste the output as the `USER_DATA` value.
 
   Check the `CONTEXT` section in the output and confirm `ETH0_MAC`, `ETH0_IP`, and `ETH0_GATEWAY` are present and non-empty.
 
-- Ensure the address pool type is `FIXED` or `RANGED` (not `ETHER`).
-  With `NETWORK` set to `"YES"` and an `ETHER`-type pool, OpenNebula sets `ETH0_IP` to an empty string.
-  Talos will then fail with a parse error when attempting to configure the interface, and the node will not reach maintenance mode.
-  If you must use an `ETHER`-type pool, use the [USER_DATA method](#embed-machine-config-using-user_data) instead, which does not rely on network context variables.
+- If using `NETWORK` set to `"YES"` with an `ETHER`-type pool, OpenNebula sets `ETH0_IP` to an empty string, causing Talos to fail with a parse error.
+  Switch to `NETWORK` set to `"NO"` with manual `ETH*_` variables as described in the [configure network context section](#configure-network-context),
+  or use the [USER_DATA method](#embed-machine-config-using-user_data).
 
 ### talosctl apply-config times out
 
