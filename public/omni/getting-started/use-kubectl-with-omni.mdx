@@ -3,83 +3,167 @@ title: Use Kubectl With Omni
 description: Access Omni-managed clusters using kubectl and OIDC.
 ---
 
-With an Omni managed cluster, you use `kubectl` as with any other Kubernetes cluster, with the caveat that you must use the `kubeconfig` file that you download from Omni, and have the OIDC plug-in installed for your `kubectl`.
+You can use `kubectl` with an Omni-managed cluster the same way you would with any Kubernetes cluster. The main difference is that you must:
 
-All Kubernetes `kubectl` commands are routed through the API endpoint created by Omni, and Omni validates access through the configured OIDC provider or other user authorization mechanism. This ensures your Kubernetes cluster is safe - unlike other systems, mere possession of a `kubeconfig` grants no access - the user also has be valid in the configured authentication system of Omni.
+- Use the `kubeconfig` file downloaded from Omni
+- Install the `oidc-login` plugin for `kubectl`
 
-#### Download the KubeConfig file
+All `kubectl` requests are routed through the Kubernetes API endpoint created by Omni. Omni validates access using the configured OpenID Connect (OIDC) provider or other authorization mechanism.
 
-Navigate to the clusters page by clicking on the “Clusters” button in the sidebar.
+This means that possessing a `kubeconfig` file alone does not grant access. The user must also authenticate through Omni’s configured identity provider.
 
-Click on the cluster and then click "Download  kubeconfig" from the cluster dashboard on the right. The downloaded file will reflect the name of the cluster.
+## Prerequisites
 
-#### Install the OIDC plug in
+Before you begin, you need `omnictl`, `omniconfig`, and the `oidc-login` plugin installed and configured.
 
-Install the `oidc-login` plugin per the official documentation: [https://github.com/int128/kubelogin#getting-started](https://github.com/int128/kubelogin#getting-started)
-
-#### Access the cluster with kubectl
-
-```
-kubectl --kubeconfig ./talos-default-kubeconfig.yaml get nodes
-```
-
-Be sure you use the name of the downloaded kubeconfig file, which will vary with the name of the cluster.
-
-The first time you use the `kubectl` command to query a cluster, a browser window will open requiring you to authenticate with your identity provider.
-
-> If you get a message `error: unknown command "oidc-login" for "kubectl" Unable to connect to the server` then you need to install the oidc-login plugin as noted above, and ensure it is in your $PATH.
-
-<Info>
-Authentication for `omnictl`, `talosctl`, and `kubectl`will last for 8 hours. After 8 hours you will need to re-authenticate each tool for your environment.
-</Info>
-
-### Switching between users when authenticating to the same cluster
-
-If you have multiple contexts in your kubeconfig(s) authenticating to the same cluster (in the same Omni instance), switching between these contexts does not switch the authenticated user. This is a [known limitation](https://github.com/int128/kubelogin/issues/29) of the OIDC-based login we use - it uses the existing logged-in user, as their auth token is the already cached for that cluster.
-
-To work around that, when you want to switch to another user, you need to clear the authentication cache first. To do this, run one of the following:
+**On macOS and Linux**: Install `omnictl` and `oidc-login` with a single command:
 
 ```bash
-kubectl oidc-login clean # OR
+brew install siderolabs/tap/sidero-tools
+```
+
+**On Windows or for manual installation**: Follow the
+[Install and Configure omnictl](./install-and-configure-omnictl#manual-installation) guide, then install the `oidc-login` plugin separately using the [kubelogin getting started guide](https://github.com/int128/kubelogin#getting-started).
+
+Once installed, follow the [Configure omnictl](./install-and-configure-omnictl#step-2-configure-omnictl) guide to set up your `omniconfig`.
+
+## Step 1: Download the kubeconfig file
+
+You can download the `kubeconfig` file for your cluster using either the Omni UI or the CLI:
+
+<Tabs>
+<Tab title="UI">
+
+To download the `kubeconfig` file using the Omni UI:
+
+1. Log in to your Omni account.
+2. Click **Clusters** in the sidebar.
+![Clusters tab](./images/use-kubectl-with-omni-clusters-tab.png)
+3. Select your cluster.
+4. Click **Download kubeconfig** in the cluster dashboard.
+![Download kubeconfig](./images/use-kubectl-with-omni-clusters-download-kubeconfig.png)
+</Tab>
+
+<Tab title="CLI">
+
+To download the `kubeconfig` file using the CLI, run the following command. Replace `<cluster-name>` with the name of your cluster:
+
+```bash
+omnictl kubeconfig --cluster <cluster-name>
+```
+</Tab>
+</Tabs>
+
+## Step 2: Merge your configuration
+
+Merge the downloaded `kubeconfig` with your existing Kubernetes configuration so `kubectl` can detect the cluster automatically:
+
+1. Define the path to the downloaded kubeconfig file:
+
+```bash
+DOWNLOADED_KUBECONFIG=<path-to-kubeconfig-file>
+```
+
+2. Merge the configuration:
+
+```bash
+export KUBECONFIG=~/.kube/config:$DOWNLOADED_KUBECONFIG
+kubectl config view --flatten > ~/.kube/config
+```
+
+## Step 3: Access the cluster with kubectl
+
+Verify that you have configured `kubectl` correctly by running:
+
+```bash
+kubectl get nodes
+```
+
+The first time you run a command, a browser window will open and prompt you to authenticate with your identity provider.
+
+Authentication for `omnictl`, `talosctl`, and `kubectl` lasts for 8 hours. After that period, you must authenticate again.
+
+<Note>
+If you see the error below, the OIDC plugin is not installed or not available in your PATH:
+
+```bash
+error: unknown command "oidc-login" for "kubectl"
+Unable to connect to the server
+```
+
+Install the `oidc-login` plugin and ensure it is available in your shell environment.
+</Note>
+
+## Switch between authenticated users
+
+If you have multiple contexts in your kubeconfig that authenticate to the same cluster within the same Omni instance, switching between those contexts does not change the authenticated user.
+
+This is a [known limitation](https://github.com/int128/kubelogin/issues/29) of the OIDC-based login used by `kubelogin`. 
+
+The plugin reuses the existing authentication token that is cached for the cluster, so the previously authenticated user remains active.
+
+To authenticate as a different user, you must first clear the authentication cache. 
+Run one of the following commands:
+
+```bash
+kubectl oidc-login clean
+```
+
+**or**
+
+```bash
 rm -rf "${KUBECACHEDIR:-$HOME/.kube/cache}/oidc-login"
 ```
 
-After doing this, the next `kubectl` command you run should trigger the OIDC login flow again, where you can authenticate as the user you need via `Switch User` option.
+After clearing the cache, run a `kubectl` command again. This will trigger the OIDC login flow, where you can authenticate as a different user using the Switch User option.
 
-### OIDC authentication over SSH
+## Using OIDC authentication over SSH
 
-If you need to use `kubectl` on a remote host over SSH you have two options.
+If you need to run kubectl on a remote host over SSH, you can authenticate using one of the following methods:
 
-#### Download `kubeconfig` with `--grant-type=authcode-keyboard`
+* Download a kubeconfig that uses keyboard authentication
+* Tunnel the local authentication ports over SSH
 
-To get started, you first need to download both **omnictl** and **omniconfig**. Once installed, you can use `omnictl` to download the configuration with the following command:
+### Option 1: Download kubeconfig using keyboard authentication
+
+This method avoids opening a browser automatically.
+
+First ensure that `omnictl` and your Omni configuration are installed.
+
+Then run:
+
+```bash
+omnictl kubeconfig --cluster <CLUSTER_NAME> --grant-type=authcode-keyboard
+```
+
+The configuration will be merged with the file defined in the KUBECONFIG environment variable.
+
+When authentication is required, the command prints a login URL and prompts for a one-time code:
 
 ```
-omnictl kubeconfig --cluster <name> --grant-type=authcode-keyboard
-```
-
-By default, the configuration will be merged with the file specified in the `KUBECONFIG` environment variable.
-
-When using this configuration, the process will not attempt to open a browser automatically. Instead, it will present you with a URL and prompt you to enter a one-time code:
-
-```
-Please visit the following URL in your browser: https://<redacted>
+Please visit the following URL in your browser: https://<endpoint>
 Enter code:
 ```
 
-Opening the link will take you to the Omni login page. After signing in, you will be provided with a code that you can copy and paste into the terminal.
+Open the URL in your browser, sign in to Omni, and copy the provided code into the terminal.
 
-#### Download the regular `kubeconfig` and do port-forwarding
+### Option 2: Use SSH port forwarding
 
-To do that you can tunnel the ports over SSH when you connect to the host. This command will open a tunnel using the default ports `oidc-login` attempts to use.
+You can also forward the authentication ports used by `oidc-login` over SSH.
 
-```
+Run the following command when connecting to the host:
+
+```bash
 ssh -L 8000:localhost:8000 -L 18000:localhost:18000 $HOST
 ```
 
-You can run this in a separate terminal temporarily while you authenticate your CLI tools.
+This command creates a tunnel for the default ports used by oidc-login.
 
-If you want to have the port forwarding happen automatically every time you connect to the host you should update your `~/.ssh/config` file to contain the following lines for the host.
+You can keep this connection open in a separate terminal while authenticating.
+
+#### Automatically enable SSH port forwarding
+
+To automatically forward these ports when connecting to a host, add the following configuration to your `~/.ssh/config` file:
 
 ```
 Host myhost
@@ -87,16 +171,20 @@ Host myhost
   LocalForward 18000 127.0.0.1:18000
 ```
 
-You will also need to disable automatic browser opening because it will likely try to open a browser on the SSH host or fail to open if one is not installed. Do that by adding `--skip-open-browser` in your `$KUBECONFIG` file.
+#### Disable automatic browser opening
 
-```
-      args:
-        - oidc-login
-        - get-token
-        - --oidc-issuer-url=https://$YOUR_ENDPOINT.omni.siderolabs.io/oidc
-        - --oidc-client-id=native
-        - --oidc-extra-scope=cluster:not-eks
-        - --skip-open-browser
-      command: kubectl
-      env: null
+You also need to disable automatic browser opening. Otherwise, `oidc-login` may attempt to open a browser on the SSH host, or fail if a browser is not installed.
+
+To disable this behavior, add `--skip-open-browser` to the oidc-login arguments in your `$KUBECONFIG` file:
+
+```yaml
+args:
+  - oidc-login
+  - get-token
+  - --oidc-issuer-url=https://$YOUR_ENDPOINT.omni.siderolabs.io/oidc
+  - --oidc-client-id=native
+  - --oidc-extra-scope=cluster:not-eks
+  - --skip-open-browser
+command: kubectl
+env: null
 ```
