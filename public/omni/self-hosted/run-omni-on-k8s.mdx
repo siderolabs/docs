@@ -4,6 +4,7 @@ description: Run Omni on your Kubernetes infrastructure
 ---
 
 import { omni_release } from '/snippets/custom-variables.mdx';
+import { omni_helm_chart_release } from '/snippets/custom-variables.mdx';
 
 This guide shows you how to run Omni on Kubernetes. This guide assumes that Omni will be deployed on a Kubernetes cluster with 1 controlplane and 1 worker node. Small differences should be expected when using different components.
 
@@ -451,7 +452,7 @@ You can install Omni with Helm, but before we can do that we need to create a va
   ```
 
   ```bash
-  cat <<EOF > values.yaml
+  cat <<EOF > omni-values.yaml
   config:
     account:
       id: $(uuidgen)
@@ -524,13 +525,10 @@ You can install Omni with Helm, but before we can do that we need to create a va
 
 With the values file created, we can now install the Helm chart.
 
-```bash
-helm install \
-  omni oci://ghcr.io/siderolabs/charts/omni \
-  --version v2.1.1 \
-  --namespace omni \
-  --values omni-values.yaml
-``` 
+<CodeBlock lang="sh">
+  {`helm install \\\n  omni oci://ghcr.io/siderolabs/charts/omni \\\n  --version ${omni_helm_chart_release} \\\n  --namespace omni \\\n  --values omni-values.yaml
+  `}
+</CodeBlock>
 
 Congratulations! You have now deployed Omni on Kubernetes.
 
@@ -588,11 +586,7 @@ EOF
 ```
 You can then upgrade the updated Helm chart with this command.
 
-```bash
-helm upgrade \
-  omni oci://ghcr.io/siderolabs/charts/omni \
-  --version v2.1.1 \
-  --namespace omni \
-  --values omni-workload-values.yaml \
-  --reuse-values
-```
+<CodeBlock lang="sh">
+  {`helm upgrade \\\n  omni oci://ghcr.io/siderolabs/charts/omni \\\n  --version ${omni_helm_chart_release} \\\n  --namespace omni \\\n  --values omni-workload-values.yaml \\\n  --reuse-values
+  `}
+</CodeBlock>
