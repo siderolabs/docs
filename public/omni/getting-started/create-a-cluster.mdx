@@ -7,144 +7,200 @@ aliases:
 
 This guide shows you how to create a cluster from registered machines.
 
+## Prerequisities
+
+To follow this guide you must have machines registered to your Omni instance. Refer to the [Register machines with Omni](../omni-cluster-setup/registering-machines/register-machines-with-omni) section to understand how to register your specific machine to Omni.
+
+You can create a cluster in Omni using this registered machines through the Omni UI, or using cluster templates through manual or dynamic machine allocation.
+
 <Tabs>
   <Tab title="UI">
-    First, click the "Clusters" section button in the sidebar. Next, click the "Create Cluster" button.
 
-    You may name the cluster, as well specify the version of Talos Linux and Kubernetes that the cluster should be created with. You may also enable optional cluster features, such as [Disk Encryption](../security-and-authentication/omni-kms-disk-encryption) or [Workload Service Proxying](../cluster-management/expose-an-http-service-from-a-cluster).
+    To create a cluster in Omni using the UI:
+
+    ### Step 1: Open the cluster creation form
+
+    Select the **Clusters** tab in the sidebar, then click **Create Cluster**.
+
+    ![Create a clusters tab](./images/create-a-cluster-clusters-tab.png)
+
+    ### Step 2: Fill in the cluster details
+
+    - **Name**: Give your cluster a unique name. Note that a cluster cannot be renamed after it is created.
+    - **Talos version**: Select the version of Talos Linux to run on your cluster.
+    - **Kubernetes version**: Select the Kubernetes version for your cluster.
+    - **Labels**: Optionally add labels to your cluster.
+    - **Features**: Optionally enable additional features such as [disk encryption](../security-and-authentication/omni-kms-disk-encryption) or [workload service proxying](../cluster-management/expose-an-http-service-from-a-cluster).
+
+    ![Create a clusters form](./images/create-a-cluster-form.png)
 
     <Info>
-      Note that disk encryption can only be enabled during cluster creation. Enabling this checkbox will configure the cluster to use Omni as a [Key Management Server](../security-and-authentication/omni-kms-disk-encryption), and local disk access will not be possible unless the machine is connected to Omni.
-
-      It is not possible to rename a cluster after it has been created.
+    Disk encryption can only be enabled at cluster creation time and cannot be turned on afterwards. Enabling it configures Omni as the cluster's [Key Management Server](../security-and-authentication/omni-kms-disk-encryption), which means local disk access will not be possible unless the machine is connected to Omni.
     </Info>
 
-    From the Available Machines list, select the role (CP for control plane, WX (where X is a number) for workers) for each machine you would like to be a member of the cluster. Optionally, choose the install disk for the OS from the dropdown menu for each machine. 
+    ### Step 3: Assign machines
 
-    <img src="./images/create-a-cluster-available-machines.png" alt=""/>
+    From the **Available Machines** list, assign a role to each machine you want in the cluster:
 
-    Finally, click “Create Cluster”
+    - **CP** — control plane
+    - **WO** — worker
 
-    <Info>For HA clusters, 3 control plane nodes are required.</Info>
+    ### Step 4: (Optional) Select an install disk
+
+    Use the dropdown next to each machine to select the OS install disk.
+
+    <img src="./images/create-a-cluster-available-machines.png" alt="Available machines list showing role assignment and disk selection" />
+
+    ### Step 5: Create the cluster
+
+    Click **Create Cluster** to provision your cluster.
 
   </Tab>
 
-  <Tab title="CLI with manual machine allocation">
-  
-    Create a file called `cluster.yaml` with the following content:
+<Tab title="CLI through manual machine allocation">
 
+  When creating a cluster using cluster templates with manually allocated machines, first identify the unique ID of each machine so the template can reference them.
+
+  ### Step 1: Get the machine UUID
+
+  For each machine you want to include in the cluster:
+
+  1. Select the **Machines** tab.
+  2. Click the **...** button on the machine.
+  3. Click **Copy Machine ID**.
+
+  Repeat this for each control plane and worker machine you plan to use.
+
+  ![Copy Machine ID](./images/create-a-cluster-copy-machine-id.png)
+
+  ### Step 2: Create a cluster template file
+
+  A [cluster template](../reference/cluster-templates) is made up of multiple documents separated by `---`. Each document defines a different aspect of your cluster, the cluster itself, control plane nodes, worker nodes, and per-machine install settings.
+
+  Create a file called `cluster.yaml` and populate it with the following, replacing each placeholder with your own values:
+
+  ```yaml
+  kind: Cluster
+  name: example
+  kubernetes:
+    version: <kubernetes-version>
+  talos:
+    version: <talos-version>
+  ---
+  kind: ControlPlane
+  machines:
+    - <control-plane-machine-uuid-1>
+  ---
+  kind: Workers
+  machines:
+    - <worker-machine-uuid>
+  ---
+  kind: Machine
+  name: <control-plane-machine-uuid>
+  install:
+    disk: /dev/<disk>
+  ---
+  kind: Machine
+  name: <worker-machine-uuid>
+  install:
+    disk: /dev/<disk>
+  ```
+
+    - `<kubernetes-version>`: The Kubernetes version for your cluster.
+    - `<talos-version>`: The Talos Linux version for your cluster.
+    - `<control-plane-machine-uuid>`: The UUID of the control plane machine.
+    - `<worker-machine-uuid>`: The UUID of the worker machine.
+    - `<disk>`: The name of the install disk on each machine (e.g. `sda`).
+
+  ### Step 3: (Optional) Enable additional features
+
+  To enable features such as disk encryption or workload proxying, add a `features` block to the `Cluster` document:
+
+  ```yaml
+  kind: Cluster
+  name: example
+  kubernetes:
+    version: <kubernetes-version>
+  talos:
+    version: <talos-version>
+  features:
+    enableWorkloadProxy: true
+    diskEncryption: true
+  ```
+
+  You can also [patch your cluster template](../reference/cluster-templates#patches) to apply further configuration changes. See the [cluster templates reference](../reference/cluster-templates) for the full list of available options.
+
+  ### Step 4: Validate the cluster template
+
+  ```bash
+  omnictl cluster template validate -f cluster.yaml
+  ```
+
+  ### Step 5: Create the cluster
+
+  ```bash
+  omnictl cluster template sync -f cluster.yaml --verbose
+  ```
+
+  ### Step 6: Wait for the cluster to be ready
+
+  ```bash
+  omnictl cluster template status -f cluster.yaml
+  ```
+  </Tab>
+
+  <Tab title="CLI through dynamic machine allocation">
+
+    Dynamic allocation lets you create a cluster without knowing individual machine UUIDs in advance, useful in autoscaling scenarios where machines may not yet exist when you define the cluster. Instead of assigning machines directly, you define machine classes that group machines by label, and the cluster automatically draws its control plane and worker nodes from those classes.
+
+    Before proceeding, make sure you have at least one machine class set up. See the [machine class documentation](../omni-cluster-setup/create-a-machine-class) for instructions.
+
+    ### Step 1: Create a cluster template file
+
+    Create a file called `cluster.yaml` with the following content, replacing each placeholder with your own values:
     ```yaml
     kind: Cluster
     name: example
     kubernetes:
-      version: v1.27.0
+      version: <kubernetes-version>
     talos:
-      version: v1.5.2
+      version: <talos-version>
     ---
     kind: ControlPlane
-    machines:
-      - <control plane machine UUID>
+    machineClass:
+      name: <control-plane-machine-class>
+      size: <number-of-control-planes>
     ---
     kind: Workers
-    machines:
-      - <worker machine UUID>
-    ---
-    kind: Machine
-    name: <control plane machine UUID>
-    install:
-      disk: /dev/<disk>
-    ---
-    kind: Machine
-    name: <worker machine UUID>
-    install:
-      disk: /dev/<disk>
+    machineClass:
+      name: <worker-machine-class>
+      size: <number-of-worker-machines>
     ```
 
-    > If enabling optional features such as disk encryption, add them to the Cluster document e.g.:
+    - `<kubernetes-version>`: The Kubernetes version for your cluster.
+    - `<talos-version>`: The Talos Linux version for your cluster.
+    - `<control-plane-machine-class>`: The machine class whose members will serve as control plane nodes.
+    - `<number-of-control-planes>`: The number of control plane nodes. Use an integer (e.g. `3`) or `unlimited` to automatically include every machine in the class. For high availability without sacrificing performance, three control planes is recommended.
+    - `<worker-machine-class>`: The machine class whose members will serve as worker nodes.
+    - `<number-of-worker-machines>`: The number of worker nodes. Accepts any integer or `unlimited`.
 
-    ```yaml
-    kind: Cluster
-    name: example
-    kubernetes:
-      version: v1.27.0
-    talos:
-      version: v1.5.2
-    features:
-      diskEncryption: true
-    ```
-
-   <Info>Be sure to update the UUIDs and install disks with the UUIDs and disks of the machines in your account.</Info>
-
-    Now, validate the document:
+    ### Step 2: Validate the cluster template
 
     ```bash
     omnictl cluster template validate -f cluster.yaml
     ```
 
-    Create the cluster:
+    ### Step 3: Create the cluster
 
     ```bash
     omnictl cluster template sync -f cluster.yaml --verbose
     ```
 
-    Finally, wait for the cluster to be up:
+    ### Step 4: Wait for the cluster to be ready
 
     ```bash
     omnictl cluster template status -f cluster.yaml
     ```
-
   </Tab>
-
-  <Tab title="CLI with machine classes">
-
-    Create a file called `cluster.yaml` with the following content:
-
-    ```yaml
-    kind: Cluster
-    name: example
-    kubernetes:
-      version: v1.28.0
-    talos:
-      version: v1.5.4
-    ---
-    kind: ControlPlane
-    machineClass:
-      name: control-planes
-      size: 1
-    ---
-    kind: Workers
-    machineClass:
-      name: workers
-      size: 1
-    ---
-    kind: Workers
-    name: secondary
-    machineClass:
-      name: secondary-workers
-      size: unlimited
-    ```
-
-    Be sure to create machine classes `control-planes`, `workers` and `secondary-workers` beforehand. See [machine classes how-to](../omni-cluster-setup/create-a-machine-class).
-
-    Now, validate the document:
-
-    ```bash
-    omnictl cluster template validate -f cluster.yaml
-    ```
-
-    Create the cluster:
-
-    ```bash
-    omnictl cluster template sync -f cluster.yaml --verbose
-    ```
-
-    Finally, wait for the cluster to be up:
-
-    ```bash
-    omnictl cluster template status -f cluster.yaml
-    ```
-  
-  </Tab>
-
 </Tabs>
 
