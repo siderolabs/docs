@@ -1,6 +1,6 @@
 ---
 title: "NVIDIA GPU (Proprietary drivers)"
-description: "In this guide we'll follow the procedure to support NVIDIA GPU using proprietary drivers on Talos."
+description: "In this guide you'll follow the procedure to support NVIDIA GPU using proprietary drivers on Talos."
 aliases:
   - ../../guides/nvidia-gpu-proprietary
 ---
@@ -48,8 +48,6 @@ machine:
       - name: nvidia_uvm
       - name: nvidia_drm
       - name: nvidia_modeset
-  sysctls:
-    net.core.bpf_jit_harden: 1
 ```
 
 Now apply the patch to all Talos nodes in the cluster having NVIDIA GPU's installed:
@@ -97,53 +95,29 @@ NVRM version: NVIDIA UNIX x86_64 Kernel Module  510.60.02  Wed Mar 16 11:24:05 U
 GCC version:  gcc version 11.2.0 (GCC)
 ```
 
-## Deploying NVIDIA device plugin
+## Deploying NVIDIA GPU Operator
 
-First we need to create the `RuntimeClass`
+you'll follow the [upstream instructions](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html) with only passing Helm chart values specific to Talos.
 
-Apply the following manifest to create a runtime class that uses the extension:
+you'll disable the driver and toolkit components of the GPU operator since we have already enabled them as system extensions on Talos.
 
-```yaml
----
-apiVersion: node.k8s.io/v1
-kind: RuntimeClass
-metadata:
-  name: nvidia
-handler: nvidia
-```
-
-Install the NVIDIA device plugin:
+Further custom values may be needed to be passed to the helm chart depending on the cluster configuration.
 
 ```bash
-helm repo add nvdp https://nvidia.github.io/k8s-device-plugin
+kubectl create ns gpu-operator
+kubectl label --overwrite ns gpu-operator pod-security.kubernetes.io/enforce=privileged
+```
+
+```bash
+helm repo add nvidia https://helm.ngc.nvidia.com/nvidia
 helm repo update
-helm install nvidia-device-plugin nvdp/nvidia-device-plugin --version=0.13.0 --set=runtimeClassName=nvidia
+helm upgrade --wait --install -n gpu-operator gpu-operator nvidia/gpu-operator \
+  --set driver.enabled=false \
+  --set toolkit.enabled=false \
+  --set hostPaths.driverInstallDir=/usr/local/glibc/usr/lib
 ```
 
-## (Optional) Setting the default runtime class as `nvidia`
-
-> Do note that this will set the default runtime class to `nvidia` for all pods scheduled on the node.
-
-Create a patch yaml `nvidia-default-runtimeclass.yaml` to update the machine config similar to below:
-
-```yaml
-- op: add
-  path: /machine/files
-  value:
-    - content: |
-        [plugins]
-          [plugins."io.containerd.cri.v1.runtime"]
-            [plugins."io.containerd.cri.v1.runtime".containerd]
-              default_runtime_name = "nvidia"
-      path: /etc/cri/conf.d/20-customization.part
-      op: create
-```
-
-Now apply the patch to all Talos nodes in the cluster having NVIDIA GPU's installed:
-
-```bash
-talosctl patch mc --patch @nvidia-default-runtimeclass.yaml
-```
+The helm chart will create a runtimeclass named `nvidia` which can be used to schedule GPU workloads.
 
 ### Testing the runtime class
 
@@ -156,7 +130,84 @@ kubectl run \
   nvidia-test \
   --restart=Never \
   -ti --rm \
-  --image nvcr.io/nvidia/cuda:12.5.0-base-ubuntu22.04 \
-  --overrides '{"spec": {"runtimeClassName": "nvidia"}}' \
-  nvidia-smi
+  --image nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda12.5.0 \
+  --overrides '{"spec": {"runtimeClassName": "nvidia"}}'
 ```
+
+## Collecting NVIDIA GPU debug data
+
+When debugging NVIDIA GPU issues (for example, `NVRM: GPU has fallen off the bus` messages in the kernel log), NVIDIA support will often ask for the output of `nvidia-bug-report.sh`.
+
+Talos does not allow direct shell access on the nodes, but you can still generate this report by follwing the steps below:
+
+1. Start a debug pod on the affected node:
+
+```bash
+ kubectl -n kube-system \
+    run debug-gpu \
+    --rm -it \
+    --image=ubuntu \
+    --overrides='{
+      "spec": {
+        "runtimeClassName": "nvidia",
+        "hostPID": true,
+        "hostNetwork": true,
+        "containers": [{
+          "name": "debug-gpu",
+          "image": "ubuntu",
+          "stdin": true,
+          "tty": true,
+          "securityContext": {
+            "privileged": true
+          },
+          "volumeMounts": [{
+            "name": "host-root",
+            "mountPath": "/host"
+          }]
+        }],
+        "volumes": [{
+          "name": "host-root",
+          "hostPath": {
+            "path": "/"
+          }
+        }]
+      }
+    }' \
+    --restart=Never \
+    -- /bin/bash
+```
+
+2. This will drop you into a shell inside a container running on the node. From here, you can install the necessary tools to run `nvidia-bug-report.sh` and generate the report.
+
+```bash
+apt update && apt install --no-install-recommends -y \
+    dmidecode \
+    pciutils \
+    usbutils \
+    mesa-utils \
+    kmod \
+    vulkan-tools \
+    infiniband-diags \
+    acpidump \
+    mstflint
+```
+
+3. Inside the debug container, run `nvidia-bug-report.sh`:
+
+  ```bash
+  /host/usr/local/bin/nvidia-bug-report.sh
+  ```
+
+This will generate `nvidia-bug-report.log.gz` in the current directory.
+
+4. To copy the report of the cluster:
+
+From your local machine, run the following command to copy the report from the debug pod to your local machine:
+
+    ```bash
+    kubectl cp \
+    "kube-system/debug-gpu:/nvidia-bug-report.log.gz" \
+    ./nvidia-bug-report.log.gz
+    ```
+
+You can now upload `nvidia-bug-report.log.gz` to NVIDIA support.
