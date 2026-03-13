@@ -80,18 +80,16 @@ worker.yaml is valid for cloud mode
 ```
 
 > Note: Using VMXNET network interfaces in VMware will cause the default [Flannel CNI](https://github.com/flannel-io/flannel) backend (vxlan) to not work between nodes.
-> To avoid this problem it is recommended to use Intel e1000 network interfaces or apply the patch below to use the host [gateway backend](https://github.com/flannel-io/flannel/blob/master/Documentation/backends.md).
+> To avoid this problem it is recommended to use Intel e1000 network interfaces or apply the patch below to [disable incompatible features](https://github.com/flannel-io/flannel/blob/master/Documentation/backends.md).
 
-If you apply the patch you can save this to a separate file (e.g. cni-patch.yaml) and apply it via `talosctl`.
+Add the following configuration to disable incompatible hardware acceleration features.
 
 ```yaml
-cluster:
-  network:
-    cni:
-      name: flannel
-      flannel:
-        extraArgs:
-          - --flannel-backend=host-gw
+apiVersion: v1alpha1
+kind: EthernetConfig
+name: flannel.1
+features:
+  tx-checksum-ip-generic: false
 ```
 
 ## Set environment variables
