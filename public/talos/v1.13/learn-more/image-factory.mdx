@@ -8,11 +8,13 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 <VersionWarningBanner />
 
-import { release_v1_13 } from '/snippets/custom-variables.mdx';
+import { release_v1_12 } from '/snippets/custom-variables.mdx';
 
-The Image Factory provides a way to download Talos Linux artifacts.
+The [Image Factory](https://factory.talos.dev) provides a way to download Talos Linux artifacts.
 Artifacts can be generated with customizations defined by a "schematic".
 A schematic can be applied to any of the versions of Talos Linux offered by the Image Factory to produce a "model".
+
+![Image factory home page](./images/image-factory-home.png)
 
 The following assets are provided:
 
@@ -27,8 +29,6 @@ The supported frontends are:
 * HTTP
 * PXE
 * Container Registry
-
-The official instance of Image Factory is available at https://factory.talos.dev.
 
 See [Boot Assets](../platform-specific-installations/boot-assets#image-factory) for an example of how to use the Image Factory to boot and upgrade Talos on different platforms.
 Full API documentation for the Image Factory is available at [GitHub](https://github.com/siderolabs/image-factory#readme).
@@ -99,16 +99,16 @@ Image Factory provides several frontends to retrieve models:
 The links to different models are available in the [Image Factory UI](#ui), and a full list of possible models is documented at [GitHub](https://github.com/siderolabs/image-factory#readme).
 
 In this guide we will provide a list of examples:
-* <a href={`https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_13}/metal-amd64.iso`}> amd64 ISO (for Talos {release_v1_13}, "vanilla" schematic) </a>
+* <a href={`https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_12}/metal-amd64.iso`}> amd64 ISO (for Talos {release_v1_12}, "vanilla" schematic) </a>
 
-*  <a href={`https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_13}/aws-arm64.raw.xz`}> arm64 AWS image (for Talos {release_v1_13}, "vanilla" schematic) </a>
+*  <a href={`https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_12}/aws-arm64.raw.xz`}>arm64 AWS image (for Talos {release_v1_12}, "vanilla" schematic)</a>
 
-* <a href={`https://pxe.factory.talos.dev/pxe/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_13}/metal-amd64`}> amd64 PXE boot script (for Talos {release_v1_13}, "vanilla" schematic)  </a>
+* <a href={`https://pxe.factory.talos.dev/pxe/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_12}/metal-amd64`}>amd64 PXE boot script (for Talos {release_v1_12}, "vanilla" schematic)</a>
 
-* Talos `<code>` installer image (for Talos {release_v1_13}, “vanilla” schematic, architecture is detected automatically):  
+* Talos `installer` image (for Talos {release_v1_12}, “vanilla” schematic, architecture is detected automatically):
 
 <CodeBlock lang="sh">
-{`factory.talos.dev/installer/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:${release_v1_13}`}
+{`factory.talos.dev/installer/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:${release_v1_12}`}
 </CodeBlock>
 
 The `installer` image can be used to install Talos Linux on a bare-metal machine, or to upgrade an existing Talos Linux installation.
@@ -117,13 +117,13 @@ As the Talos version and schematic ID can be changed, via an upgrade process, th
 ## UI
 
 The Image Factory UI is available at https://factory.talos.dev.
-The UI provides a way to list supported Talos Linux versions, list of system extensions available for each release, and a way to generate schematic based on the selected system extensions.
+The UI provides a way to list supported Talos Linux versions, a list of system extensions available for each release, and a way to generate schematic based on the selected system extensions.
 
 The UI operations are equivalent to API operations.
 
 ## Find schematic ID from Talos installation
 
-Image Factory always appends "virtual" system extension with the version matching schematic ID used to generate the model.
+Image Factory always appends a "virtual" system extension with the version matching schematic ID used to generate the model.
 So, for any running Talos Linux instance the schematic ID can be found by looking at the list of system extensions:
 
 ```shell
@@ -162,7 +162,7 @@ Image Factory verifies signatures of all source container images fetched:
 
 * `imager` container images (base boot assets)
 * `extensions` system extensions catalogs
-* `installer` contianer images (base installer layer)
+* `installer` container images (base installer layer)
 * Talos Linux system extension images
 
 Internally, Image Factory caches generated boot assets and signs all cached images using a private key.
@@ -175,9 +175,9 @@ As the schematic ID is content-addressable, it is not possible to guess the ID o
 
 ## Running your own image factory
 
-Image Factory can be deployed on-premises to provide in-house asset generation.
+Image Factory [can be deployed on-premises](../../../omni/self-hosted/run-image-factory-on-prem) to provide in-house asset generation.
 
-Image Factory requires following components:
+Image Factory requires the following components:
 
 * an OCI registry to store schematics (private)
 * an OCI registry to store cached assets (private)
