@@ -20,6 +20,7 @@ navigation:
             - "storage.mdx"
             - "local-storage.mdx"
             - "ceph-with-rook.mdx"
+            - "longhorn.mdx"
             - "synology-csi.mdx"
 
         - group: "Security"
