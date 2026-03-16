@@ -167,6 +167,19 @@ Replace `<your_cluster_name>` with the name you want to give your cluster:
     talosctl gen config --with-secrets secrets.yaml $CLUSTER_NAME https://$YOUR_ENDPOINT:6443
     ```
 
+    <Note>
+    The `talosctl` version (`talosctl version --client`) should match the Talos OS version installed on your nodes.
+    If you are using a newer version of `talosctl` to generate configurations for an older Talos OS, use the `--talos-version` flag to ensure compatibility.
+    For example, to generate a configuration compatible with Talos v1.13:
+
+    ```bash
+    talosctl gen config --with-secrets secrets.yaml --talos-version v1.13 $CLUSTER_NAME https://$YOUR_ENDPOINT:6443
+    ```
+
+    Even when using `--talos-version`, review the generated configuration files to verify that the Kubernetes version is supported by your target Talos OS.
+    Refer to the [support matrix](./support-matrix) to check which Kubernetes versions are compatible with your Talos version.
+    </Note>
+
 This command will generate three files:
 
 - **controlplane.yaml**: Configuration for your control plane.
