@@ -113,14 +113,32 @@ If the command fails for any reason, it can be safely restarted to continue the 
 
 > Note: When using custom/overridden Kubernetes component images, use flags `--*-image` to override the default image names.
 
-### Pruning
+### Kubernetes manifest synchronization
+
+A Talos version change might also cause changes in the bootstrap manifests.
+The updated bootstrap manifests, inline manifests and extra manifests are applied to the cluster as part of the Kubernetes upgrade process.
+
+If any services were deleted or disabled, the resources associated with them will be pruned.
+For example if [kube-proxy](https://docs.siderolabs.com/talos/latest/reference/configuration/v1alpha1/config#proxy) was disabled in the machine configuration the resources associated with it would be deleted at this stage.
+Pruning can be disabled by passing the `--manifests-no-prune` flag.
 
 > Note: Pruning is supported from Talos and talosctl v1.13 onwards.
 
-Pruning of resources from the cluster occurs when any services were deleted or disabled.
-For example if [kube-proxy](https://docs.siderolabs.com/talos/latest/reference/configuration/v1alpha1/config#proxy) was disabled in the machine configuration the resources associated with it would be deleted at this stage.
+From Talos v1.13 onwards, all Kubernetes manifests are applied via [Kubernetes Server-Side Apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/).
+Talos forces ownership of all fields it applies, even if they have a different field manager.
 
-Pruning can be disabled by passing the `--manifests-no-prune` flag.
+If you wish to manage a resource previously applied by Talos, you need to take the following steps:
+1. Remove the inline manifest or extra manifest entry from the machine configuration.
+After this step you can run `talosctl upgrade-k8s --dry-run --to <in-cluster-k8s-version>`.
+Resources affected will be marked for pruning in the output.
+2. Remove the resource entries from the talos tracking inventory configmap data block:
+
+```bash
+kubectl edit cm --namespace kube-system talos-bootstrap-manifests-inventory
+```
+
+3. Remove the `config.k8s.io/owning-inventory` annotation from the resources.
+4. Re-apply the resource with your own field manager or remove the `metadata.managedFields` manually.
 
 ### Synchronize declared and deployed configurations
 
