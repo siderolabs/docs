@@ -56,9 +56,18 @@ table {
   padding: 0.5rem 1rem 0.5rem 1.5rem;
 }
 
-/* Large Screen Max Width */
-@media (min-width: 1600px) {
-  .\32xl\:max-w-2xl {
-    max-width: 70%;
-  }
+/* Prevent Field and Type columns from wrapping */
+table td:nth-child(1),
+table td:nth-child(2) {
+  white-space: nowrap;
+}
+
+/* Widen the content area so reference tables don't need horizontal scrolling */
+#body-content,
+#content-container {
+  max-width: none;
+}
+
+.prose {
+  max-width: none;
 }
