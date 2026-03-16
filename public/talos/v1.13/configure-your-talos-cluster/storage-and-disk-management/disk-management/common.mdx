@@ -85,6 +85,10 @@ The `grow` flag controls what happens when the volume already exists:
 
 Setting `minSize` might influence disk selection - if the disk does not have enough free space to satisfy the minimum size requirement, it will not be selected for provisioning.
 
+Since Talos v1.13, `maxSize` field can take negative values.
+If the negative value is set to byte value, e.g. `-10GiB`, it means that the maximum size of the volume will be the total disk size minus that value, so in this example, the volume can grow to fill the entire disk except for 10 GiB.
+On the other hand, if the negative value is set to percentage, e.g. `-10%`, it means that the maximum size of the volume will be the free space on the disk minus that percentage, so in this example, the volume can grow to fill the entire disk except for 10% of free space.
+
 ## Volume selector
 
 The `volumeSelector` field is a CEL expression that allows you to match existing volumes based on their properties.
