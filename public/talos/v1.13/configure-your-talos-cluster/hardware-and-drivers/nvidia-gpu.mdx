@@ -100,10 +100,12 @@ kubectl label --overwrite ns gpu-operator pod-security.kubernetes.io/enforce=pri
 ```bash
 helm repo add nvidia https://helm.ngc.nvidia.com/nvidia
 helm repo update
-helm upgrade --wait  --install -n gpu-operator gpu-operator nvidia/gpu-operator \
+helm upgrade --wait --install -n gpu-operator gpu-operator nvidia/gpu-operator \
   --set driver.enabled=false \
   --set toolkit.enabled=false \
-  --set hostPaths.driverInstallDir=/usr/local/glibc/usr/lib
+  --set hostPaths.driverInstallDir=/usr/local/glibc/usr/lib \
+  --set 'devicePlugin.env[0].name=NVIDIA_CDI_HOOK_PATH' \
+  --set 'devicePlugin.env[0].value=/usr/local/bin/nvidia-cdi-hook'
 ```
 
 The helm chart will create a runtimeclass named `nvidia` which can be used to schedule GPU workloads.
@@ -121,6 +123,20 @@ kubectl run \
   -ti --rm \
   --image nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda12.5.0 \
   --overrides '{"spec": {"runtimeClassName": "nvidia"}}'
+```
+
+### Testing with GPU resource limits (CDI)
+
+Pods that request `nvidia.com/gpu` resource limits use the CDI (Container Device Interface) code path.
+This verifies that the device plugin's CDI spec hooks resolve correctly:
+
+```bash
+kubectl run \
+  nvidia-smi \
+  --restart=Never \
+  -ti --rm \
+  --image nvcr.io/nvidia/cuda:12.8.1-base-ubuntu24.04 \
+  --overrides '{"spec": {"runtimeClassName": "nvidia", "containers": [{"name": "nvidia-smi", "image": "nvcr.io/nvidia/cuda:12.8.1-base-ubuntu24.04", "command": ["nvidia-smi"], "resources": {"limits": {"nvidia.com/gpu": "1"}}}]}}'
 ```
 
 ## Collecting NVIDIA GPU debug data
