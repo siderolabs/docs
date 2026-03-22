@@ -1,133 +1,225 @@
 ---
-title: Expose Omni with Nginx (HTTPS)
-description: Configure Nginx as an HTTPS reverse proxy for Omni
+title: "Expose Omni with Nginx (HTTPS)"
+description: "Configure Nginx as an HTTPS reverse proxy for on-premises Omni deployments."
 ---
 
-### Omni deployment configuration
+This guide assumes Omni is deployed following the [Run Omni On-Prem](./run-omni-on-prem) guide. However, the flags used in the **Deploy Omni** section are modified as shown in **Step 1** so that Nginx handles all public traffic.
 
-You need to deploy an omni instance the [how to deploy omni on prem guide](./run-omni-on-prem.mdx), with the following flags set:
+In this setup, Nginx runs in front of Omni and routes traffic to three public endpoints:
+
+| Endpoint | Purpose |
+| --- | --- |
+| `https://$OMNI_DOMAIN_NAME` | Omni UI and main API |
+| `https://api.$OMNI_DOMAIN_NAME` | SideroLink machine API |
+| `https://kube.$OMNI_DOMAIN_NAME` | Kubernetes proxy |
+
+Omni itself listens only on localhost, while Nginx handles TLS termination and all external traffic.
+
+## Prerequisites
+
+Before proceeding, ensure the following:
+
+- Install Nginx on the machine serving public traffic
+- Open ports 80 and 443 on the Nginx machine
+- Create the following DNS A records and point them to the public IP address of the Nginx machine:
+    - `<omni-domain-name>`
+    - `api.<omni-domain-name>`
+    - `kube.<omni-domain-name>`
+
+Replace `<omni-domain-name>` with your Omni domain name (for example, `omni.example.com`) in the DNS records above and throughout this guide.
+
+**If Nginx and Omni run on the same machine**, no additional network configuration is required. The `127.0.0.1` addresses in the Nginx configuration proxy traffic to Omni over localhost.
+
+**If Nginx and Omni run on separate machines:**
+- The Omni machine must be reachable from the Nginx machine over the internal network.
+- Open ports 8080, 8090, and 8100 on the Omni machine
+- Replace `127.0.0.1` in the Nginx configuration file with the internal IP address of the Omni machine
+
+## Step 1: Start Omni with the Nginx Flags
+
+Follow the [Run Omni On-Prem](./run-omni-on-prem) guide to deploy Omni on-prem.  
+Before starting the Omni instance using either `docker run` or `docker compose`, complete the following steps.
+
+1. Verify that the required environment variables from the on-prem guide are set in your shell:
+
+	```bash
+	echo $OMNI_DOMAIN_NAME
+	echo $OMNI_ACCOUNT_UUID
+	```
+
+2. If any are variables are missing, export them now:
+
+	```bash
+	export OMNI_DOMAIN_NAME=<omni-domain>     # e.g omni.example.com
+	export OMNI_ACCOUNT_UUID=<account-id>      # your Omni account ID
+	```
+
+3. Start Omni using the following flags. Remember to include the authentication flags required by your authentication provider. For more details, see the [configure authentication guide](./run-omni-on-prem#configure-authentication):
+
+	```bash
+	--name=$OMNI_NAME \
+	--private-key-source=file:///omni.asc \
+	--bind-addr=127.0.0.1:8080 \
+	--advertised-api-url=https://$OMNI_DOMAIN_NAME/ \
+	--siderolink-api-bind-addr=127.0.0.1:8090 \
+	--siderolink-api-advertised-url=https://api.$OMNI_DOMAIN_NAME:443 \
+	--k8s-proxy-bind-addr=127.0.0.1:8100 \
+	--advertised-kubernetes-proxy-url=https://kube.$OMNI_DOMAIN_NAME/ \
+	--account-id=$OMNI_ACCOUNT_UUID
+	# Also add the authentication flags according to your setup
+	```
+
+    <Info>Authentication flags are not included here. Add the appropriate flags for your auth provider as described in the [authentication configuration guide](./run-omni-on-prem#configure-authentication). </Info>
+
+    **Example:** Starting an Omni instance might look similar to the following:
+
+    ```bash
+    docker run \
+        --net=host \
+        --cap-add=NET_ADMIN \
+        --device /dev/net/tun \
+        -v $PWD/etcd:/_out/etcd \
+        -v $PWD/omni.asc:/omni.asc \
+        ghcr.io/siderolabs/omni:<tag> \
+            --name=$OMNI_NAME \
+            --private-key-source=file:///omni.asc \
+            --bind-addr=127.0.0.1:8080 \
+            --advertised-api-url=https://$OMNI_DOMAIN_NAME/ \
+            --siderolink-api-bind-addr=127.0.0.1:8090 \
+            --siderolink-api-advertised-url=https://api.$OMNI_DOMAIN_NAME:443 \
+            --k8s-proxy-bind-addr=127.0.0.1:8100 \
+            --advertised-kubernetes-proxy-url=https://kube.$OMNI_DOMAIN_NAME/ \
+            --account-id=$OMNI_ACCOUNT_UUID \
+            --auth-auth0-enabled=true \
+            --auth-auth0-domain=<Auth0 domain> \
+            --auth-auth0-client-id=<Auth0 client ID> \
+            --initial-users=<email address>
+    ```
+## Step 2: Provision TLS Certificates
+
+Use `acme` or `certbot` to generate TLS certificates for all three subdomains. **Step 3** expects the certificates at the following paths. If your certificates are stored elsewhere, update the paths in the Nginx config accordingly.
+
+| Subdomain | Certificate path |
+|---|---|
+| `$OMNI_DOMAIN_NAME` | `/var/lib/acme/omni/` |
+| `api.$OMNI_DOMAIN_NAME` | `/var/lib/acme/omni_api/` |
+| `kube.$OMNI_DOMAIN_NAME` | `/var/lib/acme/omni_kube/` |
+
+## Step 3: Apply the Nginx Configuration
+
+Run the following command to write the Nginx config:
+
+```sh
+cat <<EOF > /etc/nginx/nginx.conf
+http {
+    proxy_redirect off;
+    proxy_http_version 1.1;
+    proxy_connect_timeout 60s;
+    # Omni requires long timeouts for long-lived connections
+    proxy_send_timeout 1h;
+    proxy_read_timeout 1h;
+
+    # Used for WebSocket proxying
+    map \$http_upgrade \$connection_upgrade {
+        default upgrade;
+        '' close;
+    }
+
+    # Redirect HTTP to HTTPS
+    server {
+        listen 0.0.0.0:80;
+        listen [::0]:80;
+        server_name $OMNI_DOMAIN_NAME;
+        location / {
+            return 301 https://\$host\$request_uri;
+        }
+    }
+
+    map \$http_content_type \$is_grpc {
+        default 0;
+        "application/grpc" 1;
+    }
+
+    # Main Omni API — routes gRPC and HTTP traffic
+    server {
+        listen 0.0.0.0:443 http2 ssl;
+        listen [::0]:443 http2 ssl;
+        server_name $OMNI_DOMAIN_NAME;
+        ssl_certificate /var/lib/acme/omni/fullchain.pem;
+        ssl_certificate_key /var/lib/acme/omni/key.pem;
+        ssl_trusted_certificate /var/lib/acme/omni/chain.pem;
+
+        location / {
+            error_page 418 = @grpc;
+            error_page 419 = @http;
+            if (\$is_grpc) {
+                return 418;
+            }
+            return 419;
+        }
+
+        location @grpc {
+            # Long timeouts required for long-lived gRPC stream connections
+            grpc_read_timeout 1h;
+            grpc_send_timeout 1h;
+            grpc_pass grpc://127.0.0.1:8080;
+        }
+
+        location @http {
+            proxy_pass http://127.0.0.1:8080;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection \$connection_upgrade;
+        }
+    }
+
+    # SideroLink (Machine) API
+    server {
+        listen 0.0.0.0:443 http2 ssl;
+        listen [::0]:443 http2 ssl;
+        server_name api.$OMNI_DOMAIN_NAME;
+        ssl_certificate /var/lib/acme/omni_api/fullchain.pem;
+        ssl_certificate_key /var/lib/acme/omni_api/key.pem;
+        ssl_trusted_certificate /var/lib/acme/omni_api/chain.pem;
+
+        location / {
+            # Long timeouts required for long-lived gRPC stream connections
+            grpc_read_timeout 1h;
+            grpc_send_timeout 1h;
+            grpc_pass grpc://127.0.0.1:8090;
+        }
+    }
+
+    # Kubernetes Proxy API
+    server {
+        listen 0.0.0.0:443 http2 ssl;
+        listen [::0]:443 http2 ssl;
+        server_name kube.$OMNI_DOMAIN_NAME;
+        ssl_certificate /var/lib/acme/omni_kube/fullchain.pem;
+        ssl_certificate_key /var/lib/acme/omni_kube/key.pem;
+        ssl_trusted_certificate /var/lib/acme/omni_kube/chain.pem;
+
+        location / {
+            proxy_pass http://127.0.0.1:8100;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection \$connection_upgrade;
+        }
+    }
+}
+EOF
+```
+
+Then reload Nginx:
 
 ```bash
---name=$OMNI_NAME
---private-key-source=file:///omni.asc
---bind-addr=127.0.0.1:8080
---advertised-api-url=https://$OMNI_DOMAIN/
---siderolink-api-bind-addr=127.0.0.1:8090
---siderolink-api-advertised-url=https://api.$OMNI_DOMAIN:443
---k8s-proxy-bind-addr=127.0.0.1:8100
---advertised-kubernetes-proxy-url=https://kube.$OMNI_DOMAIN/
---account-id=$OMNI_UUID
-## Also add the authentication flags according to your setup
+nginx -t && systemctl reload nginx
 ```
 
-### Certificates
+## Endpoints
 
-You can use acme or certbot to generate certificates for your domain. In the following nginx config, the are stored in `/var/lib/acme/omni/` and `/var/lib/acme/omni_api/` and `/var/lib/acme/omni_kube/`. Make sure to change the paths to your own or to output the certificates to those paths.
+Once Nginx is running, your Omni instance is accessible at:
 
-### Nginx configuration
-
-Use the following configuration to expose omni with nginx. Make sure to change the domain name (`$OMNI_DOMAIN`) to your own domain and to update the certificate paths if applicable.
-
-```nginx
-http {
-	proxy_redirect off;
-	proxy_http_version 1.1;
-
-	proxy_connect_timeout 60s;
-
-	# Omni needs long timeouts for the long-lived connections
-	proxy_send_timeout 1h;
-	proxy_read_timeout 1h;
-
-	# $connection_upgrade is used for websocket proxying
-	map $http_upgrade $connection_upgrade {
-		default upgrade;
-		'' close;
-	}
-
-	# Omni HTTPS redirection
-	server {
-		listen 0.0.0.0:80;
-		listen [::0]:80;
-		server_name $OMNI_DOMAIN;
-		location / {
-			return 301 https://$host$request_uri;
-		}
-	}
-
-	map $http_content_type $is_grpc {
-		default 0;
-		"application/grpc" 1;
-	}
-
-	# Omni main API
-	server {
-		listen 0.0.0.0:443 http2 ssl;
-		listen [::0]:443 http2 ssl;
-		server_name $OMNI_DOMAIN;
-		ssl_certificate /var/lib/acme/omni/fullchain.pem;
-		ssl_certificate_key /var/lib/acme/omni/key.pem;
-		ssl_trusted_certificate /var/lib/acme/omni/chain.pem;
-		location / {
-			error_page 418 = @grpc;
-			error_page 419 = @http;
-
-			if ($is_grpc) {
-				return 418;
-			}
-
-			return 419;
-		}
-
-		# Omni main GRPC API
-		location @grpc {
-			# Omni needs long timeouts for the long-lived GRPC stream connections
-			grpc_read_timeout 1h;
-			grpc_send_timeout 1h;
-			grpc_pass grpc://127.0.0.1:8080;
-		}
-
-		# Omni main HTTP API
-		location @http {
-			proxy_pass http://127.0.0.1:8080;
-			proxy_set_header Upgrade $http_upgrade;
-			proxy_set_header Connection $connection_upgrade;
-		}
-	}
-
-	# Omni SideroLink (a.k.a. Machine) API
-	server {
-		listen 0.0.0.0:443 http2 ssl;
-		listen [::0]:443 http2 ssl;
-		server_name api.$OMNI_DOMAIN;
-		ssl_certificate /var/lib/acme/omni_api/fullchain.pem;
-		ssl_certificate_key /var/lib/acme/omni_api/key.pem;
-		ssl_trusted_certificate /var/lib/acme/omni_api/chain.pem;
-		location / {
-			# Omni needs long timeouts for the long-lived GRPC stream connections
-			grpc_read_timeout 1h;
-			grpc_send_timeout 1h;
-			grpc_pass grpc://127.0.0.1:8090;
-		}
-	}
-
-	# Omni Kube API
-	server {
-		listen 0.0.0.0:443 http2 ssl;
-		listen [::0]:443 http2 ssl;
-		server_name kube.$OMNI_DOMAIN;
-		ssl_certificate /var/lib/acme/omni_kube/fullchain.pem;
-		ssl_certificate_key /var/lib/acme/omni_kube/key.pem;
-		ssl_trusted_certificate /var/lib/acme/omni_kube/chain.pem;
-		location / {
-			proxy_pass http://127.0.0.1:8100;
-			proxy_set_header Upgrade $http_upgrade;
-			proxy_set_header Connection $connection_upgrade;
-		}
-	}
-}
-```
-
-## How to use
-
-The omni instance will be available at `https://$OMNI_DOMAIN/`, the API at `https://api.$OMNI_DOMAIN/` and the kubernetes proxy at `https://kube.$OMNI_DOMAIN/`.
+| Service | URL |
+|---|---|
+| Omni UI & API | `https://$OMNI_DOMAIN_NAME/` |
+| SideroLink (Machine) API | `https://api.$OMNI_DOMAIN_NAME/` |
+| Kubernetes Proxy | `https://kube.$OMNI_DOMAIN_NAME/` |
