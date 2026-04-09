@@ -434,12 +434,12 @@ LoadBalancer contains load balancer service configuration. It is responsible for
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`dialTimeout`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>duration</td>
-      <td>DialTimeout is the timeout used by the load balancer service when dialing backend control plane nodes. Format: must be a valid Go duration (e.g., '10s', '1h30m').<br />**Default:** `15s`</td>
+      <td>DialTimeout is the timeout used by the load balancer service when dialing backend control plane nodes. Format: must be a valid Go duration (e.g., '10s', '1h30m').<br />**Default:** `30s`</td>
     </tr>
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`keepAlivePeriod`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>duration</td>
-      <td>KeepAlivePeriod is the period used by the load balancer service for keep-alive pings to backend control plane nodes. Format: must be a valid Go duration (e.g., '10s', '1h30m').<br />**Default:** `30s`</td>
+      <td>KeepAlivePeriod is the period AAAA used by the load balancer service for keep-alive pings to backend control plane nodes. Format: must be a valid Go duration (e.g., '10s', '1h30m').<br />**Default:** `30s`</td>
     </tr>
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`tcpUserTimeout`</td>
