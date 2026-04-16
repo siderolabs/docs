@@ -2350,7 +2350,8 @@
               "omni/getting-started/getting-started",
               "omni/getting-started/use-kubectl-with-omni",
               "omni/getting-started/create-a-cluster",
-              "omni/getting-started/support-matrix"
+              "omni/getting-started/support-matrix",
+              "omni/getting-started/talos-version-support-policy"
             ]
           },
           {

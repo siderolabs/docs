@@ -17,6 +17,7 @@ navigation:
             - "use-kubectl-with-omni.mdx"
             - "create-a-cluster.mdx"
             - "support-matrix.mdx"
+            - "talos-version-support-policy.mdx"
 
         - group: "Self Hosted"
           folder: "omni/self-hosted"
