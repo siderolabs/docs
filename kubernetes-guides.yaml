@@ -31,6 +31,7 @@ navigation:
             - "pod-security.mdx"
             - "seccomp-profiles.mdx"
             - "usernamespace.mdx"
+            - "wiz-kubernetes-connector.mdx"
 
         - group: "Monitoring & Observability"
           folder: "kubernetes-guides/monitoring-and-observability"

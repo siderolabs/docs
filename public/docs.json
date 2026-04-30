@@ -2777,7 +2777,8 @@
             "pages": [
               "kubernetes-guides/security/pod-security",
               "kubernetes-guides/security/seccomp-profiles",
-              "kubernetes-guides/security/usernamespace"
+              "kubernetes-guides/security/usernamespace",
+              "kubernetes-guides/security/wiz-kubernetes-connector"
             ]
           },
           {

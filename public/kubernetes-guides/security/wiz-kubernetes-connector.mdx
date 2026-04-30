@@ -1,0 +1,170 @@
+---
+title: "Install the Wiz Kubernetes Connector"
+description: "In this guide you will learn how to install the Wiz Kubernetes Connector on Talos using Helm."
+---
+
+import { k8s_release } from '/snippets/custom-variables.mdx';
+
+The [Wiz Kubernetes Connector](https://docs.wiz.io/wiz-docs/docs/kubernetes-connector) provides security visibility into your Kubernetes clusters by scanning for vulnerabilities, misconfigurations, and compliance issues. 
+
+This guide covers how to install the connector on Talos Linux.
+
+## Prerequisites
+
+Before you begin, ensure you have the following:
+
+- Talos 1.83 or later
+- A Wiz account with access to the Wiz portal.
+- A Wiz Service Account with **Kubernetes Connector** permissions. You can create one in the Wiz portal under **Settings > Service Accounts**.
+- `helm` installed on your local machine.
+- `kubectl` configured to access your Talos cluster.
+
+## Set up the Wiz Kubernetes connector credentials
+ 
+To install the Wiz Kubernetes Connector, you need to set your Wiz credentials as shell variables and create a Helm values file that references them.
+ 
+**Step 1.** Export your Wiz credentials as shell variables, replacing each placeholder with the corresponding value from Wiz:
+ 
+```bash
+export CLUSTER_NAME="<cluster-name>" # e.g. my-cluster
+export WIZ_API_ENDPOINT="<wiz-api-endpoint>"  # e.g. https://api.us1.app.wiz.io/graphql
+export WIZ_CLIENT_ID="<wiz-client-id>" # e.g. sa-1a2b3c4d-5e6f
+export WIZ_CLIENT_SECRET="<wiz-client-secret>" # e.g. eyJhbGciOiJSUzI1NiIsInR5cCI
+```
+ 
+**Step 2.** Create a Helm values file named `wiz-values.yaml` by running the following command. This file configures authentication with the Wiz API and specifies the cluster to register:
+ 
+```bash
+cat <<EOF > wiz-values.yaml
+global:
+  wizApiToken:
+    secret:
+      name: wiz-api-credentials
+      clientIdKey: clientId
+      clientTokenKey: clientToken
+  clusterExternalId: ${CLUSTER_NAME}
+  wizConnector:
+    apiEndpoint: ${WIZ_API_ENDPOINT}
+EOF
+```
+ 
+With your credentials set and your values file in place, you are ready to install the connector.
+
+## Install the Wiz Kubernetes connector
+
+You can install the Wiz Kubernetes Connector in one of the following ways:
+
+- **Using Omni manifest sync**: Recommended if you manage clusters with [Omni](https://www.siderolabs.com/omni-for-kubernetes-cluster-management). This approach renders the Helm chart to static manifests that Omni applies automatically after the cluster becomes available.
+- **Using Helm**: Recommended if you manage your clusters directly without Omni.
+
+### Using Omni manifest sync
+
+With [Omni manifest sync](../../omni/cluster-management/sync-kubernetes-manifests), you manage the Wiz connector declaratively as part of your cluster configuration. First render the Helm chart to static manifests, then reference those manifests in your cluster template.
+
+**Step 1.** Render the Helm chart to a manifest file:
+
+```bash
+helm repo add wiz https://charts.wiz.io
+helm repo update
+helm template wiz-kubernetes-connector wiz/wiz-kubernetes-connector \
+    --namespace wiz \
+    --values wiz-values.yaml > wiz-connector.yaml
+```
+
+**Step 2.** Create a `wiz-prereqs.yaml` file with the namespace and secret:
+
+```bash
+cat <<EOF > wiz-prereqs.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: wiz
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: wiz-api-credentials
+  namespace: wiz
+type: Opaque
+stringData:
+  clientId: ${WIZ_CLIENT_ID}
+  clientToken: ${WIZ_CLIENT_SECRET}
+EOF
+```
+
+**Step 3.** Reference both manifests in your Omni cluster template:
+
+<CodeBlock lang="yaml">
+  {`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: wiz-prereqs\n      file: wiz-prereqs.yaml\n      mode: full\n    - name: wiz-connector\n      file: wiz-connector.yaml\n      mode: full\n...\n# Include machines for template`}
+</CodeBlock>
+
+**Step 4.** Apply the cluster template:
+
+```bash
+omnictl cluster template sync --file cluster-template.yaml
+```
+
+**Step 5.** Verify that the connector pods are running:
+
+```bash
+kubectl get pods -n wiz
+```
+
+The connector pods should appear in the `Running` state. After startup, the connector registers with the Wiz portal and begins scanning the cluster. You can verify the connection in the Wiz portal under **Settings > Connectors**.
+
+### Using Helm
+
+If you are not using Omni, you can install the connector directly with Helm.
+
+**Step 1.** Add the Wiz Helm repository:
+
+```bash
+helm repo add wiz https://charts.wiz.io
+helm repo update
+```
+
+**Step 2.** Create a dedicated namespace for the Wiz connector:
+
+```bash
+kubectl create namespace wiz
+```
+
+**Step 3.** Create the API credentials secret using your Wiz Client ID and Client Secret:
+
+```bash
+kubectl create secret generic wiz-api-credentials \
+    --namespace wiz \
+    --from-literal=clientId="${WIZ_CLIENT_ID}" \
+    --from-literal=clientToken="${WIZ_CLIENT_SECRET}"
+```
+
+**Step 4.** Install the connector:
+
+```bash
+helm install wiz-kubernetes-connector wiz/wiz-kubernetes-connector \
+    --namespace wiz \
+    --values wiz-values.yaml
+```
+
+**Step 5.** Verify that the connector pods are running:
+
+```bash
+kubectl get pods -n wiz
+```
+
+You should see the connector pods in a `Running` state. The connector will register with the Wiz portal and begin scanning your cluster. You can confirm the connection in the Wiz portal under **Settings > Connectors**.
+
+## Uninstall the Wiz Kubernetes connector
+
+To remove the connector when installed via Helm:
+
+```bash
+helm uninstall wiz-kubernetes-connector --namespace wiz
+kubectl delete namespace wiz
+```
+
+When installed via Omni, remove the manifest entries from your cluster template and re-sync:
+
+```bash
+omnictl cluster template sync --file cluster-template.yaml
+```
