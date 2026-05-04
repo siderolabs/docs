@@ -24,16 +24,17 @@ type Product struct {
 
 // Release is the subset of the GitHub releases API response we need.
 type Release struct {
-	TagName    string `json:"tag_name"`
-	Prerelease bool   `json:"prerelease"`
-	Body       string `json:"body"`
-	HTMLURL    string `json:"html_url"`
+	TagName     string `json:"tag_name"`
+	Prerelease  bool   `json:"prerelease"`
+	Body        string `json:"body"`
+	HTMLURL     string `json:"html_url"`
+	PublishedAt string `json:"published_at"`
 }
 
-// updateBlock holds a rendered <Update> block and its parsed semver for sorting.
+// updateBlock holds a rendered <Update> block and its publish timestamp for sorting.
 type updateBlock struct {
-	content string
-	version []int
+	content     string
+	publishedAt string
 }
 
 var (
@@ -123,7 +124,7 @@ func main() {
 	fmt.Fprintln(os.Stderr, "  Merging and sorting...")
 
 	sort.Slice(allBlocks, func(i, j int) bool {
-		return versionGreater(allBlocks[i].version, allBlocks[j].version)
+		return allBlocks[i].publishedAt > allBlocks[j].publishedAt
 	})
 
 	var blockStrings []string
@@ -210,8 +211,8 @@ func fetchReleases(p Product, token string) ([]updateBlock, error) {
 		block += "</Update>"
 
 		blocks = append(blocks, updateBlock{
-			content: block,
-			version: parseVersion(r.TagName),
+			content:     block,
+			publishedAt: r.PublishedAt,
 		})
 	}
 

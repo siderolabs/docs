@@ -4,6 +4,31 @@ description: "Product updates and announcements"
 rss: true
 ---
 
+<Update label="v1.2.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.2.0)
+
+  ### Authentication Support (Enterprise)
+
+  Image Factory Enterprise now supports API key-based authentication.
+  When enabled, all schematic access requires the caller to be authenticated.
+  Each schematic records its owner at creation time, making schematics private to the user who created them.
+  Authentication is configured via a set of usernames and associated API keys.
+
+  **Note:** This feature is enterprise-only and is subject to the BUSL-1.1 license.
+
+  ### French Locale
+
+  The Image Factory frontend now includes a French (fr) locale, adding translations for the web interface.
+
+  ### Stable Resolution for 'latest' Tag
+
+  The `latest` tag in the registry frontend now resolves to the latest non-prerelease (stable) version instead of being passed through to the upstream registry.
+
+  ### New /talosctl/:version Endpoint
+
+  A new `/talosctl/:version` endpoint has been added that lists all downloadable talosctl binaries for a given Talos version.
+</Update>
+
 <Update label="v1.13.0" tags={["Talos"]}>
   [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.13.0)
 
@@ -216,6 +241,27 @@ rss: true
   Talos now supports VRF (Virtual Routing and Forwarding) via the new `VRFConfig` machine config document.
 </Update>
 
+<Update label="v1.7.1" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.7.1)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  A [EULA](https://siderolabs.com/eula/) agreement has been added to Omni which must be accepted in order to continue using it.
+
+  This agreement can be accepted through UI or programmatically either by adding the below flags:
+  ```sh
+  --eula-accept-name=Your Name
+  --eula-accept-email=your@email.com
+  ```
+
+  Or if using `--config-path` with the below configuration:
+  ```yaml
+  eulaAccept:
+    name: Your Name
+    email: your@email.com
+  ```
+</Update>
+
 <Update label="v1.12.7" tags={["Talos"]}>
   [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.7)
 
@@ -229,6 +275,174 @@ rss: true
   Talos is built with Go 1.25.9.
 </Update>
 
+<Update label="v1.7.0" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.7.0)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  A [EULA](https://siderolabs.com/eula/) agreement has been added to Omni which must be accepted in order to continue using it.
+
+  This agreement can be accepted through UI or programmatically either by adding the below flags:
+  ```sh
+  --eula-accept-name=Your Name
+  --eula-accept-email=your@email.com
+  ```
+
+  Or if using `--config-path` with the below configuration:
+  ```yaml
+  eulaAccept:
+    name: Your Name
+    email: your@email.com
+  ```
+
+  ### Allow Machine Request Destroy
+
+  Machine requests are now created without a controller owner, allowing operators and admins to teardown stuck or unwanted requests directly. The controller replaces destroyed requests automatically to maintain the desired machine count.
+
+  ### Browsable Audit Logs in the UI
+
+  Audit logs are now browsable directly in the Omni UI, making it easier to review audit events without CLI access.
+
+  ### Human-Readable Config Validation Errors
+
+  Configuration validation errors are now presented in a human-readable format, making it easier to diagnose and fix configuration issues.
+
+  ### Move Omni Defaults to JSONSchema
+
+  Omni default config values are now defined in the JSONSchema.
+
+  ### Direct Talos Node Access via SideroLink
+
+  All Talos nodes can now be accessed directly via their SideroLink endpoint, removing the need to route through the load balancer for Talos API calls. Allowing direct access to worker nodes when control plane nodes are unavailable.
+
+  ### Kubernetes Manifests Sync
+
+  Omni now supports syncing Kubernetes manifests directly to managed clusters. Manifests can be defined in cluster templates, allowing declarative management of Kubernetes resources alongside cluster configuration.
+
+  ### `omnictl edit` Command
+
+  A new `omnictl edit` command has been added, allowing users to edit Omni resources interactively from the CLI.
+
+  ### Allow Using `talosctl debug`
+
+  Update Omni Talos API proxy code to elevate permissions for `talosctl debug` command.
+
+  ### Workload Proxy Subdomain Options
+
+  The workload proxy now supports an empty subdomain configuration and a new `useOmniSubdomain` option, providing more flexibility in how workload proxy URLs are structured.
+</Update>
+
+<Update label="v1.1.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.1.0)
+
+  ### SPDX SBOM viewer
+
+  Added a new SPDX SBOM section to the Image Factory Enterprise.
+  Users can now request SBOMs for a specific Talos schematic directly from the Image Factory Enterprise interface.
+
+  **Note:** This feature is enterprise-only and is subject to the BUSL-1.1 license.
+</Update>
+
+<Update label="v1.6.5" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.5)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
+
+  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
+  * `--audit-log-dir` (`.logs.audit.path`)
+  * `--secondary-storage-path` (`.storage.secondary.path`)
+  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
+  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
+  * `--log-storage-path` (`.logs.machine.storage.path`)
+  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
+  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
+  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
+  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
+  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
+
+  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
+</Update>
+
+<Update label="v1.6.4" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.4)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
+
+  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
+  * `--audit-log-dir` (`.logs.audit.path`)
+  * `--secondary-storage-path` (`.storage.secondary.path`)
+  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
+  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
+  * `--log-storage-path` (`.logs.machine.storage.path`)
+  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
+  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
+  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
+  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
+  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
+
+  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
+</Update>
+
+<Update label="v1.6.3" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.3)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
+
+  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
+  * `--audit-log-dir` (`.logs.audit.path`)
+  * `--secondary-storage-path` (`.storage.secondary.path`)
+  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
+  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
+  * `--log-storage-path` (`.logs.machine.storage.path`)
+  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
+  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
+  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
+  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
+  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
+
+  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
+</Update>
+
+<Update label="v1.0.17" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.17)
+
+
+</Update>
+
+<Update label="v1.6.2" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.2)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
+
+  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
+  * `--audit-log-dir` (`.logs.audit.path`)
+  * `--secondary-storage-path` (`.storage.secondary.path`)
+  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
+  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
+  * `--log-storage-path` (`.logs.machine.storage.path`)
+  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
+  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
+  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
+  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
+  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
+
+  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
+</Update>
+
+<Update label="v1.0.16" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.16)
+
+
+</Update>
+
 <Update label="v1.12.6" tags={["Talos"]}>
   [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.6)
 
@@ -238,6 +452,161 @@ rss: true
   runc: 1.3.5
 
   Talos is built with Go 1.25.8.
+</Update>
+
+<Update label="v1.6.1" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.1)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
+
+  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
+  * `--audit-log-dir` (`.logs.audit.path`)
+  * `--secondary-storage-path` (`.storage.secondary.path`)
+  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
+  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
+  * `--log-storage-path` (`.logs.machine.storage.path`)
+  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
+  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
+  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
+  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
+  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
+
+  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
+</Update>
+
+<Update label="v1.6.0" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.0)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
+
+  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
+  * `--audit-log-dir` (`.logs.audit.path`)
+  * `--secondary-storage-path` (`.storage.secondary.path`)
+  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
+  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
+  * `--log-storage-path` (`.logs.machine.storage.path`)
+  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
+  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
+  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
+  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
+  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
+
+  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
+
+  ### Talos and Kubernetes CA Rotation
+
+  Omni now supports rotating the Talos and Kubernetes Certificate Authorities for managed clusters.
+
+  ### Talos and Kubernetes Versions in ClusterStatus
+
+  The `ClusterStatus` resource now includes `talos_version` and `kubernetes_version` fields, making cluster version information available programmatically. They are now also shown in the cluster list in the UI.
+
+  ### Pending and Historical Config Diffs in UI
+
+  The UI now shows pending and historical configuration diffs, making it easy to review what changed and when.
+
+  ### Force Machine Destroy
+
+  A `--force` flag has been added to the machine destroy command (and a corresponding UI option) to forcibly remove machines that are stuck or unresponsive.
+
+  ### Helm Chart v2
+
+  A new Helm chart v2 has been implemented with improved structure and more configurable options.
+  More configuration values are now exposed in the Helm chart, giving operators greater flexibility when deploying Omni.
+
+  ### Installation Media Wizard
+
+  The installation media flow now uses a wizard-based UI by default, replacing the previous modal dialog. Presets may now also be saved, allowing for future reuse.
+
+  ### Machine Log Storage Cleanup
+
+  Global size-based cleanup has been added for machine log storage, preventing unbounded disk usage.
+  Configurable options for audit log cleanup have also been added.
+
+  ### Minimum Talos Version Bump
+
+  The minimum supported Talos version for new clusters has been bumped to **1.8**.
+
+  ### Minor UI Improvements
+
+  Other minor UI improvements part of this release:
+
+  * Talos and Kubernetes versions are now shown in the cluster list.
+  * Node name and UUID are shown in the support bundle modal.
+  * Machine set pools now have a collapse/expand toggle.
+  * Cluster scaling has been moved to a modal dialog.
+  * Getting started guidance and empty-state pages have been added for clusters, machines, and machine classes.
+  * Instructions for adding machines and exporting cluster templates are now shown in the UI.
+  * Clarification text has been added to backup settings.
+  * YouTube video embedding is now supported in documentation/onboarding flows.
+  * The frontend authentication flow no longer requires an explicit login click.
+  * Resource labels use new colors for improved visual clarity.
+
+  ### Detailed Node Disk Information
+
+  The node details page now shows detailed disk information, including disk model, size, and type.
+
+  ### PCI Devices on Node Details
+
+  The node details page now includes a dedicated section listing all PCI devices present on the node.
+
+  ### Reset Node Unique Tokens
+
+  It is now possible to reset the unique token for a node, which can be useful for re-enrolling machines.
+
+  ### OIDC Token Cache Isolation for Kubeconfigs
+
+  Generated kubeconfigs now use isolated OIDC token caches, preventing token collisions between different kubeconfig users.
+
+  ### Pending Machines
+
+  Machines that were previously rejected can now be unrejected from the UI, allowing them to be accepted into Omni.
+
+  Rejected machines can also now be deleted directly from the UI.
+
+  ### SAML Logout Flow
+
+  Omni now implements the SAML logout flow, properly terminating sessions with the SAML identity provider on sign-out.
+
+  ### SQLite Metrics and Cleanup Counters
+
+  Metrics for the SQLite state backend have been exposed, along with cleanup counters for better observability.
+
+  ### Upgrade Parallelism
+
+  The upgrade parallelism for machine sets can now be configured via cluster templates and the UI, allowing operators to control how many machines are upgraded concurrently.
+
+  ### User and Service Account Activity Tracking
+
+  Omni now tracks the last activity time for users and service accounts, providing better visibility into account usage.
+
+  ### User Management gRPC Endpoints
+
+  New `ManagementService` gRPC endpoints have been added for user operations, enabling programmatic user management.
+
+  ### Configurable User and Service Account Limits
+
+  Operators can now enforce configurable limits on the number of users and service accounts that can be created in Omni.
+
+  ### Custom Vault Kubernetes Auth Mount Path
+
+  The Vault Kubernetes authentication mount path is now configurable, supporting non-default Vault configurations.
+</Update>
+
+<Update label="v1.5.11" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.11)
+
+
+</Update>
+
+<Update label="v1.5.10" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.10)
+
+
 </Update>
 
 <Update label="v1.12.5" tags={["Talos"]}>
@@ -250,6 +619,138 @@ rss: true
   etcd: 3.6.8
 
   Talos is built with Go 1.25.8.
+</Update>
+
+<Update label="v1.5.9" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.9)
+
+
+</Update>
+
+<Update label="v1.5.8" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.8)
+
+
+</Update>
+
+<Update label="v1.0.15" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.15)
+
+
+</Update>
+
+<Update label="v1.5.7" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.7)
+
+
+</Update>
+
+<Update label="v1.5.6" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.6)
+
+
+</Update>
+
+<Update label="v1.5.5" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.5)
+
+
+</Update>
+
+<Update label="v1.4.11" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.11)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
+
+  **1. New Required Flag**
+  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
+  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
+
+  **2. Audit Logging Changes**
+  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
+  * **Default:** `true`.
+  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
+
+  **3. Automatic Migration**
+  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
+
+  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
+
+  **4. Deprecated Flags (Kept for Migration)**
+  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
+  * `--audit-log-dir` (`.logs.audit.path`)
+  * `--secondary-storage-path` (`.storage.secondary.path`)
+  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
+  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
+  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
+  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
+  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
+  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
+  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
+
+  **5. Removed Flags**
+  The following flags have been removed and are no longer supported:
+  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
+  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
+</Update>
+
+<Update label="v1.5.4" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.4)
+
+
+</Update>
+
+<Update label="v1.4.10" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.10)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
+
+  **1. New Required Flag**
+  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
+  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
+
+  **2. Audit Logging Changes**
+  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
+  * **Default:** `true`.
+  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
+
+  **3. Automatic Migration**
+  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
+
+  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
+
+  **4. Deprecated Flags (Kept for Migration)**
+  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
+  * `--audit-log-dir` (`.logs.audit.path`)
+  * `--secondary-storage-path` (`.storage.secondary.path`)
+  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
+  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
+  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
+  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
+  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
+  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
+  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
+
+  **5. Removed Flags**
+  The following flags have been removed and are no longer supported:
+  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
+  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
+</Update>
+
+<Update label="v1.5.3" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.3)
+
+
+</Update>
+
+<Update label="v1.0.14" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.14)
+
+
 </Update>
 
 <Update label="v1.12.4" tags={["Talos"]}>
@@ -269,6 +770,24 @@ rss: true
   Talos is built with Go 1.25.7.
 </Update>
 
+<Update label="v1.5.2" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.2)
+
+
+</Update>
+
+<Update label="v1.5.1" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.1)
+
+
+</Update>
+
+<Update label="v1.0.3" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.0.3)
+
+
+</Update>
+
 <Update label="v1.12.3" tags={["Talos"]}>
   [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.3)
 
@@ -277,6 +796,162 @@ rss: true
   Linux: 6.18.8
 
   Talos is built with Go 1.25.7.
+</Update>
+
+<Update label="v1.5.0" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.0)
+
+  ### Better Audit Logging
+
+  Omni now collects audit logs for operations performed on *all* user-managed resources, improving security and traceability.
+
+  ### Config Generation
+
+  Omni can now generate its own configuration directly from the defined schema.
+  The config merge algorithms were also improved: now the config preserves the default values properly when some sections are
+  overwritten by the user provided config.
+
+  ### Etcd Maintenance
+
+  The following etcd commands are now usable with Omni managed clusters:
+  `talosctl etcd downgrade validate`
+  `talosctl etcd downgrade enable`
+  `talosctl etcd downgrade cancel`
+  `talosctl etcd forfeit leadership`
+
+  ### gRPC Tunnel Management
+
+  Added the ability to switch gRPC tunnel modes for connected machines.
+
+  ### Join Token Management
+
+  Added a dedicated `omnictl jointoken omni-endpoint` to streamline node registration.
+
+  ### Kernel Args CLI Tools
+
+  Added support for managing kernel arguments directly within cluster templates.
+
+  ### Schema-Aware Code Editor
+
+  The built-in code editor for the machine configs now supports different configuration schemas for each Talos version.
+  So the config will be always validated against the currently running Talos version schema.
+
+  ### `omnictl` Directory Support
+
+  The `omnictl sync/apply` can now process directories, simplifying bulk resource applications.
+
+  ### WireGuard Bind Address
+
+  The WireGuard endpoint (`services.siderolink.wireGuard.endpoint` / `--siderolink-wireguard-bind-addr`) is now respected. Previously, Omni always bound to all interfaces regardless of this setting. Default remains `0.0.0.0:50180`.
+</Update>
+
+<Update label="v1.4.9" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.9)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
+
+  **1. New Required Flag**
+  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
+  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
+
+  **2. Audit Logging Changes**
+  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
+  * **Default:** `true`.
+  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
+
+  **3. Automatic Migration**
+  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
+
+  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
+
+  **4. Deprecated Flags (Kept for Migration)**
+  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
+  * `--audit-log-dir` (`.logs.audit.path`)
+  * `--secondary-storage-path` (`.storage.secondary.path`)
+  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
+  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
+  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
+  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
+  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
+  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
+  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
+
+  **5. Removed Flags**
+  The following flags have been removed and are no longer supported:
+  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
+  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
+</Update>
+
+<Update label="v1.4.8" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.8)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
+
+  **1. New Required Flag**
+  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
+  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
+
+  **2. Audit Logging Changes**
+  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
+  * **Default:** `true`.
+  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
+
+  **3. Automatic Migration**
+  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
+
+  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
+
+  **4. Deprecated Flags (Kept for Migration)**
+  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
+  * `--audit-log-dir` (`.logs.audit.path`)
+  * `--secondary-storage-path` (`.storage.secondary.path`)
+  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
+  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
+  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
+  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
+  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
+  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
+  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
+
+  **5. Removed Flags**
+  The following flags have been removed and are no longer supported:
+  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
+  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
+</Update>
+
+<Update label="v1.0.2" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.0.2)
+
+
+</Update>
+
+<Update label="v1.0.1" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.0.1)
+
+
+</Update>
+
+<Update label="v1.0.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.0.0)
+
+  ### Configuration moved to env and config files only
+
+  All configuration is now provided exclusively via environment variables and/or configuration files.
+  Command-line flags for configuration have been removed.
+
+  Users must migrate any existing CLI-based configuration to env variables or supported config file formats.
+  This change simplifies the runtime interface but is a breaking change and requires updates to existing workflows relying on CLI flags.
+
+  ### Disk Image
+
+  The disk image build process no longer requires privileged deployment and mounting '/dev'.
+  The build process now operates in userspace, and it doesn't depend on host Linux kernel anymore.
+  This change enhances security and portability, allowing disk images to be built in a wider range of environments without elevated permissions.
+  This also enables most of the image builds to be fully reproducible.
 </Update>
 
 <Update label="v1.12.2" tags={["Talos"]}>
@@ -294,6 +969,45 @@ rss: true
   Talos is built with Go 1.25.6.
 </Update>
 
+<Update label="v1.4.7" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.7)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
+
+  **1. New Required Flag**
+  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
+  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
+
+  **2. Audit Logging Changes**
+  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
+  * **Default:** `true`.
+  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
+
+  **3. Automatic Migration**
+  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
+
+  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
+
+  **4. Deprecated Flags (Kept for Migration)**
+  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
+  * `--audit-log-dir` (`.logs.audit.path`)
+  * `--secondary-storage-path` (`.storage.secondary.path`)
+  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
+  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
+  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
+  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
+  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
+  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
+  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
+
+  **5. Removed Flags**
+  The following flags have been removed and are no longer supported:
+  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
+  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
+</Update>
+
 <Update label="v1.12.1" tags={["Talos"]}>
   [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.1)
 
@@ -302,6 +1016,151 @@ rss: true
   Linux: 6.18.2
 
   Talos is built with Go 1.25.5.
+</Update>
+
+<Update label="v1.4.6" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.6)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
+
+  **1. New Required Flag**
+  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
+  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
+
+  **2. Audit Logging Changes**
+  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
+  * **Default:** `true`.
+  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
+
+  **3. Automatic Migration**
+  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
+
+  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
+
+  **4. Deprecated Flags (Kept for Migration)**
+  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
+  * `--audit-log-dir` (`.logs.audit.path`)
+  * `--secondary-storage-path` (`.storage.secondary.path`)
+  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
+  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
+  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
+  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
+  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
+  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
+  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
+
+  **5. Removed Flags**
+  The following flags have been removed and are no longer supported:
+  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
+  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
+</Update>
+
+<Update label="v1.10.9" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.9)
+
+  ### etcd Zombine Members
+
+  See [this blog post](https://etcd.io/blog/2025/zombie_members_upgrade/) for more details.
+
+  This release includes an update to etcd v3.5.26 to ensure that upgrades to Talos v1.11 and later (which default to etcd v3.6) will not be blocked by the presence of zombine members in the etcd cluster.
+
+  Please note that etcd version can also be configured via the machine configuration with any version of Talos Linux.
+
+  ### Component Updates
+
+  Linux: 6.12.63
+  runc: 1.2.9
+  etcd: 3.5.26
+
+  Talos is built with Go 1.24.11.
+</Update>
+
+<Update label="v1.4.5" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.5)
+
+  <Warning>
+  This version has a known issue with cluster state updates, please don't use it.
+  </Warning>
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
+
+  **1. New Required Flag**
+  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
+  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
+
+  **2. Audit Logging Changes**
+  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
+  * **Default:** `true`.
+  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
+
+  **3. Automatic Migration**
+  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
+
+  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
+
+  **4. Deprecated Flags (Kept for Migration)**
+  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
+  * `--audit-log-dir` (`.logs.audit.path`)
+  * `--secondary-storage-path` (`.storage.secondary.path`)
+  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
+  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
+  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
+  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
+  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
+  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
+  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
+
+  **5. Removed Flags**
+  The following flags have been removed and are no longer supported:
+  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
+  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
+</Update>
+
+<Update label="v1.4.4" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.4)
+
+  <Warning>
+  This version has a known issue with cluster state updates, please don't use it.
+  </Warning>
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
+
+  **1. New Required Flag**
+  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
+  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
+
+  **2. Audit Logging Changes**
+  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
+  * **Default:** `true`.
+  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
+
+  **3. Automatic Migration**
+  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
+
+  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
+
+  **4. Deprecated Flags (Kept for Migration)**
+  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
+  * `--audit-log-dir` (`.logs.audit.path`)
+  * `--secondary-storage-path` (`.storage.secondary.path`)
+  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
+  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
+  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
+  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
+  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
+  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
+  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
+
+  **5. Removed Flags**
+  The following flags have been removed and are no longer supported:
+  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
+  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
 </Update>
 
 <Update label="v1.12.0" tags={["Talos"]}>
@@ -471,2169 +1330,6 @@ rss: true
   zfs: 2.4.0
 
   Talos is built with Go 1.25.5.
-</Update>
-
-<Update label="v1.11.6" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.6)
-
-  ### UEFI Boot
-
-  When using UEFI boot with systemd-boot as bootloader (on new installs of Talos from 1.10+ onwards), Talos will now not touch the UEFI boot order.
-  Talos 1.11 made a fix to create UEFI boot entry and set the boot order as first entry, but this behavior caused issues on some systems.
-  To avoid further issues, Talos will now only create the UEFI boot entry if it does not exist, but will not modify the boot order.
-
-  ### Component Updates
-
-  Linux: 6.12.62
-  runc: 1.3.4
-
-  Talos is built with Go 1.24.11.
-</Update>
-
-<Update label="v1.11.5" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.5)
-
-  ### Component Updates
-
-  containerd: 2.1.5
-
-  Talos is built with Go 1.24.9.
-</Update>
-
-<Update label="v1.11.4" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.4)
-
-  ### Component Updates
-
-  runc: 1.3.3
-  Linux: 6.12.57
-  linux-firmware: 20251021
-
-  Talos is built with Go 1.24.9.
-</Update>
-
-<Update label="v1.11.3" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.3)
-
-  ### Component Updates
-
-  runc: 1.3.2
-  Kubernetes: 1.34.1
-  Linux: 6.12.52
-  linux-firmware: 20251011
-  CoreDNS: 1.12.4
-  etcd: 3.6.5
-  Flannel: 0.27.4
-
-  Talos is built with Go 1.24.9.
-</Update>
-
-<Update label="v1.11.2" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.2)
-
-  ### Component Updates
-
-  runc: 1.3.1
-  Kubernetes: 1.34.1
-  Linux: 6.12.48
-  linux-firmware: 20250917
-
-  Talos is built with Go 1.24.6.
-</Update>
-
-<Update label="v1.11.1" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.1)
-
-  ### Component Updates
-
-  Linux: 6.12.45
-  CoreDNS: 1.12.3
-
-  Talos is built with Go 1.24.6.
-</Update>
-
-<Update label="v1.11.0" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.0)
-
-  ### Azure
-
-  Talos on Azure now defaults to MTU of 1400 bytes for the `eth0` interface to avoid packet fragmentation issues.
-  The default MTU can be overriden via machine configuration.
-
-  ### Boot
-
-  Talos boot partition size increased to 2 GiB to accommodate large images (with many system extensions included).
-
-  ### Kernel Command Line
-
-  Talos now exposes the kernel command line as a KernelCmdline resource (`talosctl get cmdline`).
-
-  ### Disk Encryption
-
-  Disk encryption for system volumes is now managed by the `VolumeConfig` machine configuration document.
-  Legacy configuration in `valpha1` machine configuration is still supported.
-
-  New per-key option `lockToSTATE` is added to the `VolumeConfig` document, which allows to lock the volume encryption key to the secret salt in the `STATE` volume.
-  So, if the `STATE` volume is wiped or replaced, the volume encryption key will not be usable anymore.
-
-  ### Disk Wipe
-
-  Talos now supports `talosctl disk wipe` command in maintenance mode (`talosctl disk wipe <disk> --insecure`).
-
-  ### Early Inline Configuration
-
-  Talos now supports passing early inline configuration via the `talos.config.early` kernel parameter.
-  This allows to pass the configuration before the platform config source is probed, which is useful for early boot configuration.
-  The value of this parameter has the same format as the `talos.config.inline` parameter, i.e. it should be base64 encoded and zstd-compressed.
-
-  ### ETCD downgrade API
-
-  Added ETCD downgrade API mimicking the ETCD API and etcdctl interfaces.
-  This API allows to downgrade ETCD cluster (storage format) to a previous version.
-
-  ### IMA support removed
-
-  Talos now drops the IMA (Integrity Measurement Architecture) support. This feature was not used in Talos for any meaningful security purpose
-  and has historically caused performance issues. See #11133 for more details.
-
-  ### Kubernetes Version Validation
-
-  Talos now validates the Kubernetes version in the image specified in the machine configuration.
-  Previously this check was performed only on upgrade, but now it is consistently applied to upgrade, initial provisioning, and machine configuration updates.
-
-  This implies that all image references should contain the tag, even if the image is pinned by digest.
-
-  ### Qemu provisioner on MacOS
-
-  On MacOS `talosctl cluster create` command now supports the Qemu provisioner in addition to the Docker provisioner.
-
-  ### Kernel Modules
-
-  Talosctl now returns the loaded modules, not the modules configured to be loaded (`talosctl get modules`).
-
-  ### SBOM
-
-  Talos now publishes [Software Bill of Materials (SBOM)](https://www.talos.dev/v1.11/advanced/sbom/) in the SPDX format.
-
-  ### Swap Suport
-
-  Talos now supports swap on block devices.
-  This feature can be enable by using [SwapVolumeConfig](https://www.talos.dev/v1.11/reference/configuration/block/swapvolumeconfig/) document in the machine configuration.  
-
-  ### Component Updates
-
-  Linux: 6.12.43
-  Kubernetes: 1.34.0
-  runc: 1.3.0
-  etcd: 3.6.4
-  containerd: 2.1.4
-  Flannel CNI plugin: 1.7.1-flannel1
-  Flannel: 0.27.2
-  CoreDNS: 1.12.2
-  xfsprogs: 6.15.0
-  systemd-udevd and systemd-boot: 257.7
-  lvm2: 2.03.33
-  cryptsetup: 2.8.0
-
-  Talos is built with Go 1.24.6.
-
-  ### VMware
-
-  Talos VMWare platform now supports `arm64` architecture in addition to `amd64`.
-
-  ### Volumes
-
-  Talos now supports [raw user volumes](https://www.talos.dev/v1.11/talos-guides/configuration/disk-management/raw/), allowing to allocate unformatted disk space as partition.
-  In addition to that, support for [existing volumes](https://www.talos.dev/v1.11/talos-guides/configuration/disk-management/existing/) has been added, allowing to mount existing partitions without formatting them.
-
-  ### Zswap Support
-
-  Talos now supports zswap, a compressed cache for swap pages.
-  This feature can be enabled by using [ZswapConfig](https://www.talos.dev/v1.11/reference/configuration/block/zswapconfig/) document in the machine configuration.
-</Update>
-
-<Update label="v1.10.9" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.9)
-
-  ### etcd Zombine Members
-
-  See [this blog post](https://etcd.io/blog/2025/zombie_members_upgrade/) for more details.
-
-  This release includes an update to etcd v3.5.26 to ensure that upgrades to Talos v1.11 and later (which default to etcd v3.6) will not be blocked by the presence of zombine members in the etcd cluster.
-
-  Please note that etcd version can also be configured via the machine configuration with any version of Talos Linux.
-
-  ### Component Updates
-
-  Linux: 6.12.63
-  runc: 1.2.9
-  etcd: 3.5.26
-
-  Talos is built with Go 1.24.11.
-</Update>
-
-<Update label="v1.10.8" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.8)
-
-  ### Component Updates
-
-  Linux: 6.12.58
-  Kubernetes: 1.33.6
-  Runc: v1.2.8
-  Containerd: v2.0.7
-
-  Talos is built with Go 1.24.10.
-</Update>
-
-<Update label="v1.10.7" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.7)
-
-  ### Component Updates
-
-  Linux: 6.12.43
-  Kubernetes: 1.33.4
-
-  Talos is built with Go 1.24.6.
-</Update>
-
-<Update label="v1.10.6" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.6)
-
-  ### Component Updates
-
-  Linux: 6.12.40
-  Kubernetes: 1.33.3
-
-  Talos is built with Go 1.24.5.
-</Update>
-
-<Update label="v1.10.5" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.5)
-
-  ### Azure
-
-  Talos on Azure now defaults to MTU of 1400 bytes for the `eth0` interface to avoid packet fragmentation issues.
-  The default MTU can be overriden with machine configuration.
-
-  ### Component Updates
-
-  Linux: 6.12.35
-  Kubernetes: 1.33.2
-
-  Talos is built with Go 1.24.4.
-</Update>
-
-<Update label="v1.10.4" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.4)
-
-  ### Component Updates
-
-  Linux: 6.12.31
-
-  Talos is built with Go 1.24.4.
-</Update>
-
-<Update label="v1.10.3" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.3)
-
-  ### Component Updates
-
-  Linux: 6.12.28
-  Kubernetes: 1.33.1
-
-  Talos is built with Go 1.24.3.
-</Update>
-
-<Update label="v1.10.2" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.2)
-
-  ### Component Updates
-
-  Linux: 6.12.27
-
-  Talos is built with Go 1.24.3.
-</Update>
-
-<Update label="v1.10.1" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.1)
-
-
-</Update>
-
-<Update label="v1.10.0" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.0)
-
-  ### auditd
-
-  Kernel parameter `talos.auditd.disabled=1` can be used to disable Talos built-in `auditd` service.
-
-  ### cgroups v1
-
-  Talos Linux no longer supports `cgroupsv1` when running in non-container mode.
-  The kernel argument `talos.unified_cgroup_hierarchy` is now ignored.
-
-  ### Disk Image
-
-  Talos starting with 1.10 will have disk images that will use GRUB only for legacy BIOS and systemd-boot for modern UEFI systems.
-  On first boot Talos determines the boot method and will wipe the unused bootloader.
-
-  Secureboot disk-images will be sd-boot only.
-
-  For ARM64 imager will still generate GRUB bootloader for Talos < 1.10 and for Talos >= 1.10 all ARM64 boot assets will use systemd-boot.
-
-  Imager supports overwriting bootloader when generating a disk image via the Imager profile `output` option.
-
-  Eg:
-
-  ```yaml
-  output:
-    kind: image
-    imageOptions:
-      bootloader: sd-boot # supported options are sd-boot, grub, dual-boot
-  ```
-
-  ### Driver Rebind
-
-  Talos 1.10 now supports a new machine config document named `PCIDriverRebindConfig` that allows rebinding the driver of a PCI device to a different target driver.
-  See the [documentation](https://www.talos.dev/v1.10/reference/configuration/hardware/pcidriverrebindconfig/) for more information.
-
-  ### Ethernet
-
-  Talos now provides `ethtool`-style Ethernet low-level configuration via `network/EthernetConfig` documents.
-  Current status of the interface can be read by `talosctl get ethernetstatus`.
-
-  ### Machine Install Extensions
-
-  `.machine.install.extensions` will have no effect starting from Talos 1.10, the machine config document field is still kept so upgrades from older versions are possible.
-  Use [Boot Assets](https://www.talos.dev/v1.10/talos-guides/install/boot-assets/) instead.
-
-  ### Extra Kernel Args
-
-  Talos 1.10 on fresh install on UEFI systems will now use systemd-boot and UKIs (Unified Kernel Images)[https://uapi-group.org/specifications/specs/unified_kernel_image/].
-  This means the kernel command line arguments are part of the UKI and cannot be modified without an upgrade to a new UKI.
-
-  Upgrades to Talos 1.10 will preseve the existing bootloader (GRUB for non-secureboot) and sd-boot for Secureboot and this change will have no effect.
-
-  To build a [boot asset](https://www.talos.dev/v1.10/talos-guides/install/boot-assets/) with extra kernel arguments whether an `installer` or a boot image use either [Image Factory](https://www.talos.dev/v1.10/talos-guides/install/boot-assets/#image-factory) or
-  [Imager](https://www.talos.dev/v1.10/talos-guides/install/boot-assets/#imager).
-
-  This means kernel arguments not part of the UKI will not be preserved across updates and a proper installer image generated via Imager Factory or Imager is required.
-
-  ### Ingress Firewall
-
-  Talos Ingress Firewall now filters access to Kubernetes NodePort services correctly.
-
-  ### iSCSI Initiator
-
-  Talos now generates `/etc/iscsi/initiatorname.iscsi` file based on the node identity which is tied to the lifecycle of the node.
-  If using `iscsi-tools` extension, starting with Talos 1.10 would have a more deterministic IQN for the initiator node.
-  Make sure to update any iSCSI targets to use the new initiator IQN.
-
-  The iqn can be read by `talosctl read /etc/iscsi/initiatorname.iscsi`
-
-  ### ISO
-
-  Talos starting with 1.10 will have ISO's that will use GRUB only for legacy BIOS and systemd-boot for modern UEFI systems.
-
-  ### kube-apiserver Authorization Config
-
-  When using `.cluster.apiServer.authorizationConfig` the user provided order for the authorizers is honoured and `Node` and `RBAC` authorizers are always added to the end if not explicitly specified.
-
-  Eg: If user provides only `Webhook` authorizer, the final order will be `Webhook`, `Node`, `RBAC`.
-
-  To provide a specific order for `Node` or `RBAC` explicitly, user can provide the authorizer in the order they want.
-
-  Eg:
-
-  ```yaml
-  cluster:
-    apiServer:
-      authorizationConfig:
-        - type: Node
-          name: Node
-        - type: Webhook
-          name: Webhook
-          webhook:
-            connectionInfo:
-              type: InClusterConfig
-          ...
-        - type: RBAC
-          name: rbac
-  ```
-
-  Usage of `authorization-mode` CLI argument will not support this form of customization.
-
-  ### NVMe NQN
-
-  Talos now generates `/etc/nvme/hostnqn` and `/etc/nvme/hostid` files based on the node identity which is tied to the lifecycle of the node.
-
-  The NQN can be read by `talosctl read /etc/nvme/hostnqn`
-
-  ### SELinux
-
-  Talos now supports enabling SELinux enforcing mode, see [SELinux](https://www.talos.dev/v1.10/advanced/selinux/) for more details.
-
-  ### Fully bootstrapped builds
-
-  Talos 1.10 is built with a toolchain based on [[Stageˣ]](https://stagex.tools/), which is a project building fully bootstrapped software.
-  This change increases reproducibility, auditability and security of Talos builds.
-
-  This also changes Talos root filesystem structure for unified /usr, with other directories symlinking to /usr/bin and /usr/lib.
-  System extensions must move their directories accordingly for 1.10.
-
-  ### Component Updates
-
-  * Linux: 6.12.25
-  * CNI plugins: 1.6.2
-  * runc: 1.2.6
-  * containerd: 2.0.5
-  * etcd: 3.5.20
-  * Flannel: 0.26.7
-  * Kubernetes: 1.33.0
-  * CoreDNS: 1.12.1
-
-  Talos is built with Go 1.24.2.
-
-  ### User Volumes
-
-  Talos now supports [user disk volumes](https://www.talos.dev/v1.10/talos-guides/configuration/disk-management/#user-volumes) via the `UserVolumeConfig` machine config document.
-
-  The old `.machine.disks` field is deprecated, but still supported for backwards compatibility.
-</Update>
-
-<Update label="v1.9.6" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.6)
-
-  ### Component Updates
-
-  * Linux: 6.12.25
-  * containerd: 2.0.5
-  * runc: 1.2.6
-  * Kubernetes: 1.32.4
-  * etcd: 3.5.21
-
-  Talos is built with Go 1.23.8.
-</Update>
-
-<Update label="v1.9.5" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.5)
-
-  ### Component Updates
-
-  * Linux: 6.12.18
-  * containerd: 2.0.3
-  * runc: 1.2.5
-  * Kubernetes: 1.32.3
-  * etcd: 3.5.19
-
-  Talos is built with Go 1.23.7.
-</Update>
-
-<Update label="v1.9.4" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.4)
-
-  ### Ingress Firewall
-
-  Talos Ingress Firewall now filters access to Kubernetes NodePort services correctly.
-
-  ### Component Updates
-
-  * Linux: 6.12.13
-  * Flannel: 0.26.4
-  * Kubernetes: 1.32.2
-
-  Talos is built with Go 1.23.6.
-</Update>
-
-<Update label="v1.9.3" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.3)
-
-  ### Component Updates
-
-  * Linux: 6.12.11
-  * Kubernetes: 1.32.1
-  * etcd: 3.5.18
-
-  Talos is built with Go 1.23.5.
-</Update>
-
-<Update label="v1.9.2" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.2)
-
-  ### auditd
-
-  Kernel parameter `talos.auditd.disabled=1` can be used to disable Talos built-in `auditd` service.
-
-  ### kube-apiserver Authorization Config
-
-  When using `.cluster.apiServer.authorizationConfig` the user provided order for the authorizers is honoured and `Node` and `RBAC` authorizers are always added to the end if not explicitly specified.
-
-  Eg: If user provides only `Webhook` authorizer, the final order will be `Webhook`, `Node`, `RBAC`.
-
-  To provide a specific order for `Node` or `RBAC` explicitly, user can provide the authorizer in the order they want.
-
-  Eg:
-
-  ```yaml
-  cluster:
-    apiServer:
-      authorizationConfig:
-        - type: Node
-          name: Node
-        - type: Webhook
-          name: Webhook
-          webhook:
-            connectionInfo:
-              type: InClusterConfig
-          ...
-        - type: RBAC
-          name: rbac
-  ```
-
-  Usage of `authorization-mode` CLI argument will not support this form of customization.
-
-  ### Component Updates
-
-  * Linux: 6.12.9
-  * runc: 1.2.4
-  * containerd: 2.0.2
-
-  Talos is built with Go 1.23.4.
-</Update>
-
-<Update label="v1.9.1" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.1)
-
-  ### Component Updates
-
-  * Linux: 6.12.6
-  * CNI plugins: 1.6.1
-
-  Talos is built with Go 1.23.4.
-</Update>
-
-<Update label="v1.9.0" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.0)
-
-  ### Auditd
-
-  Talos Linux now starts an auditd service by default.
-  Logs can be read with `talosctl logs auditd`.
-
-  ### `talosctl cgroups`
-
-  The `talosctl cgroups` command has been added to the `talosctl` tool.
-  This command allows you to view the cgroup resource consumption and limits for a machine, e.g.
-  `talosctl cgroups --preset memory`.
-
-  ### cgroups version 1
-
-  Support for cgroupsv1 is deprecated, and will be removed in Talos 1.10 (for non-container mode).
-
-  ### Custom search domains for Talos nodes
-
-  Talos now allows to supports specifying custom search domains for Talos nodes using
-  new config field `machine.network.searchDomains`
-
-  For the host it will look something like this:
-
-  ```
-  nameserver 127.0.0.53
-
-  search my-custom-search-name.com my-custom-search-name2.com
-  ```
-
-  For the pods it will look something like this:
-
-  ```
-  search default.svc.cluster.local svc.cluster.local cluster.local my-custom-search-name.com my-custom-search-name2.com
-  nameserver 10.96.0.10
-  options ndots:5
-  ```
-
-  ### Device Selectors
-
-  Talos now supports matching on permanent hardware (MAC) address of the network interfaces.
-  This is specifically useful to match bond members, as they change their hardware addresses when they become part of the bond.
-
-  ### Direct Rendering Manager (DRM)
-
-  Starting with Talos 1.9, the `i915` and `amdgpu` DRM drivers will be dropped from the Talos squashfs.
-  There will be new system extensions named `i915` and `amdgpu` that would contain both the drivers and firmware packaged together.
-  Upgrades via Image Factory will automatically include the new extensions if previously `i915-ucode` or `amdgpu-firmware` were used.
-
-  ### Image Cache
-
-  Talos now supports providing a local [Image Cache](https://www.talos.dev/v1.9/talos-guides/configuration/image-cache/) for container images.
-
-  ### Kube APIServer Authorization Config
-
-  Starting with Talos 1.9, `.cluster.apiServer.authorizationConfig` field supports setting [Kubernetes API server authorization modes](https://kubernetes.io/docs/reference/access-authn-authz/authorization/#using-configuration-file-for-authorization)
-  using the `--authorization-config` flag.
-
-  The machine config field supports a list of `authorizers`. For instance:
-
-  ```yaml
-  cluster:
-    apiServer:
-      authorizationConfig:
-        - type: Node
-          name: Node
-        - type: RBAC
-          name: rbac
-  ```
-
-  For new cluster if the Kubernetes API server supports the `--authorization-config` flag, it'll be used by default instead of the `--authorization-mode` flag.
-  By default Talos will always add the `Node` and `RBAC` authorizers to the list.
-
-  When upgrading if either a user-provided `authorization-mode` or `authorization-webhook-*` flag is set via `.cluster.apiServer.extraArgs`, it'll be used instead of the new `AuthorizationConfig`.
-
-  Current authorization config can be viewed by running: `talosctl get authorizationconfigs.kubernetes.talos.dev -o yaml`
-
-  ### Node Address Sort
-
-  Talos supports new experimental address sort algorithm for `NodeAddress` which are used to pick up default addresses for kubelet, etcd, etc.
-
-  It can be enabled with the following config patch:
-
-  ```yaml
-  machine:
-    features:
-      nodeAddressSortAlgorithm: v2
-  ```
-
-  ### OCI Base Runtime Spec
-
-  Talos now allows to [modify the OCI base runtime spec for the container runtime](https://www.talos.dev/v1.9/advanced/oci-base-spec/).
-
-  ### Registry Mirrors
-
-  In versions before Talos 1.9, there was a discrepancy between the way Talos itself and CRI plugin resolves registry mirrors:
-  Talos will never fall back to the default registry if endpoints are configured, while CRI plugin will.
-
-  > Note: Talos Linux pulls images for the `installer`, `kubelet`, `etcd`, while all workload images are pulled by the CRI plugin.
-
-  In Talos 1.9 this was fixed, so that by default an upstream registry is used as a fallback in all cases, while new registry mirror
-  configuration option `.skipFallback` can be used to disable this behavior both for Talos and CRI plugin.
-
-  ### talosctl disks
-
-  The command `talosctl disks` was removed, please use `talosctl get disks`, `talosctl get systemdisk`, and `talosctl get blockdevices` instead.
-
-  ### talosctl wipe
-
-  The new command `talosctl wipe disk` allows to wipe a disk or a partition which is not used as a volume.
-
-  ### udevd
-
-  Talos previously used `eudev` to provide `udevd`, now it uses `systemd-udevd` instead.
-
-  ### Component Updates
-
-  * Linux: 6.12.5
-  * containerd: 2.0.1
-  * Flannel: 0.26.1
-  * Kubernetes: 1.32.0
-  * runc: 1.2.3
-  * CoreDNS: 1.12.0
-
-  Talos is built with Go 1.23.4.
-
-  ### User Namespaces
-
-  Talos Linux now supports running Kubernetes pods with user namespaces enabled.
-  Refer to the [documentation](https://www.talos.dev/v1.9/kubernetes-guides/configuration/usernamespace/) for more information.
-</Update>
-
-<Update label="v1.8.4" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.8.4)
-
-  Starting with Talos v1.8.0, only standard assets would be published as github release assets. These include:
-
-  * `cloud-images.json`
-  * `talosctl` binaries
-  * `kernel`
-  * `initramfs`
-  * `metal` iso and disk images
-  * `talosctl-cni-bundle`
-
-  All other release assets can be downloaded from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
-
-  ### Component Updates
-
-  Linux: 6.6.64
-  runc: 1.2.3
-  Kubernetes: 1.31.4
-  etcd: 3.5.17
-
-  Talos is built with Go 1.22.10.
-</Update>
-
-<Update label="v1.8.3" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.8.3)
-
-  Starting with Talos v1.8.0, only standard assets would be published as github release assets. These include:
-
-  * `cloud-images.json`
-  * `talosctl` binaries
-  * `kernel`
-  * `initramfs`
-  * `metal` iso and disk images
-  * `talosctl-cni-bundle`
-
-  All other release assets can be downloaded from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
-
-  ### Component Updates
-
-  Linux: 6.6.60
-  containerd: 2.0.0
-  runc: 1.2.1
-
-  Talos is built with Go 1.22.9.
-</Update>
-
-<Update label="v1.8.2" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.8.2)
-
-  Starting with Talos v1.8.0, only standard assets would be published as github release assets. These include:
-
-  * `cloud-images.json`
-  * `talosctl` binaries
-  * `kernel`
-  * `initramfs`
-  * `metal` iso and disk images
-  * `talosctl-cni-bundle`
-
-  All other release assets can be downloaded from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
-
-  ### Component Updates
-
-  Linux: 6.6.58
-  containerd: 2.0.0-rc.6
-  runc: 1.2.0
-  Kubernetes: 1.31.2
-
-  Talos is built with Go 1.22.8.
-</Update>
-
-<Update label="v1.8.1" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.8.1)
-
-  Starting with Talos v1.8.0, only standard assets would be published as github release assets. These include:
-
-  * `cloud-images.json`
-  * `talosctl` binaries
-  * `kernel`
-  * `initramfs`
-  * `metal` iso and disk images
-  * `talosctl-cni-bundle`
-
-  All other release assets can be downloaded from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
-
-  ### Component Updates
-
-  Linux: 6.6.54
-  containerd: 2.0.0-rc.5
-  Flannel: 0.25.7
-
-  Talos is built with Go 1.22.8.
-</Update>
-
-<Update label="v1.8.0" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.8.0)
-
-  Starting with Talos v1.8.0, only standard assets would be published as github release assets. These include:
-
-  * `cloud-images.json`
-  * `talosctl` binaries
-  * `kernel`
-  * `initramfs`
-  * `metal` iso and disk images
-  * `talosctl-cni-bundle`
-
-  All other release assets can be downloaded from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
-
-  ### Node Annotations
-
-  Talos Linux now supports configuring Kubernetes node annotations via machine configuration (`.machine.nodeAnnotations`) in a way similar to node labels.
-
-  ### Workload Apparmor Profile
-
-  Talos Linux can now apply the default AppArmor profiles to all workloads started via containerd, if the machine is installed with the AppArmor LSM enforced via the extraKernelArgs.
-
-  Eg:
-
-  ```yaml
-  machine:
-      install:
-          extraKernelArgs:
-              - security=apparmor
-  ```
-
-  ### Bridge Interface
-
-  Talos Linux now support configuring 'vlan_filtering' for bridge interfaces.
-
-  ### Machine Configuration via Kernel Command Line
-
-  Talos Linux supports supplying zstd-compressed, base64-encoded machine configuration small documents via the kernel command line parameter `talos.config.inline`.
-
-  ### CNI Plugins
-
-  Talos Linux now bundles by default the following standard CNI plugins:
-
-  * `bridge`
-  * `firewall`
-  * `flannel`
-  * `host-local`
-  * `loopback`
-  * `portmap`
-
-  The Talos bundled Flannel manifest was simplified to remove the `install-cni` step.
-
-  ### Accessing `/dev/net/tun` in Kubernetes Pods
-
-  Talos Linux ships with `runc` 1.2, which [drops](https://github.com/opencontainers/runc/pull/3468) legacy rule to expose `/dev/net/tun` devices by default in the container.
-
-  If you need to access `/dev/net/tun` in your Kubernetes pods (e.g. running Tailscale as a Kubernetes pod), you can add use [device plugins](https:/www.talos.dev/v1.8/kubernetes-guides/configuration/device-plugins/) to expose `/dev/net/tun` to the pod.
-
-  ### Diagnostics
-
-  Talos Linux now shows diagnostics information for common problems related to misconfiguration via `talosctl health` and Talos dashboard.
-
-  ### Disk Management
-
-  Talos Linux now supports [configuration](https://www.talos.dev/v1.8/talos-guides/configuration/disk-management/#machine-configuration) for the `EPHEMERAL` volume.
-
-  ### Extensions in Kubernetes Nodes
-
-  Talos Linux now publishes list of installed extensions as Kubernetes node labels/annotations.
-
-  The key format is `extensions.talos.dev/<name>` and the value is the extension version.
-  If the extension name is not valid as a label key, it will be skipped.
-  If the extension version is a valid label value, it will be put to the label; otherwise it will be put to the annotation.
-
-  For Talos machines booted of the Image Factory artifacts, this means that the schematic ID will be published as the annotation
-  `extensions.talos.dev/schematic` (as it is longer than 63 characters).
-
-  ### DNS Forwarding for CoreDNS pods
-
-  Usage of the host DNS resolver as upstream for Kubernetes CoreDNS pods is now enabled by default. You can disable it
-  with:
-
-  ```yaml
-  machine:
-    features:
-      hostDNS:
-        enabled: true
-        forwardKubeDNSToHost: false
-  ```
-
-  Please note that on running cluster you will have to kill CoreDNS pods for this change to apply.
-
-  The IP address used to forward DNS queries has changed to the fixed `169.254.116.108` address.
-  For those upgrading from Talos 1.7 with `forwardKubeDNSToHost` enabled, the old Kubernetes service
-  can be cleaned up with `kubectl delete -n kube-system service host-dns`.
-
-  ### Installer
-
-  Talos Linux installer now never wipes the system disk on upgrades, which means that the flag
-  `--preserve` is always set for `talosctl upgrade`.
-
-  ### `talos.halt_if_installed` kernel argument
-
-  Starting with Talos 1.8, ISO's generated from Boot Assets would have a new kernel argument `talos.halt_if_installed` which would pause the boot sequence until boot timeout if Talos is already installed on the disk.
-  ISO generated for pre 1.8 versions would not have this kernel argument.
-
-  This can be also explicitly enabled by setting `talos.halt_if_installed=1` in kernel argument.
-
-  ### Slim Kubelet Image
-
-  Kubelet container image includes various utilities that kubelet might use to perform various tasks.
-
-  Starting with Kubernetes 1.31.0, `kubelet` image now includes less utilities, as the in-tree CSI plugins were
-  removed in Kubernetes 1.31.0. This reduces `kubelet` image size and potential attack surface.
-
-   For Kubernetes < 1.31.0, there will be two images built:
-
-  * `v1.x.y` (default, fat)
-  * `v1.x.y-slim` (slim)
-
-  For Kubernetes >= 1.31.0, there will be same two images built, but the
-  default tag would point to slim image:
-
-  * `v1.x.y` (default, slim)
-  * `v1.x.y-fat` (fat)
-
-  ### KubeSpan
-
-  Extra announced endpoints can be added using the [`KubespanEndpointsConfig` document](https://www.talos.dev/v1.8/talos-guides/network/kubespan/#configuration).
-
-  ### Default Node Labels
-
-  Talos Linux on config generation now adds a label `node.kubernetes.io/exclude-from-external-load-balancers` by default for the control plane nodes.
-
-  ### PCI Devices
-
-  A list of PCI devices can now be obtained via `PCIDevices` resource, e.g. `talosctl get pcidevices`.
-
-  ### Metal images
-
-  Starting with Talos 1.8, `console=ttyS0` kernel argument is removed from the metal images and installer. If running virtualized in QEMU (For eg: Proxmox), this can be added as an extra kernel argument if needed via Image Factory or using Imager.
-
-  This should fix slow boot or no console output issues on most bare metal hardware.
-
-  ### NVIDIA GPU Support
-
-  Starting with Talos 1.8.0, SideroLabs would ships extensions for both LTS and Production versions of NVIDIA extensions.
-  For more details see the CHANGELOG of [extensions](https://github.com/siderolabs/extensions/releases).
-
-  Upgrades with an exisiting schematic id from Image Factory would keep the existing LTS version of the NVIDIA extension.
-
-  ### Removing parts of the configuration using `$patch: delete` syntax
-
-  Talos Linux now supports removing parts of the configuration using the `$patch: delete` syntax similar to the kubernetes.
-  More information can be found [here](https://www.talos.dev/v1.8/talos-guides/configuration/patching/#strategic-merge-patches).
-
-  ### Platform Support
-
-  Talos Linux now supports Apache CloudStack platform.
-
-  ### kube-proxy
-
-  Talos Linux configures kube-proxy >= v1.31.0 to use 'nftables' backend by default.
-
-  ### Secure Boot
-
-  Talos Linux now can optionally include well-known UEFI (Microsoft) SecureBoot keys into the auto-enrollment UEFI database.
-
-  ### Custom Trusted Roots
-
-  Talos Linux now supports adding [custom trusted roots](https://www.talos.dev/v1.8/talos-guides/configuration/certificate-authorities/) (CA certificates) via `TrustedRootsConfig` configuration documents.
-
-  ### Device Extra Settle Timeout
-
-  Talos Linux now supports a kernel command line argument `talos.device.settle_time=3m` to set the device extra settle timeout to workaround issues with broken drivers.
-
-  ### Component Updates
-
-  Kubernetes: 1.31.1
-  Linux: 6.6.52
-  containerd: 2.0.0-rc.4
-  runc: 1.2.0-rc.3
-  etcd: 3.5.16
-  Flannel: 0.25.6
-  Flannel CNI plugin: 1.5.1
-  CoreDNS: 1.1.13
-
-  Talos is built with Go 1.22.7.
-
-  ### ZSTD Compression
-
-  Talos Linux now compresses kernel and initramfs using ZSTD.
-  Linux arm64 kernel is now compressed (previously it was uncompressed).
-</Update>
-
-<Update label="v1.7.7" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.7)
-
-  ### Component Updates
-
-  Linux: 6.6.52
-  Kubernetes: 1.30.5
-  containerd: 1.7.22
-  runc: 1.1.14
-
-  Talos is built with Go 1.22.7.
-</Update>
-
-<Update label="v1.7.6" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.6)
-
-  ### Component Updates
-
-  Linux: 6.6.43
-  Kubernetes: 1.30.3
-
-  Talos is built with Go 1.22.5.
-</Update>
-
-<Update label="v1.7.5" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.5)
-
-  ### Component Updates
-
-  Linux: 6.6.33
-  Flannel: 0.25.3
-  Containerd: 1.7.18
-
-  Talos is built with Go 1.22.4.
-</Update>
-
-<Update label="v1.7.4" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.4)
-
-  ### Component Updates
-
-  Talos is built with Go 1.22.3.
-</Update>
-
-<Update label="v1.7.3" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.3)
-
-  ### Component Updates
-
-  Linux: 6.6.32
-
-  Talos is built with Go 1.22.3.
-</Update>
-
-<Update label="v1.7.2" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.2)
-
-  ### Component Updates
-
-  Kubernetes: 1.30.1
-  Linux: 6.6.30
-
-  Talos is built with Go 1.22.3.
-</Update>
-
-<Update label="v1.7.1" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.1)
-
-  ### Component Updates
-
-  Linux: 6.6.29
-  containerd: 1.7.16
-
-  Talos is built with Go 1.22.2.
-</Update>
-
-<Update label="v1.7.1" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.7.1)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  A [EULA](https://siderolabs.com/eula/) agreement has been added to Omni which must be accepted in order to continue using it.
-
-  This agreement can be accepted through UI or programmatically either by adding the below flags:
-  ```sh
-  --eula-accept-name=Your Name
-  --eula-accept-email=your@email.com
-  ```
-
-  Or if using `--config-path` with the below configuration:
-  ```yaml
-  eulaAccept:
-    name: Your Name
-    email: your@email.com
-  ```
-</Update>
-
-<Update label="v1.7.0" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.0)
-
-  [Documentation on What's New in Talos 1.7.0](https://www.talos.dev/v1.7/introduction/what-is-new/)
-
-  ### CA Rotation
-
-  Talos Linux now supports rotating the root CA certificate and key for Talos API and Kubernetes API.
-
-  ### Device Selectors
-
-  Talos Linux now supports `physical: true` qualifier for device selectors, it selects non-virtual network interfaces (i.e. `en0` is selected, while `bond0` is not).
-
-  ### DNS Caching
-
-  Talos Linux now  provides a caching DNS resolver for host workloads (including host networking pods). It can be disabled with:
-
-  ```yaml
-  machine:
-    features:
-      hostDNS:
-        enabled: false
-  ```
-
-  You can also enable dns caching for k8s pods with:
-
-  ```yaml
-  machine:
-    features:
-      hostDNS:
-        enabled: true
-        forwardKubeDNSToHost: true
-  ```
-
-  Please note that on running cluster you will have to kill CoreDNS pods for this change to apply.
-
-  If you want to can also enable the resolving of member addresses through their host and node names:
-
-  ```yaml
-  machine:
-    features:
-      hostDNS:
-        enabled: true
-        resolveMemberNames: true
-  ```
-
-  ### Extension Services Config
-
-  Talos now supports supplying configuration files and environment variables for extension services.
-  The extension service configuration is a separate config document. An example is shown below:
-
-  ```yaml
-  ---
-  apiVersion: v1alpha1
-  kind: ExtensionServiceConfig
-  name: nut-client
-  configFiles:
-    - content: MONITOR ${upsmonHost} 1 remote pass password
-      mountPath: /usr/local/etc/nut/upsmon.conf
-  environment:
-    - UPS_NAME=ups
-  ```
-
-  For documentation, see [Extension Services Config Files](https://www.talos.dev/v1.7/reference/configuration/extensions/extensionserviceconfig/).
-
-  **Note**: The use of `environmentFile` in extension service spec is now deprecated and will be removed in a future release of Talos.
-  Use `ExtensionServiceConfig` instead.
-
-  ### IPTables
-
-  Talos Linux now forces `kubelet` and `kube-proxy` to use `iptables-nft` instead of `iptables-legacy` (`xtables`) which was the default
-  before Talos 1.7.0.
-
-  Container images based on `iptables-wrapper` should work without changes, but if there was a direct call to `legacy` mode of `iptables`, make sure
-  to update to use `iptables-nft`.
-
-  ### Kubernetes Upgrade
-
-  The command `talosctl upgrade-k8s` now supports specifying custom image references for Kubernetes components via `--*-image` flags.
-  The default behavior is unchanged, and the flags are optional.
-
-  ### KubeSpan
-
-  Talos Linux disables by default a KubeSpan feature to harvest additional endpoints from KubeSpan members.
-  This feature turned out to be less helpful than expected and caused unnecessary performance issues.
-
-  Previous behavior can be restored with:
-
-  ```yaml
-  machine:
-    network:
-      kubespan:
-          harvestExtraEndpoints: true
-  ```
-
-  ### Logging
-
-  Talos Linux now supports setting extra tags when sending logs in JSON format:
-
-  ```yaml
-  machine:
-    logging:
-      destinations:
-        - endpoint: "udp://127.0.0.1:12345/"
-          format: "json_lines"
-          extraTags:
-            server: s03-rack07
-  ```
-
-  ### Time Sync
-
-  Default NTP server was updated to be `time.cloudflare.com` instead of `pool.ntp.org`.
-  Default server is only used if the user does not specify any NTP servers in the configuration.
-
-  Talos Linux can now sync to PTP devices (e.g. provided by the hypervisor) skipping the network time servers.
-  In order to activate PTP sync, set `machine.time.servers` to the PTP device name (e.g. `/dev/ptp0`):
-
-  ```yaml
-  machine:
-    time:
-      servers:
-        - /dev/ptp0
-  ```
-
-  ### OpenNebula
-
-  Talos Linux now supports OpenNebula platform.
-
-  ### Platforms
-
-  Talos Linux now supports [Akamai Connected Cloud](https://www.linode.com/) provider (platform `akamai`).
-
-  ### Kubernetes API Server Service Account Key
-
-  Talos Linux starting from this release uses RSA key for Kubernetes API Server Service Account instead of ECDSA key to provide better compatibility with external OpenID Connect implementations.
-
-  ### SBC
-
-  Talos has split the SBC's (Single Board Computers) into separate repositories.
-  There will not be any more SBC specific release assets as part of Talos release.
-
-  The default Talos Installer image will stop working for SBC's and will fail the upgrade, if used, starting from Talos v1.7.0.
-
-  The SBC's images and installers can be generated on the fly using [Image Factory](https://factory.talos.dev) or using [Imager](https://www.talos.dev/latest/talos-guides/install/boot-assets/) for custom images.
-  The list of official SBC's images supported by Image Factory can be found in the [Overlays](https://github.com/siderolabs/overlays/) repository.
-
-  ### Secure Boot Image
-
-  Talos Linux now provides a way to configure systemd-boot ISO 'secure-boot-enroll' option while generating a SecureBoot ISO image:
-
-  ```yaml
-  output:
-      kind: iso
-      isoOptions:
-          sdBootEnrollKeys: force # default is still if-safe
-      outFormat: raw
-  ```
-
-  ### Syslog
-
-  Talos Linux now starts a basic syslog receiver listening on `/dev/log`.
-  The receiver can mostly parse both RFC3164 and RFC5424 messages and writes them as JSON formatted message.
-  The logs can be viewed via `talosctl logs syslogd`.
-
-  This is mostly implemented for extension services that log to syslog.
-
-  ### Component Updates
-
-  Linux: 6.6.28
-  etcd: 3.5.11
-  Kubernetes: 1.30.0
-  containerd: 1.7.15
-  runc: 1.1.12
-  Flannel: 0.25.1
-
-  Talos is built with Go 1.22.2.
-
-  ### Hardware Watchdog Timers
-
-  Talos Linux now supports hardware watchdog timers configuration.
-  If enabled, and the machine becomes unresponsive, the hardware watchdog will reset the machine.
-
-  The watchdog can be enabled with the following configuration document:
-
-  ```yaml
-  apiVersion: v1alpha1
-  kind: WatchdogTimerConfig
-  device: /dev/watchdog0
-  timeout: 3m0s
-  ```
-</Update>
-
-<Update label="v1.7.0" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.7.0)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  A [EULA](https://siderolabs.com/eula/) agreement has been added to Omni which must be accepted in order to continue using it.
-
-  This agreement can be accepted through UI or programmatically either by adding the below flags:
-  ```sh
-  --eula-accept-name=Your Name
-  --eula-accept-email=your@email.com
-  ```
-
-  Or if using `--config-path` with the below configuration:
-  ```yaml
-  eulaAccept:
-    name: Your Name
-    email: your@email.com
-  ```
-
-  ### Allow Machine Request Destroy
-
-  Machine requests are now created without a controller owner, allowing operators and admins to teardown stuck or unwanted requests directly. The controller replaces destroyed requests automatically to maintain the desired machine count.
-
-  ### Browsable Audit Logs in the UI
-
-  Audit logs are now browsable directly in the Omni UI, making it easier to review audit events without CLI access.
-
-  ### Human-Readable Config Validation Errors
-
-  Configuration validation errors are now presented in a human-readable format, making it easier to diagnose and fix configuration issues.
-
-  ### Move Omni Defaults to JSONSchema
-
-  Omni default config values are now defined in the JSONSchema.
-
-  ### Direct Talos Node Access via SideroLink
-
-  All Talos nodes can now be accessed directly via their SideroLink endpoint, removing the need to route through the load balancer for Talos API calls. Allowing direct access to worker nodes when control plane nodes are unavailable.
-
-  ### Kubernetes Manifests Sync
-
-  Omni now supports syncing Kubernetes manifests directly to managed clusters. Manifests can be defined in cluster templates, allowing declarative management of Kubernetes resources alongside cluster configuration.
-
-  ### `omnictl edit` Command
-
-  A new `omnictl edit` command has been added, allowing users to edit Omni resources interactively from the CLI.
-
-  ### Allow Using `talosctl debug`
-
-  Update Omni Talos API proxy code to elevate permissions for `talosctl debug` command.
-
-  ### Workload Proxy Subdomain Options
-
-  The workload proxy now supports an empty subdomain configuration and a new `useOmniSubdomain` option, providing more flexibility in how workload proxy URLs are structured.
-</Update>
-
-<Update label="v1.6.8" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.8)
-
-  ### Component Updates
-
-  * Linux: 6.1.100
-  * Kubernetes: 1.29.7
-  * runc: 1.1.13
-  * containerd: 1.7.20
-
-  Talos is built with Go 1.21.12.
-</Update>
-
-<Update label="v1.6.7" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.7)
-
-  ### Component Updates
-
-  * Linux: 6.1.82
-  * Kubernetes: 1.29.3
-
-  Talos is built with Go 1.21.8.
-</Update>
-
-<Update label="v1.6.6" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.6)
-
-  ### Component Updates
-
-  * Linux: 6.1.80
-
-  Talos is built with Go 1.21.8.
-</Update>
-
-<Update label="v1.6.5" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.5)
-
-  ### Kubernetes Upgrade
-
-  The command `talosctl upgrade-k8s` now supports specifying custom image references for Kubernetes components via `--*-image` flags.
-  The default behavior is unchanged, and the flags are optional.
-
-  ### Component Updates
-
-  Kubernetes: 1.29.2
-  Linux: 6.1.78
-
-  Talos is built with Go 1.21.6.
-</Update>
-
-<Update label="v1.6.5" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.5)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
-
-  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--log-storage-path` (`.logs.machine.storage.path`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
-</Update>
-
-<Update label="v1.6.4" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.4)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
-
-  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--log-storage-path` (`.logs.machine.storage.path`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
-</Update>
-
-<Update label="v1.6.4" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.4)
-
-  ### Component Updates
-
-  containerd: 1.7.13
-  runc: 1.1.12
-
-  See [CVE-2024-21626](https://github.com/opencontainers/runc/security/advisories/GHSA-xr7r-f8xq-vfvv) for the runc update.
-
-  Talos is built with Go 1.21.6.
-</Update>
-
-<Update label="v1.6.3" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.3)
-
-  ### Component Updates
-
-  Linux: 6.1.74
-  Kubernetes: 1.29.1
-
-  Talos is built with Go 1.21.6.
-</Update>
-
-<Update label="v1.6.3" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.3)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
-
-  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--log-storage-path` (`.logs.machine.storage.path`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
-</Update>
-
-<Update label="v1.6.2" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.2)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
-
-  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--log-storage-path` (`.logs.machine.storage.path`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
-</Update>
-
-<Update label="v1.6.2" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.2)
-
-  ### Component Updates
-
-  Linux: 6.1.73
-
-  Talos is built with Go 1.21.6.
-</Update>
-
-<Update label="v1.6.1" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.1)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
-
-  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--log-storage-path` (`.logs.machine.storage.path`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
-</Update>
-
-<Update label="v1.6.1" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.1)
-
-  ### Component Updates
-
-  Linux: 6.1.69
-  containerd: 1.7.11
-
-  Talos is built with Go 1.21.5.
-</Update>
-
-<Update label="v1.6.0" tags={["Talos"]}>
-  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.0)
-
-  ### OAuth2 Machine Config Flow
-
-  Talos Linux when running on the `metal` platform can be configured to authenticate the machine configuration download using [OAuth2 device flow](https://www.talos.dev/v1.6/advanced/machine-config-oauth/).
-
-  ### Network Device Selectors
-
-  Previously, [network device selectors](https://www.talos.dev/v1.6/talos-guides/network/device-selector/) only matched the first link, now the configuration is applied to all matching links.
-
-  ### Extension Services
-
-  Talos now starts Extension Services early in the boot process, this allows guest agents to be started in maintenance mode.
-
-  ### Linux Firmware
-
-  Starting with Talos 1.6, there is no Linux firmware included in the initramfs.
-  Customers who need Linux firmware can pull them as extension during install time using the image factory service.
-  If the initial boot requires firmware, a custom iso can be built with the firmware included using the image factory service.
-  This also ensures that the linux-firmware is not tied to a specific Talos version.
-
-  ### Flannel Configuration
-
-  Talos Linux now supports customizing default Flannel manifest with extra arguments for flanneld.
-
-  ```yaml
-  cluster:
-    network:
-      cni:
-        flannel:
-          extraArgs:
-            - --iface-can-reach=192.168.1.1
-  ```
-
-  ### Ingress Firewall
-
-  Talos Linux now supports configuring the [ingress firewall rules](https://talos.dev/v1.6/talos-guides/network/ingress-firewall/).
-
-  ### Kernel Arguments
-
-  Talos and Imager now supports dropping kernel arguments specified in `.machine.install.extraKernelArgs` or as `--extra-kernel-arg` to imager.
-  Any kernel argument that starts with a `-` is dropped. Kernel arguments to be dropped can be specified either as `-<key>` which would remove all arguments that start with `<key>` or as `-<key>=<value>` which would remove the exact argument.
-
-  ### Kube-Scheduler Configuration
-
-  Talos now supports specifying the kube-scheduler configuration in the Talos configuration file.
-  It can be set under `cluster.scheduler.config` and kube-scheduler will be automatically configured to with the correct flags.
-
-  ### Kubelet Credential Provider Configuration
-
-  Talos now supports specifying the kubelet credential provider configuration in the Talos configuration file.
-  It can be set under `machine.kubelet.credentialProviderConfig` and kubelet will be automatically configured to with the correct flags.
-  The credential binaries are expected to be present under `/usr/local/lib/kubelet/credentialproviders`.
-  Talos System Extensions can be used to install the credential binaries.
-
-  ### KubePrism
-
-  [KubePrism](https://www.talos.dev/v1.6/kubernetes-guides/configuration/kubeprism/) is enabled by default on port 7445.
-
-  ### Sysctl
-
-  Talos now handles sysctl/sysfs key names in line with sysctl.conf(5):
-
-  * if the first separator is '/', no conversion is done
-  * if the first separator is '.', dots and slashes are remapped
-
-  Example (both sysctls are equivalent):
-
-  ```yaml
-  machine:
-    sysctls:
-      net/ipv6/conf/eth0.100/disable_ipv6: "1"
-      net.ipv6.conf.eth0/100.disable_ipv6: "1"
-  ```
-
-  ### talosctl CLI
-
-  The command `images` deprecated in Talos 1.5 was removed, please use `talosctl images default` instead.
-
-  ### Component Updates
-
-  Linux: 6.1.67
-  containerd: 1.7.10
-  CoreDNS: 1.11.1
-  Kubernetes: 1.29.0
-  Flannel: 0.23.0
-  etcd: 3.5.11
-  runc: 1.1.10
-
-  Talos is built with Go 1.21.5.
-
-  ### User Disks
-
-  Talos Linux now supports specifying user disks in `.machine.disks` machine configuration links via `udev` symlinks, e.g. `/dev/disk/by-id/XXXX`.
-</Update>
-
-<Update label="v1.6.0" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.0)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
-
-  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--log-storage-path` (`.logs.machine.storage.path`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
-
-  ### Talos and Kubernetes CA Rotation
-
-  Omni now supports rotating the Talos and Kubernetes Certificate Authorities for managed clusters.
-
-  ### Talos and Kubernetes Versions in ClusterStatus
-
-  The `ClusterStatus` resource now includes `talos_version` and `kubernetes_version` fields, making cluster version information available programmatically. They are now also shown in the cluster list in the UI.
-
-  ### Pending and Historical Config Diffs in UI
-
-  The UI now shows pending and historical configuration diffs, making it easy to review what changed and when.
-
-  ### Force Machine Destroy
-
-  A `--force` flag has been added to the machine destroy command (and a corresponding UI option) to forcibly remove machines that are stuck or unresponsive.
-
-  ### Helm Chart v2
-
-  A new Helm chart v2 has been implemented with improved structure and more configurable options.
-  More configuration values are now exposed in the Helm chart, giving operators greater flexibility when deploying Omni.
-
-  ### Installation Media Wizard
-
-  The installation media flow now uses a wizard-based UI by default, replacing the previous modal dialog. Presets may now also be saved, allowing for future reuse.
-
-  ### Machine Log Storage Cleanup
-
-  Global size-based cleanup has been added for machine log storage, preventing unbounded disk usage.
-  Configurable options for audit log cleanup have also been added.
-
-  ### Minimum Talos Version Bump
-
-  The minimum supported Talos version for new clusters has been bumped to **1.8**.
-
-  ### Minor UI Improvements
-
-  Other minor UI improvements part of this release:
-
-  * Talos and Kubernetes versions are now shown in the cluster list.
-  * Node name and UUID are shown in the support bundle modal.
-  * Machine set pools now have a collapse/expand toggle.
-  * Cluster scaling has been moved to a modal dialog.
-  * Getting started guidance and empty-state pages have been added for clusters, machines, and machine classes.
-  * Instructions for adding machines and exporting cluster templates are now shown in the UI.
-  * Clarification text has been added to backup settings.
-  * YouTube video embedding is now supported in documentation/onboarding flows.
-  * The frontend authentication flow no longer requires an explicit login click.
-  * Resource labels use new colors for improved visual clarity.
-
-  ### Detailed Node Disk Information
-
-  The node details page now shows detailed disk information, including disk model, size, and type.
-
-  ### PCI Devices on Node Details
-
-  The node details page now includes a dedicated section listing all PCI devices present on the node.
-
-  ### Reset Node Unique Tokens
-
-  It is now possible to reset the unique token for a node, which can be useful for re-enrolling machines.
-
-  ### OIDC Token Cache Isolation for Kubeconfigs
-
-  Generated kubeconfigs now use isolated OIDC token caches, preventing token collisions between different kubeconfig users.
-
-  ### Pending Machines
-
-  Machines that were previously rejected can now be unrejected from the UI, allowing them to be accepted into Omni.
-
-  Rejected machines can also now be deleted directly from the UI.
-
-  ### SAML Logout Flow
-
-  Omni now implements the SAML logout flow, properly terminating sessions with the SAML identity provider on sign-out.
-
-  ### SQLite Metrics and Cleanup Counters
-
-  Metrics for the SQLite state backend have been exposed, along with cleanup counters for better observability.
-
-  ### Upgrade Parallelism
-
-  The upgrade parallelism for machine sets can now be configured via cluster templates and the UI, allowing operators to control how many machines are upgraded concurrently.
-
-  ### User and Service Account Activity Tracking
-
-  Omni now tracks the last activity time for users and service accounts, providing better visibility into account usage.
-
-  ### User Management gRPC Endpoints
-
-  New `ManagementService` gRPC endpoints have been added for user operations, enabling programmatic user management.
-
-  ### Configurable User and Service Account Limits
-
-  Operators can now enforce configurable limits on the number of users and service accounts that can be created in Omni.
-
-  ### Custom Vault Kubernetes Auth Mount Path
-
-  The Vault Kubernetes authentication mount path is now configurable, supporting non-default Vault configurations.
-</Update>
-
-<Update label="v1.5.11" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.11)
-
-
-</Update>
-
-<Update label="v1.5.10" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.10)
-
-
-</Update>
-
-<Update label="v1.5.9" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.9)
-
-
-</Update>
-
-<Update label="v1.5.8" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.8)
-
-
-</Update>
-
-<Update label="v1.5.7" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.7)
-
-
-</Update>
-
-<Update label="v1.5.6" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.6)
-
-
-</Update>
-
-<Update label="v1.5.5" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.5)
-
-
-</Update>
-
-<Update label="v1.5.4" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.4)
-
-
-</Update>
-
-<Update label="v1.5.3" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.3)
-
-
-</Update>
-
-<Update label="v1.5.2" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.2)
-
-
-</Update>
-
-<Update label="v1.5.1" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.1)
-
-
-</Update>
-
-<Update label="v1.5.0" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.0)
-
-  ### Better Audit Logging
-
-  Omni now collects audit logs for operations performed on *all* user-managed resources, improving security and traceability.
-
-  ### Config Generation
-
-  Omni can now generate its own configuration directly from the defined schema.
-  The config merge algorithms were also improved: now the config preserves the default values properly when some sections are
-  overwritten by the user provided config.
-
-  ### Etcd Maintenance
-
-  The following etcd commands are now usable with Omni managed clusters:
-  `talosctl etcd downgrade validate`
-  `talosctl etcd downgrade enable`
-  `talosctl etcd downgrade cancel`
-  `talosctl etcd forfeit leadership`
-
-  ### gRPC Tunnel Management
-
-  Added the ability to switch gRPC tunnel modes for connected machines.
-
-  ### Join Token Management
-
-  Added a dedicated `omnictl jointoken omni-endpoint` to streamline node registration.
-
-  ### Kernel Args CLI Tools
-
-  Added support for managing kernel arguments directly within cluster templates.
-
-  ### Schema-Aware Code Editor
-
-  The built-in code editor for the machine configs now supports different configuration schemas for each Talos version.
-  So the config will be always validated against the currently running Talos version schema.
-
-  ### `omnictl` Directory Support
-
-  The `omnictl sync/apply` can now process directories, simplifying bulk resource applications.
-
-  ### WireGuard Bind Address
-
-  The WireGuard endpoint (`services.siderolink.wireGuard.endpoint` / `--siderolink-wireguard-bind-addr`) is now respected. Previously, Omni always bound to all interfaces regardless of this setting. Default remains `0.0.0.0:50180`.
-</Update>
-
-<Update label="v1.4.11" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.11)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
-</Update>
-
-<Update label="v1.4.10" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.10)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
-</Update>
-
-<Update label="v1.4.9" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.9)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
-</Update>
-
-<Update label="v1.4.8" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.8)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
-</Update>
-
-<Update label="v1.4.7" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.7)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
-</Update>
-
-<Update label="v1.4.6" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.6)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
-</Update>
-
-<Update label="v1.4.5" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.5)
-
-  <Warning>
-  This version has a known issue with cluster state updates, please don't use it.
-  </Warning>
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
-</Update>
-
-<Update label="v1.4.4" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.4)
-
-  <Warning>
-  This version has a known issue with cluster state updates, please don't use it.
-  </Warning>
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
 </Update>
 
 <Update label="v1.4.3" tags={["Omni"]}>
@@ -2847,6 +1543,41 @@ rss: true
   This safeguard prevents machine configurations from entering a broken state due to unsupported features in older versions.
 </Update>
 
+<Update label="v1.11.6" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.6)
+
+  ### UEFI Boot
+
+  When using UEFI boot with systemd-boot as bootloader (on new installs of Talos from 1.10+ onwards), Talos will now not touch the UEFI boot order.
+  Talos 1.11 made a fix to create UEFI boot entry and set the boot order as first entry, but this behavior caused issues on some systems.
+  To avoid further issues, Talos will now only create the UEFI boot entry if it does not exist, but will not modify the boot order.
+
+  ### Component Updates
+
+  Linux: 6.12.62
+  runc: 1.3.4
+
+  Talos is built with Go 1.24.11.
+</Update>
+
+<Update label="v1.0.13" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.13)
+
+
+</Update>
+
+<Update label="v1.0.12" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.12)
+
+
+</Update>
+
+<Update label="v0.9.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.9.0)
+
+
+</Update>
+
 <Update label="v1.3.4" tags={["Omni"]}>
   [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.3.4)
 
@@ -2857,6 +1588,19 @@ rss: true
   [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.3.3)
 
 
+</Update>
+
+<Update label="v1.10.8" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.8)
+
+  ### Component Updates
+
+  Linux: 6.12.58
+  Kubernetes: 1.33.6
+  Runc: v1.2.8
+  Containerd: v2.0.7
+
+  Talos is built with Go 1.24.10.
 </Update>
 
 <Update label="v1.3.2" tags={["Omni"]}>
@@ -2909,6 +1653,44 @@ rss: true
   Omni now supports modifying kernel arguments for the existing machines.
 
   Documentation on how to use this feature can be found here: https://docs.siderolabs.com/omni/infrastructure-and-extensions/modify-kernel-arguments
+</Update>
+
+<Update label="v1.11.5" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.5)
+
+  ### Component Updates
+
+  containerd: 2.1.5
+
+  Talos is built with Go 1.24.9.
+</Update>
+
+<Update label="v1.11.4" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.4)
+
+  ### Component Updates
+
+  runc: 1.3.3
+  Linux: 6.12.57
+  linux-firmware: 20251021
+
+  Talos is built with Go 1.24.9.
+</Update>
+
+<Update label="v1.11.3" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.3)
+
+  ### Component Updates
+
+  runc: 1.3.2
+  Kubernetes: 1.34.1
+  Linux: 6.12.52
+  linux-firmware: 20251011
+  CoreDNS: 1.12.4
+  etcd: 3.6.5
+  Flannel: 0.27.4
+
+  Talos is built with Go 1.24.9.
 </Update>
 
 <Update label="v1.2.1" tags={["Omni"]}>
@@ -2974,33 +1756,27 @@ rss: true
   Integrated Userpilot reporting to help track user interactions.
 </Update>
 
-<Update label="v1.2.0" tags={["Image Factory"]}>
-  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.2.0)
+<Update label="v1.11.2" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.2)
 
-  ### Authentication Support (Enterprise)
+  ### Component Updates
 
-  Image Factory Enterprise now supports API key-based authentication.
-  When enabled, all schematic access requires the caller to be authenticated.
-  Each schematic records its owner at creation time, making schematics private to the user who created them.
-  Authentication is configured via a set of usernames and associated API keys.
+  runc: 1.3.1
+  Kubernetes: 1.34.1
+  Linux: 6.12.48
+  linux-firmware: 20250917
 
-  **Note:** This feature is enterprise-only and is subject to the BUSL-1.1 license.
-
-  ### French Locale
-
-  The Image Factory frontend now includes a French (fr) locale, adding translations for the web interface.
-
-  ### Stable Resolution for 'latest' Tag
-
-  The `latest` tag in the registry frontend now resolves to the latest non-prerelease (stable) version instead of being passed through to the upstream registry.
-
-  ### New /talosctl/:version Endpoint
-
-  A new `/talosctl/:version` endpoint has been added that lists all downloadable talosctl binaries for a given Talos version.
+  Talos is built with Go 1.24.6.
 </Update>
 
 <Update label="v1.1.5" tags={["Omni"]}>
   [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.1.5)
+
+
+</Update>
+
+<Update label="v0.8.4" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.8.4)
 
 
 </Update>
@@ -3011,10 +1787,121 @@ rss: true
 
 </Update>
 
+<Update label="v1.11.1" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.1)
+
+  ### Component Updates
+
+  Linux: 6.12.45
+  CoreDNS: 1.12.3
+
+  Talos is built with Go 1.24.6.
+</Update>
+
 <Update label="v1.1.3" tags={["Omni"]}>
   [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.1.3)
 
 
+</Update>
+
+<Update label="v1.11.0" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.0)
+
+  ### Azure
+
+  Talos on Azure now defaults to MTU of 1400 bytes for the `eth0` interface to avoid packet fragmentation issues.
+  The default MTU can be overriden via machine configuration.
+
+  ### Boot
+
+  Talos boot partition size increased to 2 GiB to accommodate large images (with many system extensions included).
+
+  ### Kernel Command Line
+
+  Talos now exposes the kernel command line as a KernelCmdline resource (`talosctl get cmdline`).
+
+  ### Disk Encryption
+
+  Disk encryption for system volumes is now managed by the `VolumeConfig` machine configuration document.
+  Legacy configuration in `valpha1` machine configuration is still supported.
+
+  New per-key option `lockToSTATE` is added to the `VolumeConfig` document, which allows to lock the volume encryption key to the secret salt in the `STATE` volume.
+  So, if the `STATE` volume is wiped or replaced, the volume encryption key will not be usable anymore.
+
+  ### Disk Wipe
+
+  Talos now supports `talosctl disk wipe` command in maintenance mode (`talosctl disk wipe <disk> --insecure`).
+
+  ### Early Inline Configuration
+
+  Talos now supports passing early inline configuration via the `talos.config.early` kernel parameter.
+  This allows to pass the configuration before the platform config source is probed, which is useful for early boot configuration.
+  The value of this parameter has the same format as the `talos.config.inline` parameter, i.e. it should be base64 encoded and zstd-compressed.
+
+  ### ETCD downgrade API
+
+  Added ETCD downgrade API mimicking the ETCD API and etcdctl interfaces.
+  This API allows to downgrade ETCD cluster (storage format) to a previous version.
+
+  ### IMA support removed
+
+  Talos now drops the IMA (Integrity Measurement Architecture) support. This feature was not used in Talos for any meaningful security purpose
+  and has historically caused performance issues. See #11133 for more details.
+
+  ### Kubernetes Version Validation
+
+  Talos now validates the Kubernetes version in the image specified in the machine configuration.
+  Previously this check was performed only on upgrade, but now it is consistently applied to upgrade, initial provisioning, and machine configuration updates.
+
+  This implies that all image references should contain the tag, even if the image is pinned by digest.
+
+  ### Qemu provisioner on MacOS
+
+  On MacOS `talosctl cluster create` command now supports the Qemu provisioner in addition to the Docker provisioner.
+
+  ### Kernel Modules
+
+  Talosctl now returns the loaded modules, not the modules configured to be loaded (`talosctl get modules`).
+
+  ### SBOM
+
+  Talos now publishes [Software Bill of Materials (SBOM)](https://www.talos.dev/v1.11/advanced/sbom/) in the SPDX format.
+
+  ### Swap Suport
+
+  Talos now supports swap on block devices.
+  This feature can be enable by using [SwapVolumeConfig](https://www.talos.dev/v1.11/reference/configuration/block/swapvolumeconfig/) document in the machine configuration.  
+
+  ### Component Updates
+
+  Linux: 6.12.43
+  Kubernetes: 1.34.0
+  runc: 1.3.0
+  etcd: 3.6.4
+  containerd: 2.1.4
+  Flannel CNI plugin: 1.7.1-flannel1
+  Flannel: 0.27.2
+  CoreDNS: 1.12.2
+  xfsprogs: 6.15.0
+  systemd-udevd and systemd-boot: 257.7
+  lvm2: 2.03.33
+  cryptsetup: 2.8.0
+
+  Talos is built with Go 1.24.6.
+
+  ### VMware
+
+  Talos VMWare platform now supports `arm64` architecture in addition to `amd64`.
+
+  ### Volumes
+
+  Talos now supports [raw user volumes](https://www.talos.dev/v1.11/talos-guides/configuration/disk-management/raw/), allowing to allocate unformatted disk space as partition.
+  In addition to that, support for [existing volumes](https://www.talos.dev/v1.11/talos-guides/configuration/disk-management/existing/) has been added, allowing to mount existing partitions without formatting them.
+
+  ### Zswap Support
+
+  Talos now supports zswap, a compressed cache for swap pages.
+  This feature can be enabled by using [ZswapConfig](https://www.talos.dev/v1.11/reference/configuration/block/zswapconfig/) document in the machine configuration.
 </Update>
 
 <Update label="v1.1.2" tags={["Omni"]}>
@@ -3027,17 +1914,6 @@ rss: true
   [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.1.1)
 
 
-</Update>
-
-<Update label="v1.1.0" tags={["Image Factory"]}>
-  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.1.0)
-
-  ### SPDX SBOM viewer
-
-  Added a new SPDX SBOM section to the Image Factory Enterprise.
-  Users can now request SBOMs for a specific Talos schematic directly from the Image Factory Enterprise interface.
-
-  **Note:** This feature is enterprise-only and is subject to the BUSL-1.1 license.
 </Update>
 
 <Update label="v1.1.0" tags={["Omni"]}>
@@ -3080,161 +1956,15 @@ rss: true
   Omni now computes and displays a unique join token status for each node.
 </Update>
 
-<Update label="v1.0.17" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.17)
+<Update label="v1.10.7" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.7)
 
+  ### Component Updates
 
-</Update>
+  Linux: 6.12.43
+  Kubernetes: 1.33.4
 
-<Update label="v1.0.16" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.16)
-
-
-</Update>
-
-<Update label="v1.0.15" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.15)
-
-
-</Update>
-
-<Update label="v1.0.14" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.14)
-
-
-</Update>
-
-<Update label="v1.0.13" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.13)
-
-
-</Update>
-
-<Update label="v1.0.12" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.12)
-
-
-</Update>
-
-<Update label="v1.0.11" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.11)
-
-
-</Update>
-
-<Update label="v1.0.10" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.10)
-
-
-</Update>
-
-<Update label="v1.0.9" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.9)
-
-
-</Update>
-
-<Update label="v1.0.8" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.8)
-
-
-</Update>
-
-<Update label="v1.0.7" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.7)
-
-
-</Update>
-
-<Update label="v1.0.6" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.6)
-
-
-</Update>
-
-<Update label="v1.0.5" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.5)
-
-
-</Update>
-
-<Update label="v1.0.4" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.4)
-
-
-</Update>
-
-<Update label="v1.0.3" tags={["Image Factory"]}>
-  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.0.3)
-
-
-</Update>
-
-<Update label="v1.0.3" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.3)
-
-
-</Update>
-
-<Update label="v1.0.2" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.2)
-
-
-</Update>
-
-<Update label="v1.0.2" tags={["Image Factory"]}>
-  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.0.2)
-
-
-</Update>
-
-<Update label="v1.0.1" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.1)
-
-
-</Update>
-
-<Update label="v1.0.1" tags={["Image Factory"]}>
-  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.0.1)
-
-
-</Update>
-
-<Update label="v1.0.0" tags={["Image Factory"]}>
-  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.0.0)
-
-  ### Configuration moved to env and config files only
-
-  All configuration is now provided exclusively via environment variables and/or configuration files.
-  Command-line flags for configuration have been removed.
-
-  Users must migrate any existing CLI-based configuration to env variables or supported config file formats.
-  This change simplifies the runtime interface but is a breaking change and requires updates to existing workflows relying on CLI flags.
-
-  ### Disk Image
-
-  The disk image build process no longer requires privileged deployment and mounting '/dev'.
-  The build process now operates in userspace, and it doesn't depend on host Linux kernel anymore.
-  This change enhances security and portability, allowing disk images to be built in a wider range of environments without elevated permissions.
-  This also enables most of the image builds to be fully reproducible.
-</Update>
-
-<Update label="v1.0.0" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.0)
-
-
-</Update>
-
-<Update label="v0.9.0" tags={["Image Factory"]}>
-  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.9.0)
-
-
-</Update>
-
-<Update label="v0.8.4" tags={["Image Factory"]}>
-  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.8.4)
-
-
+  Talos is built with Go 1.24.6.
 </Update>
 
 <Update label="v0.8.3" tags={["Image Factory"]}>
@@ -3261,6 +1991,17 @@ rss: true
 
 </Update>
 
+<Update label="v1.10.6" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.6)
+
+  ### Component Updates
+
+  Linux: 6.12.40
+  Kubernetes: 1.33.3
+
+  Talos is built with Go 1.24.5.
+</Update>
+
 <Update label="v0.7.6" tags={["Image Factory"]}>
   [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.7.6)
 
@@ -3273,10 +2014,42 @@ rss: true
 
 </Update>
 
+<Update label="v1.0.11" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.11)
+
+
+</Update>
+
+<Update label="v1.10.5" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.5)
+
+  ### Azure
+
+  Talos on Azure now defaults to MTU of 1400 bytes for the `eth0` interface to avoid packet fragmentation issues.
+  The default MTU can be overriden with machine configuration.
+
+  ### Component Updates
+
+  Linux: 6.12.35
+  Kubernetes: 1.33.2
+
+  Talos is built with Go 1.24.4.
+</Update>
+
 <Update label="v0.7.4" tags={["Image Factory"]}>
   [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.7.4)
 
 
+</Update>
+
+<Update label="v1.10.4" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.4)
+
+  ### Component Updates
+
+  Linux: 6.12.31
+
+  Talos is built with Go 1.24.4.
 </Update>
 
 <Update label="v0.7.3" tags={["Image Factory"]}>
@@ -3291,16 +2064,198 @@ rss: true
 
 </Update>
 
+<Update label="v1.10.3" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.3)
+
+  ### Component Updates
+
+  Linux: 6.12.28
+  Kubernetes: 1.33.1
+
+  Talos is built with Go 1.24.3.
+</Update>
+
 <Update label="v0.7.1" tags={["Image Factory"]}>
   [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.7.1)
 
 
 </Update>
 
+<Update label="v1.10.2" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.2)
+
+  ### Component Updates
+
+  Linux: 6.12.27
+
+  Talos is built with Go 1.24.3.
+</Update>
+
+<Update label="v1.10.1" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.1)
+
+
+</Update>
+
+<Update label="v1.9.6" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.6)
+
+  ### Component Updates
+
+  * Linux: 6.12.25
+  * containerd: 2.0.5
+  * runc: 1.2.6
+  * Kubernetes: 1.32.4
+  * etcd: 3.5.21
+
+  Talos is built with Go 1.23.8.
+</Update>
+
 <Update label="v0.7.0" tags={["Image Factory"]}>
   [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.7.0)
 
 
+</Update>
+
+<Update label="v1.10.0" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.0)
+
+  ### auditd
+
+  Kernel parameter `talos.auditd.disabled=1` can be used to disable Talos built-in `auditd` service.
+
+  ### cgroups v1
+
+  Talos Linux no longer supports `cgroupsv1` when running in non-container mode.
+  The kernel argument `talos.unified_cgroup_hierarchy` is now ignored.
+
+  ### Disk Image
+
+  Talos starting with 1.10 will have disk images that will use GRUB only for legacy BIOS and systemd-boot for modern UEFI systems.
+  On first boot Talos determines the boot method and will wipe the unused bootloader.
+
+  Secureboot disk-images will be sd-boot only.
+
+  For ARM64 imager will still generate GRUB bootloader for Talos < 1.10 and for Talos >= 1.10 all ARM64 boot assets will use systemd-boot.
+
+  Imager supports overwriting bootloader when generating a disk image via the Imager profile `output` option.
+
+  Eg:
+
+  ```yaml
+  output:
+    kind: image
+    imageOptions:
+      bootloader: sd-boot # supported options are sd-boot, grub, dual-boot
+  ```
+
+  ### Driver Rebind
+
+  Talos 1.10 now supports a new machine config document named `PCIDriverRebindConfig` that allows rebinding the driver of a PCI device to a different target driver.
+  See the [documentation](https://www.talos.dev/v1.10/reference/configuration/hardware/pcidriverrebindconfig/) for more information.
+
+  ### Ethernet
+
+  Talos now provides `ethtool`-style Ethernet low-level configuration via `network/EthernetConfig` documents.
+  Current status of the interface can be read by `talosctl get ethernetstatus`.
+
+  ### Machine Install Extensions
+
+  `.machine.install.extensions` will have no effect starting from Talos 1.10, the machine config document field is still kept so upgrades from older versions are possible.
+  Use [Boot Assets](https://www.talos.dev/v1.10/talos-guides/install/boot-assets/) instead.
+
+  ### Extra Kernel Args
+
+  Talos 1.10 on fresh install on UEFI systems will now use systemd-boot and UKIs (Unified Kernel Images)[https://uapi-group.org/specifications/specs/unified_kernel_image/].
+  This means the kernel command line arguments are part of the UKI and cannot be modified without an upgrade to a new UKI.
+
+  Upgrades to Talos 1.10 will preseve the existing bootloader (GRUB for non-secureboot) and sd-boot for Secureboot and this change will have no effect.
+
+  To build a [boot asset](https://www.talos.dev/v1.10/talos-guides/install/boot-assets/) with extra kernel arguments whether an `installer` or a boot image use either [Image Factory](https://www.talos.dev/v1.10/talos-guides/install/boot-assets/#image-factory) or
+  [Imager](https://www.talos.dev/v1.10/talos-guides/install/boot-assets/#imager).
+
+  This means kernel arguments not part of the UKI will not be preserved across updates and a proper installer image generated via Imager Factory or Imager is required.
+
+  ### Ingress Firewall
+
+  Talos Ingress Firewall now filters access to Kubernetes NodePort services correctly.
+
+  ### iSCSI Initiator
+
+  Talos now generates `/etc/iscsi/initiatorname.iscsi` file based on the node identity which is tied to the lifecycle of the node.
+  If using `iscsi-tools` extension, starting with Talos 1.10 would have a more deterministic IQN for the initiator node.
+  Make sure to update any iSCSI targets to use the new initiator IQN.
+
+  The iqn can be read by `talosctl read /etc/iscsi/initiatorname.iscsi`
+
+  ### ISO
+
+  Talos starting with 1.10 will have ISO's that will use GRUB only for legacy BIOS and systemd-boot for modern UEFI systems.
+
+  ### kube-apiserver Authorization Config
+
+  When using `.cluster.apiServer.authorizationConfig` the user provided order for the authorizers is honoured and `Node` and `RBAC` authorizers are always added to the end if not explicitly specified.
+
+  Eg: If user provides only `Webhook` authorizer, the final order will be `Webhook`, `Node`, `RBAC`.
+
+  To provide a specific order for `Node` or `RBAC` explicitly, user can provide the authorizer in the order they want.
+
+  Eg:
+
+  ```yaml
+  cluster:
+    apiServer:
+      authorizationConfig:
+        - type: Node
+          name: Node
+        - type: Webhook
+          name: Webhook
+          webhook:
+            connectionInfo:
+              type: InClusterConfig
+          ...
+        - type: RBAC
+          name: rbac
+  ```
+
+  Usage of `authorization-mode` CLI argument will not support this form of customization.
+
+  ### NVMe NQN
+
+  Talos now generates `/etc/nvme/hostnqn` and `/etc/nvme/hostid` files based on the node identity which is tied to the lifecycle of the node.
+
+  The NQN can be read by `talosctl read /etc/nvme/hostnqn`
+
+  ### SELinux
+
+  Talos now supports enabling SELinux enforcing mode, see [SELinux](https://www.talos.dev/v1.10/advanced/selinux/) for more details.
+
+  ### Fully bootstrapped builds
+
+  Talos 1.10 is built with a toolchain based on [[Stageˣ]](https://stagex.tools/), which is a project building fully bootstrapped software.
+  This change increases reproducibility, auditability and security of Talos builds.
+
+  This also changes Talos root filesystem structure for unified /usr, with other directories symlinking to /usr/bin and /usr/lib.
+  System extensions must move their directories accordingly for 1.10.
+
+  ### Component Updates
+
+  * Linux: 6.12.25
+  * CNI plugins: 1.6.2
+  * runc: 1.2.6
+  * containerd: 2.0.5
+  * etcd: 3.5.20
+  * Flannel: 0.26.7
+  * Kubernetes: 1.33.0
+  * CoreDNS: 1.12.1
+
+  Talos is built with Go 1.24.2.
+
+  ### User Volumes
+
+  Talos now supports [user disk volumes](https://www.talos.dev/v1.10/talos-guides/configuration/disk-management/#user-volumes) via the `UserVolumeConfig` machine config document.
+
+  The old `.machine.disks` field is deprecated, but still supported for backwards compatibility.
 </Update>
 
 <Update label="v0.6.9" tags={["Image Factory"]}>
@@ -3315,16 +2270,119 @@ rss: true
 
 </Update>
 
+<Update label="v1.0.10" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.10)
+
+
+</Update>
+
+<Update label="v1.9.5" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.5)
+
+  ### Component Updates
+
+  * Linux: 6.12.18
+  * containerd: 2.0.3
+  * runc: 1.2.5
+  * Kubernetes: 1.32.3
+  * etcd: 3.5.19
+
+  Talos is built with Go 1.23.7.
+</Update>
+
+<Update label="v1.9.4" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.4)
+
+  ### Ingress Firewall
+
+  Talos Ingress Firewall now filters access to Kubernetes NodePort services correctly.
+
+  ### Component Updates
+
+  * Linux: 6.12.13
+  * Flannel: 0.26.4
+  * Kubernetes: 1.32.2
+
+  Talos is built with Go 1.23.6.
+</Update>
+
 <Update label="v0.6.7" tags={["Image Factory"]}>
   [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.6.7)
 
 
 </Update>
 
+<Update label="v1.9.3" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.3)
+
+  ### Component Updates
+
+  * Linux: 6.12.11
+  * Kubernetes: 1.32.1
+  * etcd: 3.5.18
+
+  Talos is built with Go 1.23.5.
+</Update>
+
 <Update label="v0.6.6" tags={["Image Factory"]}>
   [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.6.6)
 
 
+</Update>
+
+<Update label="v1.9.2" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.2)
+
+  ### auditd
+
+  Kernel parameter `talos.auditd.disabled=1` can be used to disable Talos built-in `auditd` service.
+
+  ### kube-apiserver Authorization Config
+
+  When using `.cluster.apiServer.authorizationConfig` the user provided order for the authorizers is honoured and `Node` and `RBAC` authorizers are always added to the end if not explicitly specified.
+
+  Eg: If user provides only `Webhook` authorizer, the final order will be `Webhook`, `Node`, `RBAC`.
+
+  To provide a specific order for `Node` or `RBAC` explicitly, user can provide the authorizer in the order they want.
+
+  Eg:
+
+  ```yaml
+  cluster:
+    apiServer:
+      authorizationConfig:
+        - type: Node
+          name: Node
+        - type: Webhook
+          name: Webhook
+          webhook:
+            connectionInfo:
+              type: InClusterConfig
+          ...
+        - type: RBAC
+          name: rbac
+  ```
+
+  Usage of `authorization-mode` CLI argument will not support this form of customization.
+
+  ### Component Updates
+
+  * Linux: 6.12.9
+  * runc: 1.2.4
+  * containerd: 2.0.2
+
+  Talos is built with Go 1.23.4.
+</Update>
+
+<Update label="v1.9.1" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.1)
+
+  ### Component Updates
+
+  * Linux: 6.12.6
+  * CNI plugins: 1.6.1
+
+  Talos is built with Go 1.23.4.
 </Update>
 
 <Update label="v0.6.5" tags={["Image Factory"]}>
@@ -3340,10 +2398,173 @@ rss: true
   **Full Changelog**: https://github.com/siderolabs/image-factory/compare/v0.6.4...v0.6.5
 </Update>
 
+<Update label="v1.0.9" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.9)
+
+
+</Update>
+
 <Update label="v0.6.4" tags={["Image Factory"]}>
   [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.6.4)
 
 
+</Update>
+
+<Update label="v1.9.0" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.0)
+
+  ### Auditd
+
+  Talos Linux now starts an auditd service by default.
+  Logs can be read with `talosctl logs auditd`.
+
+  ### `talosctl cgroups`
+
+  The `talosctl cgroups` command has been added to the `talosctl` tool.
+  This command allows you to view the cgroup resource consumption and limits for a machine, e.g.
+  `talosctl cgroups --preset memory`.
+
+  ### cgroups version 1
+
+  Support for cgroupsv1 is deprecated, and will be removed in Talos 1.10 (for non-container mode).
+
+  ### Custom search domains for Talos nodes
+
+  Talos now allows to supports specifying custom search domains for Talos nodes using
+  new config field `machine.network.searchDomains`
+
+  For the host it will look something like this:
+
+  ```
+  nameserver 127.0.0.53
+
+  search my-custom-search-name.com my-custom-search-name2.com
+  ```
+
+  For the pods it will look something like this:
+
+  ```
+  search default.svc.cluster.local svc.cluster.local cluster.local my-custom-search-name.com my-custom-search-name2.com
+  nameserver 10.96.0.10
+  options ndots:5
+  ```
+
+  ### Device Selectors
+
+  Talos now supports matching on permanent hardware (MAC) address of the network interfaces.
+  This is specifically useful to match bond members, as they change their hardware addresses when they become part of the bond.
+
+  ### Direct Rendering Manager (DRM)
+
+  Starting with Talos 1.9, the `i915` and `amdgpu` DRM drivers will be dropped from the Talos squashfs.
+  There will be new system extensions named `i915` and `amdgpu` that would contain both the drivers and firmware packaged together.
+  Upgrades via Image Factory will automatically include the new extensions if previously `i915-ucode` or `amdgpu-firmware` were used.
+
+  ### Image Cache
+
+  Talos now supports providing a local [Image Cache](https://www.talos.dev/v1.9/talos-guides/configuration/image-cache/) for container images.
+
+  ### Kube APIServer Authorization Config
+
+  Starting with Talos 1.9, `.cluster.apiServer.authorizationConfig` field supports setting [Kubernetes API server authorization modes](https://kubernetes.io/docs/reference/access-authn-authz/authorization/#using-configuration-file-for-authorization)
+  using the `--authorization-config` flag.
+
+  The machine config field supports a list of `authorizers`. For instance:
+
+  ```yaml
+  cluster:
+    apiServer:
+      authorizationConfig:
+        - type: Node
+          name: Node
+        - type: RBAC
+          name: rbac
+  ```
+
+  For new cluster if the Kubernetes API server supports the `--authorization-config` flag, it'll be used by default instead of the `--authorization-mode` flag.
+  By default Talos will always add the `Node` and `RBAC` authorizers to the list.
+
+  When upgrading if either a user-provided `authorization-mode` or `authorization-webhook-*` flag is set via `.cluster.apiServer.extraArgs`, it'll be used instead of the new `AuthorizationConfig`.
+
+  Current authorization config can be viewed by running: `talosctl get authorizationconfigs.kubernetes.talos.dev -o yaml`
+
+  ### Node Address Sort
+
+  Talos supports new experimental address sort algorithm for `NodeAddress` which are used to pick up default addresses for kubelet, etcd, etc.
+
+  It can be enabled with the following config patch:
+
+  ```yaml
+  machine:
+    features:
+      nodeAddressSortAlgorithm: v2
+  ```
+
+  ### OCI Base Runtime Spec
+
+  Talos now allows to [modify the OCI base runtime spec for the container runtime](https://www.talos.dev/v1.9/advanced/oci-base-spec/).
+
+  ### Registry Mirrors
+
+  In versions before Talos 1.9, there was a discrepancy between the way Talos itself and CRI plugin resolves registry mirrors:
+  Talos will never fall back to the default registry if endpoints are configured, while CRI plugin will.
+
+  > Note: Talos Linux pulls images for the `installer`, `kubelet`, `etcd`, while all workload images are pulled by the CRI plugin.
+
+  In Talos 1.9 this was fixed, so that by default an upstream registry is used as a fallback in all cases, while new registry mirror
+  configuration option `.skipFallback` can be used to disable this behavior both for Talos and CRI plugin.
+
+  ### talosctl disks
+
+  The command `talosctl disks` was removed, please use `talosctl get disks`, `talosctl get systemdisk`, and `talosctl get blockdevices` instead.
+
+  ### talosctl wipe
+
+  The new command `talosctl wipe disk` allows to wipe a disk or a partition which is not used as a volume.
+
+  ### udevd
+
+  Talos previously used `eudev` to provide `udevd`, now it uses `systemd-udevd` instead.
+
+  ### Component Updates
+
+  * Linux: 6.12.5
+  * containerd: 2.0.1
+  * Flannel: 0.26.1
+  * Kubernetes: 1.32.0
+  * runc: 1.2.3
+  * CoreDNS: 1.12.0
+
+  Talos is built with Go 1.23.4.
+
+  ### User Namespaces
+
+  Talos Linux now supports running Kubernetes pods with user namespaces enabled.
+  Refer to the [documentation](https://www.talos.dev/v1.9/kubernetes-guides/configuration/usernamespace/) for more information.
+</Update>
+
+<Update label="v1.8.4" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.8.4)
+
+  Starting with Talos v1.8.0, only standard assets would be published as github release assets. These include:
+
+  * `cloud-images.json`
+  * `talosctl` binaries
+  * `kernel`
+  * `initramfs`
+  * `metal` iso and disk images
+  * `talosctl-cni-bundle`
+
+  All other release assets can be downloaded from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
+
+  ### Component Updates
+
+  Linux: 6.6.64
+  runc: 1.2.3
+  Kubernetes: 1.31.4
+  etcd: 3.5.17
+
+  Talos is built with Go 1.22.10.
 </Update>
 
 <Update label="v0.6.3" tags={["Image Factory"]}>
@@ -3354,6 +2575,12 @@ rss: true
 
 <Update label="v0.6.2" tags={["Image Factory"]}>
   [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.6.2)
+
+
+</Update>
+
+<Update label="v1.0.8" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.8)
 
 
 </Update>
@@ -3370,16 +2597,407 @@ rss: true
 
 </Update>
 
+<Update label="v1.8.3" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.8.3)
+
+  Starting with Talos v1.8.0, only standard assets would be published as github release assets. These include:
+
+  * `cloud-images.json`
+  * `talosctl` binaries
+  * `kernel`
+  * `initramfs`
+  * `metal` iso and disk images
+  * `talosctl-cni-bundle`
+
+  All other release assets can be downloaded from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
+
+  ### Component Updates
+
+  Linux: 6.6.60
+  containerd: 2.0.0
+  runc: 1.2.1
+
+  Talos is built with Go 1.22.9.
+</Update>
+
+<Update label="v1.8.2" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.8.2)
+
+  Starting with Talos v1.8.0, only standard assets would be published as github release assets. These include:
+
+  * `cloud-images.json`
+  * `talosctl` binaries
+  * `kernel`
+  * `initramfs`
+  * `metal` iso and disk images
+  * `talosctl-cni-bundle`
+
+  All other release assets can be downloaded from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
+
+  ### Component Updates
+
+  Linux: 6.6.58
+  containerd: 2.0.0-rc.6
+  runc: 1.2.0
+  Kubernetes: 1.31.2
+
+  Talos is built with Go 1.22.8.
+</Update>
+
+<Update label="v1.0.7" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.7)
+
+
+</Update>
+
+<Update label="v1.0.6" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.6)
+
+
+</Update>
+
+<Update label="v1.8.1" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.8.1)
+
+  Starting with Talos v1.8.0, only standard assets would be published as github release assets. These include:
+
+  * `cloud-images.json`
+  * `talosctl` binaries
+  * `kernel`
+  * `initramfs`
+  * `metal` iso and disk images
+  * `talosctl-cni-bundle`
+
+  All other release assets can be downloaded from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
+
+  ### Component Updates
+
+  Linux: 6.6.54
+  containerd: 2.0.0-rc.5
+  Flannel: 0.25.7
+
+  Talos is built with Go 1.22.8.
+</Update>
+
+<Update label="v1.7.7" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.7)
+
+  ### Component Updates
+
+  Linux: 6.6.52
+  Kubernetes: 1.30.5
+  containerd: 1.7.22
+  runc: 1.1.14
+
+  Talos is built with Go 1.22.7.
+</Update>
+
+<Update label="v1.0.5" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.5)
+
+
+</Update>
+
+<Update label="v1.0.4" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.4)
+
+
+</Update>
+
+<Update label="v1.0.3" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.3)
+
+
+</Update>
+
+<Update label="v1.8.0" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.8.0)
+
+  Starting with Talos v1.8.0, only standard assets would be published as github release assets. These include:
+
+  * `cloud-images.json`
+  * `talosctl` binaries
+  * `kernel`
+  * `initramfs`
+  * `metal` iso and disk images
+  * `talosctl-cni-bundle`
+
+  All other release assets can be downloaded from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
+
+  ### Node Annotations
+
+  Talos Linux now supports configuring Kubernetes node annotations via machine configuration (`.machine.nodeAnnotations`) in a way similar to node labels.
+
+  ### Workload Apparmor Profile
+
+  Talos Linux can now apply the default AppArmor profiles to all workloads started via containerd, if the machine is installed with the AppArmor LSM enforced via the extraKernelArgs.
+
+  Eg:
+
+  ```yaml
+  machine:
+      install:
+          extraKernelArgs:
+              - security=apparmor
+  ```
+
+  ### Bridge Interface
+
+  Talos Linux now support configuring 'vlan_filtering' for bridge interfaces.
+
+  ### Machine Configuration via Kernel Command Line
+
+  Talos Linux supports supplying zstd-compressed, base64-encoded machine configuration small documents via the kernel command line parameter `talos.config.inline`.
+
+  ### CNI Plugins
+
+  Talos Linux now bundles by default the following standard CNI plugins:
+
+  * `bridge`
+  * `firewall`
+  * `flannel`
+  * `host-local`
+  * `loopback`
+  * `portmap`
+
+  The Talos bundled Flannel manifest was simplified to remove the `install-cni` step.
+
+  ### Accessing `/dev/net/tun` in Kubernetes Pods
+
+  Talos Linux ships with `runc` 1.2, which [drops](https://github.com/opencontainers/runc/pull/3468) legacy rule to expose `/dev/net/tun` devices by default in the container.
+
+  If you need to access `/dev/net/tun` in your Kubernetes pods (e.g. running Tailscale as a Kubernetes pod), you can add use [device plugins](https:/www.talos.dev/v1.8/kubernetes-guides/configuration/device-plugins/) to expose `/dev/net/tun` to the pod.
+
+  ### Diagnostics
+
+  Talos Linux now shows diagnostics information for common problems related to misconfiguration via `talosctl health` and Talos dashboard.
+
+  ### Disk Management
+
+  Talos Linux now supports [configuration](https://www.talos.dev/v1.8/talos-guides/configuration/disk-management/#machine-configuration) for the `EPHEMERAL` volume.
+
+  ### Extensions in Kubernetes Nodes
+
+  Talos Linux now publishes list of installed extensions as Kubernetes node labels/annotations.
+
+  The key format is `extensions.talos.dev/<name>` and the value is the extension version.
+  If the extension name is not valid as a label key, it will be skipped.
+  If the extension version is a valid label value, it will be put to the label; otherwise it will be put to the annotation.
+
+  For Talos machines booted of the Image Factory artifacts, this means that the schematic ID will be published as the annotation
+  `extensions.talos.dev/schematic` (as it is longer than 63 characters).
+
+  ### DNS Forwarding for CoreDNS pods
+
+  Usage of the host DNS resolver as upstream for Kubernetes CoreDNS pods is now enabled by default. You can disable it
+  with:
+
+  ```yaml
+  machine:
+    features:
+      hostDNS:
+        enabled: true
+        forwardKubeDNSToHost: false
+  ```
+
+  Please note that on running cluster you will have to kill CoreDNS pods for this change to apply.
+
+  The IP address used to forward DNS queries has changed to the fixed `169.254.116.108` address.
+  For those upgrading from Talos 1.7 with `forwardKubeDNSToHost` enabled, the old Kubernetes service
+  can be cleaned up with `kubectl delete -n kube-system service host-dns`.
+
+  ### Installer
+
+  Talos Linux installer now never wipes the system disk on upgrades, which means that the flag
+  `--preserve` is always set for `talosctl upgrade`.
+
+  ### `talos.halt_if_installed` kernel argument
+
+  Starting with Talos 1.8, ISO's generated from Boot Assets would have a new kernel argument `talos.halt_if_installed` which would pause the boot sequence until boot timeout if Talos is already installed on the disk.
+  ISO generated for pre 1.8 versions would not have this kernel argument.
+
+  This can be also explicitly enabled by setting `talos.halt_if_installed=1` in kernel argument.
+
+  ### Slim Kubelet Image
+
+  Kubelet container image includes various utilities that kubelet might use to perform various tasks.
+
+  Starting with Kubernetes 1.31.0, `kubelet` image now includes less utilities, as the in-tree CSI plugins were
+  removed in Kubernetes 1.31.0. This reduces `kubelet` image size and potential attack surface.
+
+   For Kubernetes < 1.31.0, there will be two images built:
+
+  * `v1.x.y` (default, fat)
+  * `v1.x.y-slim` (slim)
+
+  For Kubernetes >= 1.31.0, there will be same two images built, but the
+  default tag would point to slim image:
+
+  * `v1.x.y` (default, slim)
+  * `v1.x.y-fat` (fat)
+
+  ### KubeSpan
+
+  Extra announced endpoints can be added using the [`KubespanEndpointsConfig` document](https://www.talos.dev/v1.8/talos-guides/network/kubespan/#configuration).
+
+  ### Default Node Labels
+
+  Talos Linux on config generation now adds a label `node.kubernetes.io/exclude-from-external-load-balancers` by default for the control plane nodes.
+
+  ### PCI Devices
+
+  A list of PCI devices can now be obtained via `PCIDevices` resource, e.g. `talosctl get pcidevices`.
+
+  ### Metal images
+
+  Starting with Talos 1.8, `console=ttyS0` kernel argument is removed from the metal images and installer. If running virtualized in QEMU (For eg: Proxmox), this can be added as an extra kernel argument if needed via Image Factory or using Imager.
+
+  This should fix slow boot or no console output issues on most bare metal hardware.
+
+  ### NVIDIA GPU Support
+
+  Starting with Talos 1.8.0, SideroLabs would ships extensions for both LTS and Production versions of NVIDIA extensions.
+  For more details see the CHANGELOG of [extensions](https://github.com/siderolabs/extensions/releases).
+
+  Upgrades with an exisiting schematic id from Image Factory would keep the existing LTS version of the NVIDIA extension.
+
+  ### Removing parts of the configuration using `$patch: delete` syntax
+
+  Talos Linux now supports removing parts of the configuration using the `$patch: delete` syntax similar to the kubernetes.
+  More information can be found [here](https://www.talos.dev/v1.8/talos-guides/configuration/patching/#strategic-merge-patches).
+
+  ### Platform Support
+
+  Talos Linux now supports Apache CloudStack platform.
+
+  ### kube-proxy
+
+  Talos Linux configures kube-proxy >= v1.31.0 to use 'nftables' backend by default.
+
+  ### Secure Boot
+
+  Talos Linux now can optionally include well-known UEFI (Microsoft) SecureBoot keys into the auto-enrollment UEFI database.
+
+  ### Custom Trusted Roots
+
+  Talos Linux now supports adding [custom trusted roots](https://www.talos.dev/v1.8/talos-guides/configuration/certificate-authorities/) (CA certificates) via `TrustedRootsConfig` configuration documents.
+
+  ### Device Extra Settle Timeout
+
+  Talos Linux now supports a kernel command line argument `talos.device.settle_time=3m` to set the device extra settle timeout to workaround issues with broken drivers.
+
+  ### Component Updates
+
+  Kubernetes: 1.31.1
+  Linux: 6.6.52
+  containerd: 2.0.0-rc.4
+  runc: 1.2.0-rc.3
+  etcd: 3.5.16
+  Flannel: 0.25.6
+  Flannel CNI plugin: 1.5.1
+  CoreDNS: 1.1.13
+
+  Talos is built with Go 1.22.7.
+
+  ### ZSTD Compression
+
+  Talos Linux now compresses kernel and initramfs using ZSTD.
+  Linux arm64 kernel is now compressed (previously it was uncompressed).
+</Update>
+
 <Update label="v0.5.0" tags={["Image Factory"]}>
   [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.5.0)
 
 
 </Update>
 
+<Update label="v1.7.6" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.6)
+
+  ### Component Updates
+
+  Linux: 6.6.43
+  Kubernetes: 1.30.3
+
+  Talos is built with Go 1.22.5.
+</Update>
+
+<Update label="v1.6.8" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.8)
+
+  ### Component Updates
+
+  * Linux: 6.1.100
+  * Kubernetes: 1.29.7
+  * runc: 1.1.13
+  * containerd: 1.7.20
+
+  Talos is built with Go 1.21.12.
+</Update>
+
 <Update label="v0.4.2" tags={["Image Factory"]}>
   [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.4.2)
 
 
+</Update>
+
+<Update label="v1.7.5" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.5)
+
+  ### Component Updates
+
+  Linux: 6.6.33
+  Flannel: 0.25.3
+  Containerd: 1.7.18
+
+  Talos is built with Go 1.22.4.
+</Update>
+
+<Update label="v1.7.4" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.4)
+
+  ### Component Updates
+
+  Talos is built with Go 1.22.3.
+</Update>
+
+<Update label="v1.7.3" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.3)
+
+  ### Component Updates
+
+  Linux: 6.6.32
+
+  Talos is built with Go 1.22.3.
+</Update>
+
+<Update label="v1.0.2" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.2)
+
+
+</Update>
+
+<Update label="v1.0.1" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.1)
+
+
+</Update>
+
+<Update label="v1.0.0" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.0)
+
+
+</Update>
+
+<Update label="v1.7.2" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.2)
+
+  ### Component Updates
+
+  Kubernetes: 1.30.1
+  Linux: 6.6.30
+
+  Talos is built with Go 1.22.3.
 </Update>
 
 <Update label="v0.4.1" tags={["Image Factory"]}>
@@ -3400,6 +3018,209 @@ rss: true
 
 </Update>
 
+<Update label="v1.7.1" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.1)
+
+  ### Component Updates
+
+  Linux: 6.6.29
+  containerd: 1.7.16
+
+  Talos is built with Go 1.22.2.
+</Update>
+
+<Update label="v1.7.0" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.0)
+
+  [Documentation on What's New in Talos 1.7.0](https://www.talos.dev/v1.7/introduction/what-is-new/)
+
+  ### CA Rotation
+
+  Talos Linux now supports rotating the root CA certificate and key for Talos API and Kubernetes API.
+
+  ### Device Selectors
+
+  Talos Linux now supports `physical: true` qualifier for device selectors, it selects non-virtual network interfaces (i.e. `en0` is selected, while `bond0` is not).
+
+  ### DNS Caching
+
+  Talos Linux now  provides a caching DNS resolver for host workloads (including host networking pods). It can be disabled with:
+
+  ```yaml
+  machine:
+    features:
+      hostDNS:
+        enabled: false
+  ```
+
+  You can also enable dns caching for k8s pods with:
+
+  ```yaml
+  machine:
+    features:
+      hostDNS:
+        enabled: true
+        forwardKubeDNSToHost: true
+  ```
+
+  Please note that on running cluster you will have to kill CoreDNS pods for this change to apply.
+
+  If you want to can also enable the resolving of member addresses through their host and node names:
+
+  ```yaml
+  machine:
+    features:
+      hostDNS:
+        enabled: true
+        resolveMemberNames: true
+  ```
+
+  ### Extension Services Config
+
+  Talos now supports supplying configuration files and environment variables for extension services.
+  The extension service configuration is a separate config document. An example is shown below:
+
+  ```yaml
+  ---
+  apiVersion: v1alpha1
+  kind: ExtensionServiceConfig
+  name: nut-client
+  configFiles:
+    - content: MONITOR ${upsmonHost} 1 remote pass password
+      mountPath: /usr/local/etc/nut/upsmon.conf
+  environment:
+    - UPS_NAME=ups
+  ```
+
+  For documentation, see [Extension Services Config Files](https://www.talos.dev/v1.7/reference/configuration/extensions/extensionserviceconfig/).
+
+  **Note**: The use of `environmentFile` in extension service spec is now deprecated and will be removed in a future release of Talos.
+  Use `ExtensionServiceConfig` instead.
+
+  ### IPTables
+
+  Talos Linux now forces `kubelet` and `kube-proxy` to use `iptables-nft` instead of `iptables-legacy` (`xtables`) which was the default
+  before Talos 1.7.0.
+
+  Container images based on `iptables-wrapper` should work without changes, but if there was a direct call to `legacy` mode of `iptables`, make sure
+  to update to use `iptables-nft`.
+
+  ### Kubernetes Upgrade
+
+  The command `talosctl upgrade-k8s` now supports specifying custom image references for Kubernetes components via `--*-image` flags.
+  The default behavior is unchanged, and the flags are optional.
+
+  ### KubeSpan
+
+  Talos Linux disables by default a KubeSpan feature to harvest additional endpoints from KubeSpan members.
+  This feature turned out to be less helpful than expected and caused unnecessary performance issues.
+
+  Previous behavior can be restored with:
+
+  ```yaml
+  machine:
+    network:
+      kubespan:
+          harvestExtraEndpoints: true
+  ```
+
+  ### Logging
+
+  Talos Linux now supports setting extra tags when sending logs in JSON format:
+
+  ```yaml
+  machine:
+    logging:
+      destinations:
+        - endpoint: "udp://127.0.0.1:12345/"
+          format: "json_lines"
+          extraTags:
+            server: s03-rack07
+  ```
+
+  ### Time Sync
+
+  Default NTP server was updated to be `time.cloudflare.com` instead of `pool.ntp.org`.
+  Default server is only used if the user does not specify any NTP servers in the configuration.
+
+  Talos Linux can now sync to PTP devices (e.g. provided by the hypervisor) skipping the network time servers.
+  In order to activate PTP sync, set `machine.time.servers` to the PTP device name (e.g. `/dev/ptp0`):
+
+  ```yaml
+  machine:
+    time:
+      servers:
+        - /dev/ptp0
+  ```
+
+  ### OpenNebula
+
+  Talos Linux now supports OpenNebula platform.
+
+  ### Platforms
+
+  Talos Linux now supports [Akamai Connected Cloud](https://www.linode.com/) provider (platform `akamai`).
+
+  ### Kubernetes API Server Service Account Key
+
+  Talos Linux starting from this release uses RSA key for Kubernetes API Server Service Account instead of ECDSA key to provide better compatibility with external OpenID Connect implementations.
+
+  ### SBC
+
+  Talos has split the SBC's (Single Board Computers) into separate repositories.
+  There will not be any more SBC specific release assets as part of Talos release.
+
+  The default Talos Installer image will stop working for SBC's and will fail the upgrade, if used, starting from Talos v1.7.0.
+
+  The SBC's images and installers can be generated on the fly using [Image Factory](https://factory.talos.dev) or using [Imager](https://www.talos.dev/latest/talos-guides/install/boot-assets/) for custom images.
+  The list of official SBC's images supported by Image Factory can be found in the [Overlays](https://github.com/siderolabs/overlays/) repository.
+
+  ### Secure Boot Image
+
+  Talos Linux now provides a way to configure systemd-boot ISO 'secure-boot-enroll' option while generating a SecureBoot ISO image:
+
+  ```yaml
+  output:
+      kind: iso
+      isoOptions:
+          sdBootEnrollKeys: force # default is still if-safe
+      outFormat: raw
+  ```
+
+  ### Syslog
+
+  Talos Linux now starts a basic syslog receiver listening on `/dev/log`.
+  The receiver can mostly parse both RFC3164 and RFC5424 messages and writes them as JSON formatted message.
+  The logs can be viewed via `talosctl logs syslogd`.
+
+  This is mostly implemented for extension services that log to syslog.
+
+  ### Component Updates
+
+  Linux: 6.6.28
+  etcd: 3.5.11
+  Kubernetes: 1.30.0
+  containerd: 1.7.15
+  runc: 1.1.12
+  Flannel: 0.25.1
+
+  Talos is built with Go 1.22.2.
+
+  ### Hardware Watchdog Timers
+
+  Talos Linux now supports hardware watchdog timers configuration.
+  If enabled, and the machine becomes unresponsive, the hardware watchdog will reset the machine.
+
+  The watchdog can be enabled with the following configuration document:
+
+  ```yaml
+  apiVersion: v1alpha1
+  kind: WatchdogTimerConfig
+  device: /dev/watchdog0
+  timeout: 3m0s
+  ```
+</Update>
+
 <Update label="v0.3.2" tags={["Image Factory"]}>
   [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.3.2)
 
@@ -3418,14 +3239,91 @@ rss: true
 
 </Update>
 
+<Update label="v1.6.7" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.7)
+
+  ### Component Updates
+
+  * Linux: 6.1.82
+  * Kubernetes: 1.29.3
+
+  Talos is built with Go 1.21.8.
+</Update>
+
 <Update label="v0.2.3" tags={["Image Factory"]}>
   [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.2.3)
 
 
 </Update>
 
+<Update label="v1.6.6" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.6)
+
+  ### Component Updates
+
+  * Linux: 6.1.80
+
+  Talos is built with Go 1.21.8.
+</Update>
+
+<Update label="v1.6.5" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.5)
+
+  ### Kubernetes Upgrade
+
+  The command `talosctl upgrade-k8s` now supports specifying custom image references for Kubernetes components via `--*-image` flags.
+  The default behavior is unchanged, and the flags are optional.
+
+  ### Component Updates
+
+  Kubernetes: 1.29.2
+  Linux: 6.1.78
+
+  Talos is built with Go 1.21.6.
+</Update>
+
+<Update label="v1.6.4" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.4)
+
+  ### Component Updates
+
+  containerd: 1.7.13
+  runc: 1.1.12
+
+  See [CVE-2024-21626](https://github.com/opencontainers/runc/security/advisories/GHSA-xr7r-f8xq-vfvv) for the runc update.
+
+  Talos is built with Go 1.21.6.
+</Update>
+
+<Update label="v1.6.3" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.3)
+
+  ### Component Updates
+
+  Linux: 6.1.74
+  Kubernetes: 1.29.1
+
+  Talos is built with Go 1.21.6.
+</Update>
+
 <Update label="v0.2.2" tags={["Image Factory"]}>
   [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.2.2)
+
+
+</Update>
+
+<Update label="v1.6.2" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.2)
+
+  ### Component Updates
+
+  Linux: 6.1.73
+
+  Talos is built with Go 1.21.6.
+</Update>
+
+<Update label="v0.1.3" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v0.1.3)
 
 
 </Update>
@@ -3436,14 +3334,134 @@ rss: true
 
 </Update>
 
+<Update label="v1.6.1" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.1)
+
+  ### Component Updates
+
+  Linux: 6.1.69
+  containerd: 1.7.11
+
+  Talos is built with Go 1.21.5.
+</Update>
+
 <Update label="v0.2.0" tags={["Image Factory"]}>
   [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.2.0)
 
 
 </Update>
 
-<Update label="v0.1.3" tags={["Discovery Service"]}>
-  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v0.1.3)
+<Update label="v1.6.0" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.0)
+
+  ### OAuth2 Machine Config Flow
+
+  Talos Linux when running on the `metal` platform can be configured to authenticate the machine configuration download using [OAuth2 device flow](https://www.talos.dev/v1.6/advanced/machine-config-oauth/).
+
+  ### Network Device Selectors
+
+  Previously, [network device selectors](https://www.talos.dev/v1.6/talos-guides/network/device-selector/) only matched the first link, now the configuration is applied to all matching links.
+
+  ### Extension Services
+
+  Talos now starts Extension Services early in the boot process, this allows guest agents to be started in maintenance mode.
+
+  ### Linux Firmware
+
+  Starting with Talos 1.6, there is no Linux firmware included in the initramfs.
+  Customers who need Linux firmware can pull them as extension during install time using the image factory service.
+  If the initial boot requires firmware, a custom iso can be built with the firmware included using the image factory service.
+  This also ensures that the linux-firmware is not tied to a specific Talos version.
+
+  ### Flannel Configuration
+
+  Talos Linux now supports customizing default Flannel manifest with extra arguments for flanneld.
+
+  ```yaml
+  cluster:
+    network:
+      cni:
+        flannel:
+          extraArgs:
+            - --iface-can-reach=192.168.1.1
+  ```
+
+  ### Ingress Firewall
+
+  Talos Linux now supports configuring the [ingress firewall rules](https://talos.dev/v1.6/talos-guides/network/ingress-firewall/).
+
+  ### Kernel Arguments
+
+  Talos and Imager now supports dropping kernel arguments specified in `.machine.install.extraKernelArgs` or as `--extra-kernel-arg` to imager.
+  Any kernel argument that starts with a `-` is dropped. Kernel arguments to be dropped can be specified either as `-<key>` which would remove all arguments that start with `<key>` or as `-<key>=<value>` which would remove the exact argument.
+
+  ### Kube-Scheduler Configuration
+
+  Talos now supports specifying the kube-scheduler configuration in the Talos configuration file.
+  It can be set under `cluster.scheduler.config` and kube-scheduler will be automatically configured to with the correct flags.
+
+  ### Kubelet Credential Provider Configuration
+
+  Talos now supports specifying the kubelet credential provider configuration in the Talos configuration file.
+  It can be set under `machine.kubelet.credentialProviderConfig` and kubelet will be automatically configured to with the correct flags.
+  The credential binaries are expected to be present under `/usr/local/lib/kubelet/credentialproviders`.
+  Talos System Extensions can be used to install the credential binaries.
+
+  ### KubePrism
+
+  [KubePrism](https://www.talos.dev/v1.6/kubernetes-guides/configuration/kubeprism/) is enabled by default on port 7445.
+
+  ### Sysctl
+
+  Talos now handles sysctl/sysfs key names in line with sysctl.conf(5):
+
+  * if the first separator is '/', no conversion is done
+  * if the first separator is '.', dots and slashes are remapped
+
+  Example (both sysctls are equivalent):
+
+  ```yaml
+  machine:
+    sysctls:
+      net/ipv6/conf/eth0.100/disable_ipv6: "1"
+      net.ipv6.conf.eth0/100.disable_ipv6: "1"
+  ```
+
+  ### talosctl CLI
+
+  The command `images` deprecated in Talos 1.5 was removed, please use `talosctl images default` instead.
+
+  ### Component Updates
+
+  Linux: 6.1.67
+  containerd: 1.7.10
+  CoreDNS: 1.11.1
+  Kubernetes: 1.29.0
+  Flannel: 0.23.0
+  etcd: 3.5.11
+  runc: 1.1.10
+
+  Talos is built with Go 1.21.5.
+
+  ### User Disks
+
+  Talos Linux now supports specifying user disks in `.machine.disks` machine configuration links via `udev` symlinks, e.g. `/dev/disk/by-id/XXXX`.
+</Update>
+
+<Update label="v0.1.2" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.1.2)
+
+
+</Update>
+
+<Update label="v0.1.1" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.1.1)
+
+
+</Update>
+
+<Update label="v0.1.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.1.0)
 
 
 </Update>
@@ -3454,32 +3472,14 @@ rss: true
 
 </Update>
 
-<Update label="v0.1.2" tags={["Image Factory"]}>
-  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.1.2)
-
-
-</Update>
-
 <Update label="v0.1.1" tags={["Discovery Service"]}>
   [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v0.1.1)
 
   https://github.com/talos-systems/discovery-service/issues.
 </Update>
 
-<Update label="v0.1.1" tags={["Image Factory"]}>
-  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.1.1)
-
-
-</Update>
-
 <Update label="v0.1.0" tags={["Discovery Service"]}>
   [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v0.1.0)
 
   https://github.com/talos-systems/discovery-service/issues.
-</Update>
-
-<Update label="v0.1.0" tags={["Image Factory"]}>
-  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.1.0)
-
-
 </Update>
