@@ -145,7 +145,7 @@ They use DHCP for interface configuration, and install to `/dev/sda`.
 
 Sometimes, you will need to modify the generated files to work with your systems.
 A common case is needing to change the installation disk.
-If you try to to apply the machine config to a node, and get an error like the below, you need to specify a different installation disk:
+If you try to apply the machine config to a node, and get an error like the below, you need to specify a different installation disk:
 
 ```sh
 $ talosctl apply-config --insecure -n 192.168.0.2 --file controlplane.yaml

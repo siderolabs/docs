@@ -39,7 +39,7 @@ make <target> PLATFORM=linux/arm64,linux/amd64 # build for arm64 and amd64, cont
 
 ## Custom `PKGS`
 
-When [customizing Linux kernel]( ./customizing-the-kernel), the source for the [`siderolabs/pkgs`](https://github.com/siderolabs/pkgs) repository can
+When [customizing Linux kernel](./customizing-the-kernel), the source for the [`siderolabs/pkgs`](https://github.com/siderolabs/pkgs) repository can
 be overridden with:
 
 * if you built and pushed only a custom `kernel` package, the reference can be overridden with `PKG_KERNEL` variable: `make <target> PKG_KERNEL=<registry>/<username>/kernel:<tag>`

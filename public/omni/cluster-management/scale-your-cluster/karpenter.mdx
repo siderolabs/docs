@@ -497,7 +497,7 @@ kubectl delete ec2nodeclass talos-workers
 helm uninstall karpenter -n "$KARPENTER_NAMESPACE"
 ```
 
-3. Delete the interuption queue:
+3. Delete the interruption queue:
 
 ```bash
 aws sqs delete-queue \
