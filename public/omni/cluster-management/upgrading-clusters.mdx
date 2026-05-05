@@ -99,3 +99,55 @@ omnictl cluster machine lock <machine-id>
 ```
 
 Upgrades and config patches apply to all unlocked nodes. Locked nodes retain their configuration from the time they were locked. To allow pending updates to apply, unlock the node.
+
+
+## Troubleshoot a stalled upgrade
+
+Upgrades occasionally stall due to hardware issues, network interruptions, or unexpected machine behavior. This section covers what to do if an upgrade does not complete as expected, and how to recover if the cluster reaches a broken state.
+
+### Before you start an upgrade
+
+Before upgrading, verify that an etcd backup exists and completed successfully. Backups are your primary recovery path if an upgrade leaves the cluster in an unrecoverable state.
+
+To check the most recent backup status for your cluster, run the following command, replacing `<cluster-name>` with the name of your cluster:
+
+```bash
+omnictl get etcdbackupstatus <cluster-name> -o yaml
+```
+
+Confirm that the error field is empty and that lastbackuptime reflects a recent timestamp. If no backup exists or the last backup failed, create one before proceeding. See [Create Etcd Backups](../cluster-management/etcd-backups) for instructions.
+
+### If a node appears stuck during an upgrade
+
+If a node is not progressing, wait before taking any action. Talos Linux performs several operations during an upgrade, including applying the new image, rebooting, and rejoining the cluster, and some steps can take longer than expected depending on hardware.
+
+If a node remains stuck after several minutes:
+
+1. Check the machine status in the Omni UI. A status of **Rebooting** or **Installing** indicates the upgrade is still in progress.
+
+2. Check the machine logs in the Omni UI or by running the following command, replacing `<machine-id>` with the ID of your machine:
+
+    ```bash
+    omnictl machine-logs <machine-id>
+    ```
+3. If you have access to a serial or VNC console for the machine, use it to inspect the machine state directly. This is especially useful when Talos is unresponsive, since Talos does not allow SSH access by design.
+
+4. If the upgrade cannot proceed, cancel it from the Omni UI.
+
+Talos uses an A/B partition scheme, so cancelling an upgrade will revert the node to the previous version as long as the node is still responsive.
+
+### What not to do during a stalled upgrade
+
+Avoid the following actions while an upgrade is in progress, as they can break etcd quorum and leave the cluster in an unrecoverable state:
+
+- Do not delete machines out-of-band. Deleting a VM directly from your infrastructure provider (such as OpenStack or AWS) without going through Omni leaves Omni waiting for a machine that no longer exists. This disrupts the upgrade and can break control plane quorum.
+
+- Do not add control plane nodes to resolve a quorum issue. Adding machines while the control plane is in a broken state does not restore quorum and makes the situation harder to recover from.
+
+- Do not run `kubectl delete node` on a control plane node. This removes the node from Kubernetes without removing it from Omni or etcd, which can break quorum.
+
+Control plane nodes must always be an odd number (1, 3, 5) to maintain quorum. If you are unsure how many control plane nodes you have, check the cluster overview in the Omni UI before making any changes.
+
+### If the control plane is broken and you have a backup
+
+If the control plane is in a broken state and a valid etcd backup exists, you can recover the cluster by deleting the control plane machineset and restoring from the backup. See [Restore Etcd of a Cluster](../cluster-management/restore-etcd-of-a-cluster-managed-by-cluster-templates) for the full recovery procedure.
