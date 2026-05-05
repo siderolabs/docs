@@ -28,7 +28,7 @@ Before proceeding, ensure the following:
 
 Replace `<omni-domain-name>` with your Omni domain name (for example, `omni.example.com`) in the DNS records above and throughout this guide.
 
-## Step 1: Start Omni with the Nginx Flags
+## Step 1: Start Omni with the Nginx flags
 
 Follow the [Run Omni On-Prem](./run-omni-on-prem) guide to deploy Omni on-prem.  
 Before starting the Omni instance using either `docker run` or `docker compose`, complete the following steps.
@@ -89,7 +89,7 @@ Before starting the Omni instance using either `docker run` or `docker compose`,
             --initial-users=<email address>
     ```
 
-## Step 2: Provision TLS Certificates
+## Step 2: Provision TLS certificates
 
 Use `acme` or `certbot` to generate TLS certificates for all three subdomains. **Step 3** expects the certificates at the following paths. If your certificates are stored elsewhere, update the paths in the Nginx config accordingly.
 
@@ -99,7 +99,7 @@ Use `acme` or `certbot` to generate TLS certificates for all three subdomains. *
 | `api.$OMNI_DOMAIN_NAME` | `/var/lib/acme/omni_api/` |
 | `kube.$OMNI_DOMAIN_NAME` | `/var/lib/acme/omni_kube/` |
 
-## Step 3: Apply the Nginx Configuration
+## Step 3: Apply the Nginx configuration
 
 Run the following command to write the Nginx config:
 
