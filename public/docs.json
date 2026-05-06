@@ -2724,6 +2724,7 @@
           {
             "group": "Reference",
             "pages": [
+              "omni/reference/build-with-the-omni-api",
               "omni/reference/acls",
               "omni/reference/cli",
               "omni/reference/cluster-templates",

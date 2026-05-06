@@ -116,6 +116,7 @@ navigation:
         - group: "Reference"
           folder: "omni/reference"
           pages:
+            - "build-with-the-omni-api.mdx"
             - "acls.mdx"
             - "cli.mdx"
             - "cluster-templates.mdx"
