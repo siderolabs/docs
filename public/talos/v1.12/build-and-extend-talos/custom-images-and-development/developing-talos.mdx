@@ -69,7 +69,7 @@ bash hack/start-registry-proxies.sh
 Start your local cluster with:
 
 ```bash
-sudo --preserve-env=HOME _out/talosctl-<YOUR FLAVOR> cluster create \
+sudo --preserve-env=HOME _out/talosctl-<YOUR FLAVOR> cluster create dev \
     --provisioner=qemu \
     --cidr=172.20.0.0/24 \
     --registry-mirror docker.io=http://172.20.0.1:5000 \
@@ -93,7 +93,7 @@ sudo --preserve-env=HOME _out/talosctl-<YOUR FLAVOR> cluster create \
 
 > Note: when configuration changes are introduced and the old installer doesn't validate the config, or the installation flow itself is being worked on  `--with-bootloader=false` should not be used
 >
-> `talosctl cluster create` derives Talos machine configuration version from the install image tag, so sometimes early in the development cycle (when new minor tag is not released yet), machine config version can be overridden with `--talos-version=${version_v1_12}`.
+> `talosctl cluster create dev` derives Talos machine configuration version from the install image tag, so sometimes early in the development cycle (when new minor tag is not released yet), machine config version can be overridden with `--talos-version=${version_v1_12}`.
 
 ## Console logs
 
@@ -105,7 +105,7 @@ tail -F ~/.talos/clusters/talos-default/talos-default-*.log
 
 ## Interacting with Talos
 
-Once `talosctl cluster create` finishes successfully, `talosconfig` and `kubeconfig` will be set up automatically to point to your cluster.
+Once `talosctl cluster create dev` finishes successfully, `talosconfig` and `kubeconfig` will be set up automatically to point to your cluster.
 
 Start playing with `talosctl`:
 
@@ -123,7 +123,7 @@ kubectl get nodes -o wide
 
 You can deploy some Kubernetes workloads to the cluster.
 
-You can edit machine config on the fly with `talosctl edit mc --immediate`, config patches can be applied via `--config-patch` flags, also many features have specific flags in `talosctl cluster create`.
+You can edit machine config on the fly with `talosctl edit mc --immediate`, config patches can be applied via `--config-patch` flags, also many features have specific flags in `talosctl cluster create dev`.
 
 ## Quick reboot
 
@@ -293,7 +293,7 @@ The last section adds an extra Kubernetes manifest hosted on the HTTPS server.
 The machine configuration patch can now be used to launch a test Talos cluster:
 
 ```shell
-talosctl cluster create ... --config-patch @air-gapped-patch.yaml
+talosctl cluster create dev ... --config-patch @air-gapped-patch.yaml
 ```
 
 The following lines should appear in the output of the `talosctl debug air-gapped` command:
