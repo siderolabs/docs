@@ -95,14 +95,14 @@ To update an existing file:
 To add a new page to the docs:
 
 1. Create a new MDX file in the appropriate folder:
-    * Talos (versioned): `public/talos/&lt;version>/&lt;section>/your-page.mdx`
-    * Omni: `public/omni/&lt;section>/your-page.mdx`
-    * Kubernetes Guides: `public/kubernetes-guides/&lt;section>/your-page.mdx`
+    * Talos (versioned): `public/talos/<version>/<section>/your-page.mdx`
+    * Omni: `public/omni/<section>/your-page.mdx`
+    * Kubernetes Guides: `public/kubernetes-guides/<section>/your-page.mdx`
 2. Add the new page to the sidebar. Mintlify doesn’t automatically detect new pages.
 
     To make your new page visible in the sidebar, add the file path of the new page to the correct YAML file:
 
-    * Talos → `talos-v&lt;version>.yaml`
+    * Talos → `talos-v<version>.yaml`
     * Omni → `omni.yaml`
     * Kubernetes Guides → `kubernetes-guides.yaml`
 3. Once your YAML is updated, rebuild the master `docs.json` file by running:
@@ -137,7 +137,7 @@ Once you have verified that everything looks good, commit your changes:
 
 ```bash
 git add .
-git commit -m "docs: improve &lt;topic> section"
+git commit -m "docs: improve <topic> section"
 git push -u origin HEAD
 ```
 
