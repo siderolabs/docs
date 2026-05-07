@@ -1,0 +1,175 @@
+---
+title: "Debug Shell"
+description: "Using talosctl debug shell for troubleshooting and diagnostics."
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos Linux is a minimal operating system designed to run Kubernetes workloads efficiently and securely.
+However, there are cases where you need access to the underlying system for troubleshooting or diagnostics.
+
+Some troubleshooting tasks require tools that are not included in the default Talos image — nor should they be, since they aren't needed for normal cluster operation.
+
+Talos provides a debug shell that starts a privileged container using an image you supply, then drops you into that shell.
+When you exit, the container is removed and the cluster continues operating normally.
+
+There are two ways to bring the container image to use for the debug shell:
+
+* let the Talos machine pull the image from the registry;
+* push the image to the machine using the API.
+
+Pulling from a registry is the simplest approach, but requires network access to that registry.
+If you are troubleshooting a connectivity issue, use the API to push the image directly to the machine instead.
+
+[![asciicast](https://asciinema.org/a/KFuF1m8L60eCp2US.svg)](https://asciinema.org/a/KFuF1m8L60eCp2US)
+
+## Pulling the image from the registry
+
+Pass the image reference as an argument to `talosctl debug`:
+
+```bash
+$ talosctl debug docker.io/library/alpine:latest
+/ # ls /host/
+bin     dev     lib     mnt     proc    run     sys     tmp     var
+boot    etc     lib64   opt     root    sbin    system  usr
+/
+```
+
+## Pushing the debug image to the machine
+
+First, build the image required (e.g. install required packages):
+
+> Note: if you have the image already built and stored in your local Docker image store, you can skip the build step and directly save it to a tarball.
+
+```dockerfile
+# Dockerfile
+FROM alpine:3.23
+
+RUN apk add --no-cache iputils
+```
+
+Then, build the image and store it to the local Docker image store:
+
+```bash
+docker build --tag alpine-with-tools:v1 .
+```
+
+Next, save the image to a tarball:
+
+```bash
+docker save alpine-with-tools:v1 -o ./alpine-with-tools.tar
+```
+
+> Note: the architecture of the image should match the architecture of the machine to debug, otherwise the image will fail to start.
+
+Finally, pass the tarball path to `talosctl debug`:
+
+```bash
+$ talosctl debug ./alpine-with-tools.tar
+image imported docker.io/library/alpine-with-tools:v1 from ./alpine-with-tools.tar
+/ # ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 brd 127.255.255.255 scope host lo
+       valid_lft forever preferred_lft forever
+    inet 169.254.116.108/32 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+...
+```
+
+## Anatomy of the debug container
+
+The debug container runs privileged with host PID and network namespaces, giving it access to the host's processes and network interfaces.
+
+The host filesystem is mounted at `/host`, so you can browse host files from within the container.
+
+Host devices are available under the regular `/dev` path.
+
+## Example: using pwru (packet-where-are-you) tool
+
+The `pwru` tool traces network packets through the Linux network stack, making it useful for diagnosing network issues.
+
+First, build the `pwru` image from source, since it is not available in public container registries:
+
+```bash
+git clone https://github.com/cilium/pwru.git
+cd pwru
+docker build -f Dockerfile --tag pwru:latest .
+docker save pwru:latest -o pwru.tar
+```
+
+Second, `pwru` needs to decode function names from kernel pointers, which Talos restricts by default.
+Temporarily relax this restriction by applying the following machine configuration patch:
+
+```yaml
+machine:
+  sysctls:
+    kernel.kptr_restrict: 1
+```
+
+Finally, use the `pwru` image to start the debug shell:
+
+```bash
+$ talosctl debug ./pwru.tar
+image imported docker.io/library/pwru:latest from ./pwru.tar
+/ #
+```
+
+As an example, suppose a firewall rule is blocking access to port 5005 and you want to diagnose it with `pwru`.
+
+```yaml
+apiVersion: v1alpha1
+kind: NetworkRuleConfig
+name: test
+portSelector:
+    ports:
+        - 5005
+    protocol: tcp
+ingress:
+    - subnet: 192.168.0.0/16
+```
+
+Attempting to reach port 5005 from outside the cluster results in a silent block:
+
+```bash
+$ nc -vz <machine-ip> 5005
+# hangs for a while
+```
+
+Back in the `pwru` debug shell, launch the `pwru` tool to trace the packets to port 5005:
+
+```bash
+/ # pwru 'port 5005'
+2026/03/31 13:22:21 INFO Attaching kprobes via=kprobe
+3013 / 3013 [------------------------------------------------------------------------------------------------------------------------------------------------------------] 100.00% 214 p/s
+2026/03/31 13:22:35 INFO Attached ignored=0
+2026/03/31 13:22:35 INFO Listening for events..
+SKB                CPU PROCESS          NETNS      MARK/x        IFACE       PROTO  MTU   LEN   TUPLE FUNC
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) inet_gro_receive
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) tcp4_gro_receive
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) __skb_gro_checksum_complete
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) tcp_gro_pull_header
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) tcp_gro_receive
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) ip_rcv_core
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) nf_hook_slow
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) ip_sabotage_in
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) ipv4_conntrack_defrag
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) ipv4_conntrack_in
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) nf_conntrack_in
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) nf_conntrack_tcp_packet
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) nf_checksum
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) nf_ip_checksum
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) nft_do_chain_inet
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) sk_skb_reason_drop(SKB_DROP_REASON_NETFILTER_DROP)
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) __kfree_skb
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) skb_release_head_state
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) skb_release_data
+0xffff8c37e629c800 1   <empty>:0        4026531833 0            enp0s2:8     0x0800 1500  60    172.20.0.1:46236->172.20.0.5:5005(tcp) skb_free_head
+```
+
+The `sk_skb_reason_drop(SKB_DROP_REASON_NETFILTER_DROP)` entry shows the packet being dropped by netfilter — the Linux kernel's firewall framework.
+This confirms the issue lies in the firewall rules on the machine, and further investigation should focus there.

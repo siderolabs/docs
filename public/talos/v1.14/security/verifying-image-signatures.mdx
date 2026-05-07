@@ -1,0 +1,106 @@
+---
+title: "Verifying Image Signatures"
+description: "Verifying container image signatures with Talos Linux."
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Some components of Talos Linux are distributed as part of the Talos operating system image (for example, `containerd`), while
+others are pulled as container images from the registry (for example, `ghcr.io/siderolabs/kubelet`).
+All workloads running in Kubernetes clusters created with Talos Linux are also running as container images.
+Thus, verifying the signatures of the container images is an important part of the security of the cluster, in order to prevent supply chain attacks and ensure that the images have not been tampered with.
+
+Talos Linux provides a machine-wide configurable image signature verification policy which covers all image pulls on the machine,
+including the ones initiated by the Talos operating system itself, as well as the ones initiated by Kubernetes for the workloads running in the cluster.
+
+The image signature verification policy is a top-down list of rules which are evaluated in order.
+The first rule that matches the image being pulled is applied, and the rest of the rules are ignored.
+The rules can be configured to verify the signature, ignore the signature, or reject the image.
+A rule matches on the image reference without the tag or digest, e.g. for the image `ghcr.io/siderolabs/installer:v1.13.0`, the reference matched is `ghcr.io/siderolabs/installer`.
+
+The policy is configured using the [ImageVerificationConfig](../reference/configuration/security/imageverificationconfig) configuration document.
+
+```yaml
+apiVersion: v1alpha1
+kind: ImageVerificationConfig
+rules:
+    - image: registry.k8s.io/*
+      keyless:
+        issuer: https://accounts.google.com
+        subject: krel-trust@k8s-releng-prod.iam.gserviceaccount.com
+    - image: ghcr.io/siderolabs/*
+      keyless:
+        issuer: https://accounts.google.com
+        subjectRegex: '(@siderolabs\.com$|^releasemgr-svc@talos-production\.iam\.gserviceaccount\.com$)'
+    - image: factory.talos.dev/*
+      keyless:
+        issuer: https://accounts.google.com
+        subject: image-factory-signing@talos-production.iam.gserviceaccount.com
+```
+
+In the example above, the first rule matches all images from `registry.k8s.io` and requires them to be signed by the Kubernetes release engineering team service account,
+while the second rule matches all images from `ghcr.io/siderolabs` and requires them to be signed by a Sidero Labs employee or the Talos production release manager service account.
+For the images from `factory.talos.dev` (Image Factory), the third rule requires them to be signed by the Talos production image factory service account.
+Any other images that do not match any of the rules will be allowed by default.
+This example set of rules can be used as a starting point for the image signature verification policy, and it can be customized to fit the specific needs of the cluster and the organization.
+These rules cover all images used by Talos Linux itself by default, so they can be used as a base policy for the cluster and then additional rules can be added for the workloads running in the cluster.
+
+It is also possible to create a closed policy that rejects all images that do not match any of the rules by adding a final rule with `deny: true`:
+
+```yaml
+apiVersion: v1alpha1
+kind: ImageVerificationConfig
+rules:
+    - image: registry.k8s.io/*
+      keyless:
+        issuer: https://accounts.google.com
+        subject: krel-trust@k8s-releng-prod.iam.gserviceaccount.com
+    - image: "*"
+      deny: true
+```
+
+If some images are known to have no signatures, or if there are some images for which the signature verification is not required, a rule with `skip: true` can be added:
+
+```yaml
+apiVersion: v1alpha1
+kind: ImageVerificationConfig
+rules:
+    - image: registry.k8s.io/e2e-test-images/*
+      skip: true # skip verification for e2e test images since they are not signed
+    - image: registry.k8s.io/*
+      keyless:
+        issuer: https://accounts.google.com
+        subject: krel-trust@k8s-releng-prod.iam.gserviceaccount.com
+```
+
+For the rules which verify the signature, there are two verification mechanisms supported: keyless verification based on issuer/subject claims, and verification based on public keys.
+Both mechanisms are based on the [cosign](https://docs.sigstore.dev/) tool.
+
+Keyless verification is more convenient since it does not require managing the public keys, but it requires Talos machines to have access to the TUF repository with the trusted root certificates.
+Both Kubernetes and Sidero Labs use keyless signing methods.
+
+> Note: Keyless verification will not work on air-gapped clusters that do not have access to the Internet.
+
+Public key verification does not have the above limitation, but it requires generating and managing the signing keys and making the public keys available to the Talos machines.
+
+The image verification policy is applied at the moment of pulling the image, so if the image is already present in the local image store, the signature will not be verified again.
+
+The signature verification can be verified by checking the image labels, for the presence of the `talos.dev/verified` label:
+
+```bash
+$ talosctl image ls
+NODE         IMAGE                                                                                                             DIGEST                                                                    SIZE     LABELS                                                                                                                                    CREATED
+172.20.0.2   registry.k8s.io/kube-apiserver:v1.36.0-beta.0                                                                     sha256:8738e8e72f834e981f7e9bf0d65bb2bafb3c5cac6404bbeca2fb7dc4461eb45e   30 MB    io.cri-containerd.image=managed,talos.dev/verified=verified via legacy signature (bundle verified true)                                   2026-03-27T16:18:32Z
+172.20.0.2   registry.k8s.io/kube-apiserver@sha256:8738e8e72f834e981f7e9bf0d65bb2bafb3c5cac6404bbeca2fb7dc4461eb45e            sha256:8738e8e72f834e981f7e9bf0d65bb2bafb3c5cac6404bbeca2fb7dc4461eb45e   30 MB    io.cri-containerd.image=managed,talos.dev/verified=verified via legacy signature (bundle verified true)                                   2026-03-27T16:18:32Z
+```
+
+And same command for images pulled by Talos:
+
+```bash
+talosctl image ls --namespace system
+NODE         IMAGE                                                                                                DIGEST                                                                    SIZE    LABELS                                                                    CREATED
+172.20.0.2   ghcr.io/siderolabs/kubelet:v1.36.0-beta.0                                                            sha256:9351f21d2dd799486132d7d5d2824d335463710802dee813e18a452e375f48d5   64 MB   talos.dev/verified=verified via bundle                                    2026-03-27T16:18:04Z
+172.20.0.2   ghcr.io/siderolabs/kubelet@sha256:9351f21d2dd799486132d7d5d2824d335463710802dee813e18a452e375f48d5   sha256:9351f21d2dd799486132d7d5d2824d335463710802dee813e18a452e375f48d5   64 MB   talos.dev/verified=verified via bundle                                    2026-03-27T16:18:04Z
+```

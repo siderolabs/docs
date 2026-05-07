@@ -1,0 +1,36 @@
+---
+title: Overview
+description: Talos Linux machine configuration reference.
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos Linux machines are fully configured using a single YAML file called the machine configuration.
+
+This file is a multi-document configuration that may contain multiple YAML documents, separated by `---` (three dashes).
+
+Each document represents a partial machine configuration. Talos parses and validates each document independently, then merges them into a single effective configuration before applying it to the machine. Documents are processed sequentially, and later documents take precedence over earlier ones.
+
+At present, most configuration options are defined within the [v1alpha1](./v1alpha1/config) document, which is the only mandatory document in the configuration file.
+
+Configuration documents may be named (contain a `name:` field) or unnamed. Unnamed documents can appear only once in the machine configuration, while named documents can be supplied multiple times, provided each has a unique name.
+
+The `v1alpha1` document uses a legacy structure. All other configuration documents follow this common schema:
+
+```yaml
+apiVersion: v1alpha1 # version of the document
+kind: NetworkRuleConfig # type of document
+name: rule1 # only for named documents
+```
+
+> **Note:** YAML treats certain characters,such as `!`, `?`, `*`, and `&`, as part of its own syntax.
+> When defining configuration values that include these characters (for example, in selectors or filters like `diskSelector` or `network.interfaces.match` in the [Machine Config](../configuration/v1alpha1/config)), wrap them in quotes (`"..."`) to ensure they are parsed correctly.
+
+This section contains the configuration reference, to learn more about Talos Linux machine configuration management, please see:
+
+* [quick guide to configuration generation](../../getting-started/getting-started#step-6%3A-generate-cluster-configuration)
+* [configuration management in production](../../getting-started/prodnotes#step-6%3A-generate-machine-configurations)
+* [configuration patches](../../configure-your-talos-cluster/system-configuration/patching)
+* [editing live machine configuration](../../configure-your-talos-cluster/system-configuration/editing-machine-configuration)

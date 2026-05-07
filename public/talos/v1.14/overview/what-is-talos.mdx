@@ -1,0 +1,66 @@
+---
+title: What is Talos Linux?
+weight: 10
+description: "Talos Linux is the best OS for Kubernetes."
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos Linux is a Kubernetes optimized Linux distro.
+It does one thing and it does it better than any general purpose Linux distribution.
+Boot it on [bare metal](../getting-started/getting-started) or [in a VM](../platform-specific-installations/cloud-platforms/aws) and have a Kubernetes cluster in minutes.
+
+<iframe
+  className="w-full aspect-video rounded-xl"
+  src="https://www.youtube.com/embed/IO2Yo3N46nk"
+  title="Run Talos Linux in Docker"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+></iframe>
+
+It runs on your Kubernetes nodes and hosts your workloads.
+It also runs the Kubernetes control plane components including the etcd database.
+With a single use case and focus it removes complicated and fragile configuration, maintenance, and security vulnerabilities.
+
+It's designed to be as minimal as possible while still maintaining practicality.
+For these reasons, Talos has a number of features unique to it:
+
+- API managed
+- Immutable file system
+- Minimal packages
+- Secure by default
+
+Talos can be deployed anywhere you can run a modern Linux kernel.
+
+## API managed
+
+Talos is managed by a single, declarative gRPC API.
+This is the most unique thing about Talos and something Talos users love.
+
+Imagine a Linux distribution that had configuration management built in.
+That didn't have fragile cloud-init scripts that wrap `bash` scripts in yaml.
+
+Talos ships with a network API for all configuration and troubleshooting needs.
+You can [read more about the philosophy behind Talos and Sidero products](../learn-more/philosophy).
+
+## Community & support
+
+Talos has an active and welcoming community. Whether you have a question, found a bug, or want to share feedback, there are several ways to connect:
+
+- **Support**: Ask questions, report bugs, or request features on [GitHub Discussions](https://github.com/siderolabs/talos/discussions)
+- **Slack**: Join our [Slack channel](https://taloscommunity.slack.com/). Request access via [inviter.co](https://inviter.co/sidero-labs-community)
+- **Twitter**: Follow us at [@SideroLabs](https://twitter.com/SideroLabs)
+
+We welcome users of all experience levels.
+
+### Office hours
+
+We host a recurring community office hours session:
+
+- **When**: Second Monday of every month at 16:30 UTC
+- **Where**: [Google Meet](https://meet.google.com/ivb-kjfm-jfc)
+
+Office hours are open to everyone, come ask questions, share feedback, or see what others are building with Talos.

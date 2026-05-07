@@ -1,0 +1,461 @@
+---
+title: Talos Default Hardening and CIS Compliance
+description: An overview of the kernel hardening and Kubernetes security controls that Talos Linux enables by default, and how to verify compliance.
+---
+
+Talos Linux is designed to be secure by default.
+
+Rather than providing a general-purpose operating system that operators harden after the fact, Talos ships with kernel protections, filesystem restrictions, and Kubernetes security controls already enabled.
+
+This guide covers what those defaults are, how to verify them, and what workload-level controls remain the operator's responsibility.
+
+## Kernel hardening (KSPP)
+
+Talos follows the recommendations of the [Kernel Self-Protection Project (KSPP)](https://kspp.github.io/), a Linux kernel initiative that eliminates entire classes of vulnerabilities through kernel configuration and runtime settings.
+
+Kernel hardening in Talos operates at four levels:
+
+- **Build-time kernel configuration** — security properties compiled into the kernel that cannot be changed after the kernel is built
+- **Boot-time parameters** — kernel flags enforced before userspace starts
+- **Runtime sysctl settings** — kernel behavior restrictions applied at runtime
+- **Module and memory controls** — restrictions on what code can run and how processes interact with memory
+
+Together these form a layered defense that reduces the kernel's attack surface without any operator configuration.
+
+### Build-time kernel configuration
+
+The first layer of hardening happens before a node ever boots. Talos compiles its kernel with KSPP-recommended configuration options that are baked in and cannot be changed by userspace processes after the kernel is built.
+
+The table below lists specific kernel configuration choices that are part of this baseline:
+
+| Kernel config | Talos setting | What it does |
+|---------------|---------------|--------------|
+| `CONFIG_MODULE_SIG_FORCE` | Enabled | Forces signature verification for all kernel modules unconditionally, regardless of Secure Boot state. |
+| `CONFIG_DEVMEM` | Not set | Disables the `/dev/mem` device entirely, removing a class of userspace-to-kernel memory inspection vectors. |
+| `CONFIG_KEXEC` | Not set | Disables the legacy `kexec_load()` syscall. Only `KEXEC_FILE`, `KEXEC_SIG`, and `KEXEC_BZIMAGE_VERIFY_SIG` are enabled, requiring kexec images to be cryptographically signed. |
+| `CONFIG_SECURITY_APPARMOR_PARANOID_LOAD` | Enabled | Keeps hash verification active during AppArmor profile loading. |
+| `CONFIG_TRUSTED_KEYS` | Not set | The trusted keys subsystem (TPM-backed keys) is not exposed. |
+
+Because these are compile-time decisions, they cannot be overridden through kernel command line arguments or sysctl settings at runtime.
+
+### Boot-time parameters
+
+The kernel command line has default security settings that can be changed and affect the system at run time. The following parameters are set on every node at boot:
+
+| Parameter | Purpose |
+|-----------|---------|
+| `slab_nomerge` | Prevents slab cache merging, closing a common heap exploitation vector |
+| `pti=on` | Enables Page Table Isolation, mitigating Meltdown-class CPU vulnerabilities |
+| `init_on_alloc=1` | Zeroes memory on allocation, preventing information leaks from uninitialized memory |
+
+`init_on_free` is disabled by default due to its performance impact, but can be enabled for environments with stricter memory safety requirements.
+
+To verify the active kernel command line on a Talos node:
+
+```bash
+talosctl get cmdline --nodes <node-ip>
+```
+
+<Note>If you are using Omni, run `omnictl get kernelargsstatus <machine-id> -o yaml` and check the `spec.currentcmdline` field to view the full active kernel command line for a machine.</Note>
+
+### Runtime sysctl settings
+
+Beyond boot parameters, Talos applies a stricter set of KSPP sysctl settings at runtime, starting from Talos v1.12 onwards. While boot parameters harden the kernel before userspace starts, sysctl settings control how the running kernel behaves, restricting what processes can observe and what they can do to each other.
+
+These cover three main areas: kernel pointer exposure, `/proc` access, and unprivileged BPF usage.
+
+To view all active kernel parameter settings and their current values:
+
+```bash
+talosctl get kernelparamstatus --nodes <node-ip>
+```
+
+### Module and memory controls
+
+The final layer covers what code can be loaded into the kernel and how processes can interact with each other's memory. Talos enforces two controls here, both on by default:
+
+- **Kernel module signature verification (`module.sig_enforce=1`)**: This control allows only cryptographically signed modules to be loaded into the kernel. It ensures that anything entering the kernel can be traced back to a trusted source, preventing tampering via unsigned drivers, a common persistence technique in compromised systems.
+- **Process memory write restriction (`proc_mem.force_override=never`)**: This control prevents any process from writing to `/proc/PID/mem` of another process. Without it, a compromised process could modify another process's memory directly, a technique commonly used in process injection attacks.
+
+## OS-level hardening
+
+Talos's architecture eliminates entire categories of OS-level risk that traditional Linux hardening guides address:
+
+| Property | Description |
+|----------|-------------|
+| No SSH | No remote shell access vector |
+| No interactive shell | No local shell access vector |
+| Immutable root filesystem | The OS cannot be modified at runtime |
+| No package manager | Software cannot be installed at runtime |
+| API-only management | All node operations go through the authenticated Talos API |
+
+Because of this design, the majority of the [CIS Distribution Independent Linux Benchmark](https://www.cisecurity.org/benchmark/distribution_independent_linux) does not apply to Talos nodes.
+Checks that assume SSH, a shell, a package manager, or a writable filesystem are not relevant.
+
+## Kubernetes CIS benchmark compliance
+
+The [CIS Kubernetes Benchmark](https://www.cisecurity.org/benchmark/kubernetes) is a set of security recommendations that cover how Kubernetes components should be configured, the API server, etcd, controller manager, scheduler, and kubelet.
+
+The table below shows which of those recommendations Talos satisfies out of the box, without any operator configuration:
+
+| CIS control | Talos default |
+|-------------|--------------|
+| Anonymous authentication disabled | Set on the API server by default |
+| No static token auth file | Token-based auth is not configured |
+| Node and RBAC authorization | Always enabled; cannot be removed via machine configuration |
+| Audit logging | Enabled with a `Metadata`-level audit policy |
+| Secrets encrypted at rest | `secretboxEncryptionSecret` is configured during cluster creation |
+| etcd mutual TLS | API server communicates with etcd over mutual TLS |
+| Kubelet certificate-based auth | Established via cluster PKI bootstrapping |
+| Profiling disabled | Disabled on the API server, controller manager, and scheduler |
+| Strong TLS cipher suites | API server uses CIS 1.12-recommended ciphers (Talos v1.12+) |
+| Seccomp default profile | `defaultRuntimeSeccompProfileEnabled: true` on the kubelet |
+| Pod Security Admission | Enabled with `baseline` enforce and `restricted` audit and warn |
+| Controller manager bind address | Bound to `127.0.0.1` |
+| Scheduler bind address | Bound to `127.0.0.1` |
+| Kubelet server certificate rotation | `RotateKubeletServerCertificate` is enabled |
+
+Most of these controls are enforced at the platform level, they cannot be accidentally disabled through misconfiguration.
+
+This matters because it means Talos clusters start compliant and stay compliant across upgrades, without operator intervention.
+
+However, knowing that Talos satisfies these controls by default and being able to prove it in an audit are two different things.
+
+The next section covers how to run the CIS benchmark tooling against a Talos cluster, and critically, how to correctly interpret its output.
+
+## Running CIS benchmark checks with kube-bench
+
+[`kube-bench`](https://github.com/aquasecurity/kube-bench) is the standard open source tool for running automated CIS Kubernetes benchmark checks. It works by inspecting running processes, configuration files, and file permissions on your cluster nodes, then comparing them against the [CIS benchmark requirements](https://www.cisecurity.org/benchmark/kubernetes).
+
+The important thing to understand before running it on Talos is that `kube-bench` was built for kubeadm-based clusters. It expects to find control plane configuration files in specific locations, `/etc/kubernetes/manifests/`, `/etc/kubernetes/pki/`, that do not exist on Talos. Talos manages control plane components through its own machine configuration API rather than static pod manifests, so these paths are intentionally absent.
+
+This means that when you run kube-bench on Talos, you will see a number of `[FAIL]` results that are not real failures. They are false positives caused by the architectural difference between Talos and kubeadm. The steps below walk through how to run kube-bench correctly and how to tell the difference between a false positive and a genuine finding.
+
+### Step 1: Prepare the namespace
+
+`kube-bench` requires elevated host privileges to inspect node processes and configurations. By default, Talos enforces [Pod Security Admission](../../../kubernetes-guides/security/pod-security) at the `baseline` level, which blocks privileged pods from running. Before running kube-bench, label the target namespace to permit it:
+
+```bash
+kubectl create namespace kube-bench
+
+kubectl label namespace kube-bench \
+  pod-security.kubernetes.io/enforce=privileged \
+  pod-security.kubernetes.io/warn=privileged \
+  pod-security.kubernetes.io/audit=privileged
+```
+
+### Step 2: Select the correct benchmark version
+
+kube-bench ships with benchmark configurations for different Kubernetes versions. Using the wrong version will produce inaccurate results. Match the benchmark to your cluster's Kubernetes version:
+
+| Kubernetes version | Benchmark flag |
+|-------------------|---------------|
+| 1.29 – 1.30 | `cis-1.9` |
+| 1.31 and later | `cis-1.10` |
+
+To check your cluster version:
+
+```bash
+kubectl version
+```
+
+### Step 3: Run kube-bench on control plane nodes
+
+Create the following job to run benchmark checks against your control plane.
+
+Update the `--benchmark` flag to match the version you identified in the previous step:
+
+```yaml
+cat <<EOF > kube-bench-control-plane.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kube-bench-master
+  namespace: kube-bench
+spec:
+  template:
+    spec:
+      hostPID: true
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: kube-bench
+          image: aquasec/kube-bench:latest
+          command:
+            - kube-bench
+            - run
+            - --targets
+            - master
+            - --benchmark
+            - cis-1.10
+      restartPolicy: Never
+  backoffLimit: 0
+EOF
+```
+
+Apply the `kube-bench-master` job and retrieve the logs from the job:
+
+```bash
+kubectl apply -f kube-bench-control-plane.yaml
+kubectl wait --for=condition=complete job/kube-bench-master --timeout=120s --namespace=kube-bench
+kubectl logs job/kube-bench-master --namespace=kube-bench
+```
+
+The `kubectl logs job/kube-bench-master` retrieves all the logs from the job, to see only failures and warnings logs, run:
+
+```bash
+kubectl logs job/kube-bench-master --namespace=kube-bench | grep -E "^\[FAIL\]|^\[WARN\]"
+```
+
+### Step 4: Run kube-bench on worker nodes
+
+Run a separate job to check worker node configuration:
+
+```yaml
+kubectl apply -f - <<EOF
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kube-bench-worker
+  namespace: kube-bench
+spec:
+  template:
+    spec:
+      hostPID: true
+      containers:
+        - name: kube-bench
+          image: aquasec/kube-bench:latest
+          command:
+            - kube-bench
+            - run
+            - --targets
+            - node
+            - --benchmark
+            - cis-1.10
+      restartPolicy: Never
+  backoffLimit: 0
+EOF
+```
+
+Check out the logs for the `kube-bench-worker` job:
+
+```bash
+kubectl wait --for=condition=complete job/kube-bench-worker --timeout=120s --namespace=kube-bench
+kubectl logs job/kube-bench-worker --namespace=kube-bench
+```
+
+### Step 5: Interpret the results
+
+Once you have the output, you need to read it in the context of Talos's architecture. The failures fall into two categories: false positives caused by Talos's design, and genuine findings that require attention.
+
+#### Control plane results (sections 1.1–1.4)
+
+The kube-bench control plane output is organized into four sections: section 1.1 covers configuration file permissions, section 1.2 covers the API server, and sections 1.3 and 1.4 cover the controller manager and scheduler respectively.
+
+**Section 1.1: Control plane configuration files (all false positives)**
+
+Every check in section 1.1 will fail on Talos. This section is entirely concerned with file permissions and ownership of control plane configuration files, things like pod specification files and PKI certificates. kube-bench expects to find these at paths like `/etc/kubernetes/manifests/` and `/etc/kubernetes/pki/`, which is where kubeadm-based clusters store them.
+
+On Talos, `machined`, its init system designed specifically for Kubernetes, manages `etcd` and `kubelet` as system-level services. Control plane components, including the API server, controller manager, and scheduler, run as static pods, but their manifests are generated and managed internally by Talos instead of being written to `/etc/kubernetes/manifests/` as kubeadm does. PKI is handled by `trustd`, Talos’s dedicated trust daemon, which manages certificate distribution across the cluster. Because Talos does not place manifests or PKI files at the paths that kube-bench expects, these checks fail not because the controls are missing, but because Talos’s architecture does not rely on those paths.
+
+| Checks | Result | Explanation |
+|--------|--------|-------------|
+| 1.1.1–1.1.8 | FAIL | kube-bench looks for pod spec files in `/etc/kubernetes/manifests/`; Talos runs control plane components directly via `machined`, so no manifest files exist |
+| 1.1.11–1.1.12 | FAIL | kube-bench checks etcd data directory ownership at `/var/lib/etcd`; Talos manages etcd ownership internally through its own process management |
+| 1.1.13–1.1.19 | FAIL | kube-bench looks for kubeconfig and PKI files in `/etc/kubernetes/`; Talos stores and manages these internally, not at these paths |
+| 1.1.20–1.1.21 | WARN | kube-bench cannot find `/etc/kubernetes/pki/` to run the audit; Talos manages PKI through `trustd`, its dedicated trust daemon |
+
+**Section 1.2: API server (mixed results)**
+
+Section 1.2 checks how the API server is configured, its authentication settings, authorization modes, admission plugins, and TLS configuration. Most of these pass on Talos because Talos configures the API server correctly at bootstrap time. The failures are false positives caused by kube-bench looking for explicit flags in a manifest file that does not exist on Talos:
+
+| Check | Result | Explanation |
+|-------|--------|-------------|
+| 1.2.5 | FAIL | kube-bench looks for `--kubelet-certificate-authority` flag in the API server manifest; Talos establishes kubelet trust through mutual TLS bootstrapping using the cluster PKI, which does not require this flag to be set explicitly |
+| 1.2.6–1.2.8 | FAIL | kube-bench looks for `--authorization-mode` flag in the API server manifest; on Talos, Node and RBAC authorization are always enabled at the platform level and cannot be disabled via machine configuration |
+| 1.2.1, 1.2.2 | PASS | Anonymous auth is disabled and no static token auth file is configured |
+| 1.2.4 | PASS | Kubelet client certificate and key are configured for authenticated API server to kubelet communication |
+| 1.2.15 | PASS | Profiling is disabled on the API server |
+| 1.2.16–1.2.19 | PASS | Audit logging is enabled with path, age, backup, and size arguments all configured |
+| 1.2.27, 1.2.29 | PASS | Encryption provider config is set and strong cryptographic ciphers are in use |
+
+Some section 1.2 results are labeled `Manual` by kube-bench, meaning kube-bench cannot verify them automatically. These represent optional hardening decisions that depend on your environment:
+
+| Check | Description |
+|-------|-------------|
+| 1.2.3 | `DenyServiceExternalIPs` admission plugin, enable if you do not use LoadBalancer services |
+| 1.2.9 | `EventRateLimit` admission plugin, configure based on your API server traffic patterns |
+| 1.2.11 | `AlwaysPullImages` admission plugin, relevant in multi-tenant environments to prevent image caching abuse |
+| 1.2.28 | Encryption provider configuration, Talos configures `secretbox` encryption by default, which satisfies this requirement |
+
+**Sections 1.3 and 1.4: Controller manager and scheduler**
+
+Sections 1.3 and 1.4 check the security configuration of the controller manager and scheduler. Section 1.3 covers whether profiling is disabled, whether service account credentials are used, whether the root CA file is set, and whether kubelet server certificate rotation is enabled. Section 1.4 covers profiling and bind address on the scheduler. All of these pass on Talos except one warning:
+
+| Check | Result | Explanation |
+|-------|--------|-------------|
+| 1.3.1 | WARN | `--terminated-pod-gc-threshold` is not set; this is a Manual check controlling how many terminated pods are retained before garbage collection, configure based on your cluster's workload churn |
+| 1.3.2–1.3.7 | PASS | Profiling disabled, service account credentials used, root CA set, certificate rotation enabled, bind address set to `127.0.0.1` |
+| 1.4.1–1.4.2 | PASS | Profiling disabled, bind address set to `127.0.0.1` |
+
+#### Worker node results (sections 4.1–4.3)
+
+The worker node output covers three sections: section 4.1 covers worker node configuration files, section 4.2 covers the kubelet, and section 4.3 covers kube-proxy.
+
+**Section 4.1: Worker node configuration files (all false positives)**
+
+Every check in section 4.1 will fail on Talos. kube-bench expects to find kubelet configuration at kubeadm-style paths, `/etc/systemd/system/kubelet.service.d/10-kubeadm.conf`, `/etc/kubernetes/kubelet.conf`, and `/var/lib/kubelet/config.yaml`. None of these paths exist on Talos nodes. Talos generates kubelet configuration at `/etc/kubernetes/kubelet.yaml` and manages the kubelet as a system service through `machined`. Because Talos does not use systemd, there is no systemd unit file for the kubelet, and because Talos manages configuration through its own API rather than kubeadm-style files, none of the paths kube-bench checks exist.
+
+| Checks | Result | Explanation |
+|--------|--------|-------------|
+| 4.1.1 | FAIL | kube-bench looks for `/etc/systemd/system/kubelet.service.d/10-kubeadm.conf`; Talos does not use systemd to manage the kubelet |
+| 4.1.2 | PASS | Kubelet service file ownership check passes |
+| 4.1.5–4.1.6 | FAIL | kube-bench looks for `/etc/kubernetes/kubelet.conf`; Talos uses `/etc/kubernetes/kubelet.yaml` instead |
+| 4.1.9–4.1.10 | FAIL | kube-bench looks for `/var/lib/kubelet/config.yaml`; this path does not exist on Talos |
+| 4.1.3–4.1.4 | WARN | kube-proxy config file checks; Manual checks that are environment-dependent |
+| 4.1.7–4.1.8 | WARN | Certificate authority file permission checks; Talos manages CA files through its PKI |
+
+**Section 4.2: Kubelet (mixed results)**
+
+Section 4.2 checks kubelet security settings. The three failures here are false positives, kube-bench cannot find the settings because it reads from the wrong configuration file path. The actual kubelet configuration at `/etc/kubernetes/kubelet.yaml` on each worker node confirms all three settings are correctly configured by Talos:
+
+| Check | Result | Explanation |
+|-------|--------|-------------|
+| 4.2.1 | FAIL | kube-bench reads from kubeadm paths and cannot find the anonymous auth setting; Talos sets `authentication.anonymous.enabled: false` in `/etc/kubernetes/kubelet.yaml` |
+| 4.2.2 | FAIL | kube-bench cannot find the authorization mode setting; Talos sets `authorization.mode: Webhook` in `/etc/kubernetes/kubelet.yaml` |
+| 4.2.3 | FAIL | kube-bench cannot find the client CA file setting; Talos sets `authentication.x509.clientCAFile: /etc/kubernetes/pki/ca.crt` in `/etc/kubernetes/kubelet.yaml` |
+| 4.2.4 | PASS | Read-only port is set to 0, disabling unauthenticated read access |
+| 4.2.5 | PASS | Streaming connection idle timeout is configured |
+| 4.2.6 | PASS | iptables utility chains are managed correctly |
+| 4.2.8 | PASS | Event record QPS is configured |
+| 4.2.9 | PASS | TLS cert and private key files are set; Talos manages these through its PKI |
+| 4.2.10 | PASS | Certificate rotation is enabled |
+| 4.2.11 | PASS | Kubelet server certificate rotation is enabled |
+| 4.3.1 | PASS | kube-proxy metrics service is bound to localhost |
+
+The following section 4.2 results are labeled `Manual` by kube-bench and represent optional hardening decisions:
+
+| Check | Description |
+|-------|-------------|
+| 4.2.7 | `--hostname-override`, Talos sets this by design; in cloud environments the hostname must match the provider's instance identifier for node registration to work correctly |
+| 4.2.12 | Kubelet TLS cipher suites, Talos enforces `tlsMinVersion: VersionTLS13` by default, which restricts the cipher suite selection to TLS 1.3 ciphers; if you need to specify explicit cipher suites, configure `tlsCipherSuites` in the machine configuration |
+| 4.2.13 | Pod PID limits, configure `podPidsLimit` in the machine configuration based on your workload requirements |
+
+### Step 6: Produce a clean compliance report
+
+Many organizations need to run CIS benchmarks on a regular cadence and produce audit reports. Because the section 1.1 and several section 1.2 failures on Talos are architectural false positives rather than real security gaps, including them in a report creates noise and requires manual explanation each time.
+
+kube-bench supports a `--skip` flag that lets you exclude specific checks by ID. The following commands skip all known Talos false positives, validated against a live cluster running Kubernetes 1.35 with benchmark `cis-1.10`.
+
+When a check is skipped, kube-bench still lists it in the output but marks it `[INFO]` rather than `[FAIL]`. A clean run on Talos should produce:
+
+- `[PASS]` for all checks that Talos satisfies
+- `[INFO]` for all skipped architectural false positives
+- `[WARN]` for `Manual` checks that require your own assessment
+- `0 checks FAIL` in the summary
+
+**For control plane nodes:**
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kube-bench-master-skip
+  namespace: kube-bench
+spec:
+  template:
+    spec:
+      hostPID: true
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: kube-bench
+          image: aquasec/kube-bench:latest
+          command:
+            - kube-bench
+            - run
+            - --targets
+            - master
+            - --benchmark
+            - cis-1.10
+            - --skip
+            - "1.1.1,1.1.2,1.1.3,1.1.4,1.1.5,1.1.6,1.1.7,1.1.8,1.1.11,1.1.12,1.1.13,1.1.14,1.1.15,1.1.16,1.1.17,1.1.18,1.1.19,1.2.5,1.2.6,1.2.7,1.2.8"
+      restartPolicy: Never
+  backoffLimit: 0
+EOF
+```
+
+**For worker nodes:**
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kube-bench-worker-skip
+  namespace: kube-bench
+spec:
+  template:
+    spec:
+      hostPID: true
+      containers:
+        - name: kube-bench
+          image: aquasec/kube-bench:latest
+          command:
+            - kube-bench
+            - run
+            - --targets
+            - node
+            - --benchmark
+            - cis-1.10
+            - --skip
+            - "4.1.1,4.1.5,4.1.6,4.1.9,4.1.10,4.2.1,4.2.2,4.2.3"
+      restartPolicy: Never
+  backoffLimit: 0
+EOF
+```
+
+Retrieve logs from the jobs:
+
+```bash
+kubectl wait --for=condition=complete job/kube-bench-master-skip --timeout=120s --namespace=kube-bench
+kubectl logs job/kube-bench-master-skip --namespace=kube-bench
+
+kubectl wait --for=condition=complete job/kube-bench-worker-skip --timeout=120s --namespace=kube-bench
+kubectl logs job/kube-bench-worker-skip --namespace=kube-bench
+```
+
+## Verifying security state directly
+
+kube-bench is useful for formal compliance reporting, but for day-to-day verification you can inspect Talos security state directly using `talosctl`. These commands give you a live view of what is active on any node without running a separate job:
+
+```bash
+# View the overall security state of a node
+talosctl get securitystate --nodes <node-ip>
+
+# View all active kernel parameters and their current values
+talosctl get kernelparamstatus --nodes <node-ip>
+
+# List running services, confirms the minimal attack surface
+talosctl services --nodes <node-ip>
+
+# Inspect the full machine configuration
+talosctl get machineconfig --nodes <node-ip> -o yaml
+```
+
+## FIPS 140-3 compliant builds
+
+For organizations in regulated environments, Talos Linux is available as a FIPS 140-3 compliant build. FIPS builds run across bare metal, data center, edge, cloud, and air-gapped deployments, and the full Sidero stack including Omni and the Image Factory can be self-hosted to maintain control and oversight.
+
+Talos FIPS is currently available as an enterprise feature that requires a support contract for access. To get access, visit the [Talos Linux FIPS 140-3 compliance page](https://siderolabs.com/fips-compliant-kubernetes-os/).
+
+To verify the FIPS state on a running node, use the [`RuntimeFIPSState`](../reference/api#talos.resource.definitions.enums.RuntimeFIPSState) API.

@@ -1,0 +1,202 @@
+---
+title: "Upgrading Talos Linux"
+description: "Guide to upgrading a Talos Linux machine."
+aliases:
+  - ../guides/upgrading-talos
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+import { release_v1_13 } from '/snippets/custom-variables.mdx';
+
+OS upgrades are effected by an API call, which can be sent via the `talosctl` CLI utility.
+
+The upgrade API call passes a node the installer image to use to perform the upgrade.
+
+Each Talos version has a corresponding installer image, listed on the release page for the version, for example <a href={`https://github.com/siderolabs/talos/releases/tag/${release_v1_13}`}>{release_v1_13}</a>.
+
+Upgrades use an A-B image scheme in order to facilitate rollbacks.
+This scheme retains the previous Talos kernel and OS image following each upgrade.
+If an upgrade fails to boot, Talos will roll back to the previous version.
+Likewise, Talos may be manually rolled back via API (or `talosctl rollback`), which will update the boot reference and reboot.
+
+*Note* An upgrade of the Talos Linux OS will not (since v1.0) apply an upgrade to the Kubernetes version by default.
+Kubernetes upgrades should be managed separately per [upgrading kubernetes](../../../../kubernetes-guides/advanced-guides/upgrading-kubernetes).
+
+## Supported upgrade paths
+
+Because Talos Linux is image based, an upgrade is almost the same as installing Talos, with the difference that the system has already been initialized with a configuration.
+The supported configuration may change between versions.
+The upgrade process should handle such changes transparently, but this migration is only tested between adjacent minor releases.
+Thus the recommended upgrade path is to always upgrade to the latest patch release of all intermediate minor releases.
+
+For example, if upgrading from Talos 1.0 to Talos 1.2.4, the recommended upgrade path would be:
+
+* upgrade from 1.0 to latest patch of 1.0 - to v1.0.6
+* upgrade from v1.0.6 to latest patch of 1.1 - to v1.1.2
+* upgrade from v1.1.2 to v1.2.4
+
+## Before upgrade to {release_v1_13}
+
+Talos v1.13 onwards now supports NVIDIA GPU via the gpu-operator.
+
+### NVIDIA GPU users
+
+Talos 1.13 now supports configuring NVIDIA GPU via the gpu-operator.
+
+If using NVIDIA GPU on DGX systems, use the proprietary driver guide [here](../hardware-and-drivers/nvidia-gpu-proprietary).
+DGX systems are only known to work with the proprietary driver as of now.
+
+Before upgrading to Talos 1.13, uninstall the nvidia-device-plugin helm chart and delete the nvidia runtimeclass.
+
+Uninstall the nvidia-device-plugin helm chart:
+
+First list all helm installs:
+
+```bash
+helm list -A
+```
+
+Find the helm release for the nvidia-device-plugin and uninstall it:
+
+```bash
+helm uninstall -n <namespace> <release-name>
+```
+
+Now delete the nvidia runtimeclass:
+
+```bash
+kubectl delete runtimeclass nvidia
+```
+
+Now follow the instructions in [NVIDIA GPU (OSS drivers)](../hardware-and-drivers/nvidia-gpu) or [NVIDIA GPU (Proprietary drivers)](../hardware-and-drivers/nvidia-gpu-proprietary) guide to switch to the new gpu-operator based configuration.
+
+## Video walkthrough
+
+To see a live demo of an upgrade of Talos Linux, see the video below:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/AAF6WhX0USo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+## After upgrade to {release_v1_13}
+
+There are no specific actions to be taken after an upgrade.
+
+## `talosctl upgrade`
+
+To upgrade a Talos node, specify the node's IP address and the
+installer container image for the version of Talos to upgrade to.
+
+For instance, if your Talos node has the IP address `10.20.30.40` and you want
+to install the current version, you would enter a command such
+as:
+
+<CodeBlock lang="sh">
+{`
+  $ talosctl upgrade --nodes 10.20.30.40 \\
+  --image ghcr.io/siderolabs/installer:${release_v1_13}
+`}
+</CodeBlock>
+
+Note that because Talos Linux reboots via the `kexec` syscall, the extra reboot adds very little time.
+
+### Upgrade API changes in Talos v1.13
+
+Talos v1.13 introduces a new streaming upgrade API via `LifecycleService.Upgrade`.
+The `talosctl upgrade` command now uses this new API by default, providing real-time progress reporting and support for parallel upgrades across multiple nodes.
+
+New flags:
+
+* `--progress <mode>` - Controls the output mode for upgrade progress. Values: `auto` (default), `plain`. `auto` uses a dynamic progress reporter if the output is a terminal, and falls back to plain text otherwise. `plain` always uses plain text output.
+* `--namespace <name>` - Containerd namespace to use for the upgrade image. Values: `system` (default), `cri`, `inmem`.
+
+The `--reboot-mode` flag now supports three values: `default`, `powercycle`, and `force`.
+
+> **Deprecation notice**
+> The legacy upgrade flags (`--force`, `--insecure`, `--preserve`, `--stage`) are deprecated and will be removed in Talos 1.18.
+> These flags are only used when falling back to the legacy `MachineService.Upgrade` API for older Talos versions.
+
+## Machine configuration changes
+
+* [VolumeConfig](../../reference/configuration/block/volumeconfig) and [UserVolumeConfig](../../reference/configuration/block/uservolumeconfig) now support negative byte sizes and percentages to specify space left on the disk
+  after creating a partition.
+* Mount specification in volume configuration has two new fields:
+  * `secure` (defaults to `true`) to enable `nosuid`, `nodev` options;
+  * `disableAccessTime` (defaults to `false`) to enable `noatime` option (performance).
+* New [ExternalVolumeConfig](../../reference/configuration/block/externalvolumeconfig) document to configure external volumes, at the moment `virtiofs` volumes are supported (e.g. Proxmox).
+* New [BlackholeRouteConfig](../../reference/configuration/network/blackholerouteconfig) document to configure blackhole routes.
+* New [KubeSpanConfig](../../reference/configuration/network/kubespanconfig) document which replaces `.machine.network.kubespan` configuration, and adds support for filtering advertised addresses by each node.
+* [LinkAliasConfig](../../reference/configuration/network/linkaliasconfig) now supports creating aliases for multiple matching links if the `name:` has `%d` specifier, e.g. `net%d`.
+* New [RoutingRuleConfig](../../reference/configuration/network/routingruleconfig) document to configure Linux routing rules.
+* New [TCPProbeConfig](../../reference/configuration/network/tcpprobeconfig) document to configure TCP-based connectivity checks (probes).
+* New [VRFConfig](../../reference/configuration/network/vrfconfig) document to configure VRF interfaces.
+* New [EnvironmentConfig](../../reference/configuration/runtime/environmentconfig) document to configure environment variables set on the host.
+* New [ImageVerificationConfig](../../reference/configuration/security/imageverificationconfig) document to configure container [image verification rules](../../security/verifying-image-signatures).
+
+## Upgrade sequence
+
+When a Talos node receives the upgrade command, it cordons
+itself in Kubernetes, to avoid receiving any new workload.
+It then starts to drain its existing workload.
+
+**NOTE**: If any of your workloads are sensitive to being shut down ungracefully, be sure to use the `lifecycle.preStop` Pod [spec](https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks).
+
+Once all of the workload Pods are drained, Talos will start shutting down its
+internal processes.
+
+Once all the processes are stopped and the services are shut down, the filesystems will be unmounted.
+This allows Talos to produce a very clean upgrade, as close as possible to a pristine system.
+We verify the disk and then perform the actual image upgrade.
+We set the bootloader to boot *once* with the new kernel and OS image, then we reboot.
+
+After the node comes back up and Talos verifies itself, it will make
+the bootloader change permanent, rejoin the cluster, and finally uncordon itself to receive new workloads.
+
+## FAQs
+
+**Q.** What happens if an upgrade fails?
+
+**A.** Talos Linux attempts to safely handle upgrade failures.
+
+The most common failure is an invalid installer image reference.
+In this case, Talos will fail to download the upgraded image and will abort the upgrade.
+
+Sometimes, Talos is unable to successfully kill off all of the disk access points, in which case it cannot safely unmount all filesystems to effect the upgrade.
+In this case, it will abort the upgrade and reboot.
+
+It is possible (especially with test builds) that the upgraded Talos system will fail to start.
+In this case, the node will be rebooted, and the bootloader will automatically use the previous Talos kernel and image, thus effectively rolling back the upgrade.
+
+Lastly, it is possible that Talos itself will upgrade successfully, start up, and rejoin the cluster but your workload will fail to run on it, for whatever reason.
+This is when you would use the `talosctl rollback` command to revert back to the previous Talos version.
+
+**Q.** Can upgrades be scheduled?
+
+**A.** Because the upgrade sequence is API-driven, you can easily tie it in to your own business logic to schedule and coordinate your upgrades.
+
+**Q.** Can the upgrade process be observed?
+
+**A.** Yes, using the `talosctl dmesg -f` command.
+You can also use `talosctl upgrade --wait`, and optionally `talosctl upgrade --wait --debug` to observe kernel logs
+
+**Q.** Are worker node upgrades handled differently from control plane node upgrades?
+
+**A.** Short answer: no.
+
+Long answer:  Both node types follow the same set procedure.
+From the user's standpoint, however, the processes are identical.
+However, since control plane nodes run additional services, such as etcd, there are some extra steps and checks performed on them.
+For instance, Talos will refuse to upgrade a control plane node if that upgrade would cause a loss of quorum for etcd.
+If multiple control plane nodes are asked to upgrade at the same time, Talos will protect the Kubernetes cluster by ensuring only one control plane node actively upgrades at any time, via checking etcd quorum.
+
+**Q.** Can I break my cluster by upgrading everything at once?
+
+**A.** Possibly - it's not recommended.
+
+Nothing prevents the user from sending near-simultaneous upgrades to each node of the cluster - and while Talos Linux and Kubernetes can generally deal with this situation, other components of the cluster may not be able to recover from more than one node rebooting at a time.
+(e.g. any software that maintains a quorum or state across nodes, such as Rook/Ceph)
+
+**Q.** Which version of `talosctl` should I use to update a cluster?
+
+**A.** We recommend using the version that matches the current running version of the cluster.

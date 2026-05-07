@@ -1,0 +1,78 @@
+---
+title: "External Volumes"
+description: "Configuring external volumes to mount hypervisor-provisioned storage in Talos Linux."
+weight: 60
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+External volumes allow mounting volumes that were created outside of Talos, over the hypervisor or network.
+Unlike [user volumes](./user) which provision new storage from Talos-managed disks, or [existing volumes](./existing) which mount pre-existing partitions, external volumes are provisioned and managed by the hypervisor.
+
+External volumes are mounted under `/var/mnt/<name>`.
+
+Virtiofs is a shared file system that lets virtual machines access a directory tree on the host.
+Unlike other approaches, it is designed to offer local file system semantics and performance.
+
+Virtiofs uses [FUSE](https://github.com/libfuse/libfuse) as the foundation.
+Unlike traditional FUSE where the file system daemon runs in userspace, the virtiofs daemon runs on the host.
+A [VIRTIO](https://www.oasis-open.org/committees/tc_home.php?wg_abbrev=virtio) device carries FUSE messages and provides extensions for advanced features.
+
+Virtiofs is available in mainline Linux since version 5.4, QEMU 5.0, and libvirt 6.2.
+
+## Requirements
+
+External volumes require Talos to run inside a virtual machine with virtiofs support from the hypervisor.
+The following hypervisors are supported:
+
+- QEMU
+- libvirt
+- Proxmox VE
+- Other hypervisors that support virtiofs
+
+> Note: External volumes are not available on bare metal machines.
+
+### Create external volumes
+
+To create an external volume, append the following [document](../../../reference/configuration/block/externalvolumeconfig) to the machine configuration:
+
+```yaml
+# external-volume.patch.yaml
+apiVersion: v1alpha1
+kind: ExternalVolumeConfig
+name: virtiofs-data
+filesystemType: virtiofs
+mount:
+  virtiofs:
+    tag: Data
+```
+
+For example, this machine configuration patch can be applied using the following command:
+
+```bash
+talosctl --nodes <NODE> patch mc --patch @external-volume.patch.yaml
+```
+
+In this example, an external volume named `virtiofs-data` is created, which will be mounted at `/var/mnt/virtiofs-data` on the node.
+
+The status of the volume can be checked using the following command:
+
+```bash
+$ talosctl get volumestatus x-virtiofs-data # note x- prefix
+NODE         NAMESPACE   TYPE           ID              VERSION   TYPE       PHASE   LOCATION   SIZE
+172.20.0.5   runtime     VolumeStatus   x-virtiofs-data 2         external   ready   Data
+```
+
+The disk is immediately mounted to `/var/mnt/virtiofs-data`.
+
+### Remove external volumes
+
+Before removing an external volume, ensure that it is not used anymore.
+
+In order to remove an external volume, first remove the configuration document from the machine configuration.
+The `VolumeStatus` resource will be removed automatically by Talos Linux.
+
+> Note: The actual disk data hasn't been removed yet, so you can re-apply the external volume configuration back and the volume will be available again.
+> To remove the disk data, you need to remove it from the virtual machine host manually.

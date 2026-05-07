@@ -1,0 +1,206 @@
+---
+title: Discovery Service
+description: Talos Linux node discovery service and cluster membership.
+aliases:
+  - ../../guides/discovery
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+import { release_v1_12 } from '/snippets/custom-variables.mdx';
+
+<VersionWarningBanner />
+
+The Talos Linux discovery service allows nodes in a cluster to automatically find and identify each other.
+
+Without discovery, nodes have no built-in way to learn about other cluster members, including their IP addresses and connection endpoints.
+
+When discovery is enabled, this information is shared and kept up to date across all nodes. This allows Talos to form a cluster and, when enabled, establish encrypted [KubeSpan](../../networking/kubespan) tunnels and support [KubePrism](../../../../kubernetes-guides/advanced-guides/kubeprism) peer endpoint discovery.
+
+Discovery works through a **registry**, a backend that nodes publish their connection information to and read peer information from. Talos supports two registry types:
+
+- **Service registry**: Nodes publish to and read from an external discovery service. This is enabled by default and does not depend on Kubernetes or etcd, so it continues to work even when Kubernetes is unavailable.
+- **Kubernetes registry**: Nodes publish discovery data as annotations on Kubernetes `Node` resources. This is disabled by default.
+
+<Warning>
+The Kubernetes registry is deprecated. Starting with Kubernetes 1.32, the `AuthorizeNodeWithSelectors` feature gate restricts `Node` resource read access in a way that prevents the Kubernetes registry from functioning correctly. Disabling the feature gate is not recommended as it removes other important security protections.
+</Warning>
+
+## Video walkthrough
+
+To see a live demo of cluster discovery, see the video below:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/GCBTrHhjawY" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+## Registries
+
+By default, Talos uses the `service` registry. The `kubernetes` registry is disabled by default. Peers are aggregated from all enabled registries.
+
+To disable a registry, set `disabled: true` in the cluster configuration. For example, to disable the `service` registry:
+
+```yaml
+cluster:
+  discovery:
+    enabled: true
+    registries:
+      service:
+        disabled: true
+```
+
+[Disabling all registries](#what-changes-when-discovery-is-disabled) effectively disables member discovery entirely.
+
+### Kubernetes registry
+
+The Kubernetes registry stores discovery data as annotations on Kubernetes `Node` resources:
+
+```bash
+kubectl describe node <nodename>
+```
+
+You should see an output similar to:
+
+```
+Annotations:        cluster.talos.dev/node-id: Utoh3O0ZneV0kT2IUBrh7TgdouRcUW2yzaaMl4VXnCd
+                    networking.talos.dev/assigned-prefixes: 10.244.0.0/32,10.244.0.1/24
+                    networking.talos.dev/self-ips: 172.20.0.2,fd83:b1f7:fcb5:2802:8c13:71ff:feaf:7c94
+...
+```
+
+### Service registry
+
+The service registry uses a public external discovery service to exchange encrypted information about cluster members. Sidero Labs maintains a public instance at `https://discovery.talos.dev/`. Organizations that require private infrastructure can self-host the discovery service under a commercial license.
+
+Cluster members use a globally unique shared key to coordinate basic connection information, the set of possible endpoints (IP:port pairs). Talos refers to this as **affiliate data**. All affiliate data is encrypted by Talos Linux before being sent to the discovery service and can only be decrypted by cluster members. The discovery service never has access to the encryption key.
+
+<Note>
+When KubeSpan is enabled, affiliate data also includes the node's WireGuard public key.
+</Note>
+
+Data is encrypted as follows:
+
+- Affiliate data is encrypted with AES-GCM encryption.
+- Endpoint data is separately encrypted with AES in ECB mode, allowing endpoints from different sources to be deduplicated server-side.
+
+Each node submits its own data plus the endpoints it observes from other peers. The discovery service aggregates this, deduplicates endpoints, and distributes updates to all connected peers. Peers decrypt the data locally and use it to drive cluster discovery and [KubeSpan](../../networking/kubespan).
+
+Data is stored only in memory, with encrypted snapshots written to disk to enable fast recovery after restarts.
+The cluster ID is a random value generated as part of the cluster secrets in the machine configuration. It is used by the discovery service to separate affiliates between different clusters.
+
+The discovery service is aware of the client version, cluster ID, number of affiliates, encrypted affiliate data, and a list of encrypted endpoints. However, it never has access to the actual node information.
+
+Nodes must be able to reach the discovery service on TCP port 443. For organisations that require it, the discovery service may be self-hosted under a commercial license and [downloaded from GitHub](https://github.com/siderolabs/discovery-service).
+
+## What changes when discovery is disabled
+
+Talos can operate with discovery disabled, but this affects several features and behaviours:
+
+- [KubeSpan](../../networking/kubespan) and KubePrism require discovery and do not function correctly without it.
+- Initial cluster bootstrap and recovery may take longer, as peer and control plane endpoints are not available from discovery.
+- Endpoint resolution falls back to Kubernetes API availability, for example via `kubectl get endpoints kubernetes`, which requires a functioning API server and load balancer.
+- Worker nodes become more dependent on control plane availability during failures, as they cannot rely on discovery registries to obtain peer endpoint information.
+
+Nodes can still join the cluster through Kubernetes when configured with reachable control plane endpoints, without any additional configuration beyond a correct machine config.
+
+In air-gapped or restricted environments where outbound access to `https://discovery.talos.dev` is unavailable, discovery can be disabled or replaced with a [privately operated discovery service](https://github.com/siderolabs/discovery-service).
+
+## Discovery service behaviour during outages
+
+Talos nodes periodically refresh their discovery data to prevent it from expiring due to the TTL. The discovery service uses a hardcoded TTL of 30 minutes, which cannot be configured by users.
+
+As long as the discovery service is reachable, records are continuously renewed.
+
+During a short outage, Talos uses its last known in-memory discovery state. Existing connections, including KubeSpan tunnels, continue to function using cached data.
+
+If a node reboots while the discovery service is unavailable, it loses all in-memory state and cannot publish its information or retrieve peer data until the service becomes available again.
+
+If the outage exceeds the TTL, all discovery records expire. When the service comes back online, it may return an empty dataset. Nodes receiving this update drop their existing peer information, which can temporarily disrupt KubeSpan connectivity. Recovery is automatic, nodes republish their data, peer information is rebuilt, and connectivity is restored without manual intervention.
+
+<Note>
+When KubeSpan is enabled, WireGuard keys are generated on boot and not persisted to disk. A rebooted node must publish its new public key via the discovery service before peers can establish tunnels to it.
+</Note>
+
+## Inspect discovery resources
+
+Talos exposes three resources for inspecting the state of cluster discovery. Each represents a different stage of the membership process: a node starts as an identity, becomes an affiliate when it shares the cluster credentials, and becomes a member when it is confirmed to belong to the cluster.
+
+### Identities
+
+Each node has a unique identity, a base62-encoded random 32-byte value, that serves as its `Affiliate` identifier. Base62 encoding allows the ID to be URL-safe without requiring URL-encoded base64.
+
+To retrieve the local node's identity:
+
+```bash
+talosctl get identities -o yaml
+```
+
+You should see an output similar to:
+
+```yaml
+spec:
+  nodeId: Utoh3O0ZneV0kT2IUBrh7TgdouRcUW2yzaaMl4VXnCd
+```
+
+Node identity is used as the unique `Affiliate` identifier. It is stored in the [STATE](../../learn-more/architecture#file-system-partitions) partition in `node-identity.yaml` and is preserved across reboots and upgrades, but regenerated if the node is reset.
+
+### Affiliates
+
+An affiliate is a node that shares the same cluster ID and secret. Nodes with matching values are treated as potential cluster members and can exchange encrypted discovery data. Nodes from different clusters cannot see or decrypt each other’s affiliate data.
+
+Use this resource to see what nodes the discovery registries are aware of:
+
+```bash
+talosctl get affiliates
+```
+
+You should see an output similar to:
+
+```bash
+ID                                             VERSION   HOSTNAME                       MACHINE TYPE   ADDRESSES
+2VfX3nu67ZtZPl57IdJrU87BMjVWkSBJiL9ulP9TCnF    2         talos-default-controlplane-2   controlplane   ["172.20.0.3","fd83:b1f7:fcb5:2802:986b:7eff:fec5:889d"]
+6EVq8RHIne03LeZiJ60WsJcoQOtttw1ejvTS6SOBzhUA   2         talos-default-worker-1         worker         ["172.20.0.5","fd83:b1f7:fcb5:2802:cc80:3dff:fece:d89d"]
+NVtfu1bT1QjhNq5xJFUZl8f8I8LOCnnpGrZfPpdN9WlB   2         talos-default-worker-2         worker         ["172.20.0.6","fd83:b1f7:fcb5:2802:2805:fbff:fe80:5ed2"]
+Utoh3O0ZneV0kT2IUBrh7TgdouRcUW2yzaaMl4VXnCd    4         talos-default-controlplane-1   controlplane   ["172.20.0.2","fd83:b1f7:fcb5:2802:8c13:71ff:feaf:7c94"]
+b3DebkPaCRLTLLWaeRF1ejGaR0lK3m79jRJcPn0mfA6C   2         talos-default-controlplane-3   controlplane   ["172.20.0.4","fd83:b1f7:fcb5:2802:248f:1fff:fe5c:c3f"]
+```
+
+The affiliate matching the local node's identity is populated from the node's own data. All others are pulled from the enabled registries, which run in parallel with their data merged.
+
+To see which registry each affiliate came from, query the `cluster-raw` namespace. Affiliates prefixed with `k8s/` came from the Kubernetes registry and those prefixed with `service/` came from the discovery service:
+
+```bash
+talosctl get affiliates --namespace=cluster-raw
+```
+
+You should see an output similar to:
+
+```bash
+ID                                                     VERSION   HOSTNAME                       MACHINE TYPE   ADDRESSES
+k8s/2VfX3nu67ZtZPl57IdJrU87BMjVWkSBJiL9ulP9TCnF        3         talos-default-controlplane-2   controlplane   ["172.20.0.3","fd83:b1f7:fcb5:2802:986b:7eff:fec5:889d"]
+k8s/6EVq8RHIne03LeZiJ60WsJcoQOtttw1ejvTS6SOBzhUA       2         talos-default-worker-1         worker         ["172.20.0.5","fd83:b1f7:fcb5:2802:cc80:3dff:fece:d89d"]
+k8s/NVtfu1bT1QjhNq5xJFUZl8f8I8LOCnnpGrZfPpdN9WlB       2         talos-default-worker-2         worker         ["172.20.0.6","fd83:b1f7:fcb5:2802:2805:fbff:fe80:5ed2"]
+k8s/b3DebkPaCRLTLLWaeRF1ejGaR0lK3m79jRJcPn0mfA6C       3         talos-default-controlplane-3   controlplane   ["172.20.0.4","fd83:b1f7:fcb5:2802:248f:1fff:fe5c:c3f"]
+service/2VfX3nu67ZtZPl57IdJrU87BMjVWkSBJiL9ulP9TCnF    23        talos-default-controlplane-2   controlplane   ["172.20.0.3","fd83:b1f7:fcb5:2802:986b:7eff:fec5:889d"]
+service/6EVq8RHIne03LeZiJ60WsJcoQOtttw1ejvTS6SOBzhUA   26        talos-default-worker-1         worker         ["172.20.0.5","fd83:b1f7:fcb5:2802:cc80:3dff:fece:d89d"]
+service/NVtfu1bT1QjhNq5xJFUZl8f8I8LOCnnpGrZfPpdN9WlB   20        talos-default-worker-2         worker         ["172.20.0.6","fd83:b1f7:fcb5:2802:2805:fbff:fe80:5ed2"]
+service/b3DebkPaCRLTLLWaeRF1ejGaR0lK3m79jRJcPn0mfA6C   14        talos-default-controlplane-3   controlplane   ["172.20.0.4","fd83:b1f7:fcb5:2802:248f:1fff:fe5c:c3f"]
+```
+
+### Members
+
+A member is an affiliate that has been confirmed and approved to join the cluster. Use this resource to see the current confirmed membership of the cluster:
+
+```bash
+talosctl get members
+```
+
+You should see an output similar to:
+
+<CodeBlock lang="sh">
+{`
+ID                             VERSION   HOSTNAME                       MACHINE TYPE   OS                ADDRESSES
+talos-default-controlplane-1   2         talos-default-controlplane-1   controlplane   Talos ${release_v1_12}   ["172.20.0.2","fd83:b1f7:fcb5:2802:8c13:71ff:feaf:7c94"]
+talos-default-controlplane-2   1         talos-default-controlplane-2   controlplane   Talos ${release_v1_12}   ["172.20.0.3","fd83:b1f7:fcb5:2802:986b:7eff:fec5:889d"]
+talos-default-controlplane-3   1         talos-default-controlplane-3   controlplane   Talos ${release_v1_12}   ["172.20.0.4","fd83:b1f7:fcb5:2802:248f:1fff:fe5c:c3f"]
+talos-default-worker-1         1         talos-default-worker-1         worker         Talos ${release_v1_12}   ["172.20.0.5","fd83:b1f7:fcb5:2802:cc80:3dff:fece:d89d"]
+talos-default-worker-2         1         talos-default-worker-2         worker         Talos ${release_v1_12}   ["172.20.0.6","fd83:b1f7:fcb5:2802:2805:fbff:fe80:5ed2"]
+`}
+</CodeBlock>

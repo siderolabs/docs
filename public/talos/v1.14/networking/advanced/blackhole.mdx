@@ -1,0 +1,30 @@
+---
+title: "Blackhole Routes"
+description: "How to configure blackhole routes in your network."
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Blackhole routes are used to discard traffic destined for specific IP addresses or subnets.
+It might be useful to set up blackhole routes for security reasons, to prevent traffic from reaching certain destinations,
+or for temporary testing and troubleshooting purposes.
+
+Blackhole routes can be configured in Talos Linux using the [`BlackholeRouteConfig`](../../reference/configuration/network/blackholerouteconfig) machine configuration document:
+
+```yaml
+apiVersion: v1alpha1
+kind: BlackholeRouteConfig
+name: 169.254.1.1/32
+```
+
+This configuration creates a blackhole route for the IP address `169.254.1.1` - any traffic destined for this IP address will be discarded by the system.
+
+Blackhole route will appear as a route attached to the loopback interface `lo` (for IPv6) or as a route attached to no interface (for IPv4) with the `blackhole` type:
+
+```bash
+$ talosctl  get routes
+NODE         NAMESPACE   TYPE          ID                                                       VERSION   DESTINATION                     GATEWAY      LINK        METRIC
+172.20.0.5   network     RouteStatus   inet4//169.254.1.1/32/1024                               1         169.254.1.1/32                                           1024
+```

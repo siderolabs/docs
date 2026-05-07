@@ -1,0 +1,320 @@
+---
+title: "KubeSpan"
+description: "Learn to use KubeSpan to connect Talos Linux machines securely across networks."
+aliases:
+  - ../../guides/kubespan
+  - ../../kubernetes-guides/network/kubespan
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+KubeSpan is a feature of Talos that automates the setup and maintenance of a full mesh [WireGuard](https://www.wireguard.com) network for your cluster, giving you the ability to operate hybrid Kubernetes clusters that can span the edge, datacenter, and cloud.
+Management of keys and discovery of peers can be completely automated, making it simple and easy to create hybrid clusters.
+
+KubeSpan consists of client code in Talos Linux, as well as a [discovery service](../configure-your-talos-cluster/system-configuration/discovery) that enables clients to securely find each other.
+Sidero Labs operates a free Discovery Service, but the discovery service may, with a commercial license, be operated by your organization and can be [downloaded here](https://github.com/siderolabs/discovery-service).
+
+## Video walkthrough
+
+To see a live demo of KubeSpan, see one the videos below:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/RRk8gYzRHJg" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/sBKIFLhC9MQ" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+## Network requirements
+
+KubeSpan uses **UDP port 51820** to carry all KubeSpan encrypted traffic.
+Because UDP traversal of firewalls is often lenient, and the Discovery Service communicates the apparent IP address of all peers to all other peers, KubeSpan will often work automatically, even when each node is behind its own firewall.
+However, when both ends of a KubeSpan connection are behind firewalls, it is possible the connection may not be established correctly - it depends on each end sending out packets in a limited time window.
+
+Thus best practice is to ensure that one end of all possible node-node communication allows UDP port 51820, inbound.
+
+For example, if control plane nodes are running in a corporate data center, behind firewalls, KubeSpan connectivity will work correctly so long as worker nodes on the public Internet can receive packets on UDP port 51820.
+(Note the workers will also need to receive TCP port 50000 for initial configuration via `talosctl`).
+
+An alternative topology would be to run control plane nodes in a public cloud, and allow inbound UDP port 51820 to the control plane nodes.
+Workers could be behind firewalls, and KubeSpan connectivity will be established.
+Note that if workers are in different locations, behind different firewalls, the KubeSpan connectivity between workers *should* be correctly established, but may require opening the KubeSpan UDP port on the local firewall also.
+
+## Caveats
+
+### Kubernetes API endpoint limitations
+
+When the K8s endpoint is an IP address that is **not** part of Kubespan, but is an address that is forwarded on to the Kubespan address of a control plane node, without changing the source address, then worker nodes will fail to join the cluster.
+In such a case, the control plane node has no way to determine whether the packet arrived on the private Kubespan address, or the public IP address.
+If the source of the packet was a Kubespan member, the reply will be Kubespan encapsulated, and thus not translated to the public IP, and so the control plane will reply to the session with the wrong address.
+
+This situation is seen, for example, when the Kubernetes API endpoint is the public IP of a VM in GCP or Azure for a single node control plane.
+The control plane will receive packets on the public IP, but will reply from it's KubeSpan address.
+The workaround is to create a load balancer to terminate the Kubernetes API endpoint.
+
+### Digital ocean limitations
+
+Digital Ocean assigns an "Anchor IP" address to each droplet.
+Talos Linux correctly identifies this as a link-local address, and configures KubeSpan correctly, but this address will often be selected by Flannel or other CNIs as a node's private IP.
+Because this address is not routable, nor advertised via KubeSpan, it will break pod-pod communication between nodes.
+This can be worked-around by assigning a non-Anchor private IP:
+
+`kubectl annotate node do-worker flannel.alpha.coreos.com/public-ip-overwrite=10.116.X.X`
+
+Then restarting flannel:
+`kubectl delete pods -n kube-system -l k8s-app=flannel`
+
+### Host port limitations
+
+As mentioned in Network Requirements, Kubespan uses **UDP port 51820** to carry all KubeSpan encrypted traffic.
+For clusters that make heavy use of host ports for Kubernetes pods, care should be taken to ensure that this port is not given to these pods.
+Failure to do so can result in a pod being assigned the 51820 port and conflicting with Kubespan traffic.
+
+### Cilium compatibility limitations
+
+KubeSpan and [Cilium](https://cilium.io) can generally be used together.
+However, some advanced Cilium configurations are **not compatible** with KubeSpan.
+
+Cilium expects all inter-node traffic to flow directly over the node’s primary interface (for example, `eth0`).
+With KubeSpan enabled, Talos intercepts that traffic and routes it through the WireGuard mesh.
+This leads to asymmetric routing and broken pod-to-pod communication across nodes.
+
+We recommend the following workarounds:
+
+* If you need advanced Cilium features (e.g., full eBPF datapath with masquerading), use [Cilium’s built-in WireGuard
+  encryption](https://docs.cilium.io/en/stable/security/network/encryption/) instead of Kubespan.
+
+* If you prefer to use KubeSpan for secure node-to-node connectivity, run Cilium
+  with its **default configuration**, which is compatible with KubeSpan.
+
+> **Note**: Not all Cilium setups are affected.
+> Only certain advanced configurations (like full eBPF masquerading) cause incompatibility.
+> Default Cilium deployments work as expected with KubeSpan.
+
+## Enabling
+
+### Creating a new cluster
+
+To enable KubeSpan for a new cluster, we can use the `--with-kubespan` flag in `talosctl gen config`.
+This will enable peer discovery and KubeSpan.
+
+```yaml
+cluster:
+    discovery:
+        enabled: true
+        # Configure registries used for cluster member discovery.
+        registries:
+            kubernetes: # Kubernetes registry is problematic with KubeSpan, if the control plane endpoint is routable itself via KubeSpan.
+              disabled: true
+            service: {}
+---
+apiVersion: v1alpha1
+kind: KubeSpanConfig
+enabled: true # Enable the KubeSpan feature.
+```
+
+> The default discovery service is an external service hosted by Sidero Labs at `https://discovery.talos.dev/`.
+> Contact Sidero Labs if you need to run this service privately.
+
+### Enabling for an existing cluster
+
+In order to enable KubeSpan on an existing cluster, add `KubeSpanConfig` and `discovery` settings in the machine config for each machine in the cluster (`discovery` is enabled by default):
+
+```yaml
+cluster:
+  discovery:
+    enabled: true
+---
+apiVersion: v1alpha1
+kind: KubeSpanConfig
+enabled: true
+```
+
+## Configuration
+
+KubeSpan automatically discovers cluster members, exchanges WireGuard public keys, and establishes a full mesh network between nodes.
+
+In most cases, no additional configuration is required. However, the following options are available for advanced use cases:
+
+```yaml
+apiVersion: v1alpha1
+kind: KubeSpanConfig
+enabled: true
+advertiseKubernetesNetworks: false
+allowDownPeerBypass: false
+mtu: 1420
+filters:
+    endpoints:
+      - 0.0.0.0/0
+      - ::/0
+    excludeAdvertisedNetworks:
+        - 2007::/64
+```
+
+`advertiseKubernetesNetworks`
+
+Controls whether the node advertises Kubernetes service and pod networks to other nodes over KubeSpan.
+
+By default, this setting is disabled. When disabled, KubeSpan handles only node-to-node traffic, while pod-to-pod traffic is routed and encapsulated by the CNI plugin.
+
+`allowDownPeerBypass`
+
+Controls whether a node can bypass WireGuard when the destination is not connected through KubeSpan.
+
+If this option is enabled, traffic may be routed without encryption when the destination is outside the KubeSpan network. However, it provides a workaround for situations where a node is not connected to KubeSpan but still needs access to the cluster.
+
+`mtu`
+
+Configures the WireGuard MTU. The default value is 1420.
+
+This value is safe when the underlying network MTU is 1500.
+If the underlying MTU is smaller, adjust accordingly:
+
+```bash
+KubeSpan MTU = Underlying MTU - 80
+```
+
+### Filters
+
+The `filters` setting provides fine-grained control over what this node advertises over KubeSpan.
+
+Filters apply only to the local node.
+
+`filters.endpoints`
+
+Controls which node addresses are advertised as WireGuard endpoints.
+
+By default, all detected addresses are advertised, and KubeSpan cycles through them until it finds one that works.
+
+This is useful when:
+
+- Some node IPs are unreachable from peers
+
+- Nodes have multiple network paths and one should be preferred
+
+**Example:**
+
+```yaml
+apiVersion: v1alpha1
+kind: KubeSpanConfig
+filters:
+    endpoints:
+      - 0.0.0.0/0
+      - ::/0
+      - "!123.0.0.0/24"
+```
+
+`filters.excludeAdvertisedNetworks`
+
+Excludes specific networks from being advertised over KubeSpan.
+
+By default, all eligible networks (such as host addresses and, if enabled, Kubernetes pod CIDRs) are advertised to other cluster members.
+
+Use this setting to prevent certain CIDR ranges from being announced.
+
+Excluded networks will not be reachable over KubeSpan.
+
+**Example:**
+
+```yaml
+apiVersion: v1alpha1
+kind: KubeSpanConfig
+filters:
+  excludeAdvertisedNetworks:
+    - 172.16.64.0/20
+```
+
+In this example, the `172.16.64.0/20` subnet will not be advertised to other cluster members.
+
+> **Note**: Excluded networks must remain reachable via another route (for example, direct L2/L3 routing). Otherwise, they will become unreachable from other nodes.
+
+#### Additional Announced Endpoints
+
+To announce additional endpoints (for example, inbound NAT mappings), use the separate machine configuration document:
+
+```yaml
+apiVersion: v1alpha1
+kind: KubespanEndpointsConfig
+extraAnnouncedEndpoints:
+  - 192.168.101.3:61033
+```
+
+## Resource definitions
+
+### KubeSpanIdentities
+
+A node's WireGuard identities can be obtained with:
+
+```sh
+$ talosctl get kubespanidentities -o yaml
+...
+spec:
+    address: fd83:b1f7:fcb5:2802:8c13:71ff:feaf:7c94/128
+    subnet: fd83:b1f7:fcb5:2802::/64
+    privateKey: gNoasoKOJzl+/B+uXhvsBVxv81OcVLrlcmQ5jQwZO08=
+    publicKey: NzW8oeIH5rJyY5lefD9WRoHWWRr/Q6DwsDjMX+xKjT4=
+```
+
+Talos automatically configures unique IPv6 address for each node in the cluster-specific IPv6 ULA prefix.
+
+The Wireguard private key is generated and never leaves the node, while the public key is published through the cluster discovery.
+
+`KubeSpanIdentity` is persisted across reboots and upgrades in [STATE](../learn-more/architecture#file-system-partitions) partition in the file `kubespan-identity.yaml`.
+
+### KubeSpanPeerSpecs
+
+A node's WireGuard peers can be obtained with:
+
+```sh
+$ talosctl get kubespanpeerspecs
+ID                                             VERSION   LABEL                          ENDPOINTS
+06D9QQOydzKrOL7oeLiqHy9OWE8KtmJzZII2A5/FLFI=   2         talos-default-controlplane-2   ["172.20.0.3:51820"]
+THtfKtfNnzJs1nMQKs5IXqK0DFXmM//0WMY+NnaZrhU=   2         talos-default-controlplane-3   ["172.20.0.4:51820"]
+nVHu7l13uZyk0AaI1WuzL2/48iG8af4WRv+LWmAax1M=   2         talos-default-worker-2         ["172.20.0.6:51820"]
+zXP0QeqRo+CBgDH1uOBiQ8tA+AKEQP9hWkqmkE/oDlc=   2         talos-default-worker-1         ["172.20.0.5:51820"]
+```
+
+The peer ID is the Wireguard public key.
+`KubeSpanPeerSpecs` are built from the cluster discovery data.
+
+### KubeSpanPeerStatuses
+
+The status of a node's WireGuard peers can be obtained with:
+
+```sh
+$ talosctl get kubespanpeerstatuses
+ID                                             VERSION   LABEL                          ENDPOINT           STATE   RX         TX
+06D9QQOydzKrOL7oeLiqHy9OWE8KtmJzZII2A5/FLFI=   63        talos-default-controlplane-2   172.20.0.3:51820   up      15043220   17869488
+THtfKtfNnzJs1nMQKs5IXqK0DFXmM//0WMY+NnaZrhU=   62        talos-default-controlplane-3   172.20.0.4:51820   up      14573208   18157680
+nVHu7l13uZyk0AaI1WuzL2/48iG8af4WRv+LWmAax1M=   60        talos-default-worker-2         172.20.0.6:51820   up      130072     46888
+zXP0QeqRo+CBgDH1uOBiQ8tA+AKEQP9hWkqmkE/oDlc=   60        talos-default-worker-1         172.20.0.5:51820   up      130044     46556
+```
+
+KubeSpan peer status includes following information:
+
+* the actual endpoint used for peer communication
+* link state:
+  * `unknown`: the endpoint was just changed, link state is not known yet
+  * `up`: there is a recent handshake from the peer
+  * `down`: there is no handshake from the peer
+* number of bytes sent/received over the Wireguard link with the peer
+
+If the connection state goes `down`, Talos will be cycling through the available endpoints until it finds the one which works.
+
+Peer status information is updated every 30 seconds.
+
+### KubeSpanEndpoints
+
+A node's WireGuard endpoints (peer addresses) can be obtained with:
+
+```sh
+$ talosctl get kubespanendpoints
+ID                                             VERSION   ENDPOINT           AFFILIATE ID
+06D9QQOydzKrOL7oeLiqHy9OWE8KtmJzZII2A5/FLFI=   1         172.20.0.3:51820   2VfX3nu67ZtZPl57IdJrU87BMjVWkSBJiL9ulP9TCnF
+THtfKtfNnzJs1nMQKs5IXqK0DFXmM//0WMY+NnaZrhU=   1         172.20.0.4:51820   b3DebkPaCRLTLLWaeRF1ejGaR0lK3m79jRJcPn0mfA6C
+nVHu7l13uZyk0AaI1WuzL2/48iG8af4WRv+LWmAax1M=   1         172.20.0.6:51820   NVtfu1bT1QjhNq5xJFUZl8f8I8LOCnnpGrZfPpdN9WlB
+zXP0QeqRo+CBgDH1uOBiQ8tA+AKEQP9hWkqmkE/oDlc=   1         172.20.0.5:51820   6EVq8RHIne03LeZiJ60WsJcoQOtttw1ejvTS6SOBzhUA
+```
+
+The endpoint ID is the base64 encoded WireGuard public key.
+
+The observed endpoints are submitted back to the discovery service (if enabled) so that other peers can try additional endpoints to establish the connection.

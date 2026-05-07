@@ -1,0 +1,31 @@
+---
+title: "Scale up a Talos cluster"
+description: "How to add more nodes to a Talos Linux cluster."
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+To add more nodes to a Talos Linux cluster, follow the same procedure as when initially creating the cluster:
+
+- Boot the new machines to install Talos Linux
+- Apply the appropriate configuration file (`worker.yaml` or `controlplane.yaml`) to each new machine
+
+## Get the appropriate machine configuration
+
+You need a valid `controlplane.yaml` or `worker.yaml` to apply to new nodes. If your cluster has been upgraded since it was initially created, your original files may be stale, regenerate them instead using the [reproducible machine configuration workflow](../configure-your-talos-cluster/system-configuration/reproducible-machine-configuration).
+
+## Apply configuration to new nodes
+
+Once you have the machine config, apply it to each new node using its IP address:
+
+```bash
+talosctl apply-config --insecure \
+  --nodes <NODE-IP> \
+  --file <new-config-yaml>
+```
+
+The `--insecure` flag is required because the PKI infrastructure has not yet been made available to the new node.
+
+You do not need to bootstrap the new node. Whether you are adding a control plane or worker node, it will join the cluster automatically in its assigned role.

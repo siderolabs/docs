@@ -1,0 +1,53 @@
+---
+title: "Corporate Proxies"
+description: "How to configure Talos Linux to use proxies in a corporate environment"
+aliases:
+  - ../../guides/configuring-corporate-proxies
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+## Appending the certificate authority of MITM proxies
+
+See [Custom Certificate Authorities](../security/certificate-authorities) to append the CA certificate of your corporate proxy to the trusted store.
+
+## Configuring a machine to use the proxy
+
+To configure Talos to use an HTTP or HTTPS proxy, set the appropriate environment variables in the machine configuration:
+
+```yaml
+machine:
+  env:
+    http_proxy: <http proxy>
+    https_proxy: <https proxy>
+    no_proxy: <no proxy>
+```
+
+In proxy-restricted environments, you may also need to configure DNS (`nameservers`) and NTP (`timeservers`) explicitly:
+
+```yaml
+machine:
+  env:
+  ...
+  time:
+    servers:
+      - <server 1>
+      - <server ...>
+      - <server n>
+  ...
+  network:
+    nameservers:
+      - <ip 1>
+      - <ip ...>
+      - <ip n>
+```
+
+If proxy access is required before the machine configuration is applied (for example, during initial boot), provide the proxy settings via [kernel command line arguments](../reference/kernel):
+
+```text
+talos.environment=http_proxy=<http-proxy> talos.environment=https_proxy=<https-proxy>
+```
+
+DNS and NTP settings can also be managed using their dedicated configuration documents: [ResolverConfig](../reference/configuration/network/resolverconfig) and [TimeSyncConfig](../reference/configuration/network/timesyncconfig) respectively.

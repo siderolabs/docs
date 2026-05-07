@@ -1,0 +1,202 @@
+---
+title: "NVIDIA GPU (Proprietary drivers)"
+description: "In this guide you'll follow the procedure to support NVIDIA GPU using proprietary drivers on Talos."
+aliases:
+  - ../../guides/nvidia-gpu-proprietary
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+> Enabling NVIDIA GPU support on Talos is bound by [NVIDIA EULA](https://www.nvidia.com/en-us/drivers/nvidia-license/).
+> The Talos published NVIDIA drivers are bound to a specific Talos release.
+> The extensions versions also needs to be updated when upgrading Talos.
+
+We will be using the following NVIDIA system extensions:
+
+- `nonfree-kmod-nvidia`
+- `nvidia-container-toolkit`
+
+Create the [boot assets](../../platform-specific-installations/boot-assets) which includes the system extensions mentioned above (or create a custom installer and perform a machine upgrade if Talos is already installed).
+
+> Make sure the driver version matches for both the `nonfree-kmod-nvidia` and `nvidia-container-toolkit` extensions.
+> The `nonfree-kmod-nvidia` extension is versioned as `<nvidia-driver-version>-<talos-release-version>` and the `nvidia-container-toolkit` extension is versioned as `<nvidia-driver-version>-<nvidia-container-toolkit-version>`.
+
+## Proprietary vs OSS Nvidia driver support
+
+The NVIDIA Linux GPU Driver contains several kernel modules: `nvidia.ko`, `nvidia-modeset.ko`, `nvidia-uvm.ko`, `nvidia-drm.ko`, and `nvidia-peermem.ko`.
+Two "flavors" of these kernel modules are provided, and both are available for use within Talos:
+
+- Proprietary, This is the flavor that NVIDIA has historically shipped.
+- Open, i.e. source-published/OSS, kernel modules that are dual licensed MIT/GPLv2.
+  With every driver release, the source code to the open kernel modules is published on https://github.com/NVIDIA/open-gpu-kernel-modules and a tarball is provided on https://download.nvidia.com/XFree86/.
+
+The choice between Proprietary/OSS may be decided after referencing the Official [NVIDIA announcement](https://developer.nvidia.com/blog/nvidia-transitions-fully-towards-open-source-gpu-kernel-modules/).
+
+<Tip>Some hardware may require additional system configuration. Grace Blackwell (GB10) devices running with arm64 CPUs like the Nvidia DGX Spark require setting `arm64.nobti` as a kernel argument. Without this configuration the system may crash or CUDA libraries will not load.</Tip>
+
+## Enabling the NVIDIA modules and the system extension
+
+Patch Talos machine configuration using the patch `gpu-worker-patch.yaml`:
+
+```yaml
+machine:
+  kernel:
+    modules:
+      - name: nvidia
+      - name: nvidia_uvm
+      - name: nvidia_drm
+      - name: nvidia_modeset
+```
+
+Now apply the patch to all Talos nodes in the cluster having NVIDIA GPU's installed:
+
+```bash
+talosctl patch mc --patch @gpu-worker-patch.yaml
+```
+
+The NVIDIA modules should be loaded and the system extension should be installed.
+
+This can be confirmed by running:
+
+```bash
+talosctl read /proc/modules
+```
+
+which should produce an output similar to below:
+
+```text
+nvidia_uvm 1146880 - - Live 0xffffffffc2733000 (PO)
+nvidia_drm 69632 - - Live 0xffffffffc2721000 (PO)
+nvidia_modeset 1142784 - - Live 0xffffffffc25ea000 (PO)
+nvidia 39047168 - - Live 0xffffffffc00ac000 (PO)
+```
+
+```bash
+talosctl get extensions
+```
+
+which should produce an output similar to below:
+
+```text
+NODE           NAMESPACE   TYPE              ID                                                                 VERSION   NAME                       VERSION
+172.31.41.27   runtime     ExtensionStatus   000.ghcr.io-frezbo-nvidia-container-toolkit-510.60.02-v1.9.0       1         nvidia-container-toolkit   510.60.02-v1.9.0
+```
+
+```bash
+talosctl read /proc/driver/nvidia/version
+```
+
+which should produce an output similar to below:
+
+```text
+NVRM version: NVIDIA UNIX x86_64 Kernel Module  510.60.02  Wed Mar 16 11:24:05 UTC 2022
+GCC version:  gcc version 11.2.0 (GCC)
+```
+
+## Deploying NVIDIA GPU Operator
+
+Follow the [upstream instructions](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html) with only passing Helm chart values specific to Talos.
+
+Disable the driver and toolkit components of the GPU operator since we have already enabled them as system extensions on Talos.
+
+Further custom values may be needed to be passed to the helm chart depending on the cluster configuration.
+
+```bash
+kubectl create ns gpu-operator
+kubectl label --overwrite ns gpu-operator pod-security.kubernetes.io/enforce=privileged
+```
+
+> Note: Make sure to install GPU operator version v26.3.1 or higher
+
+```bash
+helm repo add nvidia https://helm.ngc.nvidia.com/nvidia
+helm repo update
+helm upgrade --wait --install -n gpu-operator gpu-operator nvidia/gpu-operator \
+  --set driver.enabled=false \
+  --set toolkit.enabled=false \
+  --set hostPaths.driverInstallDir=/usr/local
+```
+
+### Verification
+
+Follow the [upstream instructions](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html#verification-running-sample-gpu-applications) to verify the GPU operator installation.
+
+## Collecting NVIDIA GPU debug data
+
+When debugging NVIDIA GPU issues (for example, `NVRM: GPU has fallen off the bus` messages in the kernel log), NVIDIA support will often ask for the output of `nvidia-bug-report.sh`.
+
+Talos does not allow direct shell access on the nodes, but you can still generate this report by following the steps below:
+
+1. Start a debug pod on the affected node:
+
+```bash
+ kubectl -n kube-system \
+    run debug-gpu \
+    --rm -it \
+    --image=ubuntu \
+    --overrides='{
+      "spec": {
+        "runtimeClassName": "nvidia",
+        "hostPID": true,
+        "hostNetwork": true,
+        "containers": [{
+          "name": "debug-gpu",
+          "image": "ubuntu",
+          "stdin": true,
+          "tty": true,
+          "securityContext": {
+            "privileged": true
+          },
+          "volumeMounts": [{
+            "name": "host-root",
+            "mountPath": "/host"
+          }]
+        }],
+        "volumes": [{
+          "name": "host-root",
+          "hostPath": {
+            "path": "/"
+          }
+        }]
+      }
+    }' \
+    --restart=Never \
+    -- /bin/bash
+```
+
+2. This will drop you into a shell inside a container running on the node. From here, you can install the necessary tools to run `nvidia-bug-report.sh` and generate the report.
+
+```bash
+apt update && apt install --no-install-recommends -y \
+    dmidecode \
+    pciutils \
+    usbutils \
+    mesa-utils \
+    kmod \
+    vulkan-tools \
+    infiniband-diags \
+    acpidump \
+    mstflint
+```
+
+3. Inside the debug container, run `nvidia-bug-report.sh`:
+
+  ```bash
+  /host/usr/local/bin/nvidia-bug-report.sh
+  ```
+
+This will generate `nvidia-bug-report.log.gz` in the current directory.
+
+4. To copy the report of the cluster:
+
+From your local machine, run the following command to copy the report from the debug pod to your local machine:
+
+    ```bash
+    kubectl cp \
+    "kube-system/debug-gpu:/nvidia-bug-report.log.gz" \
+    ./nvidia-bug-report.log.gz
+    ```
+
+You can now upload `nvidia-bug-report.log.gz` to NVIDIA support.

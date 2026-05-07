@@ -1,0 +1,30 @@
+---
+title: "VRF"
+description: "How to configure VRF (Virtual Routing and Forwarding) for your network."
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+VRF (Virtual Routing and Forwarding) is a [Linux feature](https://docs.kernel.org/networking/vrf.html) that allows you to create multiple separate routing tables on the same machine, effectively creating multiple virtual routers.
+VRF device is associated with a specific routing table, and any network interface attached to the VRF device will use that routing table for its traffic.
+
+VRFs can be configured in Talos Linux using the [`VRFConfig`](../../reference/configuration/network/vrfconfig) machine configuration document:
+
+```yaml
+apiVersion: v1alpha1
+kind: VRFConfig
+name: vrf-blue
+links:
+    - eno1
+    - eno5
+table: "123"
+up: true
+addresses:
+    - address: 1.2.3.5/32
+```
+
+Addresses and routes can be configured in the same document as shown in [static link configuration](./../configuration/static).
+
+The `links` field specifies the interfaces assigned to the VRF, and [link aliases](./../configuration/aliases) can be used here as well.

@@ -1,0 +1,34 @@
+---
+title: "Routing Rules"
+description: "How to configure Linux routing rules for the machine."
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Routing rules are used to control the routing of network traffic on the machine based on various criteria such as source and destination addresses, interfaces, and more.
+Routing rules are evaluated in order of priority, and the first matching rule is applied to the traffic.
+This allows for complex routing configurations, such as policy-based routing, where traffic can be routed differently based on its characteristics.
+
+By default, a predefined routing table main is used for all traffic, but additional routing tables can be created and used with routing rules to achieve more granular control over traffic routing.
+
+Routing rules can be configured in Talos Linux using the [`RoutingRuleConfig`](../../reference/configuration/network/routingruleconfig) machine configuration document:
+
+```yaml
+apiVersion: v1alpha1
+kind: RoutingRuleConfig
+name: "1000"
+src: 10.0.0.0/8
+table: "100"
+action: unicast
+```
+
+The `name` field specifies the priority of the routing rule, with lower numbers having higher priority.
+The priority must be a number between 1 and 32764, where 1 is the highest priority and 32764 is the lowest priority.
+Priorities 0, 32765, and 32766 are reserved for special use by the system and cannot be used for custom routing rules.
+
+Once the routing rule is applied, any traffic with a source address in the `10.0.0.0/8` subnet will be routed according to the routing table `100` instead of the default `main` routing table, and the action `unicast` specifies that the traffic should be routed normally
+(as opposed to being dropped or sent to a specific interface).
+
+Routes in the routing table can be populated using static routes as shown in [static link configuration](./../configuration/static) by specifying the `table:` field (which defaults to `main`).
