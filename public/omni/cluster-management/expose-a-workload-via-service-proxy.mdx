@@ -136,12 +136,14 @@ EOF
 
 The following annotations control how a service is exposed through the workload proxy:
 
-| Annotation | Required | Description |
-|---|---|---|
-| `omni-kube-service-exposer.sidero.dev/port` | Yes | The port to expose the service on. Must be unused on all nodes. |
-| `omni-kube-service-exposer.sidero.dev/label` | No | A human-readable name shown in the Omni left navigation. Defaults to `<service-name>.<service-namespace>`. |
-| `omni-kube-service-exposer.sidero.dev/prefix` | No | A fixed URL prefix. If not set, a random alphanumeric string is used. |
-| `omni-kube-service-exposer.sidero.dev/icon` | No | An icon displayed next to the service in the Omni left navigation. Accepts a base64-encoded SVG or a base64-encoded GZIP of an SVG. |
+| Annotation | Description |
+|---|---|
+| `omni-kube-service-exposer.sidero.dev/port` | **Required.** A comma-separated list of host port entries.<br/>Each entry is either a bare host port (e.g. `30080`) or a `host-port:service-port` pair<br/>where the service port is a port number or a port name (e.g. `30443:8080` or `30444:https`).<br/>Each host port must be unused on all nodes.<br/>The selected Kubernetes Service port must use the TCP protocol. |
+| `omni-kube-service-exposer.sidero.dev/label` | A human-readable name shown in the Omni left navigation.<br/>Defaults to `<service-name>.<service-namespace>`. |
+| `omni-kube-service-exposer.sidero.dev/prefix` | A fixed URL prefix.<br/>If not set, a random alphanumeric string is used. |
+| `omni-kube-service-exposer.sidero.dev/icon` | An icon displayed next to the service in the Omni left navigation.<br/>Accepts a base64-encoded SVG or a base64-encoded GZIP of an SVG. |
+
+When the bare host port form is used, the entry maps to the first port defined on the Service. To select a specific service port on a Service that defines several, use the `host-port:service-port` form.
 
 To encode an SVG icon for use with the annotation:
 
@@ -149,13 +151,45 @@ To encode an SVG icon for use with the annotation:
 gzip -c icon.svg | base64
 ```
 
+### Exposing multiple host ports
+
+<Info>
+Exposing a Service on multiple host ports requires Omni 1.8.0 or later. On earlier versions, the `port` annotation accepts only a single bare host port, and the per-host-port suffixed variants of `label`, `prefix`, and `icon` are ignored.
+</Info>
+
+A single Service can be exposed on multiple host ports by listing several entries in the `port` annotation. Each entry produces its own exposed service with its own URL in Omni.
+
+A common case is a workload that serves a user-facing UI on one port and a Prometheus metrics endpoint on another. For example, given a Service that defines port `8080` (named `http`) and port `9090` (named `metrics`):
+
+```yaml
+metadata:
+  annotations:
+    omni-kube-service-exposer.sidero.dev/port: "30080:http,30090:metrics"
+```
+
+The `label`, `prefix`, and `icon` annotations accept per-host-port suffixed variants in the form `<base>-<host-port>`. The suffixed variant wins for that host port, and the unsuffixed annotation is used as a fallback for any host port that does not have a suffixed variant set.
+
+```yaml
+metadata:
+  annotations:
+    omni-kube-service-exposer.sidero.dev/port: "30080:http,30090:metrics"
+    omni-kube-service-exposer.sidero.dev/label: My App
+    omni-kube-service-exposer.sidero.dev/label-30090: My App (metrics)
+    omni-kube-service-exposer.sidero.dev/prefix-30080: my-app
+    omni-kube-service-exposer.sidero.dev/prefix-30090: my-app-metrics
+```
+
+When the unsuffixed `prefix` annotation is set on a service exposed on multiple host ports, it is claimed by the lowest host port. Other host ports get an automatically generated alias derived from it, so there is no duplicate-prefix conflict.
+
+Bad or duplicate entries in the `port` annotation are skipped individually rather than failing the whole annotation. Check `omnictl get exposedservices` for any per-entry errors.
+
 ## Access an exposed service
 
-Once annotated, the service will appear under **Exposed Services** in the left navigation when the cluster is selected. Click the service name to open it in Omni.
+Once annotated, the service will appear under **Exposed Services** in the left navigation when the cluster is selected. A Service exposed on multiple host ports shows up as one entry per host port. Click the service name to open it in Omni.
 
 <img src="./images/expose-an-http-service-accessing-exposed-service.png" alt="Exposed services in the Omni left navigation" width="500" />
 
-The service URL will use either the randomly generated prefix or the value of the `omni-kube-service-exposer.sidero.dev/prefix` annotation if set.
+The service URL uses the suffixed `prefix-<host-port>` annotation if set, otherwise the unsuffixed `prefix` annotation, otherwise a randomly generated prefix. For a service exposed on multiple host ports, the unsuffixed `prefix` only applies to the lowest host port, and the other host ports get an automatically generated alias derived from it.
 
 ## Examples: exposing cluster tools with the workload proxy
 
