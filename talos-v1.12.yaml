@@ -142,6 +142,7 @@ navigation:
             - "verifying-images.mdx"
             - "talos-default-hardening-and-cis-compliance.mdx"
             - "talos-security-checklist.mdx"
+            - "subscribe-to-security-advisories.mdx"
 
         - group: "Build and extend Talos"
           folder: "talos/v1.12/build-and-extend-talos"

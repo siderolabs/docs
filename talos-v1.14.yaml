@@ -146,6 +146,7 @@ navigation:
             - "source-talos-images.mdx"
             - "talos-default-hardening-and-cis-compliance.mdx"
             - "talos-security-checklist.mdx"
+            - "subscribe-to-security-advisories.mdx"
 
         - group: "Build and extend Talos"
           folder: "talos/v1.13/build-and-extend-talos"
@@ -324,6 +325,7 @@ navigation:
             - "networking-resources.mdx"
             - "philosophy.mdx"
             - "process-capabilities.mdx"
+            - "subscribe-to-security-advisories.mdx"
             - "talos-for-linux-admins.mdx"
             - "talos-network-connectivity.mdx"
             - "talos-platform-configuration.mdx"

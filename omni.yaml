@@ -113,6 +113,7 @@ navigation:
             - "break-glass-emergency-access.mdx"
             - "rotate-siderolink-join-token.mdx"
             - "security-model.mdx"
+            - "subscribe-to-security-advisories.mdx"
 
         - group: "Reference"
           folder: "omni/reference"
