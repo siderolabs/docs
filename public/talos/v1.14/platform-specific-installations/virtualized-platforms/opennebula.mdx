@@ -6,7 +6,7 @@ aliases:
 ---
 
 import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
-import { release_v1_13 } from '/snippets/custom-variables.mdx';
+import { release_v1_14 } from '/snippets/custom-variables.mdx';
 
 <VersionWarningBanner />
 
@@ -32,14 +32,14 @@ Talos provides pre-built OpenNebula disk images via [Image Factory](https://fact
 Use the following command to download the disk image:
 
 <CodeBlock lang="bash">
-  {`curl -L https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_13}/opennebula-amd64.qcow2 \\
+  {`curl -L https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_14}/opennebula-amd64.qcow2 \\
   -o talos-opennebula-amd64.qcow2`}
 </CodeBlock>
 
 Use the following command to upload the image to OpenNebula:
 
 <CodeBlock lang="bash">
-  {`oneimage create --name talos-${release_v1_13} \\
+  {`oneimage create --name talos-${release_v1_14} \\
   --path talos-opennebula-amd64.qcow2 \\
   --driver qcow2 \\
   --datastore default`}

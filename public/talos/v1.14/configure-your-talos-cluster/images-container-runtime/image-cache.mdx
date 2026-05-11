@@ -7,7 +7,7 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 <VersionWarningBanner />
 
-import { release_v1_13 } from '/snippets/custom-variables.mdx';
+import { release_v1_14 } from '/snippets/custom-variables.mdx';
 
 The Image Cache feature allows nodes to access container images without needing to pull them from the Internet.
 This is especially useful in environments with limited or no Internet connectivity.
@@ -42,7 +42,7 @@ Starting with Talos 1.12 you can get a list of images needed from talosctl.
 
 <CodeBlock lang="sh">
 {`
-talosctl images talos-bundle ${release_v1_13} >> images.txt
+talosctl images talos-bundle ${release_v1_14} >> images.txt
 `}
 </CodeBlock>
 
@@ -82,7 +82,7 @@ The ISO image can built with the [imager](../../platform-specific-installations/
 <CodeBlock lang="sh">
 {`
 mkdir -p _out/
-docker run --rm -t -v $PWD/_out:/secureboot:ro -v $PWD/_out:/out -v $PWD/image-cache.oci:/image-cache.oci:ro ghcr.io/siderolabs/imager:${release_v1_13} iso --image-cache /image-cache.oci
+docker run --rm -t -v $PWD/_out:/secureboot:ro -v $PWD/_out:/out -v $PWD/image-cache.oci:/image-cache.oci:ro ghcr.io/siderolabs/imager:${release_v1_14} iso --image-cache /image-cache.oci
 `}
 </CodeBlock>
 
@@ -106,7 +106,7 @@ The disk image can be built with the [imager](../../platform-specific-installati
 <CodeBlock lang="sh">
 {`
 mkdir -p _out/
-docker run --rm -t -v $PWD/_out:/secureboot:ro -v $PWD/_out:/out -v $PWD/image-cache.oci:/image-cache.oci:ro ghcr.io/siderolabs/imager:${release_v1_13} metal --image-cache /image-cache.oci
+docker run --rm -t -v $PWD/_out:/secureboot:ro -v $PWD/_out:/out -v $PWD/image-cache.oci:/image-cache.oci:ro ghcr.io/siderolabs/imager:${release_v1_14} metal --image-cache /image-cache.oci
 `}
 </CodeBlock>
 

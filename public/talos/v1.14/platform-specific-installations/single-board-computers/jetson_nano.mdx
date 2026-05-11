@@ -9,7 +9,7 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 <VersionWarningBanner />
 
-import { release_v1_13 } from '/snippets/custom-variables.mdx';
+import { release_v1_14 } from '/snippets/custom-variables.mdx';
 
 ## Prerequisites
 
@@ -23,7 +23,7 @@ Download the latest `talosctl`.
 
 <CodeBlock lang="sh">
   {`
-curl -Lo /usr/local/bin/talosctl https://github.com/siderolabs/talos/releases/download/${release_v1_13}/talosctl-$(uname -s | tr "[:upper:]" "[:lower:]")-amd64
+curl -Lo /usr/local/bin/talosctl https://github.com/siderolabs/talos/releases/download/${release_v1_14}/talosctl-$(uname -s | tr "[:upper:]" "[:lower:]")-amd64
 chmod +x /usr/local/bin/talosctl
   `}
 </CodeBlock>
@@ -97,7 +97,7 @@ Download the image and decompress it:
 
 <CodeBlock lang="sh">
   {`
-curl -LO https://factory.talos.dev/image/c7d6f36c6bdfb45fd63178b202a67cff0dd270262269c64886b43f76880ecf1e/${release_v1_13}/metal-arm64.raw.xz
+curl -LO https://factory.talos.dev/image/c7d6f36c6bdfb45fd63178b202a67cff0dd270262269c64886b43f76880ecf1e/${release_v1_14}/metal-arm64.raw.xz
 xz -d metal-arm64.raw.xz
   `}
 </CodeBlock>
@@ -137,6 +137,6 @@ For example, to upgrade to the latest version of Talos, you can run:
 
 <CodeBlock lang="sh">
   {`
-talosctl -n <node IP or DNS name> upgrade --image=factory.talos.dev/installer/c7d6f36c6bdfb45fd63178b202a67cff0dd270262269c64886b43f76880ecf1e:${release_v1_13}
+talosctl -n <node IP or DNS name> upgrade --image=factory.talos.dev/installer/c7d6f36c6bdfb45fd63178b202a67cff0dd270262269c64886b43f76880ecf1e:${release_v1_14}
   `}
 </CodeBlock>

@@ -7,7 +7,7 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 <VersionWarningBanner />
 
-import { release_v1_13 } from '/snippets/custom-variables.mdx';
+import { release_v1_14 } from '/snippets/custom-variables.mdx';
 
 Software Bill of Materials (SBOM) is a formal record containing the details and supply chain relationships of various components used in building a software product.
 SBOMs are used to provide transparency and traceability of software components, which is essential for security, compliance, and efficient management of software supply chains.
@@ -20,7 +20,7 @@ When a system extension is installed, it can also provide its own SBOM, which wi
 SBOMs for Talos Linux are provided in SPDX format, which is a standard format for representing SBOMs.
 You can acquire SBOMs for Talos Linux in the following ways:
 
-* Download the SBOM for a specific Talos Linux release from the <a href={`https://github.com/siderolabs/talos/releases/tag/${release_v1_13}`}> GitHub release</a> page:
+* Download the SBOM for a specific Talos Linux release from the <a href={`https://github.com/siderolabs/talos/releases/tag/${release_v1_14}`}> GitHub release</a> page:
   * `talos-amd64.spdx.json` for the amd64 architecture.
   * `talos-arm64.spdx.json` for the arm64 architecture.
 * Acquire the SBOM from a running Talos Linux system using the `talosctl` command:
@@ -36,7 +36,7 @@ You can access the SBOMs using the `talosctl` command:
 {`
 talosctl get sboms
 NODE         NAMESPACE   TYPE       ID              VERSION   VERSION                LICENSE
-172.20.0.2   runtime     SBOMItem   Talos           1         ${release_v1_13}
+172.20.0.2   runtime     SBOMItem   Talos           1         ${release_v1_14}
 172.20.0.2   runtime     SBOMItem   apparmor        1         v3.1.7                 GPL-2.0-or-later
 172.20.0.2   runtime     SBOMItem   cel.dev/expr    1         v0.24.0
 ...

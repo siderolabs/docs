@@ -9,7 +9,7 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 <VersionWarningBanner />
 
-import { version_v1_13 } from '/snippets/custom-variables.mdx';
+import { version_v1_14 } from '/snippets/custom-variables.mdx';
 
 This guide outlines steps and tricks to develop Talos operating systems and related components.
 The guide assumes macOS or a Linux operating system on the development host.
@@ -93,7 +93,7 @@ sudo --preserve-env=HOME _out/talosctl-<YOUR FLAVOR> cluster create dev \
 
 > Note: when configuration changes are introduced and the old installer doesn't validate the config, or the installation flow itself is being worked on  `--with-bootloader=false` should not be used
 >
-> `talosctl cluster create dev` derives Talos machine configuration version from the install image tag, so sometimes early in the development cycle (when new minor tag is not released yet), machine config version can be overridden with `--talos-version=${version_v1_13}`.
+> `talosctl cluster create dev` derives Talos machine configuration version from the install image tag, so sometimes early in the development cycle (when new minor tag is not released yet), machine config version can be overridden with `--talos-version=${version_v1_14}`.
 
 ## Console logs
 

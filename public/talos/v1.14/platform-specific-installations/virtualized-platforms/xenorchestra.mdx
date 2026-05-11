@@ -9,7 +9,7 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 <VersionWarningBanner />
 
-import { release_v1_13 } from '/snippets/custom-variables.mdx';
+import { release_v1_14 } from '/snippets/custom-variables.mdx';
 
 In this guide, we will create a Kubernetes cluster using Xen Orchestra.
 
@@ -37,14 +37,14 @@ For manual installation and other platforms, see the [talosctl installation guid
 
 ### Download the RAW disk image
 
-To install Talos in Xen Orchestra, you will need the RAW image from [Image Factory](../boot-assets/#image-factory). To work with XCP-ng the image needs to be built for the Nocloud platform with the system extension `siderolabs/xen-guest-agent`. See this <a href={`https://factory.talos.dev/?arch=amd64&board=undefined&cmdline-set=true&extensions=-&extensions=siderolabs%2Fxen-guest-agent&platform=nocloud&target=cloud&version=${release_v1_13}`}>example Talos image</a> you can use.
+To install Talos in Xen Orchestra, you will need the RAW image from [Image Factory](../boot-assets/#image-factory). To work with XCP-ng the image needs to be built for the Nocloud platform with the system extension `siderolabs/xen-guest-agent`. See this <a href={`https://factory.talos.dev/?arch=amd64&board=undefined&cmdline-set=true&extensions=-&extensions=siderolabs%2Fxen-guest-agent&platform=nocloud&target=cloud&version=${release_v1_14}`}>example Talos image</a> you can use.
 
-For example version {release_v1_13} for `linux`, download and extract the image:
+For example version {release_v1_14} for `linux`, download and extract the image:
 
 <CodeBlock lang="sh">
   {`
 mkdir -p _out/
-curl https://factory.talos.dev/image/53b20d86399013eadfd44ee49804c1fef069bfdee3b43f3f3f5a2f57c03338ac/${release_v1_13}/nocloud-amd64.raw.xz -L -o _out/nocloud-amd64.raw.xz
+curl https://factory.talos.dev/image/53b20d86399013eadfd44ee49804c1fef069bfdee3b43f3f3f5a2f57c03338ac/${release_v1_14}/nocloud-amd64.raw.xz -L -o _out/nocloud-amd64.raw.xz
 xz -d _out/nocloud-amd64.raw.xz
   `}
 </CodeBlock>
@@ -95,7 +95,7 @@ Create a new VM with the following settings:
 1. Click (**Sidebar Menu** >) **New** > **VM**.
 2. Select the pool you want to create the VM on.
 3. Select **Template** as **Generic Linux UEFI**.
-4. Set **Name** to <code>{`talos-${release_v1_13}-template`}</code> (for the control plane).
+4. Set **Name** to <code>{`talos-${release_v1_14}-template`}</code> (for the control plane).
 5. Configure the following:
 
 **System configuration**
@@ -126,7 +126,7 @@ Create a new VM with the following settings:
 
 After creating the VM, attach the Talos disk image:
 
-1. If the VM page isn't automatically open after creation, navigate to (**Sidebar Menu** >) **Home** > **VMs**, clear the filters, and type **{`talos-${release_v1_13}-template`}**.
+1. If the VM page isn't automatically open after creation, navigate to (**Sidebar Menu** >) **Home** > **VMs**, clear the filters, and type **{`talos-${release_v1_14}-template`}**.
 2. Open the **Disk** tab.
 3. Remove any existing disk.
 4. Click **Attach disk**.
@@ -229,7 +229,7 @@ Create the control plane VM:
 1. Click **+ New VM**.
 2. Select the pool you want to create the VM on.
 3. In the **Info** section:
-    - Select the template <code>{`talos-${release_v1_13}-template`}</code>.
+    - Select the template <code>{`talos-${release_v1_14}-template`}</code>.
     - Change the **Name** to something like `demo-talos-cp`.
 4. In the **Performance** section:
     - Adjust VM settings according to requirements.
@@ -332,12 +332,12 @@ kubectl get nodes -w
 
 For Secure Boot setup, see the **Secure Boot guide** in the [Talos documentation](../../platform-specific-installations/bare-metal-platforms/secureboot) and **Enable Secure Boot for a Guest VM** in the [XCP-ng documentation](https://docs.xcp-ng.org/guides/guest-UEFI-Secure-Boot/#enable-secure-boot-for-a-guest-vm).
 
-The easiest way to get started with Secure Boot is to download the <a href={`https://factory.talos.dev/image/53b20d86399013eadfd44ee49804c1fef069bfdee3b43f3f3f5a2f57c03338ac/${release_v1_13}/nocloud-amd64-secureboot.iso`}>Secure Boot ISO</a> and boot it on a UEFI-enabled VM with Secure Boot enabled in setup mode.
+The easiest way to get started with Secure Boot is to download the <a href={`https://factory.talos.dev/image/53b20d86399013eadfd44ee49804c1fef069bfdee3b43f3f3f5a2f57c03338ac/${release_v1_14}/nocloud-amd64-secureboot.iso`}>Secure Boot ISO</a> and boot it on a UEFI-enabled VM with Secure Boot enabled in setup mode.
 
 The installation should be performed using the Secure Boot installer image. Use this value in your Talos machine configuration:
 
 <CodeBlock lang="text">
-  {`factory.talos.dev/nocloud-installer-secureboot/53b20d86399013eadfd44ee49804c1fef069bfdee3b43f3f3f5a2f57c03338ac:${release_v1_13}`}
+  {`factory.talos.dev/nocloud-installer-secureboot/53b20d86399013eadfd44ee49804c1fef069bfdee3b43f3f3f5a2f57c03338ac:${release_v1_14}`}
 </CodeBlock>
 
 You can use the **Generic Linux UEFI** template to create the VM in Xen Orchestra. Force setup mode with one of these commands:
@@ -368,7 +368,7 @@ Generate the machine configuration for the node using the Secure Boot installer 
   {`
 export CONTROL_PLANE_ENDPOINT=<YOUR_CONTROL_PLANE_ENDPOINT>  
 talosctl gen config talos-xcp-cluster https://\${CONTROL_PLANE_ENDPOINT}:6443 \\
-  --install-image=factory.talos.dev/nocloud-installer-secureboot/53b20d86399013eadfd44ee49804c1fef069bfdee3b43f3f3f5a2f57c03338ac:${release_v1_13} \\
+  --install-image=factory.talos.dev/nocloud-installer-secureboot/53b20d86399013eadfd44ee49804c1fef069bfdee3b43f3f3f5a2f57c03338ac:${release_v1_14} \\
   --install-disk=/dev/xvda
 `}
 </CodeBlock>

@@ -9,7 +9,7 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 <VersionWarningBanner />
 
-import { release_v1_13, version_v1_13 } from '/snippets/custom-variables.mdx';
+import { release_v1_14, version_v1_14 } from '/snippets/custom-variables.mdx';
 
 The process to run a Talos cluster, on a single node in Scaleway is as follows:
 
@@ -25,7 +25,7 @@ The process to run a Talos cluster, on a single node in Scaleway is as follows:
 
   <CodeBlock lang="sh">
     {`
-   wget "https://factory.talos.dev/image/18d0321d7fb289f707a76e1deeaa5c97e62209722cbf4bc533a5d51eb666885f/v{ release_v1_13 }/scaleway-amd64.raw.zst"
+   wget "https://factory.talos.dev/image/18d0321d7fb289f707a76e1deeaa5c97e62209722cbf4bc533a5d51eb666885f/v{ release_v1_14 }/scaleway-amd64.raw.zst"
    `}
    </CodeBlock>
 
@@ -59,7 +59,7 @@ The process to run a Talos cluster, on a single node in Scaleway is as follows:
 
 <img src="./images/scaleway-import-as-snapshot.png" alt="Scaleway Console Import As Snapshot"/>
 
-4. Name the snapshot *scaleway-amd64-v{ release_v1_13 }*, and use a Local Storage snapshot type.
+4. Name the snapshot *scaleway-amd64-v{ release_v1_14 }*, and use a Local Storage snapshot type.
 
 ## Instance deployment
 

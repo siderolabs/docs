@@ -9,7 +9,7 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 <VersionWarningBanner />
 
-import { release_v1_13, version_v1_13 } from '/snippets/custom-variables.mdx';
+import { release_v1_14, version_v1_14 } from '/snippets/custom-variables.mdx';
 
 ## Creating a cluster via the CLI
 
@@ -263,10 +263,10 @@ We need to download two deployment manifests for the deployment from the Talos g
 
 <CodeBlock lang="sh">
 {`
-curl -fsSLO "https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${version_v1_13}/talos-guides/install/cloud-platforms/gcp/config.yaml"
-curl -fsSLO "https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${version_v1_13}/talos-guides/install/cloud-platforms/gcp/talos-ha.jinja"
+curl -fsSLO "https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${version_v1_14}/talos-guides/install/cloud-platforms/gcp/config.yaml"
+curl -fsSLO "https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${version_v1_14}/talos-guides/install/cloud-platforms/gcp/talos-ha.jinja"
 # if using ccm
-curl -fsSLO "https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${version_v1_13}/talos-guides/install/cloud-platforms/gcp/gcp-ccm.yaml"
+curl -fsSLO "https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${version_v1_14}/talos-guides/install/cloud-platforms/gcp/gcp-ccm.yaml"
 `}
 </CodeBlock>
 
@@ -286,7 +286,7 @@ resources:
     type: talos-ha.jinja
     properties:
       zone: us-west1-b
-      talosVersion: ${release_v1_13}
+      talosVersion: ${release_v1_14}
       externalCloudProvider: false
       controlPlaneNodeCount: 5
       controlPlaneNodeType: n1-standard-1
@@ -302,7 +302,7 @@ outputs:
 
 Note: The `externalCloudProvider` property is set to `false` by default.
 The <a
-  href={`https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${version_v1_13}/cloud-platforms/gcp/gcp-ccm.yaml#L256`}>manifest</a> used for deploying the ccm (cloud controller manager) is currently using the GCP ccm provided by openshift since there are no public images for the [ccm](https://github.com/kubernetes/cloud-provider-gcp) yet.
+  href={`https://raw.githubusercontent.com/siderolabs/talos/master/website/content/${version_v1_14}/cloud-platforms/gcp/gcp-ccm.yaml#L256`}>manifest</a> used for deploying the ccm (cloud controller manager) is currently using the GCP ccm provided by openshift since there are no public images for the [ccm](https://github.com/kubernetes/cloud-provider-gcp) yet.
 
 > Since the routes controller is disabled while deploying the CCM, the CNI pods needs to be restarted after the CCM deployment is complete to remove the `node.kubernetes.io/network-unavailable` taint.
 See [Nodes network-unavailable taint not removed after installing ccm](https://github.com/kubernetes/cloud-provider-gcp/issues/291) for more information
