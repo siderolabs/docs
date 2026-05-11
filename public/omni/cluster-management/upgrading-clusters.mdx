@@ -40,7 +40,9 @@ Omni upgrades control plane nodes first, verifying that the etcd cluster is heal
 
 For each node, Omni drains and cordons it, updates the OS, then uncordons it. All upgrades retain ephemeral data on the node.
 
-<Note> If any of your workloads are sensitive to ungraceful shutdowns, configure the `lifecycle.preStop` field [bla add how to do this] in the Pod spec.</Note>
+To control how many machines in a machine set are upgraded concurrently, configure [`upgradeStrategy`](../reference/cluster-templates#updatestrategy) in your cluster template.
+
+<Note> If any of your workloads are sensitive to ungraceful shutdowns, configure the `lifecycle.preStop` field in the Pod spec.</Note>
 
 ## Upgrade Kubernetes in your Omni clusters
 

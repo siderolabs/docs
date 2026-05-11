@@ -191,6 +191,9 @@ machines:
 updateStrategy:
   rolling:
     maxParallelism: 3
+upgradeStrategy:
+  rolling:
+    maxParallelism: 3
 deleteStrategy:
   type: Rolling
   rolling:
@@ -212,6 +215,7 @@ systemExtensions:
 | `machineClass`     | [MachineClass](#machineclass)     | Machine Class configuration (mutually exclusive with `machines`).                                                                                              |
 | `updateStrategy`   | [UpdateStrategy](#updatestrategy) | Update strategy for the machine set. Defaults to `type: Rolling` with `maxParallelism: 1`.                                                                     |
 | `deleteStrategy`   | [UpdateStrategy](#updatestrategy) | Delete strategy for the machine set. Defaults to `type: Unset`.                                                                                                |
+| `upgradeStrategy`  | [UpdateStrategy](#updatestrategy) | Upgrade strategy for the machine set. Defaults to `type: Rolling` with `maxParallelism: 1`.                                                                        |
 | `systemExtensions` | array[string]                     | The list of system extensions to be installed on every machine in the machine set.                                                                             |
 | `kernelArgs`       | array[string]                     | The list of [kernel args](#kernelArgs) to be set on each machine in this machine set.                                                                          |
 
@@ -238,12 +242,15 @@ The `size` field supports keyword `unlimited|infinity`, which makes the machine 
 
 ### `UpdateStrategy`
 
-The `UpdateStrategy` section of `Workers` defines the update or delete strategy for the machine set.
+The `UpdateStrategy` section of `Workers` defines the update, delete, or upgrade strategy for the machine set.
 
 ```yaml
 kind: Workers
 name: workers
 updateStrategy:
+  rolling:
+    maxParallelism: 3
+upgradeStrategy:
   rolling:
     maxParallelism: 3
 deleteStrategy:
@@ -254,7 +261,7 @@ deleteStrategy:
 
 | Field                    | Type   | Description                                                                                                                                                                                    |
 |:-------------------------|:-------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `type`                   | string | Strategy type. Can be `Rolling` or `Unset`. Defaults to `Rolling` for `updateStrategy` and `Unset` for the `deleteStrategy`.<br/>When `Unset`, all updates and/or deletes are applied at once. |
+| `type`                   | string | Strategy type. Can be `Rolling` or `Unset`. Defaults to `Rolling` for `updateStrategy` and `upgradeStrategy`, and `Unset` for the `deleteStrategy`.<br/>When `Unset`, all updates and/or deletes are applied at once. |
 | `rolling.maxParallelism` | number | Maximum number of machines to update and/or delete in parallel. Only used when the `type` is `Rolling`. Defaults to `1`.                                                                       |
 
 ### `Machine`
