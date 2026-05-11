@@ -3,7 +3,7 @@ title: Create a Machine Class
 description: Define a reusable group of machines based on labels and conditions for automated cluster allocation.
 ---
 
-A machine class is a reusable group of machines defined by labels and conditions. It allows you to match machines based on criteria like architecture and CPU count (e.g., `amd64` architecture with more than 2 CPUs). 
+A machine class is a reusable group of machines defined by labels and conditions. It allows you to match machines based on criteria like architecture and core count (e.g., `amd64` architecture with more than 2 cores). 
 
 Machine classes are used for automated cluster allocation, instead of selecting individual machines, you reference a machine class, and Omni picks matching machines automatically.
 
@@ -17,7 +17,7 @@ You can create a machine class them via the CLI with `omnictl apply` or through 
     It selects machines that meet both of the following conditions:
 
     - `omni.sidero.dev/arch = amd64` — The machine must use an amd64 (x86_64) architecture
-    - `omni.sidero.dev/cpus > 2` — The machine must have more than 2 CPUs
+    - `omni.sidero.dev/cores > 2` — The machine must have more than 2 cores
 
     ```yaml
     metadata:
@@ -26,8 +26,8 @@ You can create a machine class them via the CLI with `omnictl apply` or through 
       id: test
     spec:
       matchlabels:
-        # matches machines with amd64 architecture and more than 2 CPUs
-        - omni.sidero.dev/arch = amd64, omni.sidero.dev/cpus > 2
+        # matches machines with amd64 architecture and more than 2 cores
+        - omni.sidero.dev/arch = amd64, omni.sidero.dev/cores > 2
     ```
 
     Apply the configuration with:
