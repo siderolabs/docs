@@ -44,6 +44,8 @@ navigation:
           folder: "kubernetes-guides/advanced-guides"
           pages:
             - "deploy-traefik.mdx"
+            - "deploy-argocd.mdx"
+            - "deploy-flux.mdx"
             - "dynamic-resource-allocation.mdx"
             - "device-plugins.mdx"
             - "gcp-workload-identity.mdx"

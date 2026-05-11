@@ -1,0 +1,178 @@
+---
+title: "Deploy Argo CD"
+description: "In this guide you will learn how to deploy Argo CD on Talos Linux using extraManifests, or on Omni-managed clusters using manifest sync."
+---
+
+import { k8s_release } from '/snippets/custom-variables.mdx';
+
+[Argo CD](https://argo-cd.readthedocs.io/en/stable/) is a declarative, GitOps-based continuous delivery controller for Kubernetes. It continuously reconciles the live state of your cluster against the desired state defined in a Git repository, making it a natural fit for managing workloads on Talos Linux.
+
+This guide covers how to deploy Argo CD on Talos Linux, either by bootstrapping it through the machine configuration or through Omni manifest sync for clusters managed by Omni.
+
+## Prerequisites
+
+Before you begin, ensure you have the following:
+
+- Talos 1.3 or later.
+- `kubectl` configured to access your cluster.
+- `talosctl` installed and configured, if deploying on Talos without Omni.
+- `omnictl` installed and configured, if deploying using Omni. See [Install and configure omnictl](../../omni/getting-started/install-and-configure-omnictl).
+
+## Installation on Talos
+
+On Talos, the recommended way to bootstrap Argo CD is through `extraManifests`. This instructs Talos to fetch and apply the Argo CD install manifest from GitHub during cluster bootstrap, so Argo CD is running as soon as the cluster is healthy.
+
+`extraManifests` are best suited for publicly available, versioned manifests hosted over HTTPS. If your environment does not have outbound internet access at bootstrap time, see [inlineManifests and extraManifests](./inlinemanifests) for alternatives.
+
+**Step 1.** Create a patch file named `argocd-extra-manifest.yaml` that references the Argo CD install manifest:
+
+```bash
+cat <<EOF > argocd-manifest.yaml
+cluster:
+  inlineManifests:
+    - name: argocd-namespace
+      contents: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: argocd
+  extraManifests:
+    - "https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml"
+EOF
+```
+
+**Step 2.** Set a variable containing the IP addresses of your control plane nodes:
+
+```bash
+CP_IPS="<control-plane-ip-1>,<control-plane-ip-2>,<control-plane-ip-3>"
+```
+
+**Step 3.** Apply the patch to your control plane nodes:
+
+```bash
+talosctl patch machineconfig \
+  --patch @argocd-extra-manifest.yaml \
+  --endpoints $CP_IPS \
+  --nodes $CP_IPS
+```
+
+If you are patching an existing cluster rather than bootstrapping a fresh one, a reboot is required for `extraManifests` to take effect:
+
+```bash
+talosctl reboot --nodes $CP_IPS --endpoints $CP_IPS
+```
+
+**Step 4.** Wait for the node to come back healthy, then verify that the Argo CD pods are running:
+
+```bash
+kubectl get pods -n argocd
+```
+
+You should see pods for the `argocd-server`, `argocd-repo-server`, `argocd-application-controller`, and supporting components all in a `Running` state. From here, Argo CD manages itself and any applications you configure in your Git repository.
+
+## Installation on Omni
+
+If you manage your clusters with [Omni](https://www.siderolabs.com/omni-for-kubernetes-cluster-management), you can deploy Argo CD declaratively using [Omni manifest sync](../../omni/cluster-management/sync-kubernetes-manifests). Because Argo CD manages its own state after bootstrapping, the manifest is applied with `mode: one-time`, Omni installs it once, and Argo CD takes over from there.
+
+Manifest sync does not support fetching manifests from remote URLs, so you first download the Argo CD install manifest locally, then reference it in your cluster template.
+
+**Step 1:** Download the Argo CD install manifest:
+
+```bash
+curl -Lo argocd-install.yaml \
+  https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+```
+
+**Step 2**: Use kustomize to inject namespace fields into every resource in the Argo CD upstream manifest. [Omni manifest sync](../../omni/cluster-management/sync-kubernetes-manifests) requires namespaces to be explicitly set on every resource:
+
+```bash
+cat <<EOF > kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: argocd
+resources:
+  - argocd-install.yaml
+EOF
+```
+
+**Step 3:** Build the namespaced manifest:
+
+```bash
+kubectl kustomize . > argocd-install-namespaced.yaml
+```
+
+**Step 4:** Create the namespace prerequisite that defines the `argocd` namespace:
+
+```bash
+cat <<EOF > argocd-prereqs.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+EOF
+```
+
+**Step 5.** Create the cluster template and reference both manifests `argocd-install-namespaced.yaml` and `argocd-prereqs.yaml`:
+
+```bash
+cat <<EOF > cluster-template.yaml
+kind: Cluster
+name: <your-cluster>
+kubernetes:
+  version: v1.x.x
+  manifests:
+    - name: argocd-prereqs
+      file: argocd-prereqs.yaml
+      mode: full
+    - name: argocd-install
+      file: argocd-install-namespaced.yaml
+      mode: one-time
+talos:
+  version: v1.x.x
+---
+kind: ControlPlane
+machines:
+  - <machine-id>
+---
+kind: Workers
+machines:
+  - <machine-id>
+EOF
+```
+
+The `argocd-prereqs` manifest uses `mode: full` so Omni continuously ensures the namespace exists. The `argocd-install` manifest uses `mode: one-time` because Argo CD manages its own resources after the initial apply.
+
+**Step 6:** Apply the cluster template:
+
+```bash
+omnictl cluster template sync --file cluster-template.yaml
+```
+
+Omni stores the manifest definitions and waits until the Kubernetes API is available and the cluster is healthy before applying them.
+
+**Step 7:** Verify that the Argo CD pods are running:
+
+```bash
+kubectl get pods -n argocd
+```
+
+All Argo CD pods should appear in a `Running` state. To inspect the manifest sync status, run:
+
+```bash
+omnictl get clusterkubernetesmanifestsstatuses <cluster-name>
+```
+
+See [Sync Kubernetes Manifests](../../omni/cluster-management/sync-kubernetes-manifests) for more details on sync modes and status monitoring.
+
+**Step 8:** Access the Argo CD UI:
+
+```bash
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+```
+
+Open `https://localhost:8080` and log in with the username `admin`. Retrieve the initial password with:
+
+```bash
+kubectl get secret argocd-initial-admin-secret -n argocd \
+  -o jsonpath="{.data.password}" | base64 -d
+```

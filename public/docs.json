@@ -2540,6 +2540,8 @@
             "group": "Advanced Guides",
             "pages": [
               "kubernetes-guides/advanced-guides/deploy-traefik",
+              "kubernetes-guides/advanced-guides/deploy-argocd",
+              "kubernetes-guides/advanced-guides/deploy-flux",
               "kubernetes-guides/advanced-guides/dynamic-resource-allocation",
               "kubernetes-guides/advanced-guides/device-plugins",
               "kubernetes-guides/advanced-guides/gcp-workload-identity",

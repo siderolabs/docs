@@ -1,0 +1,165 @@
+---
+title: "Deploy Flux"
+description: "In this guide you will learn how to deploy Flux on Talos Linux using extraManifests, or on Omni-managed clusters using manifest sync."
+---
+
+import { k8s_release } from '/snippets/custom-variables.mdx';
+
+[Flux](https://fluxcd.io/) is a GitOps toolkit for Kubernetes built around a set of controllers that continuously reconcile your cluster state against configuration stored in a Git repository. It is designed to run entirely inside the cluster and requires no external UI or CLI to operate once bootstrapped.
+
+This guide walks through how to get Flux running on Talos Linux — either via the machine configuration during bootstrap, or through Omni manifest sync on clusters managed by Omni.
+
+## Prerequisites
+
+Before you begin, ensure you have the following:
+
+- Talos 1.3 or later.
+- `kubectl` configured to access your cluster.
+- `talosctl` installed and configured, if deploying on Talos without Omni.
+- `omnictl` installed and configured, if deploying using Omni. See [Install and configure omnictl](../../omni/getting-started/install-and-configure-omnictl).
+
+## Installation on Talos
+
+On Talos, you can bootstrap Flux using `extraManifests` in the machine configuration. Talos fetches the Flux install manifest from the specified URL and applies it to the cluster at bootstrap time, so the Flux controllers are available as soon as the cluster comes up.
+
+`extraManifests` require the node to have outbound HTTPS access to the manifest URL at bootstrap time. If your environment is air-gapped, see [inlineManifests and extraManifests](./inlinemanifests) for alternatives.
+
+**Step 1.** Create a patch file named `flux-extra-manifest.yaml` that references the Flux install manifest:
+
+```bash
+cat <<EOF > flux-manifest.yaml
+cluster:
+  inlineManifests:
+    - name: flux-namespace
+      contents: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: flux-system
+  extraManifests:
+    - "https://github.com/fluxcd/flux2/releases/latest/download/install.yaml"
+EOF
+```
+
+**Step 2.** Set a variable containing the IP addresses of your control plane nodes:
+
+```bash
+CP_IPS="<control-plane-ip-1>,<control-plane-ip-2>,<control-plane-ip-3>"
+```
+
+**Step 3.** Apply the patch to your control plane nodes:
+
+```bash
+talosctl patch machineconfig \
+  --patch @flux-extra-manifest.yaml \
+  --endpoints $CP_IPS \
+  --nodes $CP_IPS
+```
+
+If you are patching an existing cluster rather than bootstrapping a fresh one, a reboot is required for `extraManifests` to take effect:
+
+```bash
+talosctl reboot --nodes $CP_IPS --endpoints $CP_IPS
+```
+
+**Step 4.** Confirm that the Flux controllers are running:
+
+```bash
+kubectl get pods -n flux-system
+```
+
+You should see the `source-controller`, `kustomize-controller`, `helm-controller`, and `notification-controller` pods in a `Running` state. With the controllers up, you can point Flux at a Git repository to begin reconciling workloads.
+
+## Installation using Omni
+
+If your clusters are managed by [Omni](https://www.siderolabs.com/omni-for-kubernetes-cluster-management), you can include Flux as part of your cluster template using [Omni manifest sync](../../omni/cluster-management/sync-kubernetes-manifests). Omni applies the Flux install manifest once after the cluster becomes available, and the Flux controllers handle all subsequent reconciliation themselves.
+
+Since manifest sync works with local files rather than remote URLs, you need to download the Flux install manifest before referencing it in the cluster template.
+
+**Step 1:** Download the Flux install manifest:
+
+```bash
+curl -Lo flux-install.yaml \
+  https://github.com/fluxcd/flux2/releases/latest/download/install.yaml
+```
+
+**Step 2**: Use kustomize to inject namespace fields into every resource in the Flux upstream manifest. [Omni manifest sync](../../omni/cluster-management/sync-kubernetes-manifests) requires namespaces to be explicitly set on every resource:
+
+```bash
+cat <<EOF > kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: flux-system
+resources:
+  - flux-install.yaml
+EOF
+```
+
+**Step 3:** Build the namespaced manifest:
+
+```bash
+kubectl kustomize . > flux-install-namespaced.yaml
+```
+
+**Step 4:** Create the namespace prerequisite that defines the `flux-system` namespace:
+
+```bash
+cat <<EOF > flux-prereqs.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flux-system
+EOF
+```
+
+**Step 5.** Create the cluster template and reference both manifests `flux-install-namespaced.yaml` and `flux-prereqs.yaml`:
+
+```bash
+cat <<EOF > cluster-template.yaml
+kind: Cluster
+name: <your-cluster>
+kubernetes:
+  version: v1.x.x
+  manifests:
+    - name: flux-prereqs
+      file: flux-prereqs.yaml
+      mode: full
+    - name: flux-install
+      file: flux-install-namespaced.yaml
+      mode: one-time
+talos:
+  version: v1.x.x
+---
+kind: ControlPlane
+machines:
+  - <machine-id>
+---
+kind: Workers
+machines:
+  - <machine-id>
+EOF
+```
+
+The `flux-prereqs` manifest uses `mode: full` so Omni continuously ensures the namespace exists. The `flux-install` manifest uses `mode: one-time` because Flux manages its own resources after the initial apply.
+
+**Step 6:** Apply the cluster template:
+
+```bash
+omnictl cluster template sync --file cluster-template.yaml
+```
+
+Omni stores the manifest definitions and waits until the Kubernetes API is available and the cluster is healthy before applying them.
+
+**Step 7:** Verify that the Flux pods are running:
+
+```bash
+kubectl get pods -n flux-system -w
+```
+
+All Flux pods should appear in a `Running` state. To inspect the manifest sync status, run:
+
+```bash
+omnictl get clusterkubernetesmanifestsstatuses <cluster-name>
+```
+
+See [Sync Kubernetes Manifests](../../omni/cluster-management/sync-kubernetes-manifests) for more details on sync modes and status monitoring.
