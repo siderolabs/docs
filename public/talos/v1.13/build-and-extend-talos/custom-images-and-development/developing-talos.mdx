@@ -70,7 +70,6 @@ Start your local cluster with:
 
 ```bash
 sudo --preserve-env=HOME _out/talosctl-<YOUR FLAVOR> cluster create dev \
-    --provisioner=qemu \
     --cidr=172.20.0.0/24 \
     --registry-mirror docker.io=http://172.20.0.1:5000 \
     --registry-mirror registry.k8s.io=http://172.20.0.1:5001  \
@@ -83,7 +82,6 @@ sudo --preserve-env=HOME _out/talosctl-<YOUR FLAVOR> cluster create dev \
     --with-bootloader=false
 ```
 
-- `--provisioner` selects QEMU vs. default Docker
 - custom `--cidr` to make QEMU cluster use different network than default Docker setup (optional)
 - `--registry-mirror` uses the caching proxies set up above to speed up boot time a lot, last one adds your local registry (installer image was pushed to it)
 - `--install-image` is the image you built with `make installer` above
@@ -181,7 +179,7 @@ Specific tests can be run with `-test.run=TestIntegration/api.ResetSuite`.
 ## Destroying cluster
 
 ```bash
-sudo --preserve-env=HOME ../talos/_out/talosctl-linux-amd64 cluster destroy --provisioner=qemu
+sudo --preserve-env=HOME ../talos/_out/talosctl-linux-amd64 cluster destroy
 ```
 
 This command stops QEMU and helper processes, tears down bridged network on the host, and cleans up

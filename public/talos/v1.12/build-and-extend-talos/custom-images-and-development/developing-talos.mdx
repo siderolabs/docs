@@ -70,7 +70,6 @@ Start your local cluster with:
 
 ```bash
 sudo --preserve-env=HOME _out/talosctl-<YOUR FLAVOR> cluster create dev \
-    --provisioner=qemu \
     --cidr=172.20.0.0/24 \
     --registry-mirror docker.io=http://172.20.0.1:5000 \
     --registry-mirror registry.k8s.io=http://172.20.0.1:5001  \
@@ -83,7 +82,6 @@ sudo --preserve-env=HOME _out/talosctl-<YOUR FLAVOR> cluster create dev \
     --with-bootloader=false
 ```
 
-- `--provisioner` selects QEMU vs. default Docker
 - custom `--cidr` to make QEMU cluster use different network than default Docker setup (optional)
 - `--registry-mirror` uses the caching proxies set up above to speed up boot time a lot, last one adds your local registry (installer image was pushed to it)
 - `--install-image` is the image you built with `make installer` above
@@ -185,7 +183,7 @@ This is uncommonly used as in this case the bash shell will run in place of mach
 ## Destroying cluster
 
 ```bash
-sudo --preserve-env=HOME ../talos/_out/talosctl-linux-amd64 cluster destroy --provisioner=qemu
+sudo --preserve-env=HOME ../talos/_out/talosctl-linux-amd64 cluster destroy
 ```
 
 This command stops QEMU and helper processes, tears down bridged network on the host, and cleans up
@@ -397,7 +395,7 @@ The policy directory contains the following main subdirectories:
   - classmaps: contains class maps, which are a SELinux concept for easily configuring the same list of permissions on a list of classes.
   Our policy frequently uses `fs_classes` classmap for enabling a group of file operations on all types of files.
   - files: labels for common system files, stored on squashfs.
-  Mostly used for generalized labels not related to a particular service.
+    Mostly used for generalized labels not related to a particular service.
   - network: rules that allow basically any network activity, as Talos does not currently use SELinux features like IPsec labeling for network security.
   - typeattributes: this file contains typeattributes, which are a SELinux concept for grouping types together to have the same rules applied to all of them.
   This file also contains macros used to assign objects into typeattributes.
