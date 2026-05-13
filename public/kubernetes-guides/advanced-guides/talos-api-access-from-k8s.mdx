@@ -37,31 +37,7 @@ spec:
 Create the following manifest file `deployment.yaml`:
 
 <CodeBlock lang="yaml" wrap>
-{`
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: talos-api-access
-spec:
-  selector:
-    matchLabels:
-      app: talos-api-access
-  template:
-    metadata:
-      labels:
-        app: talos-api-access
-    spec:
-      containers:
-        - name: talos-api-access
-          image: alpine:3
-          command:
-            - sh
-            - -c
-            - |
-              wget -O /usr/local/bin/talosctl https://github.com/siderolabs/talos/releases/download/${release}/talosctl-linux-amd64
-              chmod +x /usr/local/bin/talosctl
-              while true; talosctl -n 172.20.0.2 version; do sleep 1; done
-`}
+  {"apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: talos-api-access\nspec:\n  selector:\n    matchLabels:\n      app: talos-api-access\n  template:\n    metadata:\n      labels:\n        app: talos-api-access\n    spec:\n      containers:\n        - name: talos-api-access\n          image: alpine:3\n          command:\n            - sh\n            - -c\n            - |\n              wget -O /usr/local/bin/talosctl https://github.com/siderolabs/talos/releases/download/${release}/talosctl-linux-amd64\n              chmod +x /usr/local/bin/talosctl\n              while true; talosctl -n 172.20.0.2 version; do sleep 1; done\n"}
 </CodeBlock>
 
 **Note:** make sure that you replace the IP `172.20.0.2` with a valid Talos node IP.
@@ -75,54 +51,7 @@ talosctl inject serviceaccount -f deployment.yaml > deployment-injected.yaml
 Inspect the generated manifest:
 
 <CodeBlock lang="yaml">
-{`
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  creationTimestamp: null
-  name: talos-api-access
-spec:
-  selector:
-    matchLabels:
-      app: talos-api-access
-  strategy: {}
-  template:
-    metadata:
-      creationTimestamp: null
-      labels:
-        app: talos-api-access
-    spec:
-      containers:
-      - command:
-        - sh
-        - -c
-        - |
-          wget -O /usr/local/bin/talosctl https://github.com/siderolabs/talos/releases/download/${release}/talosctl-linux-amd64
-          chmod +x /usr/local/bin/talosctl
-          while true; talosctl -n 172.20.0.2 version; do sleep 1; done
-        image: alpine:3
-        name: talos-api-access
-        resources: {}
-        volumeMounts:
-        - mountPath: /var/run/secrets/talos.dev
-          name: talos-secrets
-      tolerations:
-      - operator: Exists
-      volumes:
-      - name: talos-secrets
-        secret:
-          secretName: talos-api-access-talos-secrets
-status: {}
----
-apiVersion: talos.dev/v1alpha1
-kind: ServiceAccount
-metadata:
-    name: talos-api-access-talos-secrets
-spec:
-    roles:
-        - os:reader
----
-`}
+  {"apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  creationTimestamp: null\n  name: talos-api-access\nspec:\n  selector:\n    matchLabels:\n      app: talos-api-access\n  strategy: {}\n  template:\n    metadata:\n      creationTimestamp: null\n      labels:\n        app: talos-api-access\n    spec:\n      containers:\n      - command:\n        - sh\n        - -c\n        - |\n          wget -O /usr/local/bin/talosctl https://github.com/siderolabs/talos/releases/download/${release}/talosctl-linux-amd64\n          chmod +x /usr/local/bin/talosctl\n          while true; talosctl -n 172.20.0.2 version; do sleep 1; done\n        image: alpine:3\n        name: talos-api-access\n        resources: {}\n        volumeMounts:\n        - mountPath: /var/run/secrets/talos.dev\n          name: talos-secrets\n      tolerations:\n      - operator: Exists\n      volumes:\n      - name: talos-secrets\n        secret:\n          secretName: talos-api-access-talos-secrets\nstatus: {}\n---\napiVersion: talos.dev/v1alpha1\nkind: ServiceAccount\nmetadata:\n    name: talos-api-access-talos-secrets\nspec:\n    roles:\n        - os:reader\n---\n"}
 </CodeBlock>
 
 As you can notice, your deployment manifest is now injected with the Talos ServiceAccount.
