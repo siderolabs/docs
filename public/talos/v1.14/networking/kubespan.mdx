@@ -71,24 +71,19 @@ Failure to do so can result in a pod being assigned the 51820 port and conflicti
 
 ### Cilium compatibility limitations
 
-KubeSpan and [Cilium](https://cilium.io) can generally be used together.
-However, some advanced Cilium configurations are **not compatible** with KubeSpan.
+KubeSpan and Cilium can generally be used together, but some Cilium configurations require specific settings to avoid asymmetric routing.
 
-Cilium expects all inter-node traffic to flow directly over the node’s primary interface (for example, `eth0`).
-With KubeSpan enabled, Talos intercepts that traffic and routes it through the WireGuard mesh.
-This leads to asymmetric routing and broken pod-to-pod communication across nodes.
+As of Talos 1.13, Cilium's native routing mode works with KubeSpan when `advertiseKubernetesNetworks: true` is set.
+Configure Cilium with the following BPF settings:
 
-We recommend the following workarounds:
+```yaml
+bpf:
+  masquerade: true        # can be set to false if masquerading isn't needed
+  hostLegacyRouting: true # required — eBPF host routing bypasses the kernel routing table and conflicts with KubeSpan
+```
 
-* If you need advanced Cilium features (e.g., full eBPF datapath with masquerading), use [Cilium’s built-in WireGuard
-  encryption](https://docs.cilium.io/en/stable/security/network/encryption/) instead of Kubespan.
-
-* If you prefer to use KubeSpan for secure node-to-node connectivity, run Cilium
-  with its **default configuration**, which is compatible with KubeSpan.
-
-> **Note**: Not all Cilium setups are affected.
-> Only certain advanced configurations (like full eBPF masquerading) cause incompatibility.
-> Default Cilium deployments work as expected with KubeSpan.
+If you don't need native routing, Cilium's default configuration works with KubeSpan out of the box.
+For advanced eBPF features without these constraints, use Cilium's built-in WireGuard encryption instead of KubeSpan.
 
 ## Enabling
 
