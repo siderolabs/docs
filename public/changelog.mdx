@@ -4,25 +4,33 @@ description: "Product updates and announcements"
 rss: true
 ---
 
-<Update label="v1.7.2" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.7.2)
+<Update label="v1.13.2" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.13.2)
 
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+  ### Component Updates
 
-  A [EULA](https://siderolabs.com/eula/) agreement has been added to Omni which must be accepted in order to continue using it.
+  Etcd: 3.6.11
+  Linux: 6.18.29
 
-  This agreement can be accepted through UI or programmatically either by adding the below flags:
-  ```sh
-  --eula-accept-name=Your Name
-  --eula-accept-email=your@email.com
-  ```
+  Talos is built with Go 1.26.3.
+</Update>
 
-  Or if using `--config-path` with the below configuration:
-  ```yaml
-  eulaAccept:
-    name: Your Name
-    email: your@email.com
-  ```
+<Update label="v1.3.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.3.0)
+
+  ### Vulnerability Scanner
+
+  Image Factory now includes a built-in vulnerability scanner that automatically scans the images for known vulnerabilities after the build process.
+  This feature helps users identify and address security issues in their images before deployment.
+
+  **Note:** This feature is enterprise-only and is subject to the BUSL-1.1 license.
+
+  ### VEX Support
+
+  Image Factory now supports VEX (Vulnerability Exploitability eXchange) documents, allowing users to associate vulnerability information with their schematics.
+  This feature enables better tracking and management of vulnerabilities in the images created with Image Factory.
+
+  **Note:** This feature is enterprise-only and is subject to the BUSL-1.1 license.
 </Update>
 
 <Update label="v1.2.0" tags={["Image Factory"]}>
@@ -262,27 +270,6 @@ rss: true
   Talos now supports VRF (Virtual Routing and Forwarding) via the new `VRFConfig` machine config document.
 </Update>
 
-<Update label="v1.7.1" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.7.1)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  A [EULA](https://siderolabs.com/eula/) agreement has been added to Omni which must be accepted in order to continue using it.
-
-  This agreement can be accepted through UI or programmatically either by adding the below flags:
-  ```sh
-  --eula-accept-name=Your Name
-  --eula-accept-email=your@email.com
-  ```
-
-  Or if using `--config-path` with the below configuration:
-  ```yaml
-  eulaAccept:
-    name: Your Name
-    email: your@email.com
-  ```
-</Update>
-
 <Update label="v1.12.7" tags={["Talos"]}>
   [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.7)
 
@@ -364,98 +351,10 @@ rss: true
   **Note:** This feature is enterprise-only and is subject to the BUSL-1.1 license.
 </Update>
 
-<Update label="v1.6.5" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.5)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
-
-  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--log-storage-path` (`.logs.machine.storage.path`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
-</Update>
-
-<Update label="v1.6.4" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.4)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
-
-  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--log-storage-path` (`.logs.machine.storage.path`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
-</Update>
-
-<Update label="v1.6.3" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.3)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
-
-  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--log-storage-path` (`.logs.machine.storage.path`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
-</Update>
-
 <Update label="v1.0.17" tags={["Discovery Service"]}>
   [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.17)
 
 
-</Update>
-
-<Update label="v1.6.2" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.2)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
-
-  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--log-storage-path` (`.logs.machine.storage.path`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
 </Update>
 
 <Update label="v1.0.16" tags={["Discovery Service"]}>
@@ -473,28 +372,6 @@ rss: true
   runc: 1.3.5
 
   Talos is built with Go 1.25.8.
-</Update>
-
-<Update label="v1.6.1" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.1)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
-
-  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--log-storage-path` (`.logs.machine.storage.path`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
 </Update>
 
 <Update label="v1.6.0" tags={["Omni"]}>
@@ -618,18 +495,6 @@ rss: true
   The Vault Kubernetes authentication mount path is now configurable, supporting non-default Vault configurations.
 </Update>
 
-<Update label="v1.5.11" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.11)
-
-
-</Update>
-
-<Update label="v1.5.10" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.10)
-
-
-</Update>
-
 <Update label="v1.12.5" tags={["Talos"]}>
   [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.5)
 
@@ -642,128 +507,8 @@ rss: true
   Talos is built with Go 1.25.8.
 </Update>
 
-<Update label="v1.5.9" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.9)
-
-
-</Update>
-
-<Update label="v1.5.8" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.8)
-
-
-</Update>
-
 <Update label="v1.0.15" tags={["Discovery Service"]}>
   [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.15)
-
-
-</Update>
-
-<Update label="v1.5.7" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.7)
-
-
-</Update>
-
-<Update label="v1.5.6" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.6)
-
-
-</Update>
-
-<Update label="v1.5.5" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.5)
-
-
-</Update>
-
-<Update label="v1.4.11" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.11)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
-</Update>
-
-<Update label="v1.5.4" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.4)
-
-
-</Update>
-
-<Update label="v1.4.10" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.10)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
-</Update>
-
-<Update label="v1.5.3" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.3)
 
 
 </Update>
@@ -789,18 +534,6 @@ rss: true
   Linux: 6.18.9
 
   Talos is built with Go 1.25.7.
-</Update>
-
-<Update label="v1.5.2" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.2)
-
-
-</Update>
-
-<Update label="v1.5.1" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.1)
-
-
 </Update>
 
 <Update label="v1.0.3" tags={["Image Factory"]}>
@@ -866,84 +599,6 @@ rss: true
   The WireGuard endpoint (`services.siderolink.wireGuard.endpoint` / `--siderolink-wireguard-bind-addr`) is now respected. Previously, Omni always bound to all interfaces regardless of this setting. Default remains `0.0.0.0:50180`.
 </Update>
 
-<Update label="v1.4.9" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.9)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
-</Update>
-
-<Update label="v1.4.8" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.8)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
-</Update>
-
 <Update label="v1.0.2" tags={["Image Factory"]}>
   [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.0.2)
 
@@ -990,45 +645,6 @@ rss: true
   Talos is built with Go 1.25.6.
 </Update>
 
-<Update label="v1.4.7" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.7)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
-</Update>
-
 <Update label="v1.12.1" tags={["Talos"]}>
   [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.1)
 
@@ -1037,45 +653,6 @@ rss: true
   Linux: 6.18.2
 
   Talos is built with Go 1.25.5.
-</Update>
-
-<Update label="v1.4.6" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.6)
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
 </Update>
 
 <Update label="v1.10.9" tags={["Talos"]}>
@@ -1096,92 +673,6 @@ rss: true
   etcd: 3.5.26
 
   Talos is built with Go 1.24.11.
-</Update>
-
-<Update label="v1.4.5" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.5)
-
-  <Warning>
-  This version has a known issue with cluster state updates, please don't use it.
-  </Warning>
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
-</Update>
-
-<Update label="v1.4.4" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.4)
-
-  <Warning>
-  This version has a known issue with cluster state updates, please don't use it.
-  </Warning>
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
 </Update>
 
 <Update label="v1.12.0" tags={["Talos"]}>
@@ -1353,135 +844,6 @@ rss: true
   Talos is built with Go 1.25.5.
 </Update>
 
-<Update label="v1.4.3" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.3)
-
-  <Warning>
-  This version has a known issue with cluster state updates, please don't use it.
-  </Warning>
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
-</Update>
-
-<Update label="v1.4.2" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.2)
-
-  <Warning>
-  This version has a known issue with cluster state updates, please don't use it.
-  </Warning>
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
-</Update>
-
-<Update label="v1.4.1" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.1)
-
-  <Warning>
-  This version has a known issue with cluster state updates, please don't use it.
-  </Warning>
-
-  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
-
-  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
-
-  **1. New Required Flag**
-  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it.
-  It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
-
-  **2. Audit Logging Changes**
-  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
-  * **Default:** `true`.
-  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
-
-  **3. Automatic Migration**
-  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
-
-  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
-
-  **4. Deprecated Flags (Kept for Migration)**
-  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
-  * `--audit-log-dir` (`.logs.audit.path`)
-  * `--secondary-storage-path` (`.storage.secondary.path`)
-  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
-  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
-  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
-  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
-  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
-  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
-  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
-
-  **5. Removed Flags**
-  The following flags have been removed and are no longer supported:
-  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
-  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
-</Update>
-
 <Update label="v1.4.0" tags={["Omni"]}>
   [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.0)
 
@@ -1599,18 +961,6 @@ rss: true
 
 </Update>
 
-<Update label="v1.3.4" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.3.4)
-
-
-</Update>
-
-<Update label="v1.3.3" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.3.3)
-
-
-</Update>
-
 <Update label="v1.10.8" tags={["Talos"]}>
   [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.8)
 
@@ -1622,18 +972,6 @@ rss: true
   Containerd: v2.0.7
 
   Talos is built with Go 1.24.10.
-</Update>
-
-<Update label="v1.3.2" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.3.2)
-
-
-</Update>
-
-<Update label="v1.3.1" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.3.1)
-
-
 </Update>
 
 <Update label="v1.3.0" tags={["Omni"]}>
@@ -1714,12 +1052,6 @@ rss: true
   Talos is built with Go 1.24.9.
 </Update>
 
-<Update label="v1.2.1" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.2.1)
-
-
-</Update>
-
 <Update label="v1.2.0" tags={["Omni"]}>
   [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.2.0)
 
@@ -1790,20 +1122,8 @@ rss: true
   Talos is built with Go 1.24.6.
 </Update>
 
-<Update label="v1.1.5" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.1.5)
-
-
-</Update>
-
 <Update label="v0.8.4" tags={["Image Factory"]}>
   [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.8.4)
-
-
-</Update>
-
-<Update label="v1.1.4" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.1.4)
 
 
 </Update>
@@ -1817,12 +1137,6 @@ rss: true
   CoreDNS: 1.12.3
 
   Talos is built with Go 1.24.6.
-</Update>
-
-<Update label="v1.1.3" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.1.3)
-
-
 </Update>
 
 <Update label="v1.11.0" tags={["Talos"]}>
@@ -1923,18 +1237,6 @@ rss: true
 
   Talos now supports zswap, a compressed cache for swap pages.
   This feature can be enabled by using [ZswapConfig](https://www.talos.dev/v1.11/reference/configuration/block/zswapconfig/) document in the machine configuration.
-</Update>
-
-<Update label="v1.1.2" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.1.2)
-
-
-</Update>
-
-<Update label="v1.1.1" tags={["Omni"]}>
-  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.1.1)
-
-
 </Update>
 
 <Update label="v1.1.0" tags={["Omni"]}>

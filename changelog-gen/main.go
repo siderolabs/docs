@@ -16,10 +16,11 @@ import (
 
 // Product defines a GitHub repo and how it appears in the changelog.
 type Product struct {
-	Repo       string
-	Label      string
-	MDXTag     string
-	MinVersion []int // exclusive lower bound; nil means no filter
+	Repo            string
+	Label           string
+	MDXTag          string
+	MinVersion      []int // exclusive lower bound; nil means no filter
+	MajorMinorOnly  bool  // if true, skip patch releases (x.y.z where z > 0)
 }
 
 // Release is the subset of the GitHub releases API response we need.
@@ -64,7 +65,7 @@ var alertTagMap = map[string]string{
 
 var products = []Product{
 	{Repo: "talos", Label: "Talos Linux", MDXTag: "Talos", MinVersion: []int{1, 6, 0}},
-	{Repo: "omni", Label: "Omni", MDXTag: "Omni", MinVersion: []int{1, 1, 0}},
+	{Repo: "omni", Label: "Omni", MDXTag: "Omni", MinVersion: []int{1, 1, 0}, MajorMinorOnly: true},
 	{Repo: "image-factory", Label: "Image Factory", MDXTag: "Image Factory"},
 	{Repo: "discovery-service", Label: "Discovery Service", MDXTag: "Discovery Service"},
 }
@@ -200,6 +201,13 @@ func fetchReleases(p Product, token string) ([]updateBlock, error) {
 
 		if p.MinVersion != nil && versionGreater(p.MinVersion, parseVersion(r.TagName)) {
 			continue
+		}
+
+		if p.MajorMinorOnly {
+			v := parseVersion(r.TagName)
+			if len(v) >= 3 && v[2] != 0 {
+				continue
+			}
 		}
 
 		cleaned := cleanBody(r.Body)
