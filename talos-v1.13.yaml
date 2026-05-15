@@ -59,6 +59,7 @@ navigation:
                 - "cloud-platforms/nocloud"
                 - "cloud-platforms/openstack"
                 - "cloud-platforms/oracle"
+                - "cloud-platforms/ovhcloud"
                 - "cloud-platforms/scaleway"
                 - "cloud-platforms/upcloud"
                 - "cloud-platforms/vultr"

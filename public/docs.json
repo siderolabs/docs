@@ -149,6 +149,7 @@
                       "talos/v1.13/platform-specific-installations/cloud-platforms/nocloud",
                       "talos/v1.13/platform-specific-installations/cloud-platforms/openstack",
                       "talos/v1.13/platform-specific-installations/cloud-platforms/oracle",
+                      "talos/v1.13/platform-specific-installations/cloud-platforms/ovhcloud",
                       "talos/v1.13/platform-specific-installations/cloud-platforms/scaleway",
                       "talos/v1.13/platform-specific-installations/cloud-platforms/upcloud",
                       "talos/v1.13/platform-specific-installations/cloud-platforms/vultr"
