@@ -66,6 +66,7 @@ navigation:
             - "how-to-set-initial-machine-labels.mdx"
             - "setting-up-the-bare-metal-infrastructure-provider.mdx"
             - "omni-firewall-egress-requirement.mdx"
+
         - group: "Cluster Management"
           folder: "omni/cluster-management"
           pages:
@@ -85,6 +86,7 @@ navigation:
             - "restore-etcd-of-a-cluster-managed-by-cluster-templates.mdx"
             - "using-audit-log.mdx"
             - "importing-talos-clusters.mdx"
+            - "manage-omni-cluster-with-nautik.mdx"
             - "wipe-a-machine.mdx"
             - "talos-config-overrides.mdx"
             - "override-ntp-servers.mdx"
