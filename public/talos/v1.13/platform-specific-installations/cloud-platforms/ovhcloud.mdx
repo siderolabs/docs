@@ -9,13 +9,13 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 <VersionWarningBanner />
 
-## Creating a cluster via the OpenStack CLI on OVHCloud
+import { release_v1_13 } from '/snippets/custom-variables.mdx';
 
 In this guide, we will create an HA Kubernetes cluster in OVHCloud with 1 worker node.
 We will assume an existing some familiarity with OpenStack.
 If you need more information on OpenStack specifics, please see the [official OVHCloud documentation](https://docs.ovh.com/).
 
-### Environment setup
+## Environment setup
 
 You should have an existing openrc file.
 This file will provide environment variables necessary to talk to your OVHCloud.
@@ -34,9 +34,9 @@ export LOADBALANCER_NAME=loadbalancer-001
 export LOADBALANCER_FLAVOR_NAME=small
 ```
 
-### Create the image
+## 1. Create the image
 
-First, download the OpenStack image from [Image Factory](https://factory.talos.dev/).
+First, download the <a href={`https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_13}/akamai-amd64.raw.gz`}> OpenStack image</a> from [Image Factory](https://factory.talos.dev/).
 These images are called `openstack-$ARCH.raw.xz`.
 
 Decompress this file with `unxz openstack-$ARCH.raw.xz`.
@@ -53,13 +53,14 @@ openstack image create $IMAGE_NAME \
   --progress 
 ```
 
-### Network infrastructure (Optional)
+## 2. Network infrastructure (Optional)
+
 If you have an existing network infrastructure, you can skip this step. 
 If not, you can follow the instructions below to create the necessary network infrastructure for your cluster.
 We will create a private network, subnet, and gateway for our cluster. 
 This will allow our cluster to communicate with the outside world and with each other.
 
-#### Private network, subnet, gateway
+### Private network, subnet, gateway
 
 ```bash
 # Create private network
@@ -82,7 +83,7 @@ openstack subnet create \
   $SUBNET_NAME
 
 # Create Gateway
-openstack router create $GATEWAY_NAME --external-gateway Ext-Net
+openstack router create $GATEWAY_NAME --external-gateway Ext-Net 
 
 # Add the subnet to the router
 openstack router add subnet \
@@ -90,14 +91,14 @@ openstack router add subnet \
   $SUBNET_NAME
 ```
 
-#### Security groups
+### Security groups
 
 This example uses the default security group in OpenStack.
 Ports have been opened to ensure that connectivity from both inside and outside the group is possible.
 You will want to allow, at a minimum, ports 6443 (Kubernetes API server) and 50000 (Talos API) from external sources.
 It is also recommended to allow communication over all ports from within the subnet.
 
-### Compute
+## 3. Compute
 
 Once the image is uploaded and the network infrastructure is in place, we can create our compute instances.
 We will create 3 control plane nodes.
@@ -122,10 +123,12 @@ done
 
 Once the compute instances are created, we need to create a load balancer to load balance traffic to the control plane nodes.
 
+Running the following commands can take a few minutes to complete as the load balancer is being provisioned.
+
 ```bash
 # Create a Load Balancer
 export SUBNET_ID=$(openstack subnet show $SUBNET_NAME -f value -c id)
-openstack loadbalancer create --name $LOADBALANCER_NAME --vip-subnet-id $SUBNET_ID --flavor $LOADBALANCER_FLAVOR_NAME
+openstack loadbalancer create --name $LOADBALANCER_NAME --vip-subnet-id $SUBNET_ID --flavor $LOADBALANCER_FLAVOR_NAME --wait
 openstack floating ip create --port $(openstack loadbalancer show $LOADBALANCER_NAME -f value -c VIP_PORT_ID) Ext-Net
 
 # Create a listener for the load balancer
@@ -141,7 +144,7 @@ for i in $( seq 1 3 ); do
 done
 ```
 
-### Cluster configuration
+## 4. Cluster configuration
 
 Now that we have our compute instances and load balancer set up, we can generate our cluster configuration files with `talosctl`.
 We need to get the Public IP of the Load Balancer as this is our Kubernetes API endpoint, and the Public IPs of the control plane nodes as addional-sans for the API certificate.
@@ -152,47 +155,59 @@ export LOADBALANCER_VIP=$(openstack floating ip list --port $(openstack loadbala
 
 # Get the Public IPs of the control plane nodes
 for i in $( seq 1 3 ); do
-  echo "talos-control-plane-$i:" $(openstack floating ip list --port $(openstack port list --server talos-control-plane-$i -f value -c ID) -f value -c "Floating IP Address")
+  export CP${i}_IP=$(openstack floating ip list --port $(openstack port list --server talos-control-plane-$i -f value -c ID) -f value -c "Floating IP Address")
 done
 ```
 
 Generate the cluster configuration file, substituting the Load Balancer VIP and control plane IPs as additional SANs for the API certificate.
 ```bash
 talosctl gen config talos-ovhcloud https://$LOADBALANCER_VIP:6443 \
-  --additional-sans <CP1_IP>,<CP2_IP>,<CP3_IP>
+  --additional-sans $CP1_IP,$CP2_IP,$CP3_IP
 ```
 
-### Applying configuration and bootstrapping the cluster
+## 5. Applying configuration and bootstrapping the cluster
+
 With our configuration file generated, we can now apply it to our control plane nodes and bootstrap the cluster.
 
 ```bash
 # Apply the configuration to the control plane nodes, substituting the Public IPs of the control plane nodes.
-talosctl apply-config -f controlplane.yaml --insecure -n <CP1_IP>
-talosctl apply-config -f controlplane.yaml --insecure -n <CP2_IP>
-talosctl apply-config -f controlplane.yaml --insecure -n <CP3_IP>
+for i in $(seq 1 3); do
+  CP_NODE="CP${i}_IP"
+  talosctl apply-config -f controlplane.yaml --insecure -n "${!CP_NODE}"
+done
 
 # Bootstrap the cluster using one of the control plane nodes
-talosctl bootstrap -n <CP1_IP> -e <CP1_IP> --talosconfig talosconfig
+talosctl bootstrap -n $CP1_IP -e $CP1_IP --talosconfig talosconfig
 ```
 
-Update the talosconfig file with the endpoint and node information for one of the control plane nodes:
+Export the `TALOSCONFIG` environment variable to point to the `talosconfig` file. This will allow you to interact with your cluster using `talosctl` without having to specify the `--talosconfig` flag every time.
 
 ```bash
-talosctl config endpoint <CP1_IP> --talosconfig talosconfig 
-talosctl config node <CP1_IP> --talosconfig talosconfig 
+export TALOSCONFIG=$(pwd)/talosconfig
+```
+
+Update the talosconfig file with the endpoints and node information for one of the control plane nodes:
+
+```bash
+for i in $(seq 1 3); do
+  CP_NODE="CP${i}_IP"
+  talosctl config endpoint "${!CP_NODE}"
+done
+
+talosctl config node $CP1_IP
 ```
 
 You should now be able to interact with your cluster with `talosctl`.
 
-### Retrieve the `kubeconfig`
+## 6. Retrieve the `kubeconfig`
 
 At this point we can retrieve the admin `kubeconfig` by running:
 
 ```bash
-talosctl kubeconfig . --talosconfig talosconfig
+talosctl kubeconfig .
 ```
 
-### Add worker nodes to the cluster
+## 7. Add worker nodes to the cluster
 
 ```bash
 # Create worker node with the user data file
