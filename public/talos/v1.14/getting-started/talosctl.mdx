@@ -8,37 +8,34 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 <VersionWarningBanner />
 
-## Recommended
+Use `talosctl` to interact with the Talos API, manage nodes, and configure your Talos machines. Follow the instructions below to install it on your operating system.
 
-The client can be installed and updated via the [Homebrew package manager](https://brew.sh/) for macOS and Linux.
-You will need to install `brew` and then you can install `talosctl` from the Sidero Labs tap.
+## Linux and macOS
+
+The recommended way to install `talosctl` on Linux and macOS is via the [Homebrew package manager](https://brew.sh/). This method automatically keeps `talosctl` up to date as new versions are released, without any manual intervention.
 
 ```bash
 brew install siderolabs/tap/talosctl
 ```
 
-This will also keep your version of `talosctl` up to date with new releases.
-This homebrew tap also has formulae for `omnictl` if you need to install that package.
+The same Homebrew tap also includes a formula for `omnictl`.
 
-> Note: Your `talosctl` version should match the version of Talos Linux you are running on a host.
-> To install a specific version of `talosctl` with `brew` you can follow [this github issue](https://github.com/siderolabs/homebrew-tap/issues/75).
+<Note>Your `talosctl` version should match the version of Talos Linux running on your host. To install a specific version of `talosctl` with Homebrew, refer to [this GitHub issue](https://github.com/siderolabs/homebrew-tap/issues/75) for guidance.</Note>
 
 ## Alternative install
 
-You can automatically install the correct version of `talosctl` for your operating system and architecture with an installer script.
-This script won't keep your version updated with releases and you will need to re-run the script to download a new version.
+If Homebrew is not available in your environment, you can use the installer script to automatically download the correct version of `talosctl` for your operating system and architecture:
 
 ```bash
 curl -sL https://talos.dev/install | sh
 ```
 
-This script will work on macOS, Linux, and WSL on Windows.
-It supports amd64 and arm64 architecture.
+This script supports macOS, Linux, and WSL on Windows, and works on both amd64 and arm64 architectures.
 
-## Manual and Windows install
+Note that this method does not update automatically, you will need to re-run the script to install a newer version.
 
-All versions can be manually downloaded from the [talos releases page](https://github.com/siderolabs/talos/releases/) including Linux, macOS, and Windows.
+## Windows
 
-You will need to add the binary to a folder part of your executable `$PATH` to use it without providing the full path to the executable.
+For Windows, all `talosctl` releases can be downloaded manually from the [Talos releases page](https://github.com/siderolabs/talos/releases/), which includes binaries for Linux, macOS, and Windows.
 
-Updating the binary will be a manual process.
+Once downloaded, add the binary to a folder on your `$PATH` so you can run it without specifying the full path to the executable. As with the alternative install method, updating `talosctl` on Windows is a manual process.

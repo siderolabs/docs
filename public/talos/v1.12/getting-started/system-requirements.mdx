@@ -9,7 +9,11 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 <VersionWarningBanner />
 
+This page outlines the system requirements for running Talos Linux. Requirements are listed for both control plane and worker nodes, and are broadly similar to those of Kubernetes.
+
 ## Minimum requirements
+
+The following are the minimum system requirements for running Talos Linux on control plane and worker nodes:
 
 <table>
   <thead>
@@ -36,7 +40,9 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
   </tbody>
 </table>
 
-## Recommended
+## Recommended requirements
+
+For production or heavier workloads, the following specifications are recommended:
 
 <table>
   <thead>
@@ -63,12 +69,10 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
   </tbody>
 </table>
 
-These requirements are similar to that of Kubernetes.
+## Storage requirements
 
-## Storage
+While Talos Linux itself requires less than 100 MB of disk space, the EPHEMERAL partition is used to store pulled images, container working directories, and other runtime data — so a minimum of 10 GiB of total disk space is required, with 100 GiB recommended.
 
-Talos Linux itself only requires less than 100 MB of disk space, but the EPHEMERAL partition is used to store pulled images, container work directories, and so on. Thus a minimum of 10 GiB of disk space is required. 100 GiB is recommended.
+During installation, Talos automatically manages disk partitioning, creating EFI, META, STATE, and EPHEMERAL partitions. The EPHEMERAL partition expands to fill all remaining space after the first three partitions. That space can either remain entirely with EPHEMERAL or be divided into additional user volumes, depending on your needs. See [Disk Layout](../configure-your-talos-cluster/storage-and-disk-management/disk-management#disk-layout) for details.
 
-Talos manages disk partitioning automatically during installation, creating EFI, META, STATE, and EPHEMERAL partitions. The EPHEMERAL partition then expands to fill all the space left after the first three. That space can either remain entirely with EPHEMERAL or be divided into additional user volumes, depending on your needs. See [Disk Layout](../configure-your-talos-cluster/storage-and-disk-management/disk-management#disk-layout) for details.
-
-For production, it is often more efficient to dedicate a smaller disk for the Talos installation itself, and use additional disks for workload storage. Using a large, single disk for both system and workloads is supported, but may not be optimal depending on your environment.
+For production environments, it is often more efficient to dedicate a smaller disk to the Talos installation and use separate disks for workload storage. Using a single large disk for both system and workloads is supported, but may not be optimal depending on your setup.

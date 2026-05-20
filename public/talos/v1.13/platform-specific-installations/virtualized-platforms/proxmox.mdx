@@ -7,303 +7,249 @@ canonical: https://docs.siderolabs.com/talos/v1.13/platform-specific-installatio
 ---
 
 import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+import { release_v1_13 } from '/snippets/custom-variables.mdx';
 
 <VersionWarningBanner />
 
-import { release_v1_13 } from '/snippets/custom-variables.mdx';
-
-In this guide we will create a Kubernetes cluster using Proxmox.
+In this guide you will create a Kubernetes cluster on Proxmox, from uploading the Talos ISO to bootstrapping etcd and retrieving your kubeconfig. Follow the steps in order — each one builds on the last.
 
 ## Video walkthrough
 
-To see a live demo of this writeup, visit Youtube here:
+To see a live demo of this guide, visit Youtube here:
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/MyxigW4_QFM" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-## Installation
+## Prerequisites
 
-### How to get Proxmox
+Before you begin, make sure the following are in place. The QEMU guest agent section is optional, only follow it if you need guest VM shutdown support.
 
-It is assumed that you have already installed Proxmox onto the server you wish to create Talos VMs on.
-Visit the [Proxmox](https://www.proxmox.com/en/downloads) downloads page if necessary.
+- **Proxmox**: This guide assumes you have already installed Proxmox on the server where you want to create Talos VMs. Visit the [Proxmox downloads page](https://www.proxmox.com/en/downloads) if you haven't done this yet.
 
-### Install talosctl
+- **talosctl**: Install `talosctl` on macOS or Linux with:
 
-You can download `talosctl` on MacOS and Linux via:
+  ```bash
+  brew install siderolabs/tap/talosctl
+  ```
 
-```bash
-brew install siderolabs/tap/talosctl
-```
+  For manual installation and other platforms, see the [talosctl installation guide](../../getting-started/talosctl).
 
-For manual installation and other platforms please see the [talosctl installation guide](../../getting-started/talosctl ).
+- **ISO image**: Download the Talos ISO from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory) with this command:
 
-### Download ISO image
+  ```bash
+  mkdir -p _out/
+  curl https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/<version>/metal-<arch>.iso -L -o _out/metal-<arch>.iso
+  ```
 
-In order to install Talos in Proxmox, you will need the ISO image from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
+  For example version, for linux platform:
 
-```bash
-mkdir -p _out/
-curl https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/<version>/metal-<arch>.iso -L -o _out/metal-<arch>.iso
-```
+  <CodeBlock lang="sh">
+    {`mkdir -p _out/\ncurl https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_13}/metal-amd64.iso -L -o _out/metal-amd64.iso`}
+  </CodeBlock>
 
-For example version {release } for `linux` platform:
+### Optional: QEMU guest agent ISO
 
-<CodeBlock lang="sh">
-  {`
-mkdir -p _out/
-curl https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_13}/metal-amd64.iso -L -o _out/metal-amd64.iso
-  `}
-</CodeBlock>
+QEMU guest agent support for guest VM shutdowns requires a custom ISO and installer image. Skip this section if that doesn't apply to you.
 
-### QEMU guest agent support (iso)
+1. **Build the custom ISO**: Go to the [Image Factory](https://factory.talos.dev/) and complete these steps to build a custom ISO:
+    - Select your Talos version
+    - Check the box for `siderolabs/qemu-guest-agent` and submit. This action will provide you with a link similar to:
+      <CodeBlock lang="sh">
+        {`Metal ISO\n\namd64 ISO\n    https://factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515/${release_v1_13}/metal-amd64.iso\narm64 ISO\n    https://factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515/${release_v1_13}/metal-arm64.iso\n\nInstaller Image\n\nFor the initial Talos install or upgrade, use the following installer image:\nfactory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515:${release_v1_13}`}
+      </CodeBlock>
+    - Download the above ISO and take note of the installer image URL, you will need it later
 
-- If you need the QEMU guest agent so you can do guest VM shutdowns of your Talos VMs, then you will need a custom ISO
-- To get this, navigate to https://factory.talos.dev/
-- Scroll down and select your Talos version ( {release_v1_13} for example)
-- Then tick the box for `siderolabs/qemu-guest-agent` and submit
-- This will provide you with a link to the bare metal ISO
-- The lines we're interested in are as follows
 
-<CodeBlock lang="sh">
-  {`
-Metal ISO
+2. **Enable QEMU Guest Agent in Proxmox:** Once your VM is created, go to **VM → Options** and set **QEMU Guest Agent** to **Enabled**.
 
-amd64 ISO
-    https://factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515/${release_v1_13}/metal-amd64.iso
-arm64 ISO
-    https://factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515/${release_v1_13}/metal-arm64.iso
+<Warning> Only enable QEMU Guest Agent in Proxmox if you built the ISO with the `siderolabs/qemu-guest-agent` extension. Enabling it without the extension will only generate log spam and provide no functionality. See [Image Factory](../../learn-more/image-factory) for more on building custom ISOs.</Warning>
 
-Installer Image
 
-For the initial Talos install or upgrade use the following installer image:
-factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515:{release_v1_13}
-  `}
-</CodeBlock>
+### VM resource requirements
 
-- Download the above ISO (this will most likely be `amd64` for you)
-- Take note of the `factory.talos.dev/installer` URL as you'll need it later
+Before creating VMs, familiarise yourself with the [system requirements](../../getting-started/system-requirements) for Talos and use the following as a baseline for all Talos nodes on Proxmox:
 
-## Upload ISO
+| Setting | Recommended value | Notes |
+|---|---|---|
+| **BIOS** | `ovmf` (UEFI) | Modern firmware, Secure Boot support, better hardware compatibility |
+| **Machine** | `q35` | Modern PCIe-based machine type with better device support |
+| **CPU type** | `host` | Enables advanced instruction sets (AVX-512, etc.). Use `kvm64` with feature flags for Proxmox < 8.0 |
+| **CPU cores** | 2+ (control plane), 4+ (workers) | Minimum 2 cores required |
+| **Memory** | 4GB+ (control plane), 8GB+ (workers) | Minimum 2GB required |
+| **Disk controller** | VirtIO SCSI | Do NOT use **VirtIO SCSI Single** — causes bootstrap hangs ([#11173](https://github.com/siderolabs/talos/issues/11173)) |
+| **Disk format** | Raw or QCOW2 | Raw preferred for performance; QCOW2 for snapshots |
+| **Disk cache** | Write Through | Use None for clustered environments |
+| **Network model** | `virtio` | Paravirtualized driver, best performance (up to 10 Gbit) |
+| **EFI disk** | 4MB | Required for UEFI firmware, stores Secure Boot keys |
+| **Ballooning** | Disabled | Talos does not support memory hotplug |
+| **RNG device** | VirtIO RNG (optional) | Better entropy for cryptographic operations |
 
-From the Proxmox UI, select the "local" storage and enter the "Content" section.
-Click the "Upload" button:
+## Step 1: Upload the ISO
+
+From the Proxmox UI, select the **local** storage and enter the **Content** section. Click the **Upload** button:
 
 <img src="./images/proxmox-click-upload.png" width="500px"/>
 
-Select the ISO you downloaded previously, then hit "Upload"
+Select the ISO you downloaded in the prerequisites, then click **Upload**:
+
+<img src="./images/proxmox-select-iso.png" width="500px"/>
+
+## Step 2: Create VMs
+
+Create a new VM by clicking **Create VM** in the Proxmox UI:
 
 <img src="./images/proxmox-create-vm.png" width="500px"/>
 
-## Create VMs
+This action will open 8 tabs, configure the tabs as follows:
 
-Before starting, familiarise yourself with the
-[system requirements](../../getting-started/system-requirements) for Talos and assign VM
-resources accordingly.
-
-### Recommended baseline VM configuration
-
-Use the following baseline settings for Proxmox VMs running Talos:
-
-| Setting | Recommended Value | Notes |
-|---------|------------------|-------|
-| **BIOS** | `ovmf` (UEFI) | Modern firmware, Secure Boot support, better hardware compatibility |
-| **Machine** | `q35` | Modern PCIe-based machine type with better device support |
-| **CPU Type** | `host` | Enables advanced instruction sets (AVX-512, etc.), best performance. Alternative: `kvm64` with feature flags for Proxmox < 8.0 |
-| **CPU Cores** | 2+ (control plane), 4+ (workers) | Minimum 2 cores required |
-| **Memory** | 4GB+ (control plane), 8GB+ (workers) | Minimum 2GB required |
-| **Disk Controller** | **VirtIO SCSI** (NOT "VirtIO SCSI Single") | Single controller can cause bootstrap hangs (#11173) |
-| **Disk Format** | Raw (performance) or QCOW2 (features/snapshots) | Raw preferred for performance |
-| **Disk Cache** | Write Through (safe default) | Or None for clustered environments |
-| **Network Model** | `virtio` | Paravirtualized driver, best performance (up to 10 Gbit) |
-| **EFI Disk** | 4MB (for OVMF) | Required for UEFI firmware, stores Secure Boot keys |
-| **Ballooning** | Disabled | Talos doesn't support memory hotplug |
-| **RNG Device** | VirtIO RNG (optional) | Better entropy for security |
-
-> **Important**: When configuring the disk controller, use **VirtIO SCSI** (not "VirtIO SCSI Single").
-> Using "VirtIO SCSI Single" can cause bootstrap to hang or prevent disk discovery.
-> See [issue #11173](https://github.com/siderolabs/talos/issues/11173) for details.
-
-Create a new VM by clicking the "Create VM" button in the Proxmox UI:
-
-<img src="./images/proxmox-create-vm.png" width="500px"/>
-
-Fill out a name for the new VM:
+- **Name tab**: Fill out a name for the VM:
 
 <img src="./images/proxmox-edit-vm-name.png" width="500px"/>
 
-In the OS tab, select the ISO we uploaded earlier:
+- **OS tab**: Select the ISO uploaded in Step 1:
 
 <img src="./images/proxmox-edit-os.png" width="500px"/>
 
-In the "System" tab:
-- Set **BIOS** to `ovmf` (UEFI) for modern firmware and Secure Boot support
-- Set **Machine** to `q35` for modern PCIe-based machine type
-- Add **EFI Disk** (4MB) for persistent UEFI settings and Secure Boot key storage
+- **System tab:**
+  - Set **BIOS** to `ovmf` (UEFI)
+  - Set **Machine** to `q35`
+  - Add an **EFI Disk** (4MB) for persistent UEFI settings and Secure Boot key storage
 
-In the "Hard Disk" tab:
-- Set **Bus/Device** to `VirtIO SCSI` (NOT "VirtIO SCSI Single")
-- Set **Storage** to your main storage pool
-- Set **Format** to `Raw` (better performance) or `QCOW2` (features/snapshots)
-- Set **Size** based on your workload requirements (adjust based on CSI and application needs)
-- Set **Cache** to `Write Through` (safe default) or `None` for clustered environments
-- Enable **Discard** (TRIM support) if using SSD storage
-- Enable **SSD emulation** if using SSD storage
+- **Hard Disk tab:**
+  - Set **Bus/Device** to `VirtIO SCSI` (NOT **VirtIO SCSI Single**)
+  - Set **Storage** to your main storage pool
+  - Set **Format** to `Raw` (performance) or `QCOW2` (snapshots)
+  - Set **Cache** to `Write Through`, or `None` for clustered environments
+  - Enable **Discard** and **SSD emulation** if using SSD storage
 
-> **Important**: When configuring the disk controller, use **VirtIO SCSI** (not "VirtIO SCSI Single").
-> Using "VirtIO SCSI Single" can cause bootstrap to hang or prevent disk discovery.
-> See [issue #11173](https://github.com/siderolabs/talos/issues/11173) for details.
+- **CPU tab:**
+  - Set **Cores** to 2+ for control planes, 4+ for workers
+  - Set **Type** to `host` for best performance
 
-In the "CPU" section:
-- Set **Cores** to 2+ for control planes, 4+ for workers
-- Set **Sockets** to 1 (keep simple)
-- Set **Type** to `host` (best performance, enables advanced instruction sets)
-  - **Alternative for Proxmox < 8.0**: Use `kvm64` with feature flags by adding to `/etc/pve/qemu-server/<vmid>.conf`:
-    ```text
-    args: -cpu kvm64,+cx16,+lahf_lm,+popcnt,+sse3,+ssse3,+sse4.1,+sse4.2
-    ```
-  - **Note**: `host` CPU type prevents live VM migration but provides best performance
+  For Proxmox < 8.0, use `kvm64` with feature flags instead. Add the following to `/etc/pve/qemu-server/<vmid>.conf`:
+  ```text
+  args: -cpu kvm64,+cx16,+lahf_lm,+popcnt,+sse3,+ssse3,+sse4.1,+sse4.2
+  ```
+
+  > **Note:** `host` CPU type prevents live VM migration.
 
 <img src="./images/proxmox-edit-cpu.png" width="500px"/>
 
-In the "Memory" section:
-- Set **Memory** to 4GB+ for control planes, 8GB+ for workers (minimum 2GB required)
-- **Disable Ballooning** (can cause issues with Talos memory detection)
+- **Memory tab:**
+  - Set **Memory** to 4GB+ for control planes, 8GB+ for workers
+  - **Disable Ballooning** — Talos does not support memory hotplug, and enabling it will prevent Talos from seeing all available memory
 
-<img src="./images/proxmox-edit-ram.png" width="500px"/>
+  <img src="./images/proxmox-edit-ram.png" width="500px"/>
 
-In the "Network" section:
-- Set **Model** to `virtio` (paravirtualized driver, best performance)
-- Set **Bridge** to your network bridge (e.g., `vmbr0`)
-- Verify the VM is set to come up on the bridge interface
+- **Network tab:**
+  - Set **Model** to `virtio`
+  - Set **Bridge** to your network bridge (e.g., `vmbr0`)
 
-<img src="./images/proxmox-edit-nic.png" width="500px"/>
+  <img src="./images/proxmox-edit-nic.png" width="500px"/>
 
-> **Tip**: Enable a serial console (ttyS0) in Proxmox VM settings to see early boot logs and troubleshoot network connectivity issues.
-> This is especially helpful when debugging DHCP timing or bridge configuration problems.
-> Set **Serial port** to `ttyS0` in Proxmox and add `console=ttyS0` if you're customizing kernel args.
+<Note>Enable a serial console (`ttyS0`) in Proxmox VM settings to see early boot logs and troubleshoot network issues. This is especially useful when debugging DHCP timing or bridge configuration problems.</Note>
 
-Finish creating the VM by clicking through the "Confirm" tab and then "Finish".
+- **Confirm tab**: Finish creating the VM by clicking through the **Confirm** tab and then **Finish**.
 
-Repeat this process for a second VM to use as a worker node.
-You can also repeat this for additional nodes desired.
+Repeat this process for each additional node, at minimum one control plane and one worker.
 
-> Note: Talos doesn't support memory hot plugging, if creating the VM programmatically don't enable memory hotplug on your
-> Talos VM's.
-> Doing so will cause Talos to be unable to see all available memory and have insufficient memory to complete
-> installation of the cluster.
+## Step 3: Start the control plane node
 
-## Start control plane node
+Start the VM designated as the first control plane node. It will boot from the ISO and enter maintenance mode.
 
-Once the VMs have been created and updated, start the VM that will be the first control plane node.
-This VM will boot the ISO image specified earlier and enter "maintenance mode".
+<Tabs>
+<Tab title="With DHCP">
 
-### With DHCP server
+Once the machine enters maintenance mode, the console will display the IP address the node received. Take note of this IP — it will be referred to as `$CONTROL_PLANE_IP` for the rest of this guide:
 
-Once the machine has entered maintenance mode, there will be a console log that details the IP address that the node received.
-Take note of this IP address, which will be referred to as `$CONTROL_PLANE_IP` for the rest of this guide.
-If you wish to export this IP as a bash variable, simply issue a command like `export CONTROL_PLANE_IP=1.2.3.4`.
+```bash
+export CONTROL_PLANE_IP=1.2.3.4
+```
 
 <img src="./images/proxmox-maintenance-mode.png" width="500px"/>
 
-### Without DHCP server
+</Tab>
+<Tab title="Without DHCP">
 
-To apply the machine configurations in maintenance mode, VM has to have IP on the network.
-So you can set it on boot time manually.
+To apply machine configuration in maintenance mode, the VM needs a static IP. Set it manually at boot time.
+
+1. Press `e` at the GRUB menu:
 
 <img src="./images/proxmox-maintenance-mode-grub-menu.png" width="600px"/>
 
-Press `e` on the boot time.
-And set the IP parameters for the VM.
-[Format is](https://www.kernel.org/doc/Documentation/filesystems/nfs/nfsroot.txt):
+2. Append the IP parameters to the boot line using the following format ([kernel nfsroot format](https://www.kernel.org/doc/Documentation/filesystems/nfs/nfsroot.txt)):
 
-```bash
-ip=<client-ip>:<srv-ip>:<gw-ip>:<netmask>:<host>:<device>:<autoconf>
-```
+  ```bash
+  ip=<client-ip>:<srv-ip>:<gw-ip>:<netmask>:<host>:<device>:<autoconf>
+  ```
 
-For example $CONTROL_PLANE_IP will be 192.168.0.100 and gateway 192.168.0.1
+  For example, with `$CONTROL_PLANE_IP` as `192.168.0.100` and gateway `192.168.0.1`:
 
-```bash
-linux /boot/vmlinuz init_on_alloc=1 slab_nomerge pti=on panic=0 consoleblank=0 printk.devkmsg=on earlyprintk=ttyS0 console=tty0 console=ttyS0 talos.platform=metal ip=192.168.0.100::192.168.0.1:255.255.255.0::eth0:off
-```
+  ```bash
+  linux /boot/vmlinuz init_on_alloc=1 slab_nomerge pti=on panic=0 consoleblank=0 printk.devkmsg=on earlyprintk=ttyS0 console=tty0 console=ttyS0 talos.platform=metal ip=192.168.0.100::192.168.0.1:255.255.255.0::eth0:off
+  ```
 
 <img src="./images/proxmox-maintenance-mode-grub-menu-ip.png" width="630px"/>
 
-Then press Ctrl-x or F10
+3. Press `Ctrl-x` or `F10` to boot with the updated parameters.
+</Tab>
+</Tabs>
 
-## Generate machine configurations
+## Step 4: Generate machine configurations
 
-With the IP address above, you can now generate the machine configurations to use for installing Talos and Kubernetes.
-Issue the following command, updating the output directory, cluster name, and control plane IP as you see fit:
+With `$CONTROL_PLANE_IP` set, generate the machine configurations for your cluster.
+
+Choose the tab that matches your ISO.
+
+<Tabs>
+<Tab title="Talos ISO">
 
 ```bash
 talosctl gen config talos-proxmox-cluster https://$CONTROL_PLANE_IP:6443 --output-dir _out
 ```
-
-This will create several files in the `_out` directory: `controlplane.yaml`, `worker.yaml`, and `talosconfig`.
-
-> Note: The Talos config by default will install to `/dev/sda`.
-> Depending on your setup the virtual disk may be mounted differently Eg: `/dev/vda`.
-> You can check for disks running the following command:
->
-> ```bash
-> talosctl get disks --insecure --nodes $CONTROL_PLANE_IP
-> ```
->
-> Update `controlplane.yaml` and `worker.yaml` config files to point to the correct disk location.
-
-### QEMU guest agent support
-
-For QEMU guest agent support, you can generate the config with the custom install image:
+</Tab>
+<Tab title="QEMU guest agent ISO">
+Use this if you built the custom ISO with the `siderolabs/qemu-guest-agent` extension in the prerequisites. The command is the same but passes the custom installer image URL you noted earlier.
 
 <CodeBlock lang="sh">
-  {`
-talosctl gen config talos-proxmox-cluster https://$CONTROL_PLANE_IP:6443 --output-dir _out --install-image factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515:${release_v1_13}
-  `}
+  {`talosctl gen config talos-proxmox-cluster https://$CONTROL_PLANE_IP:6443 --output-dir _out --install-image factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515:${release_v1_13}`}
 </CodeBlock>
+</Tab>
+</Tabs>
 
-> **Important**: Enable QEMU Guest Agent in Proxmox **only if** you built the ISO with the `siderolabs/qemu-guest-agent` extension in **Image Factory**.
-> If you're using a standard Talos ISO without this extension, leave QEMU Guest Agent disabled in Proxmox VM settings.
-> Enabling it without the extension will only generate log spam and won't provide any functionality.
-> See: [Image Factory](../../learn-more/image-factory) for building a custom ISO with extensions.
+This command creates three files in `_out/`: `controlplane.yaml`, `worker.yaml`, and `talosconfig`.
 
-- If you did include the extension, go to your VM → **Options** and set **QEMU Guest Agent** to **Enabled**.
+<Note>
+The default config installs Talos to `/dev/sda`. Depending on your setup, the virtual disk may be at a different path (e.g., `/dev/vda`). Check available disks with:
+```bash
+talosctl get disks --insecure --nodes $CONTROL_PLANE_IP
+```
 
-## Create control plane node
+Update `install.disk` in `controlplane.yaml` and `worker.yaml` if needed.
+</Note>
 
-Using the `controlplane.yaml` generated above, you can now apply this config using talosctl.
-Issue:
+## Step 5: Apply configuration to the control plane
+
+Apply the control plane configuration to the node. If you are setting up an HA control plane, repeat this step for each additional control plane node.
 
 ```bash
 talosctl apply-config --insecure --nodes $CONTROL_PLANE_IP --file _out/controlplane.yaml
 ```
 
-You should now see some action in the Proxmox console for this VM.
-Talos will be installed to disk, the VM will reboot, and then Talos will configure the Kubernetes control plane on this VM.
-The VM will remain in stage `Booting` until the bootstrap is completed in a later step.
+You should see activity in the Proxmox console. Talos will install to disk, the VM will reboot, and Talos will configure the Kubernetes control plane. The VM will remain in stage `Booting` until the cluster is bootstrapped in the next steps.
 
-> Note: This process can be repeated multiple times to create an HA control plane.
+## Step 6: Apply configuration to worker nodes
 
-## Create worker node
-
-Create at least a single worker node using a process similar to the control plane creation above.
-Start the worker node VM and wait for it to enter "maintenance mode".
-Take note of the worker node's IP address, which will be referred to as `$WORKER_IP`
-
-Issue:
+Start each worker VM and wait for it to enter maintenance mode. Repeat this step for each worker node, substituting `$WORKER_IP` with each node's IP address.
 
 ```bash
 talosctl apply-config --insecure --nodes $WORKER_IP --file _out/worker.yaml
 ```
 
-> Note: This process can be repeated multiple times to add additional workers.
+## Step 7: Bootstrap the cluster
 
-## Using the cluster
+With the control plane and worker nodes configured, complete the cluster setup by running the following commands in order:
 
-Once the cluster is available, you can make use of `talosctl` and `kubectl` to interact with the cluster.
-For example, to view current running containers, run `talosctl containers` for a list of containers in the `system` namespace, or `talosctl containers -k` for the `k8s.io` namespace.
-To view the logs of a container, use `talosctl logs <container>` or `talosctl logs -k <container>`.
-
-First, configure talosctl to talk to your control plane node by issuing the following, updating paths and IPs as necessary:
+1. Configure talosctl to talk to your control plane node:
 
 ```bash
 export TALOSCONFIG="_out/talosconfig"
@@ -311,27 +257,34 @@ talosctl config endpoint $CONTROL_PLANE_IP
 talosctl config node $CONTROL_PLANE_IP
 ```
 
-### Bootstrap etcd
+2. Bootstrap etcd:
 
 ```bash
 talosctl bootstrap
 ```
 
-### Retrieve the `kubeconfig`
-
-At this point we can retrieve the admin `kubeconfig` by running:
+3. Retrieve the kubeconfig:
 
 ```bash
 talosctl kubeconfig .
 ```
 
+4. Verify that your cluster is ready:
+
+```bash
+kubectl get nodes
+```
+
 ## Troubleshooting
+
+This section covers common issues you may encounter when setting up Talos VMs on Proxmox, along with steps to resolve them.
 
 ### Cluster creation issues
 
-If `talosctl cluster create` fails with disk controller errors:
+If `talosctl cluster create` fails with disk controller errors, the most likely cause is an unsupported disk controller type. For example:
 
-- **"virtio-scsi-single disk controller is not supported"**: This disk controller type causes Talos bootstrap to hang. Use `virtio` or `scsi` instead:
+- `virtio-scsi-single disk controller is not supported`: This disk controller type causes Talos bootstrap to hang. Use `virtio` or `scsi` instead:
+
   ```bash
   # Wrong - will be rejected
   talosctl cluster create --disks virtio-scsi-single:10GiB
@@ -343,12 +296,13 @@ If `talosctl cluster create` fails with disk controller errors:
 
 ### Network connectivity issues
 
-If nodes fail to obtain IP addresses or show "network is unreachable" errors:
+If nodes fail to obtain IP addresses or show "network is unreachable" errors, work through the following checks:
 
-1. **Verify bridge interface**: Ensure the bridge interface (e.g., `vmbr0`) exists and is UP before starting VMs
-   ```bash
-   ip link show vmbr0
-   ```
+1. **Verify bridge interface**: Ensure the bridge interface (e.g., `vmbr0`) exists and is UP before starting VMs:
+
+  ```bash
+  ip link show vmbr0
+  ```
 
 2. **Check DHCP server**: Ensure DHCP server is running and reachable from the bridge network
 
@@ -359,7 +313,9 @@ If nodes fail to obtain IP addresses or show "network is unreachable" errors:
 
 5. **Serial console**: Enable serial console to view early boot logs and network initialization messages
 
-### Disk Controller Issues
+### Disk controller issues
+
+If you run into disk-related problems during setup, the following may help:
 
 - **Configuration rejected**: If you see "virtio-scsi-single disk controller is not supported", use `--disks virtio:10GiB` instead of `--disks virtio-scsi-single:10GiB`
 - **Bootstrap hangs**: If bootstrap hangs or disks aren't discovered, verify you're using **VirtIO SCSI** (not "VirtIO SCSI Single")

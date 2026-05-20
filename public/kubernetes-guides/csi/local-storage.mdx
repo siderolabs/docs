@@ -16,8 +16,7 @@ Once the user volume is created, it is automatically mounted under `/var/mnt/u-<
 
 For example, create a configuration patch for a user volume named `local-storage`:
 
-```yaml
-# local-storage.yaml
+```yaml local-storage.yaml
 apiVersion: v1alpha1
 kind: UserVolumeConfig
 name: local-storage
@@ -31,18 +30,14 @@ provisioning:
 Apply the patch to the machine configuration:
 
 ```bash
-talosctl --nodes <WORKER_IP> patch mc --patch @local-storage.yaml
+talosctl --nodes <worker-ip> patch mc --patch @local-storage.yaml
 ```
 
 If there is enough space available on a non-system disk (see `diskSelector`), the user volume will be created and mounted under `/var/mnt/u-local-storage` path on the node.
 
 ```bash
-$ talosctl -n <WORKER-IP> get volumestatus u-local-storage
-NODE         NAMESPACE   TYPE           ID                VERSION   TYPE        PHASE   LOCATION         SIZE
-172.20.0.5   runtime     VolumeStatus   u-local-storage   3         partition   ready   /dev/nvme0n2p1   2.0 GB
-$ talosctl -n <WORKER-IP> get mountstatus u-local-storage
-NODE         NAMESPACE   TYPE          ID                VERSION   SOURCE           TARGET                   FILESYSTEM   VOLUME
-172.20.0.5   runtime     MountStatus   u-local-storage   2         /dev/nvme0n2p1   /var/mnt/local-storage   xfs          u-local-storage
+talosctl -n <worker-ip> get volumestatus u-local-storage
+talosctl -n <worker-ip> get mountstatus u-local-storage
 ```
 
 Now you can use the `/var/mnt/local-storage` path in your Kubernetes manifests to refer to the local storage:
@@ -73,7 +68,7 @@ spec:
 First, we will create a separate [user volume](../../talos/v1.10/configure-your-talos-cluster/storage-and-disk-management/disk-management#user-volumes) for the Local Path Provisioner to use.
 Apply the following machine configuration patch:
 
-> Note: make sure you have [enough space](../../talos/v1.10/configure-your-talos-cluster/storage-and-disk-management/disk-management#disk-layout) available to provision the user volume.
+<Note>Ensure that you have [enough space](../../talos/v1.10/configure-your-talos-cluster/storage-and-disk-management/disk-management#disk-layout) available to provision the user volume.</Note>
 
 ```yaml
 apiVersion: v1alpha1
@@ -90,8 +85,7 @@ Make sure to update Local Path Provisioner configuration to use the user volume 
 
 For example, Local Path Provisioner can be installed using [kustomize](https://kustomize.io/) with the following configuration:
 
-```yaml
-# kustomization.yaml
+```yaml kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
