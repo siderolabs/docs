@@ -161,7 +161,7 @@ cat <<EOF > ca-csr.json
   "CN": "Internal Root CA",
   "key": {
     "algo": "rsa",
-    "size": 4096
+    "size": 2048
   },
   "names": [
     {
@@ -258,7 +258,7 @@ cat <<EOF > wildcard-csr.json
   ],
   "key": {
     "algo": "rsa",
-    "size": 4096
+    "size": 2048
   }
 }
 EOF
@@ -533,9 +533,7 @@ done
 
 ### Create installation media
 
-The first step to create a cluster is to boot machines and connect them to Omni. In order to do that we will need to embed the self-signed CA certificate into Talos.
-
-Create a configuration for a TrustedRootsConfig:
+To boot machines and connect them to Omni, you need to embed the self-signed CA certificate into Talos. Start by creating a `TrustedRootsConfig`:
 
 ```bash
 yq eval --null-input '
@@ -546,73 +544,35 @@ yq eval --null-input '
 ' > trustedrootsconfig.yaml
 ```
 
-You can use this config two different ways. Use kernel arguments for Talos 1.11 and older and use embedded config for Talos 1.12.
+Compress and base64 encode the configuration. Copy the output, you will need it when creating the installation media.
 
-<Tabs>
-  <Tab title="Embedded config (Talos 1.12+)">
-  Create an output directory for installation media and config.
+```bash
+cat trustedrootsconfig.yaml | zstd --compress --ultra -21 | base64 -w 0
+```
 
-  ```bash
-  mkdir _out
-  mv trustedrootsconfig.yaml _out/machine-config.yaml
-  echo "---" >> _out/machine-config.yaml
-  yq eval --null-input '
-.apiVersion = "v1alpha1" |
-.kind = "TimeSyncConfig" |
-.enabled = false
-' >> _out/machine-config.yaml
-  echo "---" >> _out/machine-config.yaml
+Copy the Omni kernel arguments using `omnictl`. You can also copy them from the Omni web interface with the **Copy Kernel Parameters** button on the home page.
+
+<Note>If your shell still has `$OMNI_ENDPOINT` configured you may need to `unset OMNI_ENDPOINT` for `omnictl` commands to work.</Note>
+
+```bash
+omnictl jointoken kernel-args
+```
+
+<Note>If your `omni.internal` endpoint is not resolvable via DNS, update your machine config to set the SideroLink endpoint to the IP address of the Omni machine instead of a hostname.</Note>
+
+Navigate to your airgapped image factory, work through each page, selecting the appropriate options for your setup, until you reach the **Customization** section.
+
+In the **Extra kernel command line** arguments field, paste the following, replacing `<trusted-root-config>` with the encoded output and `<omni-kernel-args>` with the output from the omnictl command above:
+
+  ```txt
+  talos.config.early=<trusted-root-config> <omni-kernel-args>
   ```
 
-  Download machine join configuration from Omni. You can do this from the Omni web interface home page by clicking on the **Download Machine Join Config** button or if you have `omnictl` installed you can download it with
+  <Warning>
+  Kernel arguments have a maximum length. If your certificate is too large (e.g. generated with a 4096-bit key), it will be silently truncated and fail to load without an error. Use a 2048-bit key for your CA if you're passing the certificate via kernel arguments.
+  </Warning>
 
-> If your `omni.internal` endpoint is not resolvable via DNS, update your machine config to set the SideroLink endpoint to the IP address of the Omni machine instead of a hostname.
-
->If you're shell still has `$OMNI_ENDPOINT` configured you may need to `unset OMNI_ENDPOINT` for `omnictl` commands to work
-
-  ```bash
-  omnictl jointoken machine-config >> _out/machine-config.yaml
-  ```
-
-  Embed both configurations and create an installation ISO with `imager`.
-
-  <Warning>Imager cannot be run with SELinux in enforcing mode.</Warning>
-
-  <CodeBlock lang="sh">
-  {`docker run --rm -t \\\n  -v "\${PWD}/_out:/out" \\\n   \${REGISTRY_ENDPOINT}/siderolabs/imager:${release} \\\n    iso \\\n    --embedded-config-path=/out/machine-config.yaml`}
-  </CodeBlock>
-
-  </Tab>
-  <Tab title="Kernel args (Talos 1.11)">
-
-  Get the kernel arguments from Omni with `omnictl`. You can also copy them from the Omni web interface with the **Copy Kernel Parameters** button on the home page.
-
->If you're shell still has `$OMNI_ENDPOINT` configured you may need to `unset OMNI_ENDPOINT` for `omnictl` commands to work
-
-  ```bash
-  OMNI_KERNEL_ARGS=$(omnictl jointoken kernel-args)
-  ```
-
-> If your `omni.internal` endpoint is not resolvable via DNS, update your machine config to set the SideroLink endpoint to the IP address of the Omni machine instead of a hostname.
-
-  Compress and base64 encode the configuration for a kernel argument.
-
-  ```bash
-  TRUSTED_ROOT_CONFIG=$(cat trustedrootsconfig.yaml | zstd --compress --ultra -21 | base64 -w 0)
-  ```
-
-  Create an ISO with `imager` with both of the kernel arguments.
-
-  <Warning>Imager cannot be run with SELinux in enforcing mode.</Warning>
-
-  <CodeBlock lang="sh">
-  {`docker run --rm -t \\\n  -v "\${PWD}/_out:/out" \\\n  --privileged \\\n  \${REGISTRY_ENDPOINT}/siderolabs/imager:${release} \\\n    iso \\\n    --extra-kernel-arg "talos.config.early=\$TRUSTED_ROOT_CONFIG $OMNI_KERNEL_ARGS"`}
-  </CodeBlock>
-
-  </Tab>
-</Tabs>
-
-No matter which version of Talos you use you should have a Talos iso file in the `_out` directory. You can use this to boot a machine and it will connect to Omni and trust the self-signed CA certificate.
+ Complete the remaining steps in the wizard and download your installation media.
 
 ### Create cluster in Omni
 
