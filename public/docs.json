@@ -75,6 +75,10 @@
     {
       "source": "/omni/cluster-management/expose-an-http-service-from-a-cluster",
       "destination": "/omni/cluster-management/expose-a-workload-via-service-proxy"
+    },
+    {
+      "source": "/omni/cluster-management/omni-terraform",
+      "destination": "/omni/cluster-management/terraform-and-omni"
     }
   ],
   "navigation": {
@@ -2426,7 +2430,6 @@
               "omni/cluster-management/create-a-hybrid-cluster",
               "omni/cluster-management/sync-kubernetes-manifests",
               "omni/cluster-management/upgrading-clusters",
-              "omni/cluster-management/omni-terraform",
               "omni/cluster-management/expose-a-workload-via-service-proxy",
               "omni/cluster-management/export-a-cluster-template-from-a-cluster-created-in-the-ui",
               "omni/cluster-management/etcd-backups",
@@ -2438,7 +2441,8 @@
               "omni/cluster-management/talos-config-overrides",
               "omni/cluster-management/override-ntp-servers",
               "omni/cluster-management/support-bundle",
-              "omni/cluster-management/ca-rotation"
+              "omni/cluster-management/ca-rotation",
+              "omni/cluster-management/terraform-and-omni"
             ]
           },
           {

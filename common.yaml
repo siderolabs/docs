@@ -67,3 +67,5 @@ redirects:
     destination: "/talos/v1.13/:slug*"
   - source: "/omni/cluster-management/expose-an-http-service-from-a-cluster"
     destination: "/omni/cluster-management/expose-a-workload-via-service-proxy"
+  - source: "/omni/cluster-management/omni-terraform"
+    destination: "/omni/cluster-management/terraform-and-omni"
