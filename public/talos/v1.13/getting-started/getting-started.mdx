@@ -73,7 +73,15 @@ At this stage, you'll:
 - Boot one machine as your control plane node.
 - Boot additional machines as worker nodes (this is optional).
 
-You’ll see the Talos dashboard once your hardware boots from the ISO image.
+Once your hardware boots from the ISO image, you'll see the Talos dashboard. The node is now in maintenance mode, meaning it has no machine config yet and is waiting for one to be applied.
+
+<Note>
+In maintenance mode, the Talos maintenance API is unauthenticated by design — anyone with network access can apply a machine config via `talosctl apply-config --insecure`. This is expected behavior. You can avoid publicly exposing the API in a number of ways:
+
+- Apply a config at boot time by providing a full machine config via user-data, inline config, or embedded config.
+- Configure node firewall rules to restrict which hosts can reach the maintenance API port, limiting exposure at the network level.
+- Use a [Machine Join Config](../../../omni/omni-cluster-setup/registering-machines/join-machines-to-omni) to register the node with Omni, where the maintenance API is only accessible via SideroLink.
+</Note>
 
 **Note:** The ISO runs entirely in RAM and won't modify your disks until you apply a configuration.
 
