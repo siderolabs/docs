@@ -11,6 +11,21 @@ Upgrading a cluster involves updating both Talos Linux (the operating system) an
 
 This guide explains how to upgrade Talos Linux and Kubernetes, apply updated Kubernetes manifests, and use node locking to roll out changes in a controlled way.
 
+## How Omni rolls out configuration changes and upgrades
+
+Omni applies configuration changes and Talos Linux upgrades to a machine set gradually, a few machines at a time, so the cluster keeps serving workloads while changes roll out. Configuration changes and upgrades are scheduled independently, each with its own concurrency limit:
+
+- **Configuration changes** (config patches and labels) are governed by `updateStrategy`.
+- **Talos Linux upgrades** (version changes, extensions, and kernel arguments) are governed by `upgradeStrategy`.
+
+For worker machine sets, both default to a rolling strategy that updates **one machine at a time**. Raise `maxParallelism` to roll changes out faster, or keep it low to limit how many machines are disrupted at once. See [`updateStrategy` and `upgradeStrategy`](../reference/cluster-templates#updatestrategy) in the cluster template reference.
+
+Control plane machine sets always roll out **one machine at a time**, and this is not configurable. Omni also waits for etcd to be healthy before moving to the next control plane machine, so the control plane never loses quorum during a rollout.
+
+When a machine needs both an upgrade and a configuration change, Omni upgrades it first and then applies the configuration change, because the new configuration may depend on the new Talos Linux version.
+
+To stage a rollout, for example to validate a change on a few nodes before applying it across the cluster, [lock](#locking-nodes) the nodes you want to hold back.
+
 ## Upgrade Talos Linux
 
 To upgrade Talos Linux across all nodes in a cluster:
