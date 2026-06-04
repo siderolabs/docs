@@ -4,6 +4,57 @@ description: "Product updates and announcements"
 rss: true
 ---
 
+<Update label="v1.3.3" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.3.3)
+
+  ### Disk Images
+
+  Image Factory now supports generating disk images with 4096 byte sector size (custom size), set via schematic customization.
+
+  ### Embedded Machine Configuration
+
+  Image Factory now supports embedding machine configuration into generated images starting with Talos version 1.2.0 onwards.
+
+  ### Secure Boot Disk Images
+
+  Image Factory now generates disk images with Secure Boot supporting automatically enrolling keys (with if-safe setting, enabled for VMs in setup mode).
+</Update>
+
+<Update label="v1.13.3" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.13.3)
+
+  ### Component Updates
+
+  Linux: 6.18.33
+  Kubernetes: 1.36.1
+  containerd: 2.2.4
+
+  Talos is built with Go 1.26.3.
+</Update>
+
+<Update label="v1.3.2" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.3.2)
+
+
+</Update>
+
+<Update label="v1.12.8" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.8)
+
+  ### Containerd Update
+
+  This release includes an update to containerd v2.2.4 due to v2.1.x releases being EOL and affected by CVE-2026-46680.
+
+  ### Component Updates
+
+  Linux: 6.18.32
+  etcd: 3.6.11
+  CoreDNS: 1.14.3
+  containerd: 2.2.4
+
+  Talos is built with Go 1.25.10.
+</Update>
+
 <Update label="v1.8.0" tags={["Omni"]}>
   [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.8.0)
 
