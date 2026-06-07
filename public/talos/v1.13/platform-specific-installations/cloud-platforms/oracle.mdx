@@ -42,8 +42,8 @@ Prepare an image for upload:
            "pvEncryptionInTransitEnabled": true,
            "consistentVolumeNamingEnabled": true
        },
-       "imageCapabilityData": null,
-       "imageCapsFormatVersion": null,
+       "imageCapabilityData": "{\"capabilities\":{\"Compute.AMD_SecureEncryptedVirtualization\":{\"descriptorType\":\"boolean\",\"defaultValue\":false},\"Storage.BootVolumeType\":{\"descriptorType\":\"enumstring\",\"values\":[\"ISCSI\",\"PARAVIRTUALIZED\",\"SCSI\",\"IDE\",\"NVME\"],\"defaultValue\":\"PARAVIRTUALIZED\"},\"Storage.Iscsi.MultipathDeviceSupported\":{\"descriptorType\":\"boolean\",\"defaultValue\":false},\"Storage.ParaVirtualization.EncryptionInTransit\":{\"descriptorType\":\"boolean\",\"defaultValue\":true},\"Storage.ConsistentVolumeNaming\":{\"descriptorType\":\"boolean\",\"defaultValue\":true},\"Compute.SecureBoot\":{\"descriptorType\":\"boolean\",\"defaultValue\":false},\"Storage.ParaVirtualization.AttachmentVersion\":{\"descriptorType\":\"enuminteger\",\"values\":[1,2],\"defaultValue\":2},\"Storage.LocalDataVolumeType\":{\"descriptorType\":\"enumstring\",\"values\":[\"ISCSI\",\"PARAVIRTUALIZED\",\"SCSI\",\"IDE\",\"NVME\"],\"defaultValue\":\"PARAVIRTUALIZED\"},\"Network.AttachmentType\":{\"descriptorType\":\"enumstring\",\"values\":[\"VFIO\",\"PARAVIRTUALIZED\",\"E1000\",\"VDPA\"],\"defaultValue\":\"PARAVIRTUALIZED\"},\"Storage.RemoteDataVolumeType\":{\"descriptorType\":\"enumstring\",\"values\":[\"ISCSI\",\"PARAVIRTUALIZED\",\"SCSI\",\"IDE\",\"NVME\"],\"defaultValue\":\"PARAVIRTUALIZED\"},\"Compute.LaunchMode\":{\"descriptorType\":\"enumstring\",\"values\":[\"NATIVE\",\"EMULATED\",\"VDPA\",\"PARAVIRTUALIZED\",\"CUSTOM\"],\"defaultValue\":\"PARAVIRTUALIZED\"},\"Network.IPv6Only\":{\"descriptorType\":\"boolean\",\"defaultValue\":false},\"Compute.Firmware\":{\"descriptorType\":\"enumstring\",\"values\":[\"UEFI_64\"],\"defaultValue\":\"UEFI_64\"}}}",
+       "imageCapsFormatVersion": "0eacf73b-5e10-4b69-a5d2-afd3f37fdd45",
        "operatingSystem": "Talos",
        "operatingSystemVersion": "1.7.6",
        "additionalMetadata": {
