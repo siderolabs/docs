@@ -194,21 +194,15 @@ If the issue persists, see the cluster [troubleshooting documentation](../troubl
 
 ## Step 4: Download the `kubeconfig` file
 
-Click the **⋯** button next to your cluster, then select **Download kubeconfig** to download the file.
+To make `omnictl`, `talosctl`, and `kubectl` automatically detect your cluster configuration:
 
-![Download kubeconfig](./images/getting-started-download-kubeconfig.png)
-
-Alternatively, you can download the `kubeconfig` file from your CLI with this command:
+1. Export your cluster name in a variable, replacing the `<cluster-name>` variable with your name of the cluster: 
 
 ```bash
-omnictl kubeconfig --cluster <cluster-name>
+export CLUSTER_NAME=<cluster-name>
 ```
 
-Replace the `<cluster-name>` placeholder with the name of your cluster.
-
-## Step 5: Merge your configuration
-
-To make `omnictl`, `talosctl`, and `kubectl` automatically detect your cluster configuration, merge each configuration file into its default location:
+2. Merge each configuration file into its default location:
 
 ```bash
 # Merge Omni configuration
@@ -217,12 +211,11 @@ omnictl config merge $HOME/Downloads/omniconfig.yaml
 # Merge Talos configuration
 talosctl config merge $HOME/Downloads/talosconfig.yaml
 
-# Merge kubeconfig (combine and flatten)
-export KUBECONFIG=~/.kube/config:$HOME/Downloads/talos-default-kubeconfig.yaml
-kubectl config view --flatten > ~/.kube/config
+# Merge kubeconfig
+omnictl kubeconfig --cluster $CLUSTER_NAME
 ```
 
-## Step 6: Access your Kubernetes cluster
+## Step 5: Access your Kubernetes cluster
 
 Once your cluster is created, you can confirm that your nodes are registered in Kubernetes by running:
 
@@ -230,9 +223,42 @@ Once your cluster is created, you can confirm that your nodes are registered in 
 kubectl get nodes
 ```
 
-> **Note**: The first time you run `kubectl`, a browser window will open prompting you to sign in with your identity provider (Google or GitHub).
-> 
-> If you see the error `error: unknown command "oidc-login"`, ensure you’ve installed the kubectl-oidc-login plugin as described in the [prerequisites section](#install-cli-tools).
+<Note>
+The first time you run `kubectl`, a browser window will open prompting you to sign in with your identity provider (Google or GitHub).
+
+If you see the error `error: unknown command "oidc-login"`, ensure you’ve installed the kubectl-oidc-login plugin as described in the [prerequisites section](#install-cli-tools).
+</Note>
+
+## Step 6: Deploy your first workload
+
+To run your first application on the cluster:
+
+1. Deploy a sample application:
+
+```bash
+ kubectl apply -f \
+    https://raw.githubusercontent.com/siderolabs/example-workload/refs/heads/main/deploy/example-svc-nodeport.yaml
+```
+
+2. Verify that the pods and services are running:
+
+```bash
+kubectl get pods,services
+```
+
+3. Forward the service port to your local machine:
+
+```bash
+kubectl port-forward svc/example-workload 8080:8080
+```
+
+4. To view the application, open [http://localhost:8080](http://localhost:8080) in your browser or run:
+
+```bash
+curl http://localhost:8080
+```
+
+For a more complete example of a production-style cluster, including a monitoring stack, GitOps-based application management, and supporting infrastructure, see the examples in our [community contrib repo](https://github.com/siderolabs/contrib/blob/main/examples/omni).
 
 ## Explore Omni
 
@@ -248,15 +274,3 @@ From here, you can explore what else Omni can do, such as:
 * [Cluster templates](../reference/cluster-templates)
 * [Infrastructure providers](../infrastructure-and-extensions/infrastructure-providers)
 
-## Example: Deploy a Kubernetes workload on your Omni cluster
-
-You can find an example of a more advanced managed cluster, complete with a monitoring stack and application management, in our [community contrib repo](https://github.com/siderolabs/contrib/blob/main/examples/omni).
-
-This example includes components such as:
-
-* [Cilium](https://cilium.io/get-started/) for cluster networking
-* [Hubble](https://docs.cilium.io/en/stable/gettingstarted/hubble\_intro/) for network observability
-* [ArgoCD](https://argo-cd.readthedocs.io/en/stable/) for application management
-* [Rook/Ceph](https://rook.io/docs/rook/latest-release/Getting-Started/intro/) for persistent storage
-* [Prometheus](https://prometheus.io/docs/introduction/overview/) for metrics collection and alerting
-* [Grafana](https://grafana.com/docs/grafana/latest/introduction/) for metrics visualization
