@@ -148,6 +148,10 @@ This runs the SideroLabs Booter utility, which provisions PXE-booted machines us
 </Tab>
 </Tabs>
 
+<Warning>
+**Machine not appearing?** Verify that the machine has outbound access to **UDP** (the WireGuard port shown on your Omni Home panel) and **TCP 443**. If a firewall or NAT rule blocks either port, the machine will not be able to register. For more information, see the [Prerequisites](#prerequisites) section and the [Omni Firewall and Egress Requirements](../omni-cluster-setup/omni-firewall-egress-requirement) documentation.
+</Warning>
+
 ## Step 3: Create cluster
 
 Now that your machines are visible in Omni, you can create your cluster either via the UI or cluster templates. Refer to the [create a cluster documentation](./create-a-cluster) for information on how to create a cluster template.  
@@ -177,6 +181,16 @@ To create a cluster via the Omni UI by following these steps:
 6. Click **Create Cluster**.
 
 You’ll be redirected to the **Cluster Overview** page, where you can monitor the cluster’s creation progress.
+
+<Warning>
+If the cluster remains in a pending or provisioning state after you click Create Cluster, check the following:
+
+- **Machine connectivity**: Verify that all selected machines are still connected in the Machines list.
+- **etcd quorum**: For a 3-node control plane, all three nodes must be healthy before etcd can establish quorum. If one or more nodes are unavailable, cluster creation will stall.
+- **Node startup**: Newly provisioned nodes may take a minute or two to finish booting and become ready to join the cluster.
+
+If the issue persists, see the cluster [troubleshooting documentation](../troubleshooting/troubleshooting).
+</Warning>
 
 ## Step 4: Download the `kubeconfig` file
 
