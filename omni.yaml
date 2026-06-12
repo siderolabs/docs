@@ -60,6 +60,7 @@ navigation:
                 - "registering-machines/join-machines-to-omni"
             - "create-a-kubeconfig-for-a-service-account.mdx"
             - "create-a-machine-class.mdx"
+            - "how-configuration-works-in-omni.mdx"
             - "cluster-template.mdx"
             - "create-a-patch-for-cluster-machines.mdx"
             - "create-an-omni-service-account.mdx"
