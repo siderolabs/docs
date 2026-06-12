@@ -42,7 +42,7 @@ The SecureBoot process follows a strict verification chain from UEFI firmware to
 flowchart TD
     UEFI[UEFI Firmware]
     KEYS{SecureBoot Keys<br/>Enrolled?}
-    SETUP[Setup Mode<br/>Auto-enroll Keys]
+    SETUP[Setup Mode<br/>Enroll Keys]
     SYSTEMD[systemd-boot<br/>Bootloader]
     UKI[Unified Kernel Image<br/>UKI]
     MEASURE[TPM PCR<br/>Measurements]
@@ -94,6 +94,9 @@ The easiest way to get started with SecureBoot is to download the <a href={`http
 boot it on a UEFI-enabled system which has SecureBoot enabled in setup mode.
 
 The ISO bootloader will enroll the keys in the UEFI firmware, and boot the Talos Linux in SecureBoot mode.
+
+> Note: Automatic key enrollment only happens when running in a virtual machine — the default `secure-boot-enroll` mode is `if-safe`, which only auto-enrolls under virtualization. On bare-metal, enroll the keys manually from the boot menu as described below, or build a SecureBoot ISO with `secure-boot-enroll` set to `force` for unattended enrollment.
+
 The install should be performed using SecureBoot installer (put it Talos machine configuration):
 
 <CodeBlock>
@@ -110,8 +113,9 @@ In this guide we will use the ISO image to boot Talos Linux in SecureBoot mode, 
 We will use one the ways to generate and submit machine configuration to the node, please refer to the [Production Notes](../../getting-started/prodnotes) for the full guide.
 
 First, make sure SecureBoot is enabled in the UEFI firmware.
-For the first boot, the UEFI firmware should be in the setup mode, so that the keys can be enrolled into the UEFI firmware automatically.
-If the UEFI firmware does not support automatic enrollment, you may need to hit Esc to force the boot menu to appear, and select the `Enroll Secure Boot keys: auto` option.
+For the first boot, the UEFI firmware should be in the setup mode, so that the keys can be enrolled into the UEFI firmware.
+On a virtual machine the keys are enrolled automatically (the default `secure-boot-enroll` mode is `if-safe`, which only auto-enrolls under virtualization).
+On bare-metal, hit Esc to bring up the boot menu and select the `Enroll Secure Boot keys: auto` option to enroll the keys.
 
 > Note: There are other ways to enroll the keys into the UEFI firmware, but this is out of scope of this guide.
 
