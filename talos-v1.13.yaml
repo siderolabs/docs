@@ -200,6 +200,7 @@ navigation:
                     - "storage-and-disk-management/disk-management/overview"
                     - "storage-and-disk-management/disk-management/common"
                     - "storage-and-disk-management/disk-management/existing"
+                    - "storage-and-disk-management/disk-management/external"
                     - "storage-and-disk-management/disk-management/layout"
                     - "storage-and-disk-management/disk-management/raw"
                     - "storage-and-disk-management/disk-management/resources"

@@ -1,16 +1,16 @@
 navigation:
-  version: "v1.13"
+  version: "v1.14"
   tabs:
     - tab: "Talos"
       icon: "/images/talos.svg"
       groups:
         - group: "Overview"
-          folder: "talos/v1.13/overview"
+          folder: "talos/v1.14/overview"
           pages:
             - "what-is-talos.mdx"
 
         - group: "Getting Started"
-          folder: "talos/v1.13/getting-started"
+          folder: "talos/v1.14/getting-started"
           pages:
             - "system-requirements.mdx"
             - "talosctl.mdx"
@@ -22,7 +22,7 @@ navigation:
             - "support-matrix.mdx"
 
         - group: "Platform specific installation"
-          folder: "talos/v1.13/platform-specific-installations"
+          folder: "talos/v1.14/platform-specific-installations"
           pages:
             - group: "Bare Metal Platforms"
               pages:
@@ -35,7 +35,7 @@ navigation:
                 - "bare-metal-platforms/pxe"
                 - "bare-metal-platforms/secureboot"
             - group: "Virtualized Platforms"
-              folder: "talos/v1.13/platform-specific-installations"
+              folder: "talos/v1.14/platform-specific-installations"
               pages:
                 - "virtualized-platforms/hyper-v"
                 - "virtualized-platforms/kvm"
@@ -63,7 +63,7 @@ navigation:
                 - "cloud-platforms/upcloud"
                 - "cloud-platforms/vultr"
             - group: "Local Platforms"
-              folder: "talos/v1.13/platform-specific-installations"
+              folder: "talos/v1.14/platform-specific-installations"
               pages:
                 - "local-platforms/docker"
                 - "local-platforms/qemu"
@@ -90,7 +90,7 @@ navigation:
             - "omni.mdx"
 
         - group: "Deploying and managing workloads"
-          folder: "talos/v1.13/deploy-and-manage-workloads"
+          folder: "talos/v1.14/deploy-and-manage-workloads"
           pages:
             - "interactive-dashboard.mdx"
             - "scaling-up.mdx"
@@ -98,7 +98,7 @@ navigation:
             - "workers-on-controlplane.mdx"
 
         - group: "Networking"
-          folder: "talos/v1.13/networking"
+          folder: "talos/v1.14/networking"
           pages:
             - group: "Network Configuration"
               pages:
@@ -133,7 +133,7 @@ navigation:
             - "siderolink.mdx"
 
         - group: "Security"
-          folder: "talos/v1.13/security"
+          folder: "talos/v1.14/security"
           pages:
             - "verifying-image-signatures.mdx"
             - "ca-rotation.mdx"
@@ -149,7 +149,7 @@ navigation:
             - "subscribe-to-security-advisories.mdx"
 
         - group: "Build and extend Talos"
-          folder: "talos/v1.13/build-and-extend-talos"
+          folder: "talos/v1.14/build-and-extend-talos"
           pages:
             - group: "Custom Images & Development"
               pages:
@@ -163,7 +163,7 @@ navigation:
                 - "custom-images-and-development/system-extensions"
                 - "custom-images-and-development/talos-development-tools"
             - group: "Cluster Operations & Maintenance"
-              folder: "talos/v1.13/build-and-extend-talos"
+              folder: "talos/v1.14/build-and-extend-talos"
               pages:
                 - "cluster-operations-and-maintenance/disaster-recovery"
                 - "cluster-operations-and-maintenance/cgroups-analysis"
@@ -171,7 +171,7 @@ navigation:
                 - "cluster-operations-and-maintenance/watchdog"
 
         - group: "Configure your Talos cluster"
-          folder: "talos/v1.13/configure-your-talos-cluster"
+          folder: "talos/v1.14/configure-your-talos-cluster"
           pages:
             - group: "System Configuration"
               pages:
@@ -192,13 +192,14 @@ navigation:
                 - "images-container-runtime/image-cache-registry-mirror"
                 - "images-container-runtime/static-pods"
             - group: "Storage & Disk Management"
-              folder: "talos/v1.13/configure-your-talos-cluster"
+              folder: "talos/v1.14/configure-your-talos-cluster"
               pages:
                 - group: "Disk Management"
                   pages:
                     - "storage-and-disk-management/disk-management/overview"
                     - "storage-and-disk-management/disk-management/common"
                     - "storage-and-disk-management/disk-management/existing"
+                    - "storage-and-disk-management/disk-management/external"
                     - "storage-and-disk-management/disk-management/layout"
                     - "storage-and-disk-management/disk-management/raw"
                     - "storage-and-disk-management/disk-management/resources"
@@ -221,14 +222,14 @@ navigation:
                 - "lifecycle-management/resetting-a-machine"
 
         - group: "Advanced guides"
-          folder: "talos/v1.13/advanced-guides"
+          folder: "talos/v1.14/advanced-guides"
           pages:
             - "install-kubevirt.mdx"
             - "migrating-from-kubeadm.mdx"
             - "SBOM.mdx"
 
         - group: "Reference"
-          folder: "talos/v1.13/reference"
+          folder: "talos/v1.14/reference"
           pages:
             - "configuration/overview.mdx"
             - "configuration/v1alpha1/config.mdx"
@@ -306,14 +307,14 @@ navigation:
                     - "configuration/siderolink/siderolinkconfig.mdx"
 
         - group: "Troubleshooting and support"
-          folder: "talos/v1.13/troubleshooting"
+          folder: "talos/v1.14/troubleshooting"
           pages:
             - "troubleshooting.mdx"
             - "talosctl-debug.mdx"
             - "faqs.mdx"
 
         - group: "Learn more"
-          folder: "talos/v1.13/learn-more"
+          folder: "talos/v1.14/learn-more"
           pages:
             - "architecture.mdx"
             - "components.mdx"
@@ -325,7 +326,6 @@ navigation:
             - "networking-resources.mdx"
             - "philosophy.mdx"
             - "process-capabilities.mdx"
-            - "subscribe-to-security-advisories.mdx"
             - "talos-for-linux-admins.mdx"
             - "talos-network-connectivity.mdx"
             - "talos-platform-configuration.mdx"

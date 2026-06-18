@@ -4,3 +4,11 @@ _out/
 
 # Local Netlify folder
 .netlify
+
+# Temp file written by upgrade-talos-version
+.upgrade-version-tmp
+
+# Go build artifacts
+version-upgrade-gen/version-upgrade-gen
+changelog-gen/changelog-gen
+docs-gen/docs-gen

@@ -22,6 +22,7 @@ navigation:
             - "storage.mdx"
             - "local-storage.mdx"
             - "ceph-with-rook.mdx"
+            - "longhorn.mdx"
             - "simplyblock-storage.mdx"
             - "synology-csi.mdx"
 

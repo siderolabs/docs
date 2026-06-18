@@ -7,6 +7,7 @@ PORT := 3000
 DOCS_GEN_IMAGE := ghcr.io/siderolabs/docs-gen:latest
 DOCS_CONVERT_IMAGE := ghcr.io/siderolabs/docs-convert:latest
 CHANGELOG_GEN_IMAGE := ghcr.io/siderolabs/changelog-gen:latest
+VERSION_UPGRADE_IMAGE := ghcr.io/siderolabs/version-upgrade-gen:latest
 TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.13.0
 TALOS_VERSION := v1.13
 VALE_IMAGE := jdkato/vale:latest
@@ -194,3 +195,35 @@ changelog: ## Generate the changelog from GitHub releases
 .PHONY: changelog-local
 changelog-local: ## Generate the changelog using local Go build
 	cd changelog-gen && go run . --output ../public/changelog.mdx
+
+.PHONY: validate-docs-nav
+validate-docs-nav: ## Validate all talos yaml nav configs match their content directories
+	cd docs-validate && go run . --workspace ..
+
+.PHONY: upgrade-talos-version
+upgrade-talos-version: ## Upgrade docs to the next Talos minor version (fetches versions from GitHub)
+	docker run --rm -it -v $(PWD):/workspace -w /workspace \
+		-e GITHUB_TOKEN=$(GITHUB_TOKEN) \
+		$(VERSION_UPGRADE_IMAGE)
+	$(eval NEW_VERSION := $(shell cat .upgrade-version-tmp))
+	@rm -f .upgrade-version-tmp
+	$(MAKE) changelog
+	$(MAKE) docs.json
+	$(MAKE) validate-docs-nav
+	@echo ""
+	@echo "Upgrade to $(NEW_VERSION) complete! Run: make preview to preview your $(NEW_VERSION) docs"
+
+.PHONY: upgrade-talos-version-local
+upgrade-talos-version-local: ## Upgrade docs to the next Talos minor version using local Go build
+	cd version-upgrade-gen && go run . --workspace ..
+	$(eval NEW_VERSION := $(shell cat .upgrade-version-tmp))
+	@rm -f .upgrade-version-tmp
+	$(MAKE) changelog
+	$(MAKE) docs.json
+	$(MAKE) validate-docs-nav
+	@echo ""
+	@echo "Upgrade to $(NEW_VERSION) complete! Run: make preview to preview your $(NEW_VERSION) docs"
+
+.PHONY: build-version-upgrade-container
+build-version-upgrade-container: ## Build the version-upgrade-gen container locally
+	docker build -t $(VERSION_UPGRADE_IMAGE) ./version-upgrade-gen
