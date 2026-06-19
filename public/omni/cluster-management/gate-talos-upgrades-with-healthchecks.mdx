@@ -1,0 +1,255 @@
+---
+title: Gate Talos Upgrades with Healthchecks
+description: Define Kubernetes Job healthchecks in a cluster template to gate Talos Linux upgrades until your workloads report healthy.
+---
+
+Advanced healthchecks let you hold back a Talos Linux upgrade until your own workloads report that they are ready for a node to go down.
+A healthcheck is a Kubernetes [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) that Omni runs inside the workload cluster before it starts upgrading the next node.
+While any healthcheck is failing or still running, Omni holds the upgrade. Once all healthchecks pass, the upgrade proceeds.
+
+This is useful when a node going down would otherwise disrupt a stateful workload, for example, holding the upgrade while a storage system is rebalancing or a database is still catching up on replication.
+
+<Note>Healthchecks gate Talos Linux version upgrades only. They do not gate Kubernetes upgrades or configuration changes.</Note>
+
+## Prerequisites
+
+Before you get started, you must have the following:
+
+- An Omni account with permission to manage clusters.
+- `omnictl` installed and configured. See [Install and configure omnictl](../getting-started/install-and-configure-omnictl).
+- A cluster managed by a [cluster template](../reference/cluster-templates).
+
+## How healthcheck gating works
+
+When you upgrade Talos Linux on a cluster that defines healthchecks, Omni evaluates every healthcheck before it lets the next node upgrade:
+
+- Omni creates each healthcheck's Job in the workload cluster and waits for it to finish.
+- While any Job is still running or has failed, Omni holds the upgrade by keeping the upgrade quota at zero, so no new node is taken down. It re-runs the checks on an interval until they pass.
+- When a Job **succeeds** (exits `0`), Omni deletes it and lets the upgrade proceed.
+- When a Job **fails**, Omni surfaces the failure reason in the cluster's Talos upgrade status and re-creates the Job to retry on the next interval.
+
+Omni runs the checks repeatedly throughout the upgrade, so they continue to gate every subsequent node, not just the first one.
+
+<Note>Each check is re-evaluated on its `interval` (default `30s`, minimum `5s`). A failing check holds the upgrade at the shortest interval requested by any failing check.</Note>
+
+## Define a healthcheck
+
+Healthchecks are defined under the `healthchecks` field of `kubernetes` in the [`Cluster` document](../reference/cluster-templates#cluster) of a cluster template.
+Each entry defines a single Kubernetes Job, supplied either inline with `job` or from an external file with `file`.
+
+| Field | Type | Description |
+|:------|:-----|:------------|
+| `name` | string | Unique name for the healthcheck, used to derive the Job name. Required unless `idOverride` is set. |
+| `idOverride` | string | Overrides the generated resource ID. When set, `name` is not required. You normally won't need this; it's for when you want a stable resource ID independent of name" |
+| `job` | string | Inline Kubernetes Job manifest. Mutually exclusive with `file`. |
+| `file` | string | Path to a file containing the Job manifest, relative to the working directory when running `omnictl`. Mutually exclusive with `job`. |
+| `interval` | string | How often Omni re-checks while it is holding an upgrade. Must be a valid [Go duration](https://pkg.go.dev/time#ParseDuration). Defaults to `30s`, minimum `5s`. |
+| `labels` | map[string]string | Labels to apply to the healthcheck resource. |
+| `annotations` | map[string]string | Annotations to apply to the healthcheck resource. |
+
+<Warning>The manifest must be a Kubernetes Job (`kind: Job`, `apiVersion: batch/v1`). `job` and `file` are mutually exclusive, and exactly one of them is required.</Warning>
+
+Omni owns the Job's identity so that it can track, recreate, and clean up the Job. It sets the Job's name and adds its own labels and annotations, but everything else, including the namespace, service account, containers, and command, is yours.
+If the Job manifest does not set a namespace, the Job runs in the `default` namespace.
+
+### Inline healthcheck
+
+Use `job` to embed the Job manifest directly in the cluster template:
+
+```yaml
+kind: Cluster
+name: example
+kubernetes:
+  version: v1.35.0
+  healthchecks:
+    - name: nodes-ready
+      interval: 30s
+      job: |
+        apiVersion: batch/v1
+        kind: Job
+        spec:
+          backoffLimit: 0
+          template:
+            spec:
+              restartPolicy: Never
+              containers:
+                - name: check
+                  image: bitnami/kubectl
+                  command: ["kubectl", "wait", "--for=condition=Ready", "nodes", "--all", "--timeout=10s"]
+talos:
+  version: v1.11.0
+```
+
+### External file healthcheck
+
+Use `file` to reference an external YAML file containing the Job manifest.
+The file path is relative to the working directory when running `omnictl`.
+
+```yaml
+kind: Cluster
+name: example
+kubernetes:
+  version: v1.35.0
+  healthchecks:
+    - name: nodes-ready
+      file: healthchecks/nodes-ready.yaml
+talos:
+  version: v1.11.0
+```
+
+## Return failure details to the upgrade status
+
+When a healthcheck Job fails, Omni surfaces the failed container's output as the failure reason in the cluster's Talos upgrade status.
+By default, Omni captures the tail of the container's output (its `stderr` and `stdout`) on a non-zero exit, so anything your check writes before exiting becomes the message shown in Omni.
+
+To make failures report a clear, human-readable reason:
+
+- Set `backoffLimit: 0` and `restartPolicy: Never` so a single failed run reports the failure promptly instead of being retried inside the Job.
+- Write a useful message to `stderr` before exiting non-zero.
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: check
+          image: bitnami/kubectl
+          command:
+            - sh
+            - -c
+            - |
+              pending=$(kubectl get pods -A --field-selector=status.phase=Pending -o name)
+              if [ -n "$pending" ]; then
+                echo "pods still pending, holding upgrade:" >&2
+                echo "$pending" >&2
+                exit 1
+              fi
+```
+
+<Note>The failure reason shown in the upgrade status is truncated to 256 characters, so keep the most important detail first.</Note>
+
+## A complete example: gate upgrades on a healthy Ceph cluster
+
+A common use case is to avoid taking a node down while a storage system is unhealthy.
+This example gates Talos upgrades on a healthy [Rook](https://rook.io/) Ceph cluster: the upgrade is held while Ceph is not `HEALTH_OK`, for example while placement groups are still rebalancing after the previous node rebooted.
+
+The healthcheck Job only defines the check itself. Anything the check depends on, such as a service account and the RBAC it needs to read the Rook-managed connection details, is defined separately as [Kubernetes manifests](../cluster-management/sync-kubernetes-manifests) in the same cluster template file.
+
+```yaml
+kind: Cluster
+name: ceph-gated
+kubernetes:
+  version: v1.35.0
+  manifests:
+    # Supporting resources the healthcheck Job depends on. These are not part of
+    # the healthcheck itself, so they are defined as regular Kubernetes manifests.
+    - name: ceph-healthcheck-rbac
+      mode: full
+      inline:
+        - apiVersion: v1
+          kind: ServiceAccount
+          metadata:
+            name: omni-ceph-healthcheck
+            namespace: rook-ceph
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: Role
+          metadata:
+            name: omni-ceph-healthcheck
+            namespace: rook-ceph
+          rules:
+            - apiGroups: [""]
+              resources: ["configmaps"]
+              resourceNames: ["rook-ceph-mon-endpoints"]
+              verbs: ["get"]
+            - apiGroups: [""]
+              resources: ["secrets"]
+              resourceNames: ["rook-ceph-mon", "rook-ceph-config"]
+              verbs: ["get"]
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: RoleBinding
+          metadata:
+            name: omni-ceph-healthcheck
+            namespace: rook-ceph
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: Role
+            name: omni-ceph-healthcheck
+          subjects:
+            - kind: ServiceAccount
+              name: omni-ceph-healthcheck
+              namespace: rook-ceph
+  healthchecks:
+    - name: ceph-health
+      interval: 30s
+      job: |
+        apiVersion: batch/v1
+        kind: Job
+        metadata:
+          namespace: rook-ceph
+        spec:
+          backoffLimit: 0
+          template:
+            spec:
+              restartPolicy: Never
+              serviceAccountName: omni-ceph-healthcheck
+              containers:
+                - name: check
+                  image: quay.io/ceph/ceph:v18
+                  command:
+                    - sh
+                    - -c
+                    - |
+                      health=$(ceph health)
+                      if [ "$health" != "HEALTH_OK" ]; then
+                        echo "ceph is not healthy, holding upgrade:" >&2
+                        ceph status >&2
+                        exit 1
+                      fi
+talos:
+  version: v1.11.0
+---
+kind: ControlPlane
+machines:
+  - 27c16241-96bf-4f17-9579-ea3a6c4a3ca8
+---
+kind: Workers
+machines:
+  - b885f565-b64f-4c7a-a1ac-d2c8c2781373
+```
+
+<Note>The supporting manifests must reconcile before the check can pass. Define them in the same template so that the service account and RBAC exist by the time Omni runs the Job.</Note>
+
+## Apply the cluster template
+
+Once the cluster template defines your healthchecks, apply it using `omnictl`:
+
+```bash
+omnictl cluster template sync --file cluster.yaml
+```
+
+The healthchecks take effect on the next Talos Linux upgrade. See [Upgrade Omni Clusters](../cluster-management/upgrading-clusters) for how to start an upgrade.
+
+## Check healthcheck status during an upgrade
+
+While an upgrade is held by a failing healthcheck, the reason is reported in the cluster's `TalosUpgradeStatus` resource.
+To inspect it, run the following command, replacing `<cluster-name>` with the name of your cluster:
+
+```bash
+omnictl get talosupgradestatus <cluster-name> -o yaml
+```
+
+While a check is failing, the status `step` shows a message such as `waiting for healthchecks to pass: "ceph-health": ceph is not healthy, holding upgrade: ...`, including the output your check wrote to `stderr`.
+
+## Limitations
+
+Here are some limitations with using healthchecks:
+
+- Healthchecks gate Talos Linux version upgrades only. They do not gate Kubernetes upgrades or configuration changes.
+- The healthcheck manifest must be a Kubernetes Job (`kind: Job`).
+- Only the Job is defined in a healthcheck. Any supporting resources, such as service accounts, RBAC, or config maps, must be defined separately as [Kubernetes manifests](../cluster-management/sync-kubernetes-manifests) in the same cluster template.
+- The failure reason surfaced in the upgrade status is truncated to 256 characters.
+- Healthchecks are not visible or manageable from the Omni UI at this time.

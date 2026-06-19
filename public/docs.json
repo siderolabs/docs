@@ -2433,6 +2433,7 @@
               "omni/cluster-management/create-a-hybrid-cluster",
               "omni/cluster-management/sync-kubernetes-manifests",
               "omni/cluster-management/upgrading-clusters",
+              "omni/cluster-management/gate-talos-upgrades-with-healthchecks",
               "omni/cluster-management/expose-a-workload-via-service-proxy",
               "omni/cluster-management/export-a-cluster-template-from-a-cluster-created-in-the-ui",
               "omni/cluster-management/etcd-backups",

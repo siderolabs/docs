@@ -81,6 +81,7 @@ navigation:
             - "create-a-hybrid-cluster.mdx"
             - "sync-kubernetes-manifests.mdx"
             - "upgrading-clusters.mdx"
+            - "gate-talos-upgrades-with-healthchecks.mdx"
             - "expose-a-workload-via-service-proxy.mdx"
             - "export-a-cluster-template-from-a-cluster-created-in-the-ui.mdx"
             - "etcd-backups.mdx"

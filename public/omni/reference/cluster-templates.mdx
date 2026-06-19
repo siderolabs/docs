@@ -131,6 +131,7 @@ kernelArgs:
 | `annotations`                           | map[string]string        | Annotations to be applied to the cluster.                                                                                                                                                                                   |
 | `kubernetes.version`                    | string                   | Kubernetes version to use, `vA.B.C`.                                                                                                                                                                                        |
 | `kubernetes.manifests`                  | array[Manifest]          | List of Kubernetes manifests to deploy and sync to the cluster. Each entry is applied independently. See [Sync Kubernetes Manifests](../cluster-management/sync-kubernetes-manifests).                                                                                         |
+| `kubernetes.healthchecks`               | array[Healthcheck]       | List of advanced healthchecks that gate Talos Linux upgrades. See [Gate Talos Upgrades with Healthchecks](../cluster-management/gate-talos-upgrades-with-healthchecks).                                                                                                      |
 | `talos.version`                         | string                   | Talos version to use, `vA.B.C`.                                                                                                                                                                                             |
 | `features.enableWorkloadProxy`          | boolean                  | Whether to enable the workload proxy feature.<br/>Defaults to `false`.                                                                                                                                                      |
 | `features.useEmbeddedDiscoveryService`  | boolean                  | Whether to use the embedded discovery service that runs inside the Omni instance instead of the public one (`discovery.talos.dev`).<br/>Defaults to `false`. It is only valid if the Omni instance has the feature enabled. |
@@ -352,6 +353,44 @@ The `manifests` field under `kubernetes` in the `Cluster` document lets you defi
 | `file` | string | Path to an external YAML file, relative to the working directory when running `omnictl`.|
 
 For full usage details and examples, see [Sync Kubernetes Manifests](../cluster-management/sync-kubernetes-manifests).
+
+### `kubernetes.healthchecks`
+
+The `healthchecks` field under `kubernetes` in the `Cluster` document defines advanced healthchecks that gate Talos Linux upgrades. Each entry is a Kubernetes Job that Omni runs in the workload cluster before upgrading the next node. While any healthcheck is failing or still running, Omni holds the upgrade.
+
+```yaml
+kind: Cluster
+name: example
+kubernetes:
+  version: v1.35.0
+  healthchecks:
+    - name: nodes-ready
+      interval: 30s
+      job: |
+        apiVersion: batch/v1
+        kind: Job
+        spec:
+          backoffLimit: 0
+          template:
+            spec:
+              restartPolicy: Never
+              containers:
+                - name: check
+                  image: bitnami/kubectl
+                  command: ["kubectl", "wait", "--for=condition=Ready", "nodes", "--all", "--timeout=10s"]
+```
+
+| Field | Type | Description |
+|:------|:-----|:------------|
+| `name` | string | Unique name for the healthcheck, used to derive the Job name. Required unless `idOverride` is set. |
+| `idOverride` | string | Overrides the generated resource ID. When set, `name` is not required. You normally won't need this; it's for when you want a stable resource ID independent of name |
+| `job` | string | Inline Kubernetes Job manifest. Mutually exclusive with `file`. |
+| `file` | string | Path to a file containing the Job manifest, relative to the working directory when running `omnictl`. Mutually exclusive with `job`. |
+| `interval` | string | How often Omni re-checks while it is holding an upgrade. Must be a valid [Go duration](https://pkg.go.dev/time#ParseDuration). Defaults to `30s`, minimum `5s`. |
+| `labels` | map[string]string | Labels to apply to the healthcheck resource. |
+| `annotations` | map[string]string | Annotations to apply to the healthcheck resource. |
+
+For full usage details and examples, see [Gate Talos Upgrades with Healthchecks](../cluster-management/gate-talos-upgrades-with-healthchecks).
 
 ### `kernelArgs`
 
