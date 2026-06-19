@@ -1,0 +1,98 @@
+---
+title: "Production vs. Non-Production Use Under the Business Source License"
+description: "Interpretive guidance from Sidero Labs on applying the Business Source License's production and non-production distinction to common Omni deployment patterns."
+---
+
+Omni is distributed under the Business Source License 1.1 (BSL / BUSL). The license lets anyone read, modify, and build on Omni freely, and run it for non-production use at no charge. Production use requires a commercial license: either a self-hosted Omni subscription, or Sidero Labs' hosted SaaS offering, which is licensed for production by default.
+
+The line between those two cases comes directly from the license's Additional Use Grant:
+
+> *"You may make non-production use of the Licensed Work, including testing and evaluation of the Licensed Work itself, or personal use in a home lab environment. Use of the Licensed Work to host, run, test, or support any environment on which Customer's own development, operations, or business depends is not non-production use and requires a commercial license, regardless of how that environment is designated."*
+
+That grant is the entirety of what the license says about production vs. non-production use. Everything below it in this guide is Sidero Labs' interpretation of how the grant applies to real deployments, not additional license text.
+
+The grant makes two things free — evaluating Omni itself, and personal home-lab use — and treats everything else as production, expressly including any environment your own development, operations, or business depends on, regardless of how it's labeled. 
+
+The judgment calls that remain are about applying that line to real deployments, particularly standing staging, QA, and internal test environments. The rest of this guide works through them in practical terms.
+
+## How to tell if you need a commercial license
+
+Most cases come down to a single underlying question:
+
+> Does your organization depend on this Omni deployment, day to day, to develop, test, run, or deliver its own software or business?
+
+If the answer is yes, you're using a production instance, and a commercial license is required, regardless of what the environment is called (production, staging, QA, dev) or how many nodes it has. If the answer is no, you're using a non-production instance, and free to run Omni without a license.
+
+Two patterns account for most of the edge cases people run into:
+
+* The label on an environment doesn't decide its classification. "Staging," "QA," "test," and "dev" do not, by themselves, make an environment non-production. What matters is whether your organization depends on that environment to do its own work. A 600-node staging fleet your engineers rely on to test your product before release is production, regardless of its name, and regardless of whether any customer connects to it.
+* What you're testing matters more than the word "test." Testing Omni itself, to decide whether to adopt it, is non-production. Using Omni as the standing platform on which you test your own software is production.
+
+### What stays free
+
+A handful of patterns consistently fall on the non-production side of the line:
+
+* Evaluating, learning, or running a proof of concept or bake-off of Omni itself, at any scale, for as long as the evaluation genuinely lasts
+* A developer spinning up a throwaway cluster to try something, with nothing depending on it
+* Home labs and other personal, non-commercial use
+* Internal training or upskilling, where staff are learning Omni on throwaway clusters
+* Ephemeral demo environments spun up and torn down for a presentation
+
+### What requires a commercial license
+
+Outside of that list, the deployment is almost certainly production use, including:
+
+* Any standing environment your organization depends on to develop, test, run, or deliver its own software or business, such as production, staging, QA, UAT, or persistent dev/test platforms
+* Customer-facing or revenue-generating applications
+* Internal applications and services your organization relies on day to day
+* CI/CD, build, artifact, or delivery infrastructure your engineering org depends on
+* Persistent staging, QA, or UAT fleets your team relies on, even if they test only your own software and no customer connects to them
+* Disaster-recovery, standby, or failover environments supporting any of the above
+* Managing client clusters as a service provider
+* Delivering training, courses, or hands-on labs as a commercial service where customers connect to Omni-managed environments
+
+### Edge cases worth knowing
+
+A few patterns are easy to misclassify even once you know the rule:
+
+* **"It's only staging or test, and no customer touches it."** This is still production use. The non-production "testing" described in the license refers to testing Omni itself. A standing staging or test fleet your organization relies on to test its own software is production, regardless of its name and regardless of whether anyone outside the organization connects to it.
+* **Throwaway vs. standing.** The dividing line is organizational dependence, not literal uptime. A developer's scratch cluster, created and destroyed at will, is non-production. A platform the team relies on every day is production, even if individual nodes are torn down and rebuilt nightly.
+* **Evaluating Omni at scale.** A genuine evaluation of Omni itself stays non-production even if it's large or runs for weeks, until the point you start relying on it to run, build, or test your own software, at which point it becomes production.
+
+## Common scenarios and quick reference
+
+The rules above resolve most cases, and it helps to see them applied at scale and laid out side by side.
+
+### A worked example
+
+An enterprise runs Omni across 1,000 production nodes serving its applications, plus 600 staging nodes used to test its own software before release. No customer connects to the staging fleet.
+
+Both fleets require a commercial license. The production fleet falls under the license's production-use requirement directly. The staging fleet is production use as well, because it is standing infrastructure the organization depends on every day to test its own software; the "staging" label and the absence of outside users don't change that. The only use in this scenario that would stay free is a developer separately spinning up a throwaway cluster to evaluate a new Omni feature, or someone running Omni in a home lab, apart from the standing fleets.
+
+### Quick reference table
+
+The table below maps frequent scenarios to a classification and the reasoning behind it:
+
+| Scenario | Classification | Why |
+| --- | --- | --- |
+| Evaluating Omni, proof of concept, or bake-off, at any scale | Non-production | You're assessing Omni itself, not running your own work on it |
+| Developer spins up a throwaway cluster to experiment, nothing relies on it | Non-production | Throwaway use; the organization doesn't depend on it |
+| Home lab or other personal, non-commercial use | Non-production | No organization or customer relies on it |
+| Internal training, staff learning Omni on throwaway clusters | Non-production | Learning Omni, nothing depends on it |
+| Ephemeral demo sandbox for a presentation | Non-production | Spun up and torn down; nothing relies on it |
+| Persistent staging or QA/UAT fleet testing your own software (e.g., 600 nodes) | Production | Standing infrastructure the org depends on; label and lack of external users don't matter |
+| CI/CD, build, artifact, or delivery infrastructure the eng org depends on | Production | Standing infrastructure the organization relies on day to day |
+| Standing internal dev platform engineers rely on every day | Production | The org depends on it, even if individual nodes are recycled |
+| Internal apps or services your organization relies on to operate | Production | Operational dependency |
+| Customer-facing or revenue-generating applications | Production | Real users depend on it |
+| Disaster recovery, or hot/warm standby for any of the above | Production | Exists to carry production workloads |
+| Managing client clusters as a service provider | Production | Commercial service delivery |
+| Commercial training business, students connect to Omni-managed labs they paid for | Production | Omni is the substrate of a paid service customers depend on |
+
+Even at this scale, the underlying rule stays the same: there is no node count or usage level small enough to stay free once a deployment qualifies as production, and there is no free production tier regardless of size. If you would rather not run the server yourself, hosted Omni is licensed for production use by default.
+
+If you are not sure where your deployment falls, contact us with details about what you are running and we can help classify it. Reach us at sales@siderolabs.com, or see hosted Omni pricing at [siderolabs.com/pricing](https://www.siderolabs.com/pricing).
+
+---
+
+*This document reflects Sidero Labs' good-faith interpretation of "production use" under the Business Source License 1.1 for Omni, and may be updated over time. It does not modify the license or any agreement between you and Sidero Labs. The Additional Use Grant quoted above is the authoritative license text; everything else in this guide is interpretation.*

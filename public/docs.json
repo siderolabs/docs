@@ -2368,6 +2368,7 @@
               "omni/self-hosted/options-for-running-omni",
               "omni/self-hosted/omni-on-prem-hardware-requirements",
               "omni/self-hosted/run-omni-on-prem",
+              "omni/self-hosted/production-vs-non-production",
               "omni/self-hosted/omni-configuration-example",
               "omni/self-hosted/enable-workload-proxy",
               "omni/self-hosted/run-an-etcd-cluster",

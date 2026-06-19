@@ -25,6 +25,7 @@ navigation:
             - "options-for-running-omni.mdx"
             - "omni-on-prem-hardware-requirements.mdx"
             - "run-omni-on-prem.mdx"
+            - "production-vs-non-production.mdx"
             - "omni-configuration-example.mdx"
             - "enable-workload-proxy.mdx"
             - "run-an-etcd-cluster.mdx"
