@@ -1,6 +1,6 @@
 ---
 title: Set Initial Machine Labels
-description: Configure machine labels at boot time for automated grouping and selection in Omni.
+description: Set machine labels at boot time and understand labels derived from platform metadata for automated grouping and selection in Omni.
 ---
 
 import { release } from '/snippets/custom-variables.mdx';
@@ -152,9 +152,28 @@ The standalone [Image Factory web UI](https://factory.talos.dev) does not curren
 However, the Image Factory UI built into Omni **does** support initial machine labels.
 </Warning>
 
+## Set machine user labels using platform metadata
+
+Omni can automatically create machine user labels from the platform metadata tags that the underlying platform exposes to Talos Linux. For example, an EC2 instance's tags are exposed by Talos as platform metadata tags, and Omni surfaces them as machine labels when the machine joins. This works for any platform that exposes tags through Talos `PlatformMetadata`, not just AWS EC2.
+
+You can inspect the platform metadata tags Talos sees on a machine with:
+
+```bash
+omnictl get machinestatus -oyaml <machine-id> | yq '.spec.platformmetadata.tags'
+```
+
+
+Machine user labels based on platform metadata are populated **once**, when the machine first joins Omni. After the labels are created successfully, Omni records that the initialization has happened and does not reconcile these labels ever again for that machine. As a result:
+
+- Rebooting the machine does **not** recreate the labels.
+- Changing the platform tags after the machine has joined (for example, editing the instance tags in EC2) is **not** reflected as updated labels in Omni.
+
+
+Labels created from platform metadata behave like any other user label. You can edit or remove them after they are created, and your changes won't get overwritten. If a platform metadata tag has the same key as a label you set yourself, the pre-existing label takes precedence. 
+
 ## Verifying labels
 
-After a machine boots from the labeled media or PXE URL and registers with Omni, you can verify its labels using the Omni UI or omnictl.
+After a machine registers with Omni, you can verify its labels using the Omni UI or omnictl. This applies both to user labels set at boot (from labeled media or a PXE URL) and to user labels derived from platform metadata. They appear alongside one another.
 
 To check labels with omnictl, run either of the following commands, replacing `<machine-id>` with your machine's ID:
 
