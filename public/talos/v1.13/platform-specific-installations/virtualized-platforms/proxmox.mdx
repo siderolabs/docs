@@ -58,11 +58,9 @@ QEMU guest agent support for guest VM shutdowns requires a custom ISO and instal
       </CodeBlock>
     - Download the above ISO and take note of the installer image URL, you will need it later
 
-
 2. **Enable QEMU Guest Agent in Proxmox:** Once your VM is created, go to **VM → Options** and set **QEMU Guest Agent** to **Enabled**.
 
 <Warning> Only enable QEMU Guest Agent in Proxmox if you built the ISO with the `siderolabs/qemu-guest-agent` extension. Enabling it without the extension will only generate log spam and provide no functionality. See [Image Factory](../../learn-more/image-factory) for more on building custom ISOs.</Warning>
-
 
 ### VM resource requirements
 

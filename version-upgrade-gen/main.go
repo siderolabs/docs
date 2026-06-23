@@ -257,7 +257,6 @@ func fetchRelease(repo, tag, token string) (*Release, error) {
 	return &release, nil
 }
 
-
 // parseField extracts the first capture group from a regex match against text.
 func parseField(text string, re *regexp.Regexp) string {
 	m := re.FindStringSubmatch(text)
