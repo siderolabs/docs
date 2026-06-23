@@ -495,6 +495,7 @@
                   "talos/v1.13/learn-more/components",
                   "talos/v1.13/learn-more/control-plane",
                   "talos/v1.13/learn-more/controllers-resources",
+                  "talos/v1.13/learn-more/enterprise-image-factory",
                   "talos/v1.13/learn-more/image-factory",
                   "talos/v1.13/learn-more/knowledge-base",
                   "talos/v1.13/learn-more/kubespan",

@@ -320,6 +320,7 @@ navigation:
             - "components.mdx"
             - "control-plane.mdx"
             - "controllers-resources.mdx"
+            - "enterprise-image-factory.mdx"
             - "image-factory.mdx"
             - "knowledge-base.mdx"
             - "kubespan.mdx"
