@@ -5,7 +5,12 @@ description: Configure and install Longhorn distributed block storage on a Talos
 
 import { version } from '/snippets/custom-variables.mdx';
 
-This guide explains how to install Longhorn on a Talos Linux cluster. It covers the required system extensions, disk provisioning with `UserVolumeConfig`, pod security configuration, and the final Helm installation.
+[Longhorn](https://longhorn.io) is a distributed block storage system for Kubernetes that provisions persistent volumes from the local disks of your nodes. It ships with two data engines, and this guide covers installing both on a Talos Linux cluster.
+
+- **V1 Data Engine**: the mature, production-ready default. It builds replicated volumes on a Longhorn-native iSCSI stack and runs on any node that has the required system extensions.
+- **V2 Data Engine**: a newer, SPDK-based engine that delivers higher throughput and lower latency at the cost of extra node configuration. It additionally requires huge pages and a few kernel modules.
+
+Pick the tab for the engine you want to deploy. Both paths cover the required system extensions, disk provisioning with `UserVolumeConfig`, pod security configuration, and the final Helm installation.
 
 ## Prerequisites
 
@@ -27,6 +32,11 @@ Select your Talos version and architecture, add both extensions (`iscsi-tools` a
 
 **If your nodes are already running without these extensions**, upgrade each node to a schematic that includes both extensions. You can generate an updated schematic using the [Talos Image Factory](https://factory.talos.dev/), then follow the <a href={`../../talos/${version}/platform-specific-installations/boot-assets`}>Boot Assets guide</a> to apply it to your existing nodes.
 
+
+<Tabs>
+  <Tab title="V1 Data Engine">
+
+
 ## Step 1: Provision a dedicated disk with UserVolumeConfig
 
 Talos Linux v1.10 introduced **UserVolumeConfig**, which replaces the deprecated `machine.disks` API.
@@ -45,9 +55,9 @@ Use this output to determine which disks should be used for Longhorn storage.
 
 ### 1.2: Create the UserVolumeConfig
 
-Create a `UserVolumeConfig` document to tell Talos which disk to provision for Longhorn. Talos will automatically mount the volume at `/var/mnt/longhorn`.
+Create a <a href={`../../talos/${version}/reference/configuration/block/uservolumeconfig`}>UserVolumeConfig</a> document to tell Talos which disk to provision for Longhorn. Talos will automatically mount the volume at `/var/mnt/longhorn`.
 
-Adjust the `diskSelector.match` and `maxSize` to match your hardware.
+Adjust based on your hardware and the disk you want to use. The example below uses the first NVMe disk that is not a system disk.
 
 ```bash
 cat <<EOF > longhorn-user-disk.yaml
@@ -56,13 +66,12 @@ kind: UserVolumeConfig
 name: longhorn
 provisioning:
   diskSelector:
-    match: disk.transport == 'nvme'
+    match: disk.transport == 'nvme' && !system_disk
   grow: false
-  maxSize: 10GB
 EOF
 ```
 
-<Info> The `diskSelector.match` field accepts [Common Expression Language (CEL)](https://cel.dev) expressions. You can target disks more precisely using expressions such as `disk.size > 50GB` or `disk.model == "Samsung SSD 980"`. Run `talosctl get disks` to see the available fields for your hardware. For more information, refer to the <a href={`../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/disk-management/overview`}>Disk Management documentation</a>.</Info>
+<Info> The `diskSelector.match` field accepts Common Expression Language (CEL) expressions. You can target disks more precisely using expressions such as `disk.size > 50GB` or `disk.model == "Samsung SSD 980"`. Run `talosctl get disks` to see the available fields for your hardware. For more information, refer to the <a href={`../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/disk-management/overview`}>Disk Management documentation</a>.</Info>
 
 ### 1.3: Apply the UserVolumeConfig configuration to storage nodes
 
@@ -98,19 +107,13 @@ done
 
 Longhorn requires privileged containers to manage disks and mount volumes.
 
-Talos enables the **baseline Pod Security profile** by default, which blocks privileged workloads.
+Talos enables the [Pod Security Admission Policies](https://docs.siderolabs.com/kubernetes-guides/security/pod-security#override-the-pod-security-admission-configuration) by default, which blocks the privileged containers.
 
-Create the Longhorn namespace with the privileged security level enabled.
+Create the `longhorn-system` namespace and label it to allow privileged workloads:
 
 ```bash
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: longhorn-system
-  labels:
-    pod-security.kubernetes.io/enforce: privileged
-EOF
+kubectl create namespace longhorn-system
+kubectl label namespace longhorn-system pod-security.kubernetes.io/enforce=privileged
 ```
 
 ## Step 3: Install Longhorn with Helm
@@ -155,6 +158,226 @@ worker-01   True    true              True          2m
 
 Each storage node should appear with `SCHEDULABLE` set to `true` and at least one disk detected.
 
+
+  </Tab>
+
+  <Tab title="V2 Data Engine">
+
+The V2 Data Engine runs Longhorn on top of [SPDK](https://spdk.io) for significantly higher throughput and lower latency than V1. It uses NVMe-over-TCP instead of the iSCSI stack, so each storage node needs three things V1 does not: a **raw, unformatted block device**, huge pages, and a couple of kernel modules.
+
+## Step 1: Provision a raw block device and enable the V2 prerequisites
+
+Unlike V1, the V2 Data Engine stores data on **`block`-type disks** — raw, unformatted block devices. On Talos you allocate one with **RawVolumeConfig**, which carves an unformatted partition out of a disk and exposes it at a stable path. You also need huge pages and the SPDK kernel modules, enabled through the machine configuration.
+
+### 1.1: Inspect available disks
+
+Inspect the disks available on each storage node.
+
+```bash
+talosctl get disks --nodes <node-ip>
+```
+
+Use this output to determine which disks should be used for Longhorn storage.
+
+### 1.2: Create the RawVolumeConfig
+
+Create a <a href={`../../talos/${version}/reference/configuration/block/rawvolumeconfig`}>RawVolumeConfig</a> document to tell Talos which disk to carve the raw partition from. Talos leaves the partition unformatted and exposes it at the stable symlink `/dev/disk/by-partlabel/r-longhorn` (the `r-` prefix plus the volume name form the partition label).
+
+Adjust based on your hardware and the disk you want to use. The example below uses the first NVMe disk that is not a system disk.
+
+```bash
+cat <<EOF > longhorn-raw-disk.yaml
+apiVersion: v1alpha1
+kind: RawVolumeConfig
+name: longhorn
+provisioning:
+  diskSelector:
+    match: disk.transport == 'nvme' && !system_disk
+EOF
+```
+
+<Info> The `diskSelector.match` field accepts Common Expression Language (CEL) expressions. You can target disks more precisely using expressions such as `disk.size > 50GB` or `disk.model == "Samsung SSD 980"`. Run `talosctl get disks` to see the available fields for your hardware. For more information, refer to the <a href={`../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/disk-management/overview`}>Disk Management documentation</a>.</Info>
+
+### 1.3: Enable huge pages and the SPDK kernel modules
+
+Create a second machine configuration patch that reserves huge pages and loads the kernel modules required by SPDK.
+
+```bash
+cat <<EOF > longhorn-v2-engine.yaml
+machine:
+  sysctls:
+    vm.nr_hugepages: "1024"
+  kernel:
+    modules:
+      - name: nvme_tcp
+      - name: vfio_pci
+      - name: uio_pci_generic
+      - name: ublk_drv
+EOF
+```
+
+### 1.4: Apply the configuration to storage nodes
+
+Define the IP addresses of the worker nodes that will provide storage to Longhorn.
+
+Add one entry per worker node that will provide storage to Longhorn:
+
+```bash
+WORKER_IPS=("<WORKER_IP_1>" "<WORKER_IP_2>")
+```
+
+Then apply both patches to each node:
+
+```bash
+for ip in "${WORKER_IPS[@]}"; do
+    echo "Applying patches to worker node: $ip"
+    talosctl patch machineconfig --nodes "$ip" \
+        --patch @longhorn-raw-disk.yaml \
+        --patch @longhorn-v2-engine.yaml
+done
+```
+
+### 1.5: Reboot the nodes
+
+Reboot each worker node to apply the configuration changes:
+
+```bash
+for ip in "${WORKER_IPS[@]}"; do
+  echo "Rebooting node: $ip"
+  talosctl reboot --nodes "$ip"
+done
+```
+
+After the nodes come back up, confirm the huge pages were allocated:
+
+```bash
+talosctl read /proc/meminfo --nodes <node-ip> | grep -i hugepages_total
+```
+
+You should see `HugePages_Total: 1024`.
+
+Then confirm Kubernetes is exposing the huge pages as a schedulable resource:
+
+```bash
+kubectl describe node <node-name> | grep "hugepages-2Mi:"
+```
+
+You should see
+```bash
+  hugepages-2Mi:      2Gi
+  hugepages-2Mi:      2Gi
+```
+
+Then confirm the raw partition was provisioned (note the `r-` prefix on the volume name):
+
+```bash
+talosctl get volumestatus r-longhorn --nodes <node-ip>
+```
+
+The volume should report `PHASE` `ready`. The `LOCATION` column shows the underlying device that the `/dev/disk/by-partlabel/r-longhorn` symlink points to.
+
+## Step 2: Enable privileged pod security
+
+Longhorn requires privileged containers to manage disks and mount volumes.
+
+Talos enables the [Pod Security Admission Policies](https://docs.siderolabs.com/kubernetes-guides/security/pod-security#override-the-pod-security-admission-configuration) by default, which blocks the privileged containers.
+
+Create the `longhorn-system` namespace and label it to allow privileged workloads:
+
+```bash
+kubectl create namespace longhorn-system
+kubectl label namespace longhorn-system pod-security.kubernetes.io/enforce=privileged
+```
+
+## Step 3: Install Longhorn with Helm
+
+Add the Longhorn Helm repository:
+
+```bash
+helm repo add longhorn https://charts.longhorn.io
+helm repo update
+```
+
+Install Longhorn with the V2 Data Engine enabled:
+
+```bash
+helm install longhorn longhorn/longhorn \
+  --namespace longhorn-system \
+  --set defaultSettings.v1DataEngine=false \
+  --set defaultSettings.v2DataEngine=true \
+  --set defaultSettings.createDefaultDiskLabeledNodes=true \
+  --set persistence.dataEngine=v2
+```
+
+This turns on the SPDK-based V2 Data Engine. Setting `createDefaultDiskLabeledNodes=true` stops Longhorn from creating a default *filesystem* disk on every node, so the V2 engine schedules only onto the dedicated block device you register in **Step 4**.
+
+Wait for the deployment to complete:
+
+```bash
+kubectl -n longhorn-system rollout status deploy/longhorn-driver-deployer
+kubectl get pods -n longhorn-system
+```
+
+## Step 4: Add a block-type disk and verify
+
+Enabling the V2 Data Engine does not automatically register the raw partition with Longhorn. Add it to each Longhorn node as a `block`-type disk, pointing at the stable symlink created in **Step 1**.
+
+### 4.1: Add the raw block device to each node
+
+The Longhorn node resource is named after the Kubernetes node. For each storage node, set two things:
+
+- a **label** (`node.longhorn.io/create-default-disk=config`) that tells Longhorn to build its default disk from a custom configuration instead of auto-detecting one, and
+- an **annotation** (`node.longhorn.io/default-disks-config`) that points at the raw block device created in **Step 1**.
+
+List your storage nodes, then apply both to each one:
+
+```bash
+WORKER_NODES=("worker-01" "worker-02" "worker-03")
+
+for node in "${WORKER_NODES[@]}"; do
+  echo "Adding block-type disk to Longhorn node: $node"
+  kubectl label node "$node" \
+    node.longhorn.io/create-default-disk="config"
+  kubectl annotate node "$node" \
+    node.longhorn.io/default-disks-config='[{"name":"longhorn-v2","path":"/dev/disk/by-partlabel/r-longhorn","diskType":"block","allowScheduling":true}]'
+done
+```
+
+<Info> Since Longhorn v1.11, block disks that already contain a filesystem or partition table are rejected to prevent data loss. A `RawVolumeConfig` partition is unformatted, so it is accepted as-is, no wiping required.</Info>
+
+### 4.2: Verify the disks were accepted
+
+Confirm that the V2 instance-manager pods are running:
+
+```bash
+kubectl -n longhorn-system get pods -l longhorn.io/component=instance-manager
+```
+
+Check that the Longhorn nodes are registered:
+
+```bash
+kubectl get nodes.longhorn.io -n longhorn-system
+```
+
+You should see one entry per storage node, similar to:
+
+```
+NAME        READY   ALLOWSCHEDULING   SCHEDULABLE   AGE
+worker-01   True    true              True          2m
+```
+
+Each storage node should appear with `SCHEDULABLE` set to `true`. Inspect a node to confirm the block disk was accepted:
+
+```bash
+kubectl -n longhorn-system get nodes.longhorn.io worker-01 \
+  -o jsonpath="{.status.diskStatus['longhorn-v2'].conditions}"
+```
+
+The disk's `Ready` and `Schedulable` conditions should report `status: "True"`. This can take a few seconds after the node is labeled and annotated, so wait a moment and re-run the command if you see `status: "False"`.
+
+  </Tab>
+</Tabs>
+
 ## Step 5: Create a test persistent volume
 
 Create a test PersistentVolumeClaim.
@@ -181,4 +404,10 @@ Check its status:
 kubectl get pvc longhorn-test-pvc
 ```
 
-The PVC should reach the **Bound** state within a few seconds.
+The PVC should reach the **Bound** state within a few seconds, confirming that Longhorn can provision volumes.
+
+Once you have confirmed it works, remove the test claim:
+
+```bash
+kubectl delete pvc longhorn-test-pvc
+```
