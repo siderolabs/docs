@@ -2525,6 +2525,7 @@
               "kubernetes-guides/csi/storage",
               "kubernetes-guides/csi/local-storage",
               "kubernetes-guides/csi/ceph-with-rook",
+              "kubernetes-guides/csi/dell-powerstore",
               "kubernetes-guides/csi/longhorn",
               "kubernetes-guides/csi/simplyblock-storage",
               "kubernetes-guides/csi/synology-csi"

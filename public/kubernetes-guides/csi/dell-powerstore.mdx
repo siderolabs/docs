@@ -1,0 +1,205 @@
+---
+title: Dell PowerStore CSI
+description: Configure and install the Dell PowerStore CSI driver on a Talos Linux cluster
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+[Dell PowerStore CSI](https://github.com/dell/csi-powerstore) is a container storage interface (CSI) driver for Kubernetes that provisions persistent volumes from Dell PowerStore storage arrays. This guide covers installing the driver on a Talos Linux cluster and connecting to the array over NVMe/TCP.
+
+## Prerequisites
+
+Before you begin, ensure that you have the following:
+
+- `talosctl` installed
+- `kubectl` installed (v1.25 or higher)
+- Helm installed (v3.7 or higher)
+- Access to a Dell PowerStore array with the **Storage Operator** role or higher
+- Network connectivity from your nodes to the PowerStore array
+
+Dell PowerStore CSI requires four Talos system extensions on every node:
+
+- `siderolabs/nvme-cli` — provides the `nvme` CLI used for NVMe/TCP connections
+- `siderolabs/multipath-tools` — provides `multipathd` for device multipathing
+- `siderolabs/iscsi-tools` — provides iscsid and iscsiadm for persistent volume operations
+- `siderolabs/util-linux-tools` — provides Linux utilities such as `fstrim`
+
+<Note> Use Talos Linux v1.13.3 or higher.</Note>
+
+<Info> The schematic ID `4f50d1375e1c91b2bcac34a8a99ccc83ab9220f7f1ab65172ccff510bb926b4b` corresponds to exactly the four extensions listed above.</Info>
+
+**If your nodes are already running** without these extensions, upgrade each node to a schematic that includes all four. You can generate an updated schematic using the [Talos Image Factory](https://factory.talos.dev/), then follow the <a href={`../../talos/${version}/platform-specific-installations/boot-assets`}>Boot Assets guide</a> to apply it to your existing nodes.
+
+## Step 1: Download the CSI driver chart
+
+Add the Dell Helm repository and pull the chart locally so you can customize it before installing:
+
+```bash
+helm repo add dell https://dell.github.io/helm-charts --force-update
+helm pull dell/csi-powerstore --untar --version 2.17.0
+```
+
+## Step 2: Create a privileged namespace
+
+Talos enables the [Pod Security Admission Policies](https://docs.siderolabs.com/kubernetes-guides/security/pod-security#override-the-pod-security-admission-configuration) by default, which blocks the privileged containers the CSI driver requires.
+
+Create the `csi-powerstore` namespace and label it to allow privileged workloads:
+
+```bash
+kubectl create namespace csi-powerstore
+kubectl label namespace csi-powerstore pod-security.kubernetes.io/enforce=privileged
+```
+
+## Step 3: Configure the PowerStore connection secret
+
+Download Dell's example secret and edit it to match your array:
+
+```bash
+curl -sL -o config.yaml https://raw.githubusercontent.com/dell/csi-powerstore/main/samples/secret/secret.yaml
+```
+
+In `config.yaml`, set `blockProtocol` to `NVMeTCP`. The `username` must belong to a PowerStore authentication provider and have the correct role to perform the required actions — the minimum is **Storage Operator**.
+
+Create a Kubernetes secret from the edited file:
+
+```bash
+kubectl create secret generic powerstore-config -n csi-powerstore --from-file=config=config.yaml
+```
+
+## Step 4: Create a StorageClass
+
+Create a StorageClass based on one of the [Dell samples](https://github.com/dell/csi-powerstore/tree/main/samples/storageclass/). A minimal NVMe/TCP example:
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: "powerstore-ext4"
+provisioner: "csi-powerstore.dellemc.com"
+parameters:
+  # arrayID: id of array to be used for volumes
+  # Allowed values: arrayID corresponding to array's globalID specified in secret.yaml
+  # Optional: false
+  # Default value: None
+  arrayID: ""
+  csi.storage.k8s.io/fstype: "ext4"
+reclaimPolicy: Delete
+# Default value: false
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
+EOF
+```
+
+<Info> If you do not specify the `arrayID` parameter in the StorageClass, the array marked as the default in your secret is used for provisioning volumes.</Info>
+
+## Step 5: Configure the Helm values
+
+Create a copy of the chart's values file and edit it to match your configuration:
+
+```bash
+cp csi-powerstore/values.yaml my-powerstore-values.yaml
+```
+
+### Work around the multipath.conf mount on Talos
+
+<Warning> On Talos Linux v1.13 and earlier, `multipath.conf` is not mounted correctly, so the multipath host mounts must be disabled in the chart's node template before installing.</Warning>
+
+Edit `csi-powerstore/templates/node.yaml`. In the `volumeMounts` section, comment out the `mpath` mount:
+
+```yaml
+            # - name: mpath
+            #   mountPath: /etc/multipath.conf
+```
+
+Then in the `volumes` section, comment out the matching `mpath` volume:
+
+```yaml
+        # - name: mpath
+        #   hostPath:
+        #     path: /etc/multipath.conf
+        #     type: FileOrCreate
+```
+
+### Volume Health Monitoring (optional)
+
+Volume Health Monitoring is disabled by default. To enable it, add the configuration below to your `my-powerstore-values.yaml` file before installing the driver. Set `enabled: true` under `controller.healthMonitor` to check the health condition of CSI volumes, and under `node.healthMonitor` to enable volume stats monitoring.
+
+```yaml
+controller:
+  healthMonitor:
+    # enabled: Enable/Disable health monitor of CSI volumes
+    enabled: true
+    # interval: Interval of monitoring volume health condition (e.g. 60s, 5m, 1h)
+    interval: 60s
+
+node:
+  healthMonitor:
+    # enabled: Enable/Disable health monitor of CSI volumes - volume usage, volume condition
+    enabled: true
+```
+
+## Step 6: Install the driver
+
+Once you have configured your `my-powerstore-values.yaml` file, install the driver from the local chart:
+
+```bash
+helm install csi-powerstore ./csi-powerstore -n csi-powerstore --values my-powerstore-values.yaml
+```
+
+## Step 7: Verify the installation
+
+Check that the controller and node pods are running:
+
+```bash
+kubectl get pods -n csi-powerstore
+```
+
+The `csi-powerstore-controller` deployment and a `csi-powerstore-node` pod on each node should reach the **Running** state.
+
+## Step 8: Create a test persistent volume
+
+Create a test PersistentVolumeClaim using the StorageClass from **Step 4**:
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: powerstore-test-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: powerstore-ext4
+  resources:
+    requests:
+      storage: 5Gi
+EOF
+```
+
+Check its status:
+
+```bash
+kubectl get pvc powerstore-test-pvc
+```
+
+The PVC should reach the **Bound** state within a few seconds, confirming that the driver can provision volumes on the PowerStore array.
+
+Once you have confirmed it works, remove the test claim:
+
+```bash
+kubectl delete pvc powerstore-test-pvc
+```
+
+## Enable replication (optional)
+
+The following applies only if you enable the replication feature in `my-powerstore-values.yaml`:
+
+```yaml
+replication:
+  enabled: true
+```
+
+The replication CRDs are obtained from the [csm-replication](https://github.com/dell/csm-replication) project. Use `csm-replication/deploy/replicationcrds.all.yaml` from the repository to install them.
+
+CRDs should be configured during the replication prepare stage with `repctl`, as described in the Dell [install-repctl](https://github.com/dell/csm-replication) documentation.
