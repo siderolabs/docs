@@ -16,13 +16,22 @@ In this guide, we will create an HA Kubernetes cluster in OVHcloud with 1 worker
 We will assume an existing some familiarity with OpenStack.
 If you need more information on OpenStack specifics, please see the [official OVHcloud documentation](https://docs.ovh.com/).
 
+## Prerequisites
+
+### Security groups
+
+This example uses the default security group in OpenStack.
+Ports have been opened to ensure that connectivity from both inside and outside the group is possible.
+You will want to allow, at a minimum, ports 6443 (Kubernetes API server) and 50000 (Talos API) from external sources.
+It is also recommended to allow communication over all ports from within the subnet.
+
 ## Environment setup
 
 You should have an existing openrc file.
 This file will provide environment variables necessary to talk to your OVHcloud.
 See [here](https://help.ovhcloud.com/csm/en-gb-public-cloud-compute-openstack-tokens?id=kb_article_view&sysparm_article=KB0057950) for instructions on fetching this file.
 
-Set environment variables:
+Set environment variables. and adjust the values to match your environment:
 
 ```bash
 export PRIVATE_NETWORK_NAME=private-network-001
@@ -35,15 +44,13 @@ export LOADBALANCER_NAME=loadbalancer-001
 export LOADBALANCER_FLAVOR_NAME=small
 ```
 
-## Step 1. Create the image
+## Step 1. Create and upload the image
 
-First, download the <a href={`https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_13}/akamai-amd64.raw.gz`}> OpenStack image</a> from [Image Factory](https://factory.talos.dev/).
+First, download the <a href={`https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_13}/openstack-amd64.raw.xz`}> OpenStack image</a> from [Image Factory](https://factory.talos.dev/).
 These images are called `openstack-$ARCH.raw.xz`.
 
 Decompress this file with `unxz openstack-$ARCH.raw.xz`.
 The resulting file will be called `openstack-$ARCH.raw`.
-
-#### Upload the image
 
 Once you have the image, you can upload to OpenStack with:
 
@@ -54,17 +61,15 @@ openstack image create $IMAGE_NAME \
   --progress 
 ```
 
-## Step 2. Network infrastructure (Optional)
+## Step 2. Create network infrastructure (Optional)
 
 If you have an existing network infrastructure, you can skip this step. 
 If not, you can follow the instructions below to create the necessary network infrastructure for your cluster.
 We will create a private network, subnet, and gateway for our cluster. 
 This will allow our cluster to communicate with the outside world and with each other.
 
-### Private network, subnet, gateway
-
+### 2.1 Create private network
 ```bash
-# Create private network
 openstack network create \
   --provider-network-type vrack \
   --provider-segment 1 \
@@ -74,35 +79,36 @@ openstack network create \
   $PRIVATE_NETWORK_NAME
 
 export PRIVATE_NETWORK_ID=$(openstack network show $PRIVATE_NETWORK_NAME -f value -c id)
+```
 
-# Create subnet
+### 2.2 Create subnet
+```bash
 openstack subnet create \
   --network $PRIVATE_NETWORK_ID \
   --subnet-range $SUBNET_CIDR \
   --dns-nameserver 1.1.1.1 \
   --dns-nameserver 8.8.8.8 \
   $SUBNET_NAME
+```
 
-# Create Gateway
+### 2.3 Create gateway
+```bash
 openstack router create $GATEWAY_NAME --external-gateway Ext-Net 
+```
 
-# Add the subnet to the router
+### 2.4 Add the subnet to the router
+```bash
 openstack router add subnet \
   $GATEWAY_NAME \
   $SUBNET_NAME
 ```
 
-### Security groups
-
-This example uses the default security group in OpenStack.
-Ports have been opened to ensure that connectivity from both inside and outside the group is possible.
-You will want to allow, at a minimum, ports 6443 (Kubernetes API server) and 50000 (Talos API) from external sources.
-It is also recommended to allow communication over all ports from within the subnet.
-
-## Step 3. Compute
+## Step 3. Create compute
 
 Once the image is uploaded and the network infrastructure is in place, we can create our compute instances.
 We will create 3 control plane nodes.
+
+### 3.1 Create instances
 
 ```bash
 # Create control planes 2 and 3, substituting the same info.
@@ -120,7 +126,7 @@ for i in $( seq 1 3 ); do
 done
 ```
 
-### Load balancer
+### 3.2 Create load balancer
 
 Once the compute instances are created, we need to create a load balancer to load balance traffic to the control plane nodes.
 
@@ -209,6 +215,8 @@ talosctl kubeconfig .
 ```
 
 ## Step 7. Add worker nodes to the cluster
+
+With the control plane bootstrapped, we can now add worker nodes by creating compute instances that use the `worker.yaml` configuration generated in **Step 4** as their user data.
 
 ```bash
 # Create worker node with the user data file
