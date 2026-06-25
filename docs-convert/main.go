@@ -93,20 +93,27 @@ func convertFile(srcPath, dstPath string) error {
 
 		// Handle multi-line description in frontmatter
 		if inFrontmatter && strings.HasPrefix(line, "description: |") {
-			// Collect all indented lines that follow
-			descriptionParts := []string{}
+			// Output the block scalar marker
+			fmt.Fprintln(writer, "description: |")
 			i++
-			for i < len(lines) && len(lines[i]) > 0 && (lines[i][0] == ' ' || lines[i][0] == '\t') {
-				// Remove leading whitespace and add to parts
-				descriptionParts = append(descriptionParts, strings.TrimSpace(lines[i]))
+			// Collect and output all indented lines (preserving blank lines between paragraphs)
+			for i < len(lines) {
+				currentLine := lines[i]
+				// Stop at non-indented, non-blank lines (next YAML key or end of frontmatter)
+				if len(currentLine) > 0 && currentLine[0] != ' ' && currentLine[0] != '\t' {
+					break
+				}
+				// Output the line with leading spaces removed (dedent to 2 spaces for YAML)
+				if len(currentLine) > 0 {
+					// Preserve relative indentation but remove excess indent
+					trimmed := strings.TrimPrefix(currentLine, "    ")
+					fmt.Fprintln(writer, "  "+trimmed)
+				} else {
+					// Preserve blank lines between paragraphs
+					fmt.Fprintln(writer, "")
+				}
 				i++
 			}
-			// Join all parts into a single line
-			singleLineDescription := strings.Join(descriptionParts, " ")
-			// Escape single quotes in the description
-			singleLineDescription = strings.Replace(singleLineDescription, "'", "''", -1)
-			// Quote the description with single quotes to handle special characters
-			fmt.Fprintf(writer, "description: '%s'\n", singleLineDescription)
 			continue
 		}
 
