@@ -148,13 +148,22 @@ See the [Reproducible Machine Configuration](../../talos/v1.10/configure-your-ta
 
 ## Manual Kubernetes upgrade
 
-Kubernetes can be upgraded manually by following the steps outlined below.
-They are equivalent to the steps performed by the `talosctl upgrade-k8s` command.
+Kubernetes can be upgraded manually by following the steps outlined below. They are equivalent to the steps performed by the `talosctl upgrade-k8s` command.
+
+The commands below reference `${k8s_release}` (the target Kubernetes version) and `${k8s_prev_release}` (the currently running version). Export these variables, replacing the placeholders with your values:
+
+```bash
+export k8s_release=<target-k8s-version>
+export k8s_prev_release=<current-k8s-version>
+```
+
+<Note>
+The `talosctl patch mc` examples use strategic-merge (YAML) patches, which work across supported Talos versions. From Talos v1.13 the machine configuration is a multi-document configuration, for which strategic-merge patches should be used rather than RFC 6902 (`op`/`path`/`value`) patches. A strategic-merge patch also creates the target key if it is not already present.
+</Note>
 
 ### Kubeconfig
 
-In order to edit the control plane, you need a working `kubectl` config.
-If you don't already have one, you can get one by running:
+In order to edit the control plane, you need a working `kubectl` config. If you don't already have one, you can get one by running:
 
 ```bash
 talosctl --nodes <control-plane-ip> kubeconfig
@@ -162,15 +171,13 @@ talosctl --nodes <control-plane-ip> kubeconfig
 
 ### API server
 
-Patch machine configuration using `talosctl patch` command:
+Patch the machine configuration with the new API server image:
 
 ```bash
-talosctl -n <control-plane-ip> patch mc --mode=no-reboot -p '[{"op": "replace", "path": "/cluster/apiServer/image", "value": "registry.k8s.io/kube-apiserver:v${k8s_release}"}]'
+talosctl -n <control-plane-ip> patch mc --mode=no-reboot -p "cluster:
+  apiServer:
+    image: registry.k8s.io/kube-apiserver:v${k8s_release}"
 ```
-
-The JSON patch might need to be adjusted if current machine configuration is missing `.cluster.apiServer.image` key.
-
-Also the machine configuration can be edited manually with `talosctl -n <IP>  edit mc --mode=no-reboot`.
 
 Capture the new version of `kube-apiserver` config with:
 
@@ -211,30 +218,24 @@ spec:
 ```
 
 In this example, the new version is `5`.
-Wait for the new pod definition to propagate to the API server state (replace `talos-default-controlplane-1` with the node name):
+
+Wait for the new pod definition to propagate, then check that the `kube-apiserver` pods are running on the control plane nodes:
 
 ```bash
-kubectl get pod -n kube-system -l k8s-app=kube-apiserver --field-selector spec.nodeName=talos-default-controlplane-1 -o jsonpath='{.items[0].metadata.annotations.talos\.dev/config\-version}'
-5
-```
-
-Check that the pod is running:
-
-```bash
-kubectl get pod -n kube-system -l k8s-app=kube-apiserver --field-selector spec.nodeName=talos-default-controlplane-1
+kubectl get pods -n kube-system -l k8s-app=kube-apiserver -o wide
 ```
 
 Repeat this process for every control plane node, verifying that state got propagated successfully between each node update.
 
 ### Controller manager
 
-Patch machine configuration using `talosctl patch` command:
+Patch the machine configuration with the new controller manager image:
 
 ```bash
-talosctl -n <control-plane-ip> patch mc --mode=no-reboot -p '[{"op": "replace", "path": "/cluster/controllerManager/image", "value": "registry.k8s.io/kube-controller-manager:v${k8s_release}"}]'
+talosctl -n <control-plane-ip> patch mc --mode=no-reboot -p "cluster:
+  controllerManager:
+    image: registry.k8s.io/kube-controller-manager:v${k8s_release}"
 ```
-
-The JSON patch might need be adjusted if current machine configuration is missing `.cluster.controllerManager.image` key.
 
 Capture new version of `kube-controller-manager` config with:
 
@@ -269,32 +270,27 @@ spec:
             cpu: ""
             memory: ""
         limits: {}
-```  
-
-In this example, new version is `3`.
-Wait for the new pod definition to propagate to the API server state (replace `talos-default-controlplane-1` with the node name):
-
-```bash
-kubectl get pod -n kube-system -l k8s-app=kube-controller-manager --field-selector spec.nodeName=talos-default-controlplane-1 -o jsonpath='{.items[0].metadata.annotations.talos\.dev/config\-version}'
 ```
 
-Check that the pod is running:
+In this example, new version is `3`.
+
+Wait for the new pod definition to propagate, then check that the `kube-controller-manager` pods are running on the control plane nodes:
 
 ```bash
-kubectl get pod -n kube-system -l k8s-app=kube-controller-manager --field-selector spec.nodeName=talos-default-controlplane-1
+kubectl get pods -n kube-system -l k8s-app=kube-controller-manager -o wide
 ```
 
 Repeat this process for every control plane node, verifying that state propagated successfully between each node update.
 
 ### Scheduler
 
-Patch machine configuration using `talosctl patch` command:
+Patch the machine configuration with the new scheduler image:
 
 ```bash
-talosctl -n <control-plane-ip> patch mc --mode=no-reboot -p '[{"op": "replace", "path": "/cluster/scheduler/image", "value": "registry.k8s.io/kube-scheduler:v${k8s_release}"}]'
+talosctl -n <control-plane-ip> patch mc --mode=no-reboot -p "cluster:
+  scheduler:
+    image: registry.k8s.io/kube-scheduler:v${k8s_release}"
 ```
-
-JSON patch might need be adjusted if current machine configuration is missing `.cluster.scheduler.image` key.
 
 Capture new version of `kube-scheduler` config with:
 
@@ -328,66 +324,30 @@ spec:
         limits: {}
     config: {}
 ```
+
 In this example, new version is `3`.
 
-Wait for the new pod definition to propagate to the API server state (replace `talos-default-controlplane-1` with the node name):
+Wait for the new pod definition to propagate, then check that the `kube-scheduler` pods are running on the control plane nodes:
 
 ```bash
-kubectl get pod -n kube-system -l k8s-app=kube-scheduler --field-selector spec.nodeName=talos-default-controlplane-1 -o jsonpath='{.items[0].metadata.annotations.talos\.dev/config\-version}'
-```
-
-Check that the pod is running:
-
-```bash
-kubectl get pod -n kube-system -l k8s-app=kube-scheduler --field-selector spec.nodeName=talos-default-controlplane-1
+kubectl get pods -n kube-system -l k8s-app=kube-scheduler -o wide
 ```
 
 Repeat this process for every control plane node, verifying that state got propagated successfully between each node update.
 
 ### Proxy
 
-In the proxy's `DaemonSet`, change:
+Upgrade `kube-proxy` through the machine configuration, in the same way as the other control plane components. The `kube-proxy` `DaemonSet` is generated from `.cluster.proxy.image` and is reconciled when the bootstrap manifests are applied in the next step, so its image should be set in the machine configuration rather than by editing the live `DaemonSet`.
 
-```yaml
-kind: DaemonSet
-...
-spec:
-  ...
-  template:
-    ...
-    spec:
-      containers:
-        - name: kube-proxy
-          image: registry.k8s.io/kube-proxy:v${k8s_prev_release}
-      tolerations:
-        - ...
-```
-
-to:
-
-```yaml
-kind: DaemonSet
-...
-spec:
-  ...
-  template:
-    ...
-    spec:
-      containers:
-        - name: kube-proxy
-          image: registry.k8s.io/kube-proxy:v${k8s_release}
-      tolerations:
-        - ...
-        - key: node-role.kubernetes.io/control-plane
-          operator: Exists
-          effect: NoSchedule
-```
-
-To edit the `DaemonSet`, run:
+Patch the machine configuration with the new proxy image:
 
 ```bash
-kubectl edit daemonsets -n kube-system kube-proxy
+talosctl -n <control-plane-ip> patch mc --mode=no-reboot -p "cluster:
+  proxy:
+    image: registry.k8s.io/kube-proxy:v${k8s_release}"
 ```
+
+Repeat for every control plane node. The updated `DaemonSet` is rolled out when you apply the bootstrap manifests in the next step.
 
 ### Bootstrap manifests
 
@@ -403,6 +363,8 @@ Diff the manifests with the cluster:
 kubectl diff -f manifests.yaml
 ```
 
+Confirm that the `kube-proxy` `DaemonSet` image shown in the diff matches the target version (`v${k8s_release}`). If it shows the previous version, set `.cluster.proxy.image` in the machine configuration as described in the [Proxy](#proxy) step before applying.
+
 Apply the manifests:
 
 ```bash
@@ -413,14 +375,16 @@ kubectl apply -f manifests.yaml
 
 ### kubelet
 
-For every node, patch machine configuration with new kubelet version, wait for the kubelet to restart with new version:
+For every node, patch the machine configuration with the new kubelet version, then wait for the kubelet to restart:
 
 ```bash
-talosctl -n <control-plane-ip> patch mc --mode=no-reboot -p '[{"op": "replace", "path": "/machine/kubelet/image", "value": "ghcr.io/siderolabs/kubelet:v${k8s_release}"}]'
+talosctl -n <node-ip> patch mc --mode=no-reboot -p "machine:
+  kubelet:
+    image: ghcr.io/siderolabs/kubelet:v${k8s_release}"
 ```
 
-Once `kubelet` restarts with the new configuration, confirm upgrade with `kubectl get nodes <name>`:
+Once `kubelet` restarts with the new configuration, confirm the upgrade. The `VERSION` column should show the new Kubernetes version for every node:
 
 ```bash
-kubectl get nodes talos-default-controlplane-1
+kubectl get nodes -o wide
 ```
