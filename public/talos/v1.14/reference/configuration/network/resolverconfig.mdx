@@ -1,7 +1,6 @@
 ---
 description: ResolverConfig is a config document to configure DNS resolving.
 title: ResolverConfig
-canonical: https://docs.siderolabs.com/talos/v1.13/reference/configuration/network/resolverconfig
 ---
 
 {/*
@@ -24,7 +23,13 @@ kind: ResolverConfig
 # A list of nameservers (DNS servers) to use for resolving domain names.
 nameservers:
     - address: 1.1.1.1 # The IP address of the nameserver.
+
+      # # TLS server name to validate the nameserver certificate against.
+      # tlsServerName: dns1.example.com
     - address: ff08::1 # The IP address of the nameserver.
+
+      # # TLS server name to validate the nameserver certificate against.
+      # tlsServerName: dns1.example.com
 # Configuration for search domains (in /etc/resolv.conf).
 searchDomains:
     # A list of search domains to be used for DNS resolution.
@@ -38,6 +43,42 @@ kind: ResolverConfig
 # Configuration for search domains (in /etc/resolv.conf).
 searchDomains:
     disableDefault: true # Disable default search domain configuration from hostname FQDN.
+```
+
+```yaml
+apiVersion: v1alpha1
+kind: ResolverConfig
+# Configuration for host DNS resolver.
+hostDNS:
+    enabled: true # Enable host DNS caching resolver.
+    forwardKubeDNSToHost: true # Use the host DNS resolver as upstream for Kubernetes CoreDNS pods.
+    resolveMemberNames: true # Resolve member hostnames using the host DNS resolver.
+```
+
+```yaml
+apiVersion: v1alpha1
+kind: ResolverConfig
+# A list of nameservers (DNS servers) to use for resolving domain names.
+nameservers:
+    - address: 9.9.9.9 # The IP address of the nameserver.
+      protocol: DoT # A DNS protocol to use.
+      tlsServerName: dns.quad9.net # TLS server name to validate the nameserver certificate against.
+    - address: 2620:fe::fe # The IP address of the nameserver.
+      protocol: DoT # A DNS protocol to use.
+      tlsServerName: dns.quad9.net # TLS server name to validate the nameserver certificate against.
+```
+
+```yaml
+apiVersion: v1alpha1
+kind: ResolverConfig
+# A list of nameservers (DNS servers) to use for resolving domain names.
+nameservers:
+    - address: 1.1.1.1 # The IP address of the nameserver.
+      protocol: DoH # A DNS protocol to use.
+      tlsServerName: cloudflare-dns.com # TLS server name to validate the nameserver certificate against.
+    - address: 2606:4700:4700::1111 # The IP address of the nameserver.
+      protocol: DoH # A DNS protocol to use.
+      tlsServerName: cloudflare-dns.com # TLS server name to validate the nameserver certificate against.
 ```
 
 
@@ -63,6 +104,12 @@ searchDomains:
       <td>Configuration for search domains (in /etc/resolv.conf).<br /><br />The default is to derive search domains from the hostname FQDN.</td>
       <td></td>
     </tr>
+    <tr>
+      <td>`hostDNS`</td>
+      <td><a href="#hostdns">HostDNSConfig</a></td>
+      <td>Configuration for host DNS resolver.<br /><br />This configures a local DNS caching resolver on the host to improve DNS resolution performance and reliability.</td>
+      <td></td>
+    </tr>
   </tbody>
 </table>
 
@@ -71,6 +118,7 @@ searchDomains:
 ## nameservers[]
 
 NameserverConfig represents a single nameserver configuration.
+
 
 
 
@@ -91,6 +139,18 @@ NameserverConfig represents a single nameserver configuration.
       <td>The IP address of the nameserver.</td>
       <td></td>
     </tr>
+    <tr>
+      <td>`protocol`</td>
+      <td>DNSProtocol</td>
+      <td>A DNS protocol to use.<br /><br />The default protocol is plain DNS (`Do53`) (DNS over TCP/UDP). Set this to<br />`DoT` to use DNS over TLS (RFC 7858) on TCP port 853, or `DoH` to use DNS<br />over HTTPS (RFC 8484) on TCP port 443 with the `/dns-query` URL path. Both<br />`DoT` and `DoH` deliver encrypted queries to this nameserver.<br /><br />Note: encrypted DNS protocols require a correct system clock to validate<br />certificates. If NTP is configured with hostnames that need to be resolved<br />through DoT/DoH, the boot may stall: NTP needs DNS, and TLS needs valid<br />time. Either rely on the hardware clock, configure NTP servers by IP, or<br />keep at least one plain-DNS fallback nameserver.</td>
+      <td>`Do53`<br />`DoT`<br />`DoH`<br /></td>
+    </tr>
+    <tr>
+      <td>`tlsServerName`</td>
+      <td>string</td>
+      <td>TLS server name to validate the nameserver certificate against.<br /><br />This field should be set if the protocol is set to `DoT` or `DoH`.<br />The value is used both as the SNI sent during the TLS handshake and as the<br />name verified against the server certificate. For `DoH`, it is also used as<br />the host portion of the request URL (`https://<tlsServerName>/dns-query`)<br />while the connection itself is established to the configured `address`.</td>
+      <td></td>
+    </tr>
   </tbody>
 </table>
 
@@ -101,6 +161,7 @@ NameserverConfig represents a single nameserver configuration.
 ## searchDomains
 
 SearchDomainsConfig represents search domains configuration.
+
 
 
 
@@ -125,6 +186,49 @@ SearchDomainsConfig represents search domains configuration.
       <td>`disableDefault`</td>
       <td>bool</td>
       <td>Disable default search domain configuration from hostname FQDN.<br /><br />When set to true, the system will not derive search domains from the hostname FQDN.<br />This allows for a custom configuration of search domains without any defaults.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+## hostDNS
+
+HostDNSConfig represents host DNS configuration.
+
+
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`enabled`</td>
+      <td>bool</td>
+      <td>Enable host DNS caching resolver.<br /><br />When enabled, a local DNS caching resolver is deployed on the host to improve DNS resolution performance and reliability.<br />Upstream DNS servers for the host resolver are configured using the `nameservers` field in this config document.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`forwardKubeDNSToHost`</td>
+      <td>bool</td>
+      <td>Use the host DNS resolver as upstream for Kubernetes CoreDNS pods.<br /><br />When enabled, CoreDNS pods use host DNS server as the upstream DNS (instead of<br />using configured upstream DNS resolvers directly).</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`resolveMemberNames`</td>
+      <td>bool</td>
+      <td>Resolve member hostnames using the host DNS resolver.<br /><br />When enabled, cluster member hostnames and node names are resolved using the host DNS resolver.<br />This requires service discovery to be enabled.</td>
       <td></td>
     </tr>
   </tbody>

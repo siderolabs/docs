@@ -1,7 +1,10 @@
 ---
-description: 'ExternalVolumeConfig is an external disk mount configuration document. External volumes allow to mount volumes that were created outside of Talos, over the network or API. Volume will be mounted under `/var/mnt/<name>`. The external volume config name should not conflict with user volume names.'
+description: |
+  ExternalVolumeConfig is an external disk mount configuration document.
+  External volumes allow to mount volumes that were created outside of Talos,
+  over the network or API. Volume will be mounted under `/var/mnt/<name>`.
+  The external volume config name should not conflict with user volume names.
 title: ExternalVolumeConfig
-canonical: https://docs.siderolabs.com/talos/v1.13/reference/configuration/block/externalvolumeconfig
 ---
 
 {/*
@@ -71,6 +74,7 @@ ExternalMountSpec describes how the external volume is mounted.
 
 
 
+
 <table>
   <thead>
     <tr>
@@ -113,6 +117,7 @@ ExternalMountSpec describes how the external volume is mounted.
 ### virtiofs
 
 VirtiofsMountSpec describes Virtiofs mount options.
+
 
 
 

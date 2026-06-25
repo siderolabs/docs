@@ -8,8 +8,8 @@ DOCS_GEN_IMAGE := ghcr.io/siderolabs/docs-gen:latest
 DOCS_CONVERT_IMAGE := ghcr.io/siderolabs/docs-convert:latest
 CHANGELOG_GEN_IMAGE := ghcr.io/siderolabs/changelog-gen:latest
 VERSION_UPGRADE_IMAGE := ghcr.io/siderolabs/version-upgrade-gen:latest
-TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.13.0
-TALOS_VERSION := v1.13
+TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.14.0-alpha.2
+TALOS_VERSION := v1.14
 VALE_IMAGE := jdkato/vale:latest
 VALE_CONFIG ?= .vale.ini
 

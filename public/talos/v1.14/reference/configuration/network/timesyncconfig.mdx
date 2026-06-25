@@ -1,7 +1,7 @@
 ---
-description: TimeSyncConfig is a config document to configure time synchronization (NTP).
+description: TimeSyncConfig is a config document to configure time synchronization
+    (NTP).
 title: TimeSyncConfig
-canonical: https://docs.siderolabs.com/talos/v1.13/reference/configuration/network/timesyncconfig
 ---
 
 {/*
@@ -85,6 +85,7 @@ NTPConfig represents a NTP server configuration.
 
 
 
+
 <table>
   <thead>
     <tr>
@@ -98,7 +99,13 @@ NTPConfig represents a NTP server configuration.
     <tr>
       <td>`servers`</td>
       <td>[]string</td>
-      <td>Specifies time (NTP) servers to use for setting the system time.<br />Defaults to `time.cloudflare.com`.</td>
+      <td>Specifies time (NTP) servers to use for setting the system time.<br />Defaults to `time.cloudflare.com` when configuration is not provided.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`useNTS`</td>
+      <td>bool</td>
+      <td>Enables NTS (Network Time Security) for NTP queries.<br />NTS provides authenticated and encrypted time synchronization using TLS.<br />When enabled, all NTP capable servers must be specified as hostnames (not IP addresses).<br />Defaults to `true` when configuration is not provided, using the system default server (`time.cloudflare.com`).</td>
       <td></td>
     </tr>
   </tbody>
@@ -111,6 +118,7 @@ NTPConfig represents a NTP server configuration.
 ## ptp
 
 PTPConfig represents a PTP (Precision Time Protocol) configuration.
+
 
 
 

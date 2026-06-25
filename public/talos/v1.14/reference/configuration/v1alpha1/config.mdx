@@ -1,7 +1,6 @@
 ---
 description: Config defines the v1alpha1.Config Talos machine configuration document.
 title: MachineConfig
-canonical: https://docs.siderolabs.com/talos/v1.13/reference/configuration/v1alpha1/config
 ---
 
 {/*
@@ -76,7 +75,7 @@ machine:
     # InstallConfig represents the installation options for preparing a node.
     install:
         disk: /dev/sda # The disk used for installations.
-        image: ghcr.io/siderolabs/installer:latest # Allows for supplying the image used to perform the installation.
+        image: factory.talos.dev/metal-installer/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:latest # Allows for supplying the image used to perform the installation.
         wipe: false # Indicates if the installation disk should be wiped at installation time.
         grubUseUKICmdline: true # Indicates if legacy GRUB bootloader should use kernel cmdline from the UKI instead of building it on the host.
 
@@ -129,12 +128,6 @@ machine:
       <td></td>
     </tr>
     <tr>
-      <td>`controlPlane`</td>
-      <td><a href="#controlplane">MachineControlPlaneConfig</a></td>
-      <td>Provides machine specific control plane configuration options.</td>
-      <td></td>
-    </tr>
-    <tr>
       <td>`kubelet`</td>
       <td><a href="#kubelet">KubeletConfig</a></td>
       <td>Used to provide additional options to the kubelet.</td>
@@ -156,18 +149,6 @@ machine:
       <td>`files`</td>
       <td><a href="#files%5B%5D">MachineFile</a></td>
       <td>Allows the addition of user specified files.<br />The value of `op` can be `create`, `overwrite`, or `append`.<br />In the case of `create`, `path` must not exist.<br />In the case of `overwrite`, and `append`, `path` must be a valid file.<br />If an `op` value of `append` is used, the existing file will be appended.<br />Note that the file contents are not required to be base64 encoded.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`sysctls`</td>
-      <td>map[string]string</td>
-      <td>Used to configure the machine's sysctls.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`sysfs`</td>
-      <td>map[string]string</td>
-      <td>Used to configure the machine's sysfs.</td>
       <td></td>
     </tr>
     <tr>
@@ -229,123 +210,17 @@ machine:
 
 
 
-### controlPlane
-
-MachineControlPlaneConfig machine specific configuration options.
-
-
-
-```yaml
-machine:
-    controlPlane:
-        # Controller manager machine specific configuration options.
-        controllerManager:
-            disabled: false # Disable kube-controller-manager on the node.
-        # Scheduler machine specific configuration options.
-        scheduler:
-            disabled: true # Disable kube-scheduler on the node.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`controllerManager`</td>
-      <td><a href="#controllermanager">MachineControllerManagerConfig</a></td>
-      <td>Controller manager machine specific configuration options.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`scheduler`</td>
-      <td><a href="#scheduler">MachineSchedulerConfig</a></td>
-      <td>Scheduler machine specific configuration options.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-#### controllerManager
-
-MachineControllerManagerConfig represents the machine specific ControllerManager config values.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`disabled`</td>
-      <td>bool</td>
-      <td>Disable kube-controller-manager on the node.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-#### scheduler
-
-MachineSchedulerConfig represents the machine specific Scheduler config values.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`disabled`</td>
-      <td>bool</td>
-      <td>Disable kube-scheduler on the node.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-
-
 ### kubelet
 
 KubeletConfig represents the kubelet config values.
 
 
 
+
 ```yaml
 machine:
     kubelet:
-        image: ghcr.io/siderolabs/kubelet:v1.36.0 # The `image` field is an optional reference to an alternative kubelet image.
+        image: ghcr.io/siderolabs/kubelet:v1.36.2 # The `image` field is an optional reference to an alternative kubelet image.
         # The `extraArgs` field is used to provide additional flags to the kubelet.
         extraArgs:
             feature-gates: ServerSideApply=true
@@ -482,6 +357,7 @@ ExtraMount wraps OCI Mount specification.
 
 
 
+
 ```yaml
 machine:
     kubelet:
@@ -555,6 +431,7 @@ LinuxIDMapping represents the Linux ID mapping.
 
 
 
+
 <table>
   <thead>
     <tr>
@@ -593,6 +470,7 @@ LinuxIDMapping represents the Linux ID mapping.
 ##### gidMappings[]
 
 LinuxIDMapping represents the Linux ID mapping.
+
 
 
 
@@ -640,6 +518,7 @@ KubeletNodeIPConfig represents the kubelet node IP configuration.
 
 
 
+
 ```yaml
 machine:
     kubelet:
@@ -683,11 +562,12 @@ InstallConfig represents the installation options for preparing a node.
 
 
 
+
 ```yaml
 machine:
     install:
         disk: /dev/sda # The disk used for installations.
-        image: ghcr.io/siderolabs/installer:latest # Allows for supplying the image used to perform the installation.
+        image: factory.talos.dev/metal-installer/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:latest # Allows for supplying the image used to perform the installation.
         wipe: false # Indicates if the installation disk should be wiped at installation time.
         grubUseUKICmdline: true # Indicates if legacy GRUB bootloader should use kernel cmdline from the UKI instead of building it on the host.
 
@@ -753,6 +633,7 @@ machine:
 #### diskSelector
 
 InstallDiskSelector represents a disk query parameters for the install disk lookup.
+
 
 
 
@@ -848,6 +729,7 @@ MachineFile represents a file to write to disk.
 
 
 
+
 ```yaml
 machine:
     files:
@@ -905,6 +787,7 @@ FeaturesConfig describes individual Talos features that can be switched on or of
 
 
 
+
 ```yaml
 machine:
     features:
@@ -951,18 +834,6 @@ machine:
       <td></td>
     </tr>
     <tr>
-      <td>`hostDNS`</td>
-      <td><a href="#hostdns">HostDNSConfig</a></td>
-      <td>Configures host DNS caching resolver.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`imageCache`</td>
-      <td><a href="#imagecache">ImageCacheConfig</a></td>
-      <td>Enable Image Cache feature.</td>
-      <td></td>
-    </tr>
-    <tr>
       <td>`nodeAddressSortAlgorithm`</td>
       <td>string</td>
       <td>Select the node address sort algorithm.<br />The 'v1' algorithm sorts addresses by the address itself.<br />The 'v2' algorithm prefers more specific prefixes.<br />If unset, defaults to 'v1'.</td>
@@ -976,6 +847,7 @@ machine:
 #### kubernetesTalosAPIAccess
 
 KubernetesTalosAPIAccessConfig describes the configuration for the Talos API access from Kubernetes pods.
+
 
 
 
@@ -1035,6 +907,7 @@ KubePrism describes the configuration for the KubePrism load balancer.
 
 
 
+
 <table>
   <thead>
     <tr>
@@ -1064,83 +937,12 @@ KubePrism describes the configuration for the KubePrism load balancer.
 
 
 
-#### hostDNS
-
-HostDNSConfig describes the configuration for the host DNS resolver.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`enabled`</td>
-      <td>bool</td>
-      <td>Enable host DNS caching resolver.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`forwardKubeDNSToHost`</td>
-      <td>bool</td>
-      <td>Use the host DNS resolver as upstream for Kubernetes CoreDNS pods.<br /><br />When enabled, CoreDNS pods use host DNS server as the upstream DNS (instead of<br />using configured upstream DNS resolvers directly).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`resolveMemberNames`</td>
-      <td>bool</td>
-      <td>Resolve member hostnames using the host DNS resolver.<br /><br />When enabled, cluster member hostnames and node names are resolved using the host DNS resolver.<br />This requires service discovery to be enabled.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-#### imageCache
-
-ImageCacheConfig describes the configuration for the Image Cache feature.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`localEnabled`</td>
-      <td>bool</td>
-      <td>Enable local image cache.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
 
 
 ### udev
 
 UdevConfig describes how the udev system should be configured.
+
 
 
 
@@ -1182,6 +984,7 @@ LoggingConfig struct configures Talos logging.
 
 
 
+
 ```yaml
 machine:
     logging:
@@ -1189,6 +992,18 @@ machine:
         destinations:
             - endpoint: tcp://1.2.3.4:12345 # Where to send logs. Supported protocols are "tcp" and "udp".
               format: json_lines # Logs format.
+```
+
+```yaml
+machine:
+    logging:
+        # Logging destination.
+        destinations:
+            - endpoint: udp://127.0.0.1:12345 # Where to send logs. Supported protocols are "tcp" and "udp".
+              format: json_lines # Logs format.
+              # Extra tags (key-value) pairs to attach to every log message sent.
+              extraTags:
+                machine: worker-1
 ```
 
 
@@ -1216,6 +1031,7 @@ machine:
 #### destinations[]
 
 LoggingDestination struct configures Talos logging destination.
+
 
 
 
@@ -1259,33 +1075,6 @@ Endpoint represents the endpoint URL parsed out of the machine config.
 
 
 
-```yaml
-machine:
-    logging:
-        destinations:
-            - endpoint: https://1.2.3.4:6443
-```
-
-```yaml
-machine:
-    logging:
-        destinations:
-            - endpoint: https://cluster1.internal:6443
-```
-
-```yaml
-machine:
-    logging:
-        destinations:
-            - endpoint: udp://127.0.0.1:12345
-```
-
-```yaml
-machine:
-    logging:
-        destinations:
-            - endpoint: tcp://1.2.3.4:12345
-```
 
 
 <table>
@@ -1313,6 +1102,7 @@ machine:
 ### kernel
 
 KernelConfig struct configures Talos Linux kernel.
+
 
 
 
@@ -1353,6 +1143,7 @@ KernelModuleConfig struct configures Linux kernel modules to load.
 
 
 
+
 <table>
   <thead>
     <tr>
@@ -1387,6 +1178,7 @@ KernelModuleConfig struct configures Linux kernel modules to load.
 ### seccompProfiles[]
 
 MachineSeccompProfile defines seccomp profiles for the machine.
+
 
 
 
@@ -1442,20 +1234,7 @@ cluster:
     # ControlPlaneConfig represents the control plane configuration options.
     controlPlane:
         endpoint: https://1.2.3.4 # Endpoint is the canonical controlplane endpoint, which can be an IP address or a DNS hostname.
-        localAPIServerPort: 443 # The port that the API server listens on internally.
     clusterName: talos.local
-    # ClusterNetworkConfig represents kube networking configuration options.
-    network:
-        # The CNI used.
-        cni:
-            name: flannel # Name of CNI to use.
-        dnsDomain: cluster.local # The domain used by Kubernetes DNS.
-        # The pod subnet CIDR.
-        podSubnets:
-            - 10.244.0.0/16
-        # The service subnet CIDR.
-        serviceSubnets:
-            - 10.96.0.0/12
 ```
 
 
@@ -1494,27 +1273,9 @@ cluster:
       <td></td>
     </tr>
     <tr>
-      <td>`network`</td>
-      <td><a href="#network">ClusterNetworkConfig</a></td>
-      <td>Provides cluster specific network configuration options.</td>
-      <td></td>
-    </tr>
-    <tr>
       <td>`token`</td>
       <td>string</td>
       <td>The [bootstrap token](https://kubernetes.io/docs/reference/access-authn-authz/bootstrap-tokens/) used to join the cluster.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`aescbcEncryptionSecret`</td>
-      <td>string</td>
-      <td>A key used for the [encryption of secret data at rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/).<br />Enables encryption with AESCBC.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`secretboxEncryptionSecret`</td>
-      <td>string</td>
-      <td>A key used for the [encryption of secret data at rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/).<br />Enables encryption with secretbox.<br />Secretbox has precedence over AESCBC.</td>
       <td></td>
     </tr>
     <tr>
@@ -1539,36 +1300,6 @@ cluster:
       <td>`serviceAccount`</td>
       <td>PEMEncodedKey</td>
       <td>The base64 encoded private key for service account token generation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`apiServer`</td>
-      <td><a href="#apiserver">APIServerConfig</a></td>
-      <td>API server specific configuration options.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`controllerManager`</td>
-      <td><a href="#controllermanager">ControllerManagerConfig</a></td>
-      <td>Controller manager server specific configuration options.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`proxy`</td>
-      <td><a href="#proxy">ProxyConfig</a></td>
-      <td>Kube-proxy server-specific configuration options</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`scheduler`</td>
-      <td><a href="#scheduler">SchedulerConfig</a></td>
-      <td>Scheduler server specific configuration options.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`discovery`</td>
-      <td><a href="#discovery">ClusterDiscoveryConfig</a></td>
-      <td>Configures cluster member discovery.</td>
       <td></td>
     </tr>
     <tr>
@@ -1630,11 +1361,11 @@ ControlPlaneConfig represents the control plane configuration options.
 
 
 
+
 ```yaml
 cluster:
     controlPlane:
         endpoint: https://1.2.3.4 # Endpoint is the canonical controlplane endpoint, which can be an IP address or a DNS hostname.
-        localAPIServerPort: 443 # The port that the API server listens on internally.
 ```
 
 
@@ -1654,12 +1385,6 @@ cluster:
       <td>Endpoint is the canonical controlplane endpoint, which can be an IP address or a DNS hostname.<br />It is single-valued, and may optionally include a port number.</td>
       <td></td>
     </tr>
-    <tr>
-      <td>`localAPIServerPort`</td>
-      <td>int</td>
-      <td>The port that the API server listens on internally.<br />This may be different than the port portion listed in the endpoint field above.<br />The default is `6443`.</td>
-      <td></td>
-    </tr>
   </tbody>
 </table>
 
@@ -1671,29 +1396,6 @@ Endpoint represents the endpoint URL parsed out of the machine config.
 
 
 
-```yaml
-cluster:
-    controlPlane:
-        endpoint: https://1.2.3.4:6443
-```
-
-```yaml
-cluster:
-    controlPlane:
-        endpoint: https://cluster1.internal:6443
-```
-
-```yaml
-cluster:
-    controlPlane:
-        endpoint: udp://127.0.0.1:12345
-```
-
-```yaml
-cluster:
-    controlPlane:
-        endpoint: tcp://1.2.3.4:12345
-```
 
 
 <table>
@@ -1708,1011 +1410,6 @@ cluster:
   <tbody>
   </tbody>
 </table>
-
-
-
-
-
-
-
-
-### network
-
-ClusterNetworkConfig represents kube networking configuration options.
-
-
-
-```yaml
-cluster:
-    network:
-        # The CNI used.
-        cni:
-            name: flannel # Name of CNI to use.
-        dnsDomain: cluster.local # The domain used by Kubernetes DNS.
-        # The pod subnet CIDR.
-        podSubnets:
-            - 10.244.0.0/16
-        # The service subnet CIDR.
-        serviceSubnets:
-            - 10.96.0.0/12
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`cni`</td>
-      <td><a href="#cni">CNIConfig</a></td>
-      <td>The CNI used.<br />Composed of "name" and "urls".<br />The "name" key supports the following options: "flannel", "custom", and "none".<br />"flannel" uses Talos-managed Flannel CNI, and that's the default option.<br />"custom" uses custom manifests that should be provided in "urls".<br />"none" indicates that Talos will not manage any CNI installation.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`dnsDomain`</td>
-      <td>string</td>
-      <td>The domain used by Kubernetes DNS.<br />The default is `cluster.local`</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`podSubnets`</td>
-      <td>[]string</td>
-      <td>The pod subnet CIDR.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`serviceSubnets`</td>
-      <td>[]string</td>
-      <td>The service subnet CIDR.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-#### cni
-
-CNIConfig represents the CNI configuration options.
-
-
-
-```yaml
-cluster:
-    network:
-        cni:
-            name: custom # Name of CNI to use.
-            # URLs containing manifests to apply for the CNI.
-            urls:
-                - https://docs.projectcalico.org/archive/v3.20/manifests/canal.yaml
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`name`</td>
-      <td>string</td>
-      <td>Name of CNI to use.</td>
-      <td>`flannel`<br />`custom`<br />`none`<br /></td>
-    </tr>
-    <tr>
-      <td>`urls`</td>
-      <td>[]string</td>
-      <td>URLs containing manifests to apply for the CNI.<br />Should be present for "custom", must be empty for "flannel" and "none".</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`flannel`</td>
-      <td><a href="#flannel">FlannelCNIConfig</a></td>
-      <td>description:</td>
-      <td><br />Flannel configuration options.<br /></td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-##### flannel
-
-FlannelCNIConfig represents the Flannel CNI configuration options.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`extraArgs`</td>
-      <td>[]string</td>
-      <td>Extra arguments for 'flanneld'.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`kubeNetworkPoliciesEnabled`</td>
-      <td>bool</td>
-      <td>Deploys kube-network-policies along with Flannel.<br /><br />This enables Kubernetes Network Policies support in the cluster.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-
-
-
-
-### apiServer
-
-APIServerConfig represents the kube apiserver configuration options.
-
-
-
-```yaml
-cluster:
-    apiServer:
-        image: registry.k8s.io/kube-apiserver:v1.36.0 # The container image used in the API server manifest.
-        # Extra arguments to supply to the API server.
-        extraArgs:
-            feature-gates: ServerSideApply=true
-            http2-max-streams-per-connection: "32"
-        # Extra certificate subject alternative names for the API server's certificate.
-        certSANs:
-            - 1.2.3.4
-            - 4.5.6.7
-
-        # # Configure the API server admission plugins.
-        # admissionControl:
-        #     - name: PodSecurity # Name is the name of the admission controller.
-        #       # Configuration is an embedded configuration object to be used as the plugin's
-        #       configuration:
-        #         apiVersion: pod-security.admission.config.k8s.io/v1alpha1
-        #         defaults:
-        #             audit: restricted
-        #             audit-version: latest
-        #             enforce: baseline
-        #             enforce-version: latest
-        #             warn: restricted
-        #             warn-version: latest
-        #         exemptions:
-        #             namespaces:
-        #                 - kube-system
-        #             runtimeClasses: []
-        #             usernames: []
-        #         kind: PodSecurityConfiguration
-
-        # # Configure the API server audit policy.
-        # auditPolicy:
-        #     apiVersion: audit.k8s.io/v1
-        #     kind: Policy
-        #     rules:
-        #         - level: Metadata
-
-        # # Configure the API server authorization config. Node and RBAC authorizers are always added irrespective of the configuration.
-        # authorizationConfig:
-        #     - type: Webhook # Type is the name of the authorizer. Allowed values are `Node`, `RBAC`, and `Webhook`.
-        #       name: webhook # Name is used to describe the authorizer.
-        #       # webhook is the configuration for the webhook authorizer.
-        #       webhook:
-        #         connectionInfo:
-        #             type: InClusterConfig
-        #         failurePolicy: Deny
-        #         matchConditionSubjectAccessReviewVersion: v1
-        #         matchConditions:
-        #             - expression: has(request.resourceAttributes)
-        #             - expression: '!(\''system:serviceaccounts:kube-system\'' in request.groups)'
-        #         subjectAccessReviewVersion: v1
-        #         timeout: 3s
-        #     - type: Webhook # Type is the name of the authorizer. Allowed values are `Node`, `RBAC`, and `Webhook`.
-        #       name: in-cluster-authorizer # Name is used to describe the authorizer.
-        #       # webhook is the configuration for the webhook authorizer.
-        #       webhook:
-        #         connectionInfo:
-        #             type: InClusterConfig
-        #         failurePolicy: NoOpinion
-        #         matchConditionSubjectAccessReviewVersion: v1
-        #         subjectAccessReviewVersion: v1
-        #         timeout: 3s
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`image`</td>
-      <td>string</td>
-      <td>The container image used in the API server manifest.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`extraArgs`</td>
-      <td>Args</td>
-      <td>Extra arguments to supply to the API server.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`extraVolumes`</td>
-      <td><a href="#extravolumes%5B%5D">VolumeMountConfig</a></td>
-      <td>Extra volumes to mount to the API server static pod.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`env`</td>
-      <td>Env</td>
-      <td>The `env` field allows for the addition of environment variables for the control plane component.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`certSANs`</td>
-      <td>[]string</td>
-      <td>Extra certificate subject alternative names for the API server's certificate.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`admissionControl`</td>
-      <td><a href="#admissioncontrol%5B%5D">AdmissionPluginConfig</a></td>
-      <td>Configure the API server admission plugins.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`auditPolicy`</td>
-      <td>Unstructured</td>
-      <td>Configure the API server audit policy.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`resources`</td>
-      <td><a href="#resources">ResourcesConfig</a></td>
-      <td>Configure the API server resources.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`authorizationConfig`</td>
-      <td><a href="#authorizationconfig%5B%5D">AuthorizationConfigAuthorizerConfig</a></td>
-      <td>Configure the API server authorization config. Node and RBAC authorizers are always added irrespective of the configuration.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-#### extraVolumes[]
-
-VolumeMountConfig struct describes extra volume mount for the static pods.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`hostPath`</td>
-      <td>string</td>
-      <td>Path on the host.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`mountPath`</td>
-      <td>string</td>
-      <td>Path in the container.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`readonly`</td>
-      <td>bool</td>
-      <td>Mount the volume read only.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-#### admissionControl[]
-
-AdmissionPluginConfig represents the API server admission plugin configuration.
-
-
-
-```yaml
-cluster:
-    apiServer:
-        admissionControl:
-            - name: PodSecurity # Name is the name of the admission controller.
-              # Configuration is an embedded configuration object to be used as the plugin's
-              configuration:
-                apiVersion: pod-security.admission.config.k8s.io/v1alpha1
-                defaults:
-                    audit: restricted
-                    audit-version: latest
-                    enforce: baseline
-                    enforce-version: latest
-                    warn: restricted
-                    warn-version: latest
-                exemptions:
-                    namespaces:
-                        - kube-system
-                    runtimeClasses: []
-                    usernames: []
-                kind: PodSecurityConfiguration
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`name`</td>
-      <td>string</td>
-      <td>Name is the name of the admission controller.<br />It must match the registered admission plugin name.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`configuration`</td>
-      <td>Unstructured</td>
-      <td>Configuration is an embedded configuration object to be used as the plugin's<br />configuration.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-#### resources
-
-ResourcesConfig represents the pod resources.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`requests`</td>
-      <td>Unstructured</td>
-      <td>Requests configures the reserved cpu/memory resources.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`limits`</td>
-      <td>Unstructured</td>
-      <td>Limits configures the maximum cpu/memory resources a container can use.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-#### authorizationConfig[]
-
-AuthorizationConfigAuthorizerConfig represents the API server authorization config authorizer configuration.
-
-
-
-```yaml
-cluster:
-    apiServer:
-        authorizationConfig:
-            - type: Webhook # Type is the name of the authorizer. Allowed values are `Node`, `RBAC`, and `Webhook`.
-              name: webhook # Name is used to describe the authorizer.
-              # webhook is the configuration for the webhook authorizer.
-              webhook:
-                connectionInfo:
-                    type: InClusterConfig
-                failurePolicy: Deny
-                matchConditionSubjectAccessReviewVersion: v1
-                matchConditions:
-                    - expression: has(request.resourceAttributes)
-                    - expression: '!(\''system:serviceaccounts:kube-system\'' in request.groups)'
-                subjectAccessReviewVersion: v1
-                timeout: 3s
-            - type: Webhook # Type is the name of the authorizer. Allowed values are `Node`, `RBAC`, and `Webhook`.
-              name: in-cluster-authorizer # Name is used to describe the authorizer.
-              # webhook is the configuration for the webhook authorizer.
-              webhook:
-                connectionInfo:
-                    type: InClusterConfig
-                failurePolicy: NoOpinion
-                matchConditionSubjectAccessReviewVersion: v1
-                subjectAccessReviewVersion: v1
-                timeout: 3s
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`type`</td>
-      <td>string</td>
-      <td>Type is the name of the authorizer. Allowed values are `Node`, `RBAC`, and `Webhook`.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`name`</td>
-      <td>string</td>
-      <td>Name is used to describe the authorizer.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`webhook`</td>
-      <td>Unstructured</td>
-      <td>webhook is the configuration for the webhook authorizer.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-
-
-### controllerManager
-
-ControllerManagerConfig represents the kube controller manager configuration options.
-
-
-
-```yaml
-cluster:
-    controllerManager:
-        image: registry.k8s.io/kube-controller-manager:v1.36.0 # The container image used in the controller manager manifest.
-        # Extra arguments to supply to the controller manager.
-        extraArgs:
-            feature-gates: ServerSideApply=true
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`image`</td>
-      <td>string</td>
-      <td>The container image used in the controller manager manifest.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`extraArgs`</td>
-      <td>Args</td>
-      <td>Extra arguments to supply to the controller manager.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`extraVolumes`</td>
-      <td><a href="#extravolumes%5B%5D">VolumeMountConfig</a></td>
-      <td>Extra volumes to mount to the controller manager static pod.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`env`</td>
-      <td>Env</td>
-      <td>The `env` field allows for the addition of environment variables for the control plane component.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`resources`</td>
-      <td><a href="#resources">ResourcesConfig</a></td>
-      <td>Configure the controller manager resources.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-#### extraVolumes[]
-
-VolumeMountConfig struct describes extra volume mount for the static pods.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`hostPath`</td>
-      <td>string</td>
-      <td>Path on the host.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`mountPath`</td>
-      <td>string</td>
-      <td>Path in the container.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`readonly`</td>
-      <td>bool</td>
-      <td>Mount the volume read only.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-#### resources
-
-ResourcesConfig represents the pod resources.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`requests`</td>
-      <td>Unstructured</td>
-      <td>Requests configures the reserved cpu/memory resources.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`limits`</td>
-      <td>Unstructured</td>
-      <td>Limits configures the maximum cpu/memory resources a container can use.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-
-
-### proxy
-
-ProxyConfig represents the kube proxy configuration options.
-
-
-
-```yaml
-cluster:
-    proxy:
-        image: registry.k8s.io/kube-proxy:v1.36.0 # The container image used in the kube-proxy manifest.
-        mode: ipvs # proxy mode of kube-proxy.
-        # Extra arguments to supply to kube-proxy.
-        extraArgs:
-            proxy-mode: iptables
-
-        # # Disable kube-proxy deployment on cluster bootstrap.
-        # disabled: false
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`disabled`</td>
-      <td>bool</td>
-      <td>Disable kube-proxy deployment on cluster bootstrap.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`image`</td>
-      <td>string</td>
-      <td>The container image used in the kube-proxy manifest.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`mode`</td>
-      <td>string</td>
-      <td>proxy mode of kube-proxy.<br />The default is 'iptables'.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`extraArgs`</td>
-      <td>Args</td>
-      <td>Extra arguments to supply to kube-proxy.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-### scheduler
-
-SchedulerConfig represents the kube scheduler configuration options.
-
-
-
-```yaml
-cluster:
-    scheduler:
-        image: registry.k8s.io/kube-scheduler:v1.36.0 # The container image used in the scheduler manifest.
-        # Extra arguments to supply to the scheduler.
-        extraArgs:
-            feature-gates: AllBeta=true
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`image`</td>
-      <td>string</td>
-      <td>The container image used in the scheduler manifest.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`extraArgs`</td>
-      <td>Args</td>
-      <td>Extra arguments to supply to the scheduler.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`extraVolumes`</td>
-      <td><a href="#extravolumes%5B%5D">VolumeMountConfig</a></td>
-      <td>Extra volumes to mount to the scheduler static pod.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`env`</td>
-      <td>Env</td>
-      <td>The `env` field allows for the addition of environment variables for the control plane component.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`resources`</td>
-      <td><a href="#resources">ResourcesConfig</a></td>
-      <td>Configure the scheduler resources.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`config`</td>
-      <td>Unstructured</td>
-      <td>Specify custom kube-scheduler configuration.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-#### extraVolumes[]
-
-VolumeMountConfig struct describes extra volume mount for the static pods.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`hostPath`</td>
-      <td>string</td>
-      <td>Path on the host.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`mountPath`</td>
-      <td>string</td>
-      <td>Path in the container.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`readonly`</td>
-      <td>bool</td>
-      <td>Mount the volume read only.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-#### resources
-
-ResourcesConfig represents the pod resources.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`requests`</td>
-      <td>Unstructured</td>
-      <td>Requests configures the reserved cpu/memory resources.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`limits`</td>
-      <td>Unstructured</td>
-      <td>Limits configures the maximum cpu/memory resources a container can use.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-
-
-### discovery
-
-ClusterDiscoveryConfig struct configures cluster membership discovery.
-
-
-
-```yaml
-cluster:
-    discovery:
-        enabled: true # Enable the cluster membership discovery feature.
-        # Configure registries used for cluster member discovery.
-        registries:
-            # Kubernetes registry uses Kubernetes API server to discover cluster members and stores additional information
-            kubernetes: {}
-            # Service registry is using an external service to push and pull information about cluster members.
-            service:
-                endpoint: https://discovery.talos.dev/ # External service endpoint.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`enabled`</td>
-      <td>bool</td>
-      <td>Enable the cluster membership discovery feature.<br />Cluster discovery is based on individual registries which are configured under the registries field.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`registries`</td>
-      <td><a href="#registries">DiscoveryRegistriesConfig</a></td>
-      <td>Configure registries used for cluster member discovery.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-#### registries
-
-DiscoveryRegistriesConfig struct configures cluster membership discovery.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`kubernetes`</td>
-      <td><a href="#kubernetes">RegistryKubernetesConfig</a></td>
-      <td>Kubernetes registry uses Kubernetes API server to discover cluster members and stores additional information<br />as annotations on the Node resources.<br /><br />This feature is deprecated as it is not compatible with Kubernetes 1.32+.<br />See https://github.com/siderolabs/talos/issues/9980 for more information.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`service`</td>
-      <td><a href="#service">RegistryServiceConfig</a></td>
-      <td>Service registry is using an external service to push and pull information about cluster members.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-##### kubernetes
-
-RegistryKubernetesConfig struct configures Kubernetes discovery registry.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`disabled`</td>
-      <td>bool</td>
-      <td>Disable Kubernetes discovery registry.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-##### service
-
-RegistryServiceConfig struct configures Kubernetes discovery registry.
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`disabled`</td>
-      <td>bool</td>
-      <td>Disable external service discovery registry.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`endpoint`</td>
-      <td>string</td>
-      <td>External service endpoint.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
 
 
 
@@ -2727,10 +1424,11 @@ EtcdConfig represents the etcd configuration options.
 
 
 
+
 ```yaml
 cluster:
     etcd:
-        image: registry.k8s.io/etcd:v3.6.9 # The container image used to create the etcd service.
+        image: registry.k8s.io/etcd:3.7.0-rc.0-0 # The container image used to create the etcd service.
         # The `ca` is the root certificate authority of the PKI.
         ca:
             crt: LS0tIEVYQU1QTEUgQ0VSVElGSUNBVEUgLS0t
@@ -2798,6 +1496,7 @@ CoreDNS represents the CoreDNS config values.
 
 
 
+
 ```yaml
 cluster:
     coreDNS:
@@ -2837,6 +1536,7 @@ cluster:
 ### externalCloudProvider
 
 ExternalCloudProviderConfig contains external cloud provider configuration.
+
 
 
 
@@ -2886,6 +1586,7 @@ ClusterInlineManifest struct describes inline bootstrap manifests for the user.
 
 
 
+
 ```yaml
 cluster:
     inlineManifests:
@@ -2930,6 +1631,7 @@ cluster:
 ### adminKubeconfig
 
 AdminKubeconfigConfig contains admin kubeconfig settings.
+
 
 
 

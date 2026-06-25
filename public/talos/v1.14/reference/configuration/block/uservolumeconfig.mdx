@@ -1,7 +1,10 @@
 ---
-description: 'UserVolumeConfig is a user volume configuration document. User volume is automatically allocated as a partition on the specified disk and mounted under `/var/mnt/<name>`. The partition label is automatically generated as `u-<name>`.'
+description: |
+  UserVolumeConfig is a user volume configuration document.
+  User volume is automatically allocated as a partition on the specified disk
+  and mounted under `/var/mnt/<name>`.
+  The partition label is automatically generated as `u-<name>`.
 title: UserVolumeConfig
-canonical: https://docs.siderolabs.com/talos/v1.13/reference/configuration/block/uservolumeconfig
 ---
 
 {/*
@@ -199,6 +202,12 @@ encryption:
       <td>The mount describes additional mount options.</td>
       <td></td>
     </tr>
+    <tr>
+      <td>`trim`</td>
+      <td><a href="#trim">TrimConfig</a></td>
+      <td>The trim describes the per-volume filesystem trim (fstrim) configuration.</td>
+      <td></td>
+    </tr>
   </tbody>
 </table>
 
@@ -207,6 +216,7 @@ encryption:
 ## provisioning
 
 ProvisioningSpec describes how the volume is provisioned.
+
 
 
 
@@ -257,6 +267,7 @@ DiskSelector selects a disk for the volume.
 
 
 
+
 <table>
   <thead>
     <tr>
@@ -289,6 +300,7 @@ FilesystemSpec configures the filesystem for the volume.
 
 
 
+
 <table>
   <thead>
     <tr>
@@ -303,7 +315,7 @@ FilesystemSpec configures the filesystem for the volume.
       <td>`type`</td>
       <td>FilesystemType</td>
       <td>Filesystem type. Default is `xfs`.</td>
-      <td>`ext4`<br />`xfs`<br /></td>
+      <td>`ext4`<br />`xfs`<br />`btrfs`<br /></td>
     </tr>
     <tr>
       <td>`projectQuotaSupport`</td>
@@ -395,7 +407,13 @@ encryption:
       <td>`options`</td>
       <td>[]string</td>
       <td>Additional --perf parameters for the LUKS2 encryption.</td>
-      <td>`no_read_workqueue`<br />`no_write_workqueue`<br />`same_cpu_crypt`<br /></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`allowDiscards`</td>
+      <td>bool</td>
+      <td>Allow TRIM/discard requests to be passed through to the underlying device when the encrypted volume is opened.<br />Defaults to false.</td>
+      <td></td>
     </tr>
   </tbody>
 </table>
@@ -405,6 +423,7 @@ encryption:
 ### keys[]
 
 EncryptionKey represents configuration for disk encryption key.
+
 
 
 
@@ -467,6 +486,7 @@ EncryptionKeyStatic represents throw away key type.
 
 
 
+
 <table>
   <thead>
     <tr>
@@ -493,6 +513,7 @@ EncryptionKeyStatic represents throw away key type.
 #### nodeID
 
 EncryptionKeyNodeID represents deterministically generated key from the node UUID and PartitionLabel.
+
 
 
 
@@ -546,6 +567,7 @@ EncryptionKeyTPM represents a key that is generated and then sealed/unsealed by 
 
 
 
+
 <table>
   <thead>
     <tr>
@@ -576,6 +598,7 @@ EncryptionKeyTPM represents a key that is generated and then sealed/unsealed by 
 ##### options
 
 EncryptionKeyTPMOptions represents the options for TPM-based key protection.
+
 
 
 
@@ -616,6 +639,7 @@ UserMountSpec describes how the volume is mounted.
 
 
 
+
 <table>
   <thead>
     <tr>
@@ -636,6 +660,45 @@ UserMountSpec describes how the volume is mounted.
       <td>`secure`</td>
       <td>bool</td>
       <td>Enable secure mount options (nosuid, nodev).<br /><br />Defaults to true for better security.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+## trim
+
+TrimConfig describes per-volume filesystem trim (fstrim) configuration.
+
+It overrides the global FilesystemTrimConfig for the volume.
+
+
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`enabled`</td>
+      <td>bool</td>
+      <td>Enable or disable trimming for this volume.<br /><br />If not set, trimming is enabled when the global FilesystemTrimConfig is present.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`interval`</td>
+      <td>Duration</td>
+      <td>The interval at which the volume is trimmed, overriding the global trim interval.</td>
       <td></td>
     </tr>
   </tbody>

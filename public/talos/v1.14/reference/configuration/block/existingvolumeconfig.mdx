@@ -1,7 +1,10 @@
 ---
-description: 'ExistingVolumeConfig is an existing volume configuration document. Existing volumes allow to mount partitions (or whole disks) that were created outside of Talos. Volume will be mounted under `/var/mnt/<name>`. The existing volume config name should not conflict with user volume names.'
+description: |
+  ExistingVolumeConfig is an existing volume configuration document.
+  Existing volumes allow to mount partitions (or whole disks) that were created
+  outside of Talos. Volume will be mounted under `/var/mnt/<name>`.
+  The existing volume config name should not conflict with user volume names.
 title: ExistingVolumeConfig
-canonical: https://docs.siderolabs.com/talos/v1.13/reference/configuration/block/existingvolumeconfig
 ---
 
 {/*
@@ -58,6 +61,12 @@ discovery:
       <td>The mount describes additional mount options.</td>
       <td></td>
     </tr>
+    <tr>
+      <td>`trim`</td>
+      <td><a href="#trim">TrimConfig</a></td>
+      <td>The trim describes the per-volume filesystem trim (fstrim) configuration.</td>
+      <td></td>
+    </tr>
   </tbody>
 </table>
 
@@ -66,6 +75,7 @@ discovery:
 ## discovery
 
 VolumeDiscoverySpec describes how the volume is discovered.
+
 
 
 
@@ -94,6 +104,7 @@ VolumeDiscoverySpec describes how the volume is discovered.
 ### volumeSelector
 
 VolumeSelector selects an existing volume.
+
 
 
 
@@ -130,6 +141,7 @@ ExistingMountSpec describes how the volume is mounted.
 
 
 
+
 <table>
   <thead>
     <tr>
@@ -156,6 +168,45 @@ ExistingMountSpec describes how the volume is mounted.
       <td>`secure`</td>
       <td>bool</td>
       <td>Enable secure mount options (nosuid, nodev).<br /><br />Defaults to true for better security.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+## trim
+
+TrimConfig describes per-volume filesystem trim (fstrim) configuration.
+
+It overrides the global FilesystemTrimConfig for the volume.
+
+
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`enabled`</td>
+      <td>bool</td>
+      <td>Enable or disable trimming for this volume.<br /><br />If not set, trimming is enabled when the global FilesystemTrimConfig is present.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`interval`</td>
+      <td>Duration</td>
+      <td>The interval at which the volume is trimmed, overriding the global trim interval.</td>
       <td></td>
     </tr>
   </tbody>

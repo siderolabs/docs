@@ -1,7 +1,6 @@
 ---
 description: KubeSpanConfig is a config document to configure KubeSpan.
 title: KubeSpanConfig
-canonical: https://docs.siderolabs.com/talos/v1.13/reference/configuration/network/kubespanconfig
 ---
 
 {/*
@@ -52,7 +51,7 @@ filters:
     <tr>
       <td>`enabled`</td>
       <td>bool</td>
-      <td>Enable the KubeSpan feature.<br />Cluster discovery should be enabled with cluster.discovery.enabled for KubeSpan to be enabled.</td>
+      <td>Enable the KubeSpan feature.<br />Requires cluster discovery to be enabled through a DiscoveryServiceConfig document.</td>
       <td></td>
     </tr>
     <tr>
@@ -93,6 +92,7 @@ filters:
 ## filters
 
 KubeSpanFiltersConfig configures KubeSpan endpoint filters.
+
 
 
 

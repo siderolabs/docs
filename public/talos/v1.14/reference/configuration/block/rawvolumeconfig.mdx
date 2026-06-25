@@ -1,7 +1,11 @@
 ---
-description: 'RawVolumeConfig is a raw volume configuration document. Raw volumes allow to create partitions without formatting them. If you want to use local storage, user volumes is a better choice, raw volumes are intended to be used with CSI provisioners. The partition label is automatically generated as `r-<name>`.'
+description: |
+  RawVolumeConfig is a raw volume configuration document.
+  Raw volumes allow to create partitions without formatting them.
+   If you want to use local storage, user volumes is a better choice,
+   raw volumes are intended to be used with CSI provisioners.
+  The partition label is automatically generated as `r-<name>`.
 title: RawVolumeConfig
-canonical: https://docs.siderolabs.com/talos/v1.13/reference/configuration/block/rawvolumeconfig
 ---
 
 {/*
@@ -98,6 +102,7 @@ ProvisioningSpec describes how the volume is provisioned.
 
 
 
+
 <table>
   <thead>
     <tr>
@@ -140,6 +145,7 @@ ProvisioningSpec describes how the volume is provisioned.
 ### diskSelector
 
 DiskSelector selects a disk for the volume.
+
 
 
 
@@ -246,7 +252,13 @@ encryption:
       <td>`options`</td>
       <td>[]string</td>
       <td>Additional --perf parameters for the LUKS2 encryption.</td>
-      <td>`no_read_workqueue`<br />`no_write_workqueue`<br />`same_cpu_crypt`<br /></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`allowDiscards`</td>
+      <td>bool</td>
+      <td>Allow TRIM/discard requests to be passed through to the underlying device when the encrypted volume is opened.<br />Defaults to false.</td>
+      <td></td>
     </tr>
   </tbody>
 </table>
@@ -256,6 +268,7 @@ encryption:
 ### keys[]
 
 EncryptionKey represents configuration for disk encryption key.
+
 
 
 
@@ -318,6 +331,7 @@ EncryptionKeyStatic represents throw away key type.
 
 
 
+
 <table>
   <thead>
     <tr>
@@ -344,6 +358,7 @@ EncryptionKeyStatic represents throw away key type.
 #### nodeID
 
 EncryptionKeyNodeID represents deterministically generated key from the node UUID and PartitionLabel.
+
 
 
 
@@ -397,6 +412,7 @@ EncryptionKeyTPM represents a key that is generated and then sealed/unsealed by 
 
 
 
+
 <table>
   <thead>
     <tr>
@@ -427,6 +443,7 @@ EncryptionKeyTPM represents a key that is generated and then sealed/unsealed by 
 ##### options
 
 EncryptionKeyTPMOptions represents the options for TPM-based key protection.
+
 
 
 

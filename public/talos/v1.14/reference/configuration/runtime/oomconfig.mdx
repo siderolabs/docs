@@ -1,7 +1,6 @@
 ---
 description: OOMConfig is a Out of Memory handler config document.
 title: OOMConfig
-canonical: https://docs.siderolabs.com/talos/v1.13/reference/configuration/runtime/oomconfig
 ---
 
 {/*
@@ -50,6 +49,12 @@ sampleInterval: 100ms # How often should the trigger expression be evaluated.
       <td>`cgroupRankingExpression`</td>
       <td>Expression</td>
       <td>This expression defines how to rank cgroups for OOM handler.<br /><br />The cgroup with the highest rank (score) will be evicted first.<br />The expression must evaluate to a double value.<br /><br />This expression receives the following parameters:<br />- memory_max - Optional{"<"}uint{">"} - in bytes<br />- memory_current - Optional{"<"}uint{">"} - in bytes<br />- memory_peak - Optional{"<"}uint{">"} - in bytes<br />- path - string, path to the cgroup<br />- class - int. This represents cgroup QoS class, and matches one of the constants, which are also provided: Besteffort, Burstable, Guaranteed, Podruntime, System</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`strictCgroupClassOrdering`</td>
+      <td>bool</td>
+      <td>Whether to enforce strict QoS class ordering when selecting an OOM victim.<br /><br />When enabled (the default), cgroups in the lowest-importance QoS class are<br />killed first, and the ranking score only breaks ties within a class.<br />When disabled, the highest-scoring cgroup is killed regardless of class.</td>
       <td></td>
     </tr>
     <tr>
