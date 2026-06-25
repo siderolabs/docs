@@ -3,7 +3,7 @@ title: Dell PowerStore CSI
 description: Configure and install the Dell PowerStore CSI driver on a Talos Linux cluster
 ---
 
-import { version } from '/snippets/custom-variables.mdx';
+import { version, release } from '/snippets/custom-variables.mdx';
 
 [Dell PowerStore CSI](https://github.com/dell/csi-powerstore) is a container storage interface (CSI) driver for Kubernetes that provisions persistent volumes from Dell PowerStore storage arrays. This guide covers installing the driver on a Talos Linux cluster and connecting to the array over NVMe/TCP.
 
@@ -26,7 +26,7 @@ Dell PowerStore CSI requires four Talos system extensions on every node:
 
 <Note> Use Talos Linux v1.13.3 or higher.</Note>
 
-<Info> The schematic ID [`4f50d1375e1c91b2bcac34a8a99ccc83ab9220f7f1ab65172ccff510bb926b4b`](https://factory.talos.dev/?arch=amd64&platform=metal&schematic-id=4f50d1375e1c91b2bcac34a8a99ccc83ab9220f7f1ab65172ccff510bb926b4b&target=metal&version=${release}) corresponds to exactly the four extensions listed above.</Info>
+<Info> The schematic ID <a href={`https://factory.talos.dev/?arch=amd64&platform=metal&schematic-id=4f50d1375e1c91b2bcac34a8a99ccc83ab9220f7f1ab65172ccff510bb926b4b&target=metal&version=${release}`}><code>4f50d1375e1c91b2bcac34a8a99ccc83ab9220f7f1ab65172ccff510bb926b4b</code></a> corresponds to exactly the four extensions listed above.</Info>
 
 **If your nodes are already running** without these extensions, upgrade each node to a schematic that includes all four. You can generate an updated schematic using the [Talos Image Factory](https://factory.talos.dev/), then follow the <a href={`../../talos/${version}/platform-specific-installations/boot-assets`}>Boot Assets guide</a> to apply it to your existing nodes.
 
