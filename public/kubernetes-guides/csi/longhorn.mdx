@@ -3,14 +3,14 @@ title: Longhorn
 description: Configure and install Longhorn distributed block storage on a Talos Linux cluster
 ---
 
-import { version } from '/snippets/custom-variables.mdx';
+import { version, release } from '/snippets/custom-variables.mdx';
 
 [Longhorn](https://longhorn.io) is a distributed block storage system for Kubernetes that provisions persistent volumes from the local disks of your nodes. It ships with two data engines, and this guide covers installing both on a Talos Linux cluster.
 
 - **V1 Data Engine**: the mature, production-ready default. It builds replicated volumes on a Longhorn-native iSCSI stack and runs on any node that has the required system extensions.
 - **V2 Data Engine**: a newer, SPDK-based engine that delivers higher throughput and lower latency at the cost of extra node configuration. It additionally requires huge pages and a few kernel modules.
 
-Pick the tab for the engine you want to deploy. Both paths cover the required system extensions, disk provisioning with `UserVolumeConfig`, pod security configuration, and the final Helm installation.
+Pick the tab for the engine you want to deploy. Both paths cover the required system extensions, disk provisioning with `UserVolumeConfig` or `RawVolumeConfig`, pod security configuration, and the final Helm installation.
 
 ## Prerequisites
 
@@ -26,20 +26,18 @@ Longhorn also requires two Talos system extensions on every node:
 - `siderolabs/iscsi-tools` — provides iscsid and iscsiadm for persistent volume operations
 - `siderolabs/util-linux-tools` — provides fstrim for filesystem trimming
 
+<Info> The schematic ID <a href={`https://factory.talos.dev/?arch=amd64&platform=metal&schematic-id=613e1592b2da41ae5e265e8789429f22e121aab91cb4deb6bc3c0b6262961245&target=metal&version=${release}`}><code>613e1592b2da41ae5e265e8789429f22e121aab91cb4deb6bc3c0b6262961245</code></a> corresponds to exactly the four extensions listed above.</Info>
+
 **If you are provisioning new nodes**, add these extensions when building your Talos image using the [Talos Image Factory UI](https://factory.talos.dev/) or during the Download installation media step when creating machines with Omni.
-
-Select your Talos version and architecture, add both extensions (`iscsi-tools` and `util-linux-tools`) under **System Extensions**, and bootstrap your cluster using the generated image.
-
-**If your nodes are already running without these extensions**, upgrade each node to a schematic that includes both extensions. You can generate an updated schematic using the [Talos Image Factory](https://factory.talos.dev/), then follow the <a href={`../../talos/${version}/platform-specific-installations/boot-assets`}>Boot Assets guide</a> to apply it to your existing nodes.
-
 
 <Tabs>
   <Tab title="V1 Data Engine">
 
+The V1 Data Engine is Longhorn's mature, production-ready default. It builds replicated volumes on a Longhorn-native iSCSI stack and runs on any node that has the required system extensions, so each storage node needs nothing more than a dedicated disk.
 
 ## Step 1: Provision a dedicated disk with UserVolumeConfig
 
-Talos Linux v1.10 introduced **UserVolumeConfig**, which replaces the deprecated `machine.disks` API.
+Talos Linux v1.10 introduced <a href={`../../talos/${version}/reference/configuration/block/uservolumeconfig`}>UserVolumeConfig</a>, which replaces the deprecated `machine.disks` API.
 
 This resource automatically mounts selected disks under `/var/mnt/<name>`. In this guide, the volume is named `longhorn` which mounts at `/var/mnt/longhorn`.
 
@@ -167,7 +165,7 @@ The V2 Data Engine runs Longhorn on top of [SPDK](https://spdk.io) for significa
 
 ## Step 1: Provision a raw block device and enable the V2 prerequisites
 
-Unlike V1, the V2 Data Engine stores data on **`block`-type disks** — raw, unformatted block devices. On Talos you allocate one with **RawVolumeConfig**, which carves an unformatted partition out of a disk and exposes it at a stable path. You also need huge pages and the SPDK kernel modules, enabled through the machine configuration.
+Unlike V1, the V2 Data Engine stores data on unformatted `block` devices. On Talos you allocate one with <a href={`../../talos/${version}/reference/configuration/block/rawvolumeconfig`}>RawVolumeConfig</a>, which carves an unformatted partition out of a disk and exposes it at a stable path. You also need huge pages and the SPDK kernel modules, enabled through the machine configuration.
 
 ### 1.1: Inspect available disks
 
