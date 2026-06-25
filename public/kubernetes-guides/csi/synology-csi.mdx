@@ -5,8 +5,6 @@ aliases:
   - ../../guides/synology-csi
 ---
 
-## Background
-
 Synology is a company that specializes in Network Attached Storage (NAS) devices.
 They provide a number of features within a simple web OS, including an LDAP server, Docker support, and (perhaps most relevant to this guide) function as an iSCSI host.
 The focus of this guide is to allow a Kubernetes cluster running on Talos to provision Kubernetes storage (both dynamic or static) on a Synology NAS using a direct integration, rather than relying on an intermediary layer like Rook/Ceph or Mayastor.
@@ -29,19 +27,16 @@ In order to minimize access in the case of these credentials being compromised, 
 
 ## Setting up the Synology CSI
 
-> Note: this guide is paraphrased from the Synology CSI [readme](https://github.com/zebernst/synology-csi-talos).
-> Please consult the readme for more in-depth instructions and explanations.
-
 Clone the git repository.
 
 ```bash
-git clone https://github.com/zebernst/synology-csi-talos.git
+git clone https://github.com/SynologyOpenSource/synology-csi.git
+cd synology-csi
 ```
 
-While Synology provides some automated scripts to deploy the CSI driver, they can be finicky especially when making changes to the source code.
-We will be configuring and deploying things manually in this guide.
+The repository provides ready-to-apply Kubernetes manifests under `deploy/kubernetes/<version>/`. These manifests reference the `synology/synology-csi` image published on Docker Hub, and this guide configures and applies them directly. For additional configuration options and a full reference, see the [Synology CSI README](https://github.com/SynologyOpenSource/synology-csi#synology-csi-driver-for-kubernetes).
 
-The relevant files we will be touching are in the following locations:
+The manifests you will work with are organized as follows:
 
 ```text
 .
@@ -64,8 +59,15 @@ The relevant files we will be touching are in the following locations:
 
 ### Configure connection info
 
-Use `config/client-info-template.yml` as an example to configure the connection information for DSM.
-You can specify **one or more** storage systems on which the CSI volumes will be created.
+Copy the template to create your connection config file:
+
+```bash
+cp config/client-info-template.yml config/client-info.yml
+```
+
+Edit `config/client-info.yml` to configure the connection information for DSM.
+You can specify one or more storage systems on which the CSI volumes will be created.
+
 See below for an example:
 
 ```yaml
@@ -78,24 +80,25 @@ clients:
   password: password  # password
 ```
 
-Create a Kubernetes secret using the client information config file.
+### Create the namespace and secret
+
+Create the namespace defined by the manifests, and label it so that the driver's privileged node pods are admitted under Pod Security Admission:
+
+```bash
+kubectl apply -f deploy/kubernetes/v1.20/namespace.yml
+kubectl label namespace synology-csi pod-security.kubernetes.io/enforce=privileged --overwrite
+```
+
+<Note> The node DaemonSet runs a privileged container so it can manage iSCSI devices on the host.
+Without the privileged enforcement label, Pod Security Admission will emit warnings or block the pods.</Note>
+
+Create a Kubernetes secret using the client information config file:
 
 ```bash
 kubectl create secret -n synology-csi generic client-info-secret --from-file=config/client-info.yml
 ```
 
-Note that if you rename the secret to something other than `client-info-secret`, make sure you update the corresponding references in the deployment manifests as well.
-
-### Build the Talos-compatible image
-
-Modify the `Makefile` so that the image is built and tagged under your GitHub Container Registry username:
-
-```makefile
-REGISTRY_NAME=ghcr.io/<username>
-```
-
-When you run `make docker-build` or `make docker-build-multiarch`, it will push the resulting image to `ghcr.io/<username>/synology-csi:v1.1.0`.
-Ensure that you find and change any reference to `synology/synology-csi:v1.1.0` to point to your newly-pushed image within the deployment manifests.
+Note that if you rename the secret to something other than client-info-secret, make sure you update the corresponding references in the deployment manifests as well.
 
 ### Configure the CSI driver
 
