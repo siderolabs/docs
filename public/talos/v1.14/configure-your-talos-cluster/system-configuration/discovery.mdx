@@ -6,8 +6,8 @@ aliases:
 canonical: https://docs.siderolabs.com/talos/v1.13/configure-your-talos-cluster/system-configuration/discovery
 ---
 
-import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
-import { release_v1_12 } from '/snippets/custom-variables.mdx';
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx";
+import { release_v1_12 } from "/snippets/custom-variables.mdx";
 
 <VersionWarningBanner />
 
@@ -17,39 +17,111 @@ Without discovery, nodes have no built-in way to learn about other cluster membe
 
 When discovery is enabled, this information is shared and kept up to date across all nodes. This allows Talos to form a cluster and, when enabled, establish encrypted [KubeSpan](../../networking/kubespan) tunnels and support [KubePrism](../../../../kubernetes-guides/advanced-guides/kubeprism) peer endpoint discovery.
 
-Discovery works through a **registry**, a backend that nodes publish their connection information to and read peer information from. Talos supports two registry types:
-
-- **Service registry**: Nodes publish to and read from an external discovery service. This is enabled by default and does not depend on Kubernetes or etcd, so it continues to work even when Kubernetes is unavailable.
-- **Kubernetes registry**: Nodes publish discovery data as annotations on Kubernetes `Node` resources. This is disabled by default.
-
-<Warning>
-The Kubernetes registry is deprecated. Starting with Kubernetes 1.32, the `AuthorizeNodeWithSelectors` feature gate restricts `Node` resource read access in a way that prevents the Kubernetes registry from functioning correctly. Disabling the feature gate is not recommended as it removes other important security protections.
-</Warning>
-
-## Video walkthrough
-
-To see a live demo of cluster discovery, see the video below:
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/GCBTrHhjawY" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
 ## Registries
 
-By default, Talos uses the `service` registry. The `kubernetes` registry is disabled by default. Peers are aggregated from all enabled registries.
+Discovery works through a **registry**, a backend that nodes publish their connection information to and read peer information from. Talos supports two registry types:
 
-To disable a registry, set `disabled: true` in the cluster configuration. For example, to disable the `service` registry:
+- **Service registry**: Nodes publish to and read from an external discovery service. This is configured with a [`DiscoveryServiceConfig`](../../reference/configuration/cluster/discoveryserviceconfig) document, enabled by default, and does not depend on Kubernetes or etcd, so it continues to work even when Kubernetes is unavailable.
+- **Kubernetes registry**: Nodes publish discovery data as annotations on Kubernetes `Node` resources. This is deprecated and disabled by default.
+
+<Warning>
+  The Kubernetes registry is deprecated. Starting with Kubernetes 1.32, the
+  `AuthorizeNodeWithSelectors` feature gate restricts `Node` resource read
+  access in a way that prevents the Kubernetes registry from functioning
+  correctly. Disabling the feature gate is not recommended as it removes other
+  important security protections.
+</Warning>
+
+By default, Talos uses the service registry. Peers are aggregated from all enabled registries.
+
+### Service registry
+
+The service registry uses a public external discovery service to exchange encrypted information about cluster members. Sidero Labs maintains a public instance at `https://discovery.talos.dev/`. Organizations that require private infrastructure can self-host the discovery service under a commercial license.
+
+Cluster members use a globally unique shared key to coordinate basic connection information, the set of possible endpoints (IP:port pairs). Talos refers to this as **affiliate data**. All affiliate data is encrypted by Talos Linux before being sent to the discovery service and can only be decrypted by cluster members. The discovery service never has access to the encryption key.
+
+<Note>
+  When KubeSpan is enabled, affiliate data also includes the node's WireGuard
+  public key.
+</Note>
+
+Data is encrypted as follows:
+
+- Affiliate data is encrypted with AES-GCM encryption.
+- Endpoint data is separately encrypted with AES in ECB mode, allowing endpoints from different sources to be deduplicated server-side.
+
+Each node submits its own data plus the endpoints it observes from other peers. The discovery service aggregates this, deduplicates endpoints, and distributes updates to all connected peers. Peers decrypt the data locally and use it to drive cluster discovery and [KubeSpan](../../networking/kubespan).
+
+Data is stored only in memory, with encrypted snapshots written to disk to enable fast recovery after restarts.
+The cluster ID is a random value generated as part of the cluster secrets in the machine configuration. It is used by the discovery service to separate affiliates between different clusters.
+
+The discovery service is aware of the client version, cluster ID, number of affiliates, encrypted affiliate data, and a list of encrypted endpoints. However, it never has access to the actual node information.
+
+Nodes must be able to reach the discovery service on TCP port 443. For organizations that require it, the discovery service may be self-hosted under a commercial license and [downloaded from GitHub](https://github.com/siderolabs/discovery-service).
+
+The service registry is enabled by the presence of a [`DiscoveryServiceConfig`](../../reference/configuration/cluster/discoveryserviceconfig) document. A freshly generated machine configuration includes one named `default` that points at the public discovery service:
+
+```yaml
+apiVersion: v1alpha1
+kind: DiscoveryServiceConfig
+name: default
+endpoint: https://discovery.talos.dev/
+```
+
+To use a self-hosted discovery service, append the following document to the machine configuration with the `endpoint` set to your own instance:
+
+```yaml
+apiVersion: v1alpha1
+kind: DiscoveryServiceConfig
+name: self-hosted
+endpoint: https://discovery.example.com/
+```
+
+For a highly available setup, append additional [`DiscoveryServiceConfig`](../../reference/configuration/cluster/discoveryserviceconfig) documents, each with a unique `name` and `endpoint`. Endpoints must use the `http://`, `https://` or `grpc://` scheme. Nodes publish to and read from every configured discovery service, so the cluster continues to discover peers as long as at least one of them is reachable:
+
+```yaml
+apiVersion: v1alpha1
+kind: DiscoveryServiceConfig
+name: discovery-1
+endpoint: https://discovery-1.example.com/
+---
+apiVersion: v1alpha1
+kind: DiscoveryServiceConfig
+name: discovery-2
+endpoint: https://discovery-2.example.com/
+```
+
+To disable the discovery service, remove all [`DiscoveryServiceConfig`](../../reference/configuration/cluster/discoveryserviceconfig) documents from the machine configuration. With no service registry and no Kubernetes registry, [member discovery is effectively disabled](#what-changes-when-discovery-is-disabled).
+
+### Kubernetes registry
+
+The Kubernetes registry has no [`DiscoveryServiceConfig`](../../reference/configuration/cluster/discoveryserviceconfig) equivalent and should not be used in new clusters. It can only be enabled through the deprecated `.cluster.discovery` configuration block, where it is disabled by default:
 
 ```yaml
 cluster:
   discovery:
     enabled: true
     registries:
-      service:
-        disabled: true
+      kubernetes:
+        disabled: false
 ```
 
-[Disabling all registries](#what-changes-when-discovery-is-disabled) effectively disables member discovery entirely.
+<Note>
+  The [`DiscoveryServiceConfig`](../../reference/configuration/cluster/discoveryserviceconfig) documents and the legacy `.cluster.discovery` configuration block are mutually exclusive. A machine configuration must not contain both.
+</Note>
 
-### Kubernetes registry
+A configuration that uses the legacy `.cluster.discovery` block must also configure the service registry there (under `registries.service`) rather than with a [`DiscoveryServiceConfig`](../../reference/configuration/cluster/discoveryserviceconfig) document:
+
+```yaml
+cluster:
+  discovery:
+    enabled: true
+    registries:
+      kubernetes:
+        disabled: false
+      service:
+        endpoint: https://discovery.talos.dev/
+```
 
 The Kubernetes registry stores discovery data as annotations on Kubernetes `Node` resources:
 
@@ -66,33 +138,9 @@ Annotations:        cluster.talos.dev/node-id: Utoh3O0ZneV0kT2IUBrh7TgdouRcUW2yz
 ...
 ```
 
-### Service registry
-
-The service registry uses a public external discovery service to exchange encrypted information about cluster members. Sidero Labs maintains a public instance at `https://discovery.talos.dev/`. Organizations that require private infrastructure can self-host the discovery service under a commercial license.
-
-Cluster members use a globally unique shared key to coordinate basic connection information, the set of possible endpoints (IP:port pairs). Talos refers to this as **affiliate data**. All affiliate data is encrypted by Talos Linux before being sent to the discovery service and can only be decrypted by cluster members. The discovery service never has access to the encryption key.
-
-<Note>
-When KubeSpan is enabled, affiliate data also includes the node's WireGuard public key.
-</Note>
-
-Data is encrypted as follows:
-
-- Affiliate data is encrypted with AES-GCM encryption.
-- Endpoint data is separately encrypted with AES in ECB mode, allowing endpoints from different sources to be deduplicated server-side.
-
-Each node submits its own data plus the endpoints it observes from other peers. The discovery service aggregates this, deduplicates endpoints, and distributes updates to all connected peers. Peers decrypt the data locally and use it to drive cluster discovery and [KubeSpan](../../networking/kubespan).
-
-Data is stored only in memory, with encrypted snapshots written to disk to enable fast recovery after restarts.
-The cluster ID is a random value generated as part of the cluster secrets in the machine configuration. It is used by the discovery service to separate affiliates between different clusters.
-
-The discovery service is aware of the client version, cluster ID, number of affiliates, encrypted affiliate data, and a list of encrypted endpoints. However, it never has access to the actual node information.
-
-Nodes must be able to reach the discovery service on TCP port 443. For organisations that require it, the discovery service may be self-hosted under a commercial license and [downloaded from GitHub](https://github.com/siderolabs/discovery-service).
-
 ## What changes when discovery is disabled
 
-Talos can operate with discovery disabled, but this affects several features and behaviours:
+Discovery is disabled by removing all [`DiscoveryServiceConfig`](../../reference/configuration/cluster/discoveryserviceconfig) documents from the machine configuration (and not configuring the legacy `.cluster.discovery` block). Talos can operate with discovery disabled, but this affects several features and behaviours:
 
 - [KubeSpan](../../networking/kubespan) and KubePrism require discovery and do not function correctly without it.
 - Initial cluster bootstrap and recovery may take longer, as peer and control plane endpoints are not available from discovery.
@@ -116,7 +164,9 @@ If a node reboots while the discovery service is unavailable, it loses all in-me
 If the outage exceeds the TTL, all discovery records expire. When the service comes back online, it may return an empty dataset. Nodes receiving this update drop their existing peer information, which can temporarily disrupt KubeSpan connectivity. Recovery is automatic, nodes republish their data, peer information is rebuilt, and connectivity is restored without manual intervention.
 
 <Note>
-When KubeSpan is enabled, WireGuard keys are generated on boot and not persisted to disk. A rebooted node must publish its new public key via the discovery service before peers can establish tunnels to it.
+  When KubeSpan is enabled, WireGuard keys are generated on boot and not
+  persisted to disk. A rebooted node must publish its new public key via the
+  discovery service before peers can establish tunnels to it.
 </Note>
 
 ## Inspect discovery resources
@@ -196,7 +246,7 @@ talosctl get members
 You should see an output similar to:
 
 <CodeBlock lang="sh">
-{`
+  {`
 ID                             VERSION   HOSTNAME                       MACHINE TYPE   OS                ADDRESSES
 talos-default-controlplane-1   2         talos-default-controlplane-1   controlplane   Talos ${release_v1_12}   ["172.20.0.2","fd83:b1f7:fcb5:2802:8c13:71ff:feaf:7c94"]
 talos-default-controlplane-2   1         talos-default-controlplane-2   controlplane   Talos ${release_v1_12}   ["172.20.0.3","fd83:b1f7:fcb5:2802:986b:7eff:fec5:889d"]

@@ -90,35 +90,25 @@ For advanced eBPF features without these constraints, use Cilium's built-in Wire
 
 ### Creating a new cluster
 
-To enable KubeSpan for a new cluster, we can use the `--with-kubespan` flag in `talosctl gen config`.
-This will enable peer discovery and KubeSpan.
+To enable KubeSpan for a new cluster, we can use the `--with-kubespan` flag in `talosctl gen config`. This will add the following `KubeSpanConfig` document to the machine config:
 
 ```yaml
-cluster:
-    discovery:
-        enabled: true
-        # Configure registries used for cluster member discovery.
-        registries:
-            kubernetes: # Kubernetes registry is problematic with KubeSpan, if the control plane endpoint is routable itself via KubeSpan.
-              disabled: true
-            service: {}
 ---
 apiVersion: v1alpha1
 kind: KubeSpanConfig
 enabled: true # Enable the KubeSpan feature.
 ```
 
+[Discovery](../configure-your-talos-cluster/system-configuration/discovery) is enabled by default for new clusters, so no additional configuration is needed.
+
 > The default discovery service is an external service hosted by Sidero Labs at `https://discovery.talos.dev/`.
 > Contact Sidero Labs if you need to run this service privately.
 
 ### Enabling for an existing cluster
 
-In order to enable KubeSpan on an existing cluster, add `KubeSpanConfig` and `discovery` settings in the machine config for each machine in the cluster (`discovery` is enabled by default):
+In order to enable KubeSpan on an existing cluster, add a `KubeSpanConfig` document to the machine config and ensure the discovery service is enabled for every machine in the cluster ([discovery service](../configure-your-talos-cluster/system-configuration/discovery) is enabled by default):
 
 ```yaml
-cluster:
-  discovery:
-    enabled: true
 ---
 apiVersion: v1alpha1
 kind: KubeSpanConfig
