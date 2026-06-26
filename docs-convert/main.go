@@ -350,6 +350,17 @@ func escapeAngleBracketPlaceholders(line string) string {
 					i = end + 1
 					continue
 				}
+			} else {
+				// No closing '>' on this line, so this can't be a real HTML/JSX tag
+				// (e.g. shell process substitution like "<(some command)").
+				// Escape the lone '<' so MDX doesn't try to parse it as JSX.
+				if inBackticks {
+					result += string(line[i])
+				} else {
+					result += `{"<"}`
+				}
+				i++
+				continue
 			}
 		}
 		result += string(line[i])
