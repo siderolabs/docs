@@ -18,12 +18,8 @@ If you need more information on OpenStack specifics, please see the [official OV
 
 ## Prerequisites
 
-### Security groups
-
-This example uses the default security group in OpenStack.
-Ports have been opened to ensure that connectivity from both inside and outside the group is possible.
-You will want to allow, at a minimum, ports 6443 (Kubernetes API server) and 50000 (Talos API) from external sources.
-It is also recommended to allow communication over all ports from within the subnet.
+This guide uses the default security group in OpenStack, with ports opened to allow connectivity from both inside and outside the group.
+At a minimum, allow ports 6443 (Kubernetes API server) and 50000 (Talos API) from external sources, and it is recommended to allow communication over all ports from within the subnet.
 
 ## Environment setup
 
@@ -69,6 +65,9 @@ We will create a private network, subnet, and gateway for our cluster.
 This will allow our cluster to communicate with the outside world and with each other.
 
 ### 2.1 Create private network
+
+Create the private network that your cluster nodes will use to communicate:
+
 ```bash
 openstack network create \
   --provider-network-type vrack \
@@ -82,6 +81,9 @@ export PRIVATE_NETWORK_ID=$(openstack network show $PRIVATE_NETWORK_NAME -f valu
 ```
 
 ### 2.2 Create subnet
+
+Add a subnet to the private network and assign DNS resolvers:
+
 ```bash
 openstack subnet create \
   --network $PRIVATE_NETWORK_ID \
@@ -92,11 +94,17 @@ openstack subnet create \
 ```
 
 ### 2.3 Create gateway
+
+Create a router that connects the network to the external `Ext-Net`:
+
 ```bash
 openstack router create $GATEWAY_NAME --external-gateway Ext-Net 
 ```
 
 ### 2.4 Add the subnet to the router
+
+Attach the subnet to the router so traffic can reach the gateway:
+
 ```bash
 openstack router add subnet \
   $GATEWAY_NAME \
@@ -109,6 +117,8 @@ Once the image is uploaded and the network infrastructure is in place, we can cr
 We will create 3 control plane nodes.
 
 ### 3.1 Create instances
+
+Create the three control plane instances on the private network:
 
 ```bash
 # Create control planes 2 and 3, substituting the same info.
