@@ -205,6 +205,7 @@ navigation:
                     - "storage-and-disk-management/disk-management/resources"
                     - "storage-and-disk-management/disk-management/system"
                     - "storage-and-disk-management/disk-management/user"
+                - "storage-and-disk-management/lvm"
                 - "storage-and-disk-management/disk-encryption"
                 - "storage-and-disk-management/swap"
             - group: "Logging & Telemetry"
