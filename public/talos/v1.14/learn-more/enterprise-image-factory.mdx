@@ -1,0 +1,117 @@
+---
+title: "Enterprise Image Factory"
+description: "How Enterprise Image Factory differs from the public Image Factory."
+---
+
+Enterprise Image Factory is Sidero's authenticated image delivery service for Talos Enterprise Linux, hosted at `factory.siderolabs.com`.
+
+Though the Enterprise Image Factory ( `factory.siderolabs.com` ) and the public [Image Factory](./image-factory) (`factory.talos.dev`) services do share a codebase and the same core API (schematics, HTTP, PXE, and registry frontends), they differ in the following ways:
+
+- `factory.talos.dev` is anonymous and unauthenticated. It is the distribution mechanism for open-source Talos Linux.
+- `factory.siderolabs.com` requires authentication and is the delivery channel for Talos Enterprise Linux artifacts: FIPS-enabled builds, per-schematic SBOMs, and VEX data.
+
+## Tier availability
+
+Talos Enterprise Linux is available to customers on the Enterprise, Enterprise On-Prem, Edge, Edge On-Prem, and Talos Enterprise Linux Support tiers. It is also bundled into the FIPS product, a separate tier for customers who need FIPS 140-3 (CMVP) certified builds, on top of everything included in Talos Enterprise Linux. Customers on the Talos Enterprise Linux Support tier authenticate to Enterprise Image Factory directly, without an Omni account.
+
+## Feature comparison
+
+The table below summarizes what each service provides. Each row is covered in more detail under [Features](#features).
+
+| | `factory.talos.dev` (public) | `factory.siderolabs.com` (Enterprise) |
+|---|---|---|
+| Authentication | None | Required |
+| Tier access | All Talos Linux users | Enterprise, Enterprise On-Prem, Edge, Edge On-Prem, Talos Enterprise Linux Support, FIPS |
+| Schematics, HTTP/PXE/registry frontends | Yes | Yes |
+| FIPS-enabled builds | No | Yes, on every build (Talos 1.13+) |
+| Per-schematic SBOM (SPDX) | No | Yes |
+| VEX data | No | Yes |
+| Vulnerability scan reports | No | Yes (`.json`, `.table`, `.sarif`, `.cdx`) |
+| On-premises deployment | No | Yes |
+| Omni-session authentication | N/A | Yes |
+
+## Features
+
+This section covers each Talos Enterprise Linux artifact and capability in more detail: FIPS, SBOM, VEX, vulnerability scan reports, deployment, authentication, and per-customer isolation. 
+
+Once a build completes, its SBOM, VEX, and vulnerability scan report can all be downloaded from the same Image Factory UI page as the image's boot assets.
+
+### FIPS
+
+Every build served from Enterprise Image Factory is FIPS-enabled by default for Talos 1.13 and later. FIPS (Federal Information Processing Standards) builds use FIPS-validated cryptographic modules in non-strict mode: WireGuard and other non-FIPS-validated cryptography continue to work normally alongside them.
+
+FIPS-enabled builds require no separate opt-in or gating step — any build pulled from Enterprise Image Factory has this property. This is a compliance attribute rather than a stronger security posture, since FIPS (NIST/CMVP) is a US-specific certification scheme.
+
+FIPS-enabled builds are distinct from FIPS 140-3 (CMVP) certification and strict/enforcing FIPS mode, which are a separate product offering for customers with formal certification requirements (for example, US federal buyers).
+
+Enterprise Image Factory is the delivery channel for FIPS-enabled builds, and every build it serves is FIPS-enabled. Customers who want the other Talos Enterprise Linux features (SBOM, VEX, build attestation) get FIPS-enabled builds as part of that, whether or not FIPS itself is a requirement for them.
+
+### SBOM
+
+Enterprise Image Factory generates a per-schematic SBOM in SPDX 2.3 format, covering the full image — the Talos base and all configured extensions — for a given schematic and Talos version.
+
+This differs from the SBOMs published with each Talos Linux release on GitHub, which cover only the unmodified base OS. A per-schematic SBOM is matched to the exact image a customer is running, including any extensions.
+
+The SBOM can be consumed directly by vulnerability scanners such as Grype:
+
+```shell
+grype sbom:image.spdx.json
+```
+
+Components contributed by customer-provided extensions or a customer-built base are attributed separately in the SBOM, distinguishing them from Sidero-maintained components.
+
+SPDX bundles are available for Talos versions v1.13.0 and later.
+
+### VEX
+
+Enterprise Image Factory serves Vulnerability Exploitability eXchange (VEX) data per Talos Linux release.
+
+VEX statements declare whether a given CVE actually applies to a given Sidero artifact, which lets scanners and admission controllers suppress non-exploitable CVE matches without resorting to a blanket waiver. VEX data is Sidero-curated and signed per statement.
+
+Used together with a schematic's SBOM, VEX data lets Grype scan with non-applicable CVEs already filtered out:
+
+```shell
+grype sbom:image.spdx.json --vex talos.vex.json
+```
+
+VEX data for Talos Linux is available exclusively through Enterprise Image Factory.
+
+### Vulnerability scan reports
+
+Enterprise Image Factory can return a vulnerability scan report for a given schematic, version, and architecture, computed on demand against the current vulnerability database.
+
+Supported report formats include:
+
+- `.json` — output format of the underlying scanner
+- `.table` — human-readable table
+- `.sarif` — SARIF format
+- `.cdx` — CycloneDX format
+
+Because the scan runs against a live vulnerability database rather than being baked in at build time, the result reflects the image's vulnerability state at request time, not at the time it was built.
+
+### Deployment
+
+Enterprise Image Factory can run:
+
+- **Hosted by Sidero**, at `factory.siderolabs.com` — used by SaaS customers and Omni-managed customers on a qualifying tier.
+- **On-premises**, in the customer's own environment, bundled with Omni or standalone. An on-premises instance keeps its backing registry in sync with Sidero's official Talos Enterprise Linux releases and extensions, and reads customer-private content directly from the customer's own registry using credentials the customer has registered with it.
+
+Omni users — whether on the hosted or on-premises deployment — reach Enterprise Image Factory through their existing Omni session, with no separate credential to manage.
+
+### Authentication
+
+Every interaction with Enterprise Image Factory requires authentication: the web UI, direct downloads of ISOs, raw disks, and installer images, the PXE stager, and the machine config a Talos node uses to pull its installer image at install or upgrade time.
+
+This differs from the public Image Factory's registry frontend, which performs an HTTP redirect to its backing CDN. When authentication is enabled, Enterprise Image Factory proxies all registry traffic through itself instead of redirecting, so the auth boundary applies consistently across every frontend.
+
+## What Enterprise Image Factory does not do
+
+A few boundaries are worth stating explicitly, since they're easy to assume incorrectly:
+
+- It does not replace the public Image Factory at `factory.talos.dev`, which is unaffected by anything described on this page.
+- It does not require an Omni account on the Talos Enterprise Linux Support tier.
+
+## See also
+
+- [Image Factory](./image-factory) — the public, unauthenticated service at `factory.talos.dev`
+- [SBOMs](../advanced-guides/SBOM) — acquiring and scanning SBOMs for Talos Linux
