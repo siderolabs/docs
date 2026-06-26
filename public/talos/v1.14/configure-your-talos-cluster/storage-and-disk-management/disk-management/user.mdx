@@ -129,6 +129,62 @@ Restrictions for `disk` volumes:
 * The provisioning block must not define size-related settings (`minSize`, `maxSize`, or `grow`).
   A full device implies a fixed size.
 
+#### User volumes on LVM logical volumes
+
+An LVM logical volume can back a user volume.
+Use `volumeType: disk` so Talos treats the logical volume as the block device for the user volume instead of trying to create another partition on it.
+
+First create the LVM volume group and logical volume.
+For example, create a logical volume that uses the full volume group:
+
+```yaml
+apiVersion: v1alpha1
+kind: LVMLogicalVolumeConfig
+name: lv-user
+type: linear
+provisioning:
+  volumeGroup: vg-pool
+  maxSize: 100%
+```
+
+After the logical volume is created, find its stable device symlink.
+The logical volume appears as a device-mapper disk with symlinks such as `/dev/mapper/vg--pool-lv--user` or `/dev/disk/by-dm-name/vg--pool-lv--user`.
+
+```bash
+talosctl get disks -o yaml
+```
+
+Then create a `UserVolumeConfig` of type `disk` and match that symlink:
+
+```yaml
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: lvm-user
+volumeType: disk
+provisioning:
+  diskSelector:
+    match: "'/dev/mapper/vg--pool-lv--user' in disk.symlinks"
+filesystem:
+  type: xfs
+```
+
+Apply the user volume configuration:
+
+```bash
+talosctl --nodes <NODE> patch mc --patch @user-volume-on-lvm.patch.yaml
+```
+
+Talos formats the logical volume, mounts it at `/var/mnt/lvm-user`, and propagates the mount into the `kubelet` container.
+Check readiness with the standard volume and mount resources:
+
+```bash
+talosctl get volumestatus u-lvm-user
+talosctl get mountstatus u-lvm-user
+```
+
+When matching an LVM logical volume, use a stable symlink from `disk.symlinks` instead of matching `/dev/dm-*` directly.
+Device-mapper numbers can change across boots.
+
 ### `volumeType: directory`
 
 This type is useful for lightweight storage needs where full partitioning is unnecessary or impractical, and all that is required is a simple directory on the EPHEMERAL volume.

@@ -1,0 +1,214 @@
+---
+title: "LVM"
+description: "Provision and inspect LVM volume groups and logical volumes."
+weight: 30
+canonical: https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/storage-and-disk-management/lvm
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos Linux can declaratively provision Linux Logical Volume Manager (LVM) physical volumes, volume groups, and logical volumes.
+Use LVM when you need one or more block devices assembled into a volume group and split into logical volumes for a storage system such as a CSI driver.
+
+Talos reconciles the desired LVM state from machine configuration documents:
+
+- `LVMVolumeGroupConfig` selects existing Talos volumes or whole disks and creates the physical volumes and volume group.
+- `LVMLogicalVolumeConfig` creates logical volumes inside the volume group.
+- LVM status resources (`pvs`, `vgs`, and `lvs`) expose the final state discovered on the node.
+
+## Provision LVM storage
+
+The simplest LVM setup is a volume group backed directly by whole disks.
+Use this when the entire disk should be dedicated to LVM and no Talos partition needs to be created first.
+
+The following example creates `vg-pool` from two whole disks and provisions a logical volume named `lv-data`:
+
+```yaml
+# lvm.patch.yaml
+apiVersion: v1alpha1
+kind: LVMVolumeGroupConfig
+name: vg-pool
+provisioning:
+  volumeSelector:
+    match: disk.dev_path == "/dev/sdb" || disk.dev_path == "/dev/sdc"
+---
+apiVersion: v1alpha1
+kind: LVMLogicalVolumeConfig
+name: lv-data
+type: linear
+provisioning:
+  volumeGroup: vg-pool
+  maxSize: 80%
+```
+
+Apply the configuration patch to the node:
+
+```bash
+talosctl --nodes <NODE> patch mc --patch @lvm.patch.yaml
+```
+
+The volume selector is a CEL expression evaluated against each discovered volume as `volume`.
+For whole disks, the expression can also use the `disk` variable.
+Use selectors that match only the intended devices: Talos initializes matched devices as LVM physical volumes.
+
+You can match disks by stable properties such as serial number, WWID, or symlink, depending on what the node reports in the `Disk` resource:
+
+```bash
+talosctl get disks -o yaml
+```
+
+For production configurations, prefer stable disk identifiers over `/dev/sd*` names when possible.
+Device names can change across boots or when hardware is added or removed.
+
+## Configure volume groups
+
+An `LVMVolumeGroupConfig` document requires:
+
+- `name`: the volume group name, 1-63 characters, using ASCII letters, digits, hyphens, and underscores.
+- `provisioning.volumeSelector.match`: a CEL expression selecting the disks or partitions to use as physical volumes.
+
+Example:
+
+```yaml
+apiVersion: v1alpha1
+kind: LVMVolumeGroupConfig
+name: vg-pool
+provisioning:
+  volumeSelector:
+    match: disk.dev_path == "/dev/sdb" || disk.dev_path == "/dev/sdc"
+```
+
+Talos creates one `LVMPhysicalVolumeSpec` for each matched device, then creates or extends the volume group so it contains those physical volumes.
+If a selector conflict cannot be resolved, Talos reports it with an `LVMValidationError` resource.
+
+## Configure logical volumes
+
+An `LVMLogicalVolumeConfig` document requires:
+
+- `name`: the logical volume name, 1-63 characters, using ASCII letters, digits, hyphens, and underscores.
+- `type`: one of `linear`, `raid0`, `raid1`, or `raid10`.
+- `provisioning.volumeGroup`: the target volume group name.
+- `provisioning.maxSize`: the desired maximum size, either an absolute size such as `50GiB` or a percentage of the volume group such as `80%`.
+
+Optional fields:
+
+- `provisioning.minSize`: minimum acceptable size when using an absolute `maxSize`.
+- `mirrors`: number of mirror copies for `raid1` and `raid10`; defaults to `1` when unset.
+- `stripes`: number of stripes for `raid0` and `raid10`; defaults to all available physical volumes when unset and must be at least `2` when set.
+
+Example:
+
+```yaml
+apiVersion: v1alpha1
+kind: LVMLogicalVolumeConfig
+name: lv-data
+type: linear
+provisioning:
+  volumeGroup: vg-pool
+  maxSize: 50GiB
+```
+
+Talos creates the logical volume and activates it.
+The status resource shows its device path, for example `/dev/vg-pool/lv-data`.
+Talos does not format or mount the logical volume through the LVM configuration itself; configure the consumer of the block device separately.
+
+## Use raw volume partitions as physical volumes
+
+Instead of selecting whole disks directly, an LVM volume group can be backed by Talos raw volume partitions.
+This is useful when Talos should first allocate partitions from available disk space, and LVM should use those partitions as physical volumes.
+
+The following example creates two raw volumes and selects their partition labels for `vg-pool`:
+
+```yaml
+apiVersion: v1alpha1
+kind: RawVolumeConfig
+name: lvm-a
+provisioning:
+  diskSelector:
+    match: "!system_disk"
+  minSize: 50GiB
+  maxSize: 50GiB
+---
+apiVersion: v1alpha1
+kind: RawVolumeConfig
+name: lvm-b
+provisioning:
+  diskSelector:
+    match: "!system_disk"
+  minSize: 50GiB
+  maxSize: 50GiB
+---
+apiVersion: v1alpha1
+kind: LVMVolumeGroupConfig
+name: vg-pool
+provisioning:
+  volumeSelector:
+    match: volume.partition_label.startsWith("r-lvm")
+```
+
+Raw volume names are prefixed with `r-` when Talos creates their partition labels.
+In this example, the `LVMVolumeGroupConfig` selector matches the raw volume partitions labeled `r-lvm-a` and `r-lvm-b`.
+
+A logical volume can also back a Talos user volume.
+For details, see [User Volumes](./disk-management/user#user-volumes-on-lvm-logical-volumes).
+
+## Inspect LVM state
+
+Use the LVM status resource aliases to inspect physical volumes, volume groups, and logical volumes.
+
+```bash
+$ talosctl get pvs
+NODE         NAMESPACE   TYPE                      ID             VERSION   DEVICE      VG        SIZE      FREE      ALLOCATABLE
+172.20.0.5   runtime     LVMPhysicalVolumeStatus   /dev/sda1      1         /dev/sda1   vg-pool   50 GB     0 B       allocatable
+172.20.0.5   runtime     LVMPhysicalVolumeStatus   /dev/sdb1      1         /dev/sdb1   vg-pool   50 GB     20 GB     allocatable
+```
+
+```bash
+$ talosctl get vgs
+NODE         NAMESPACE   TYPE                   ID        VERSION   NAME      PERMISSIONS   SIZE     FREE    PVS   LVS
+172.20.0.5   runtime     LVMVolumeGroupStatus   vg-pool   1         vg-pool   writeable     100 GB   20 GB   2     1
+```
+
+```bash
+$ talosctl get lvs
+NODE         NAMESPACE   TYPE                    ID                VERSION   PATH                    VG        LAYOUT   SIZE    ACTIVE
+172.20.0.5   runtime     LVMLogicalVolumeStatus  vg-pool/lv-data   1         /dev/vg-pool/lv-data    vg-pool   linear   80 GB   active
+```
+
+For detailed output, request YAML:
+
+```bash
+talosctl get lvs vg-pool/lv-data -o yaml
+```
+
+To debug desired state and validation errors, inspect the LVM spec and error resources:
+
+```bash
+talosctl get lvmphysicalvolumespecs
+talosctl get lvmvolumegroupspecs
+talosctl get lvmlogicalvolumespecs
+talosctl get lvmvalidationerrors
+```
+
+## Remove LVM resources
+
+First remove the `LVMLogicalVolumeConfig` and `LVMVolumeGroupConfig` documents from the machine configuration.
+If the documents remain in configuration, Talos will reconcile them again.
+
+Then remove the on-disk LVM objects with `talosctl wipe`:
+
+```bash
+# Remove one logical volume.
+talosctl --nodes <NODE> wipe lv vg-pool/lv-data
+
+# Remove a volume group and all logical volumes inside it.
+talosctl --nodes <NODE> wipe vg vg-pool
+
+# Remove an LVM physical volume label from a device after its VG is gone.
+talosctl --nodes <NODE> wipe pv /dev/sda1
+```
+
+Removing a volume group is destructive: Talos removes every logical volume in the group before removing the group itself.
+The physical volume labels remain until they are wiped with `talosctl wipe pv`.
