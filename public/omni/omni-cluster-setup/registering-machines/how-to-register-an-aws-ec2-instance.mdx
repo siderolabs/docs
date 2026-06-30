@@ -1,13 +1,24 @@
 ---
 title: Register an AWS EC2 Instance
-description: Launch and connect an AWS EC2 instance to Omni using a custom Talos AMI.
+description: Launch AWS EC2 instances and register them with Omni.
 ---
 
 import { release } from '/snippets/custom-variables.mdx';
 
-This guide walks through creating a Talos AMI for AWS, importing it into your AWS account, and launching EC2 instances that can be registered with Omni.
+This guide explains how to launch AWS EC2 instances and register them with Omni.
 
-## Step 1: Set your AWS region
+There are two ways to get started:
+
+- **Option A: Use the official Talos AMI** — the fastest and recommended approach. Choose this unless you need to customize the image.
+- **Option B: Build a custom Talos AMI** — use this only if you need system extensions or other image-level customizations.
+
+Both options begin with the same AWS setup. First, complete the steps in [Set up your AWS environment](#set-up-your-aws-environment), then continue with either Option A or Option B.
+
+## Set up your AWS environment
+
+Before launching your instances, configure the AWS networking required for your deployment.
+
+### Step 1: Set your AWS region
 
 Define the AWS region where you want to create your Omni machines.
 
@@ -15,7 +26,7 @@ Define the AWS region where you want to create your Omni machines.
 REGION=<your-aws-region> # e.g. us-east-1
 ```
 
-## Step 2: Identify the VPC
+### Step 2: Identify the VPC
 
 Your EC2 instances must run inside a VPC. Most AWS accounts have a default VPC available.
 
@@ -38,7 +49,7 @@ echo $VPC_ID
 
 This command stores the VPC ID in the `VPC_ID` variable.
 
-## Step 3: Create a subnet
+### Step 3: Create a subnet
 
 Next, create a subnet within the VPC.
 
@@ -57,7 +68,7 @@ echo $SUBNET_ID
 
 The subnet ID will be used later when launching EC2 instances.
 
-## Step 4: Create a security group
+### Step 4: Create a security group
 
 First, create a security group that will be attached to the EC2 instances.
 
@@ -83,68 +94,91 @@ aws ec2 authorize-security-group-ingress \
   --source-group $SECURITY_GROUP
 ```
 
-## Step 5: Register machines to your Omni account
+## Option A: Use the official Talos AMI
 
-Talos provides an official AWS AMI that you can use directly. However, if you need to customize the AMI, for example by adding custom labels or system extensions, you must create a custom Talos AMI and bake those customizations into the image.
-
-If you plan to create a custom Talos AMI, skip this step and continue to **Step 6**.
+Talos provides an official AWS AMI that you can use directly, with no image build required.
 
 <Note>The official Talos AWS AMI includes the `ecr-credential-provider` system extension by default.</Note>
 
-To register AWS EC2 instances to your Omni account using the official Talos AMI, you must add a [join config](./join-machines-to-omni) to the EC2 instance user data and boot the instance with the Talos Omni AMI. This ensures the machine automatically joins your Omni account when it starts.
-
-To register your AWS EC2 instances:
+To register an instance, you add a [join config](./join-machines-to-omni) to the EC2 instance user data and boot the instance with the official Talos AMI. The machine then joins your Omni account automatically when it starts.
 
 1. Define environment variables that specify the machines you want to register.
 
-These are example values. Adjust them to match your machine specifications.
+   These are example values. Adjust them to match your machine specifications.
 
-<CodeBlock lang='sh'>
-{`
-AWS_REGION=$(aws configure get region)\nTALOS_VERSION=${release}\nARCH=amd64\nINSTANCE_TYPE=t3.small\nCOUNT=1
-`}
-</CodeBlock>
+   <CodeBlock lang='sh'>
+   {`
+   AWS_REGION=$(aws configure get region)\nTALOS_VERSION=${release}\nARCH=amd64\nINSTANCE_TYPE=t3.small\nCOUNT=1
+   `}
+   </CodeBlock>
 
 2. Retrieve the official Talos AWS AMI:
 
-```bash
-AMI=$(curl -sL https://github.com/siderolabs/talos/releases/download/${TALOS_VERSION}/cloud-images.json \
-  | jq -r '.[] | select(.region == "'"$AWS_REGION"'") | select(.arch == "'"$ARCH"'") | .id')
+   ```bash
+   AMI=$(curl -sL https://github.com/siderolabs/talos/releases/download/${TALOS_VERSION}/cloud-images.json \
+     | jq -r '.[] | select(.region == "'"$AWS_REGION"'") | select(.arch == "'"$ARCH"'") | .id')
 
-echo "Using AMI: $AMI"
-```
+   echo "Using AMI: $AMI"
+   ```
 
-3.  Generate the join configuration. This configuration allows the Talos machines to register with Omni when they boot:
+3. Generate the join configuration. This allows the Talos machines to register with Omni when they boot:
 
-```bash
-USER_DATA=$(omnictl jointoken machine-config)
-```
+   ```bash
+   USER_DATA=$(omnictl jointoken machine-config)
+   ```
 
-4. Launch the EC2 instances:
+4. Launch the EC2 instances. Omni surfaces an instance's EC2 tags as machine labels when the machine first joins. Choose the option that fits your needs:
 
-```bash
-aws ec2 run-instances \
-  --region $AWS_REGION \
-  --image-id $AMI \
-  --instance-type $INSTANCE_TYPE \
-  --count $CONTROL_PLANE_NO  \
-  --iam-instance-profile Name=$AUTOSCALER_INSTANCE_PROFILE_NAME \
-  --user-data "$USER_DATA" \
-  --tag-specifications 'ResourceType=instance,Tags=[{Key=role,Value=autoscaler-controlplane-machine}]'
-```
+   <Tabs>
+   <Tab title="Without labels">
 
-## Step 6: Create a custom Talos AWS AMI 
+   Launch the instances with the official AMI and your join configuration. The machine registers with Omni automatically when it boots:
 
-If you need to customize the Talos AMI (for example by adding custom labels or system extensions), you must build a custom image with those extensions included.
+   ```bash
+   aws ec2 run-instances \
+     --region $AWS_REGION \
+     --image-id $AMI \
+     --instance-type $INSTANCE_TYPE \
+     --count $COUNT \
+     --user-data "$USER_DATA"
+   ```
 
-In this step, you will:
+   </Tab>
+   <Tab title="With machine labels">
+
+   To attach labels, the instance must allow tags in instance metadata, which is **not** enabled by default. The `--metadata-options` flag enables it, and each tag becomes a machine label. In this example, the tag with key `cp-candidate` and value `true` becomes a machine label named `cp-candidate` with the value `true`:
+
+   ```bash
+   aws ec2 run-instances \
+     --region $AWS_REGION \
+     --image-id $AMI \
+     --instance-type $INSTANCE_TYPE \
+     --count $COUNT \
+     --user-data "$USER_DATA" \
+     --metadata-options "InstanceMetadataTags=enabled" \
+     --tag-specifications 'ResourceType=instance,Tags=[{Key=cp-candidate,Value=true}]'
+   ```
+
+   </Tab>
+   </Tabs>
+
+Your machine is now registered with Omni and will appear on the **Machines** page once it joins. To use it, continue to [Create a cluster](../../getting-started/getting-started#step-3-create-cluster).
+
+When you are finished and no longer need these resources, see [Cleanup](#cleanup).
+
+## Option B: Build a custom Talos AMI
+
+If you need system extensions or other customizations baked into the image, build a custom Talos AMI.
+
+In this option, you will:
 
 1. Download the Talos AWS disk image from Omni
 2. Upload it to Amazon S3
 3. Import it into EC2 as a snapshot
 4. Register the snapshot as an AMI
+5. Launch instances from your custom AMI
 
-### 6.1: Download the Talos AWS image
+### Step 1: Download the Talos AWS image
 
 You can download the Talos AWS image from the CLI or the UI:
 
@@ -157,7 +191,7 @@ Run the following command to download the Talos AWS image:
 omnictl download aws
 ```
 
-To see available options for adding custom labels or system extensions:
+To see available options for adding system extensions:
 
 ```bash
 omnictl download aws --help
@@ -171,8 +205,8 @@ To download the Talos AWS image from the UI:
 2. Go to the **Overview** page.
 3. Click **Download Installation Media**.
 4. Select **AWS AMI (amd64)** or **AWS AMI (arm64)** depending on your instance architecture.
-5. Add any required system extensions or labels.
-5. Click **Download**.
+5. Add any required system extensions.
+6. Click **Download**.
 
 </Tab>
 </Tabs>
@@ -189,9 +223,9 @@ Extract the archive:
 tar -xzf aws-amd64.tar.gz
 ```
 
-This command will produce a disk image similar to `disk.raw`:
+This command will produce a disk image similar to `disk.raw`.
 
-### 6.2: Create S3 bucket
+### Step 2: Create an S3 bucket
 
 The disk image must be uploaded to an S3 bucket before it can be imported into EC2.
 
@@ -206,15 +240,15 @@ aws s3api create-bucket \
   --create-bucket-configuration LocationConstraint=$REGION
 ```
 
-### 6.3: Upload the disk image to S3
+### Step 3: Upload the disk image to S3
 
 Upload the extracted disk image to the S3 bucket:
 
-```
+```bash
 aws s3 cp disk.raw s3://$BUCKET/omni-aws.raw
 ```
 
-### 6.4: Import the disk image as an EC2 snapshot
+### Step 4: Import the disk image as an EC2 snapshot
 
 Next, import the uploaded disk image into EC2 as a snapshot.
 
@@ -229,7 +263,7 @@ IMPORT_TASK=$(aws ec2 import-snapshot \
 echo $IMPORT_TASK
 ```
 
-### 6.5: Monitor the snapshot import
+### Step 5: Monitor the snapshot import
 
 You can check the status of the import task using:
 
@@ -253,7 +287,7 @@ echo $SNAPSHOT
 
 You will use this snapshot in the next step to register the AMI.
 
-## Step 7: Register the AMI
+### Step 6: Register the AMI
 
 Create an AMI from the snapshot.
 
@@ -272,9 +306,9 @@ AMI_ID=$(aws ec2 register-image \
 echo $AMI_ID
 ```
 
-## Step 8: Launch EC2 instances
+### Step 7: Launch EC2 instances
 
-Finally, create EC2 instances using the AMI.
+Finally, create EC2 instances using your custom AMI.
 
 ```bash
 aws ec2 run-instances \
@@ -288,37 +322,27 @@ aws ec2 run-instances \
   --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=omni-aws-ami}]"
 ```
 
+Your machine is now registered with Omni and will appear on the **Machines** page once it joins. To use it, continue to [Create a cluster](../../getting-started/getting-started#step-3-create-cluster).
+
 ## Cleanup
 
 If you no longer need the resources created in this guide, remove them to avoid unnecessary AWS charges.
 
-### Terminate the EC2 instance
+### Terminate the EC2 instances
 
-First, terminate the EC2 instance created from the AMI.
-
-You can find the instance ID with:
-
-```bash
-INSTANCE_ID=$(aws ec2 describe-instances \
-  --region $REGION \
-  --filters "Name=image-id,Values=$AMI_ID" \
-  --query "Reservations[*].Instances[*].InstanceId" \
-  --output text)
-
-echo $INSTANCE_ID
-```
-
-Terminate the instance:
+Terminate the instances you launched, using their instance IDs:
 
 ```bash
 aws ec2 terminate-instances \
   --region $REGION \
-  --instance-ids $INSTANCE_ID
+  --instance-ids <instance-id> [<instance-id> ...]
 ```
 
-### Deregister the AMI
+You can find your instance IDs in the EC2 console, or in the output of the `run-instances` command you ran earlier.
 
-Next, deregister the AMI created earlier:
+### Deregister the AMI (Option B only)
+
+If you created a custom AMI, deregister it:
 
 ```bash
 aws ec2 deregister-image \
@@ -326,7 +350,7 @@ aws ec2 deregister-image \
   --image-id $AMI_ID
 ```
 
-### Delete the snapshot
+### Delete the snapshot (Option B only)
 
 After deregistering the AMI, delete the snapshot used to create it:
 
@@ -336,7 +360,7 @@ aws ec2 delete-snapshot \
   --snapshot-id $SNAPSHOT
 ```
 
-### Remove the disk image from S3
+### Remove the disk image from S3 (Option B only)
 
 Delete the uploaded disk image:
 
@@ -344,7 +368,7 @@ Delete the uploaded disk image:
 aws s3 rm s3://$BUCKET/omni-aws.raw
 ```
 
-### Delete the S3 bucket
+### Delete the S3 bucket (Option B only)
 
 After removing the object, delete the bucket:
 
