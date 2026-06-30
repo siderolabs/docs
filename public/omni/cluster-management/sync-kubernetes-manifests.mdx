@@ -22,8 +22,6 @@ Omni waits until the Kubernetes API is available and the cluster is healthy befo
 If a manifest fails to apply due to a transient error, Omni retries continuously until it succeeds.
 If a manifest contains a configuration error (for example, an invalid field), Omni reports the error in the `ClusterKubernetesManifestsStatus` resource and keeps retrying.
 
-<Note>Manifests are not visible or manageable from the Omni UI at this time.</Note>
-
 ### Sync modes
 
 Manifest sync supports two operation modes:
@@ -148,14 +146,26 @@ If the cluster is not yet healthy, Omni waits until the Kubernetes API is availa
 
 ### Verify manifest sync status
 
-To inspect the sync status of manifests for a cluster, use `omnictl` to get the `ClusterKubernetesManifestsStatus` resource:
+You can inspect a cluster's manifest sync status from either the CLI or the Omni UI.
+
+<Tabs>
+<Tab title="CLI">
+Use `omnictl` to read the `ClusterKubernetesManifestsStatus` resource:
 
 ```bash
 omnictl get clusterkubernetesmanifestsstatuses <cluster-name>
 ```
 
 The output shows the state of each manifest.
-If a manifest cannot be applied due to a configuration error (for example, a typo in a field name or an invalid API version), the error is reported in the status.
+</Tab>
+<Tab title="Omni UI">
+Open the cluster you want to inspect to bring up its cluster page, then select the **Manifest Status** tab in the sidebar. Choose any manifest to view its status:
+
+![Manifest Status Page](./images/sync-kubernetes-manifest-manifest-status-page.png)
+</Tab>
+</Tabs>
+
+A manifest that fails to apply because of a configuration error — such as a mistyped field name or an invalid API version — reports that error in its status.
 
 ## Limitations
 
@@ -163,4 +173,4 @@ Here are some limitations with using the Kubernetes manifest sync feature:
 
 - Helm and Kustomize are not supported at this time. Only raw Kubernetes manifests can be applied.
 - Manifest sync does not support fetching manifests from remote URLs (for example, `https://`).
-- The Omni UI does not display or allow management of synced manifests.
+- The Omni UI displays the sync status of synced manifests, but does not allow editing or managing them from the UI.
