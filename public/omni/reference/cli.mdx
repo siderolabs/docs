@@ -5,7 +5,16 @@ description: omnictl CLI tool reference.
 
 ## omnictl apply
 
-Create or update resource using YAML file as an input
+Create or update resource using YAML file or directory as an input
+
+### Synopsis
+
+Create or update resources using YAML file(s) as input.
+
+If a file is specified, only that file will be processed.
+If a directory is specified, all YAML files (*.yaml, *.yml) in the directory
+and its subdirectories will be processed recursively. Each file is processed
+independently, similar to kubectl behavior.
 
 ```
 omnictl apply [flags]
@@ -15,7 +24,7 @@ omnictl apply [flags]
 
 ```
   -d, --dry-run       Dry run, implies verbose
-  -f, --file string   Resource file to load and apply
+  -f, --file string   Resource file or directory to load and apply
   -h, --help          help for apply
   -v, --verbose       Verbose output
 ```
@@ -37,14 +46,12 @@ omnictl apply [flags]
 
 Read audit log from Omni
 
-```
-omnictl audit-log [flags]
-```
+### Synopsis
 
-Optionally specify a date range using the YYYY-MM-DD format:
+Read audit log from Omni. Optionally filter by date range using start and end arguments in YYYY-MM-DD format (date-only, interpreted in the server's local time, e.g. 2024-01-01).
 
 ```
-omnictl audit-log <start-date> <end-date> [flags]
+omnictl audit-log [start] [end] [flags]
 ```
 
 ### Options
@@ -318,9 +325,11 @@ omnictl cluster machine delete machine-id [flags]
 ### Options
 
 ```
-  -f, --force              force destroy the machine
-  -h, --help               help for delete
-  -t, --timeout duration   timeout for the machine deletion (default 5m0s)
+  -f, --force                  force delete the machine, skipping wipe
+      --force-etcd-leave       force leave etcd
+  -h, --help                   help for delete
+  -t, --timeout duration       timeout for the machine deletion (default 5m0s)
+  -y, --yes-i-am-really-sure   do not ask for confirmation when using --force-etcd-leave
 ```
 
 ### Options inherited from parent commands
@@ -428,6 +437,170 @@ Commands to manage cluster machines.
 * [omnictl cluster machine lock](#omnictl-cluster-machine-lock)	 - Lock the machine
 * [omnictl cluster machine unlock](#omnictl-cluster-machine-unlock)	 - Unlock the machine
 
+## omnictl cluster secret rotate kubernetes-ca
+
+Rotate Kubernetes CA certificate.
+
+### Synopsis
+
+Rotate Kubernetes CA certificate for all nodes in the cluster. Kubernetes CA is used by the Kubernetes API server and kubelet for authenticating clients.
+
+```
+omnictl cluster secret rotate kubernetes-ca [flags]
+```
+
+### Options
+
+```
+  -h, --help   help for kubernetes-ca
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+  -n, --name string                cluster name
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+  -w, --wait                       wait for the secret rotation to complete (default true)
+  -t, --wait-timeout duration      wait timeout for secret rotation, if zero, wait indefinitely (default 5m0s)
+```
+
+### SEE ALSO
+
+* [omnictl cluster secret rotate](#omnictl-cluster-secret-rotate)	 - Rotate cluster secrets, wait for the rotation to complete.
+
+## omnictl cluster secret rotate status
+
+Show secret rotation status, wait for the rotation to complete.
+
+### Synopsis
+
+Shows current secret rotation status, if the terminal supports it, watch the status as it updates. The command waits for the secret to be fully rotated by default.
+
+```
+omnictl cluster secret rotate status [flags]
+```
+
+### Options
+
+```
+  -h, --help   help for status
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+  -n, --name string                cluster name
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+  -w, --wait                       wait for the secret rotation to complete (default true)
+  -t, --wait-timeout duration      wait timeout for secret rotation, if zero, wait indefinitely (default 5m0s)
+```
+
+### SEE ALSO
+
+* [omnictl cluster secret rotate](#omnictl-cluster-secret-rotate)	 - Rotate cluster secrets, wait for the rotation to complete.
+
+## omnictl cluster secret rotate talos-ca
+
+Rotate Talos CA certificate.
+
+### Synopsis
+
+Rotate Talos CA certificate for all nodes in the cluster. Talos CA is used by Talos API.
+
+```
+omnictl cluster secret rotate talos-ca [flags]
+```
+
+### Options
+
+```
+  -h, --help   help for talos-ca
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+  -n, --name string                cluster name
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+  -w, --wait                       wait for the secret rotation to complete (default true)
+  -t, --wait-timeout duration      wait timeout for secret rotation, if zero, wait indefinitely (default 5m0s)
+```
+
+### SEE ALSO
+
+* [omnictl cluster secret rotate](#omnictl-cluster-secret-rotate)	 - Rotate cluster secrets, wait for the rotation to complete.
+
+## omnictl cluster secret rotate
+
+Rotate cluster secrets, wait for the rotation to complete.
+
+### Synopsis
+
+Rotates specified cluster secret, if the terminal supports it, watch the secret update steps. The command waits for the secret to be fully rotated by default.
+
+### Options
+
+```
+  -h, --help                    help for rotate
+  -w, --wait                    wait for the secret rotation to complete (default true)
+  -t, --wait-timeout duration   wait timeout for secret rotation, if zero, wait indefinitely (default 5m0s)
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+  -n, --name string                cluster name
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl cluster secret](#omnictl-cluster-secret)	 - Cluster secret management subcommands.
+* [omnictl cluster secret rotate kubernetes-ca](#omnictl-cluster-secret-rotate-kubernetes-ca)	 - Rotate Kubernetes CA certificate.
+* [omnictl cluster secret rotate status](#omnictl-cluster-secret-rotate-status)	 - Show secret rotation status, wait for the rotation to complete.
+* [omnictl cluster secret rotate talos-ca](#omnictl-cluster-secret-rotate-talos-ca)	 - Rotate Talos CA certificate.
+
+## omnictl cluster secret
+
+Cluster secret management subcommands.
+
+### Synopsis
+
+Commands to manage cluster secrets.
+
+### Options
+
+```
+  -h, --help          help for secret
+  -n, --name string   cluster name
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl cluster](#omnictl-cluster)	 - Cluster-related subcommands.
+* [omnictl cluster secret rotate](#omnictl-cluster-secret-rotate)	 - Rotate cluster secrets, wait for the rotation to complete.
+
 ## omnictl cluster status
 
 Show cluster status, wait for the cluster to be ready.
@@ -478,7 +651,7 @@ omnictl cluster template delete [flags]
 ```
       --destroy-disconnected-machines   removes all disconnected machines which are part of the cluster from Omni
   -d, --dry-run                         dry run
-  -f, --file string                     path to the cluster template file.
+  -f, --file string                     path to the cluster template file or directory.
   -h, --help                            help for delete
   -v, --verbose                         verbose output (show diff for each resource)
 ```
@@ -511,7 +684,7 @@ omnictl cluster template diff [flags]
 ### Options
 
 ```
-  -f, --file string   path to the cluster template file.
+  -f, --file string   path to the cluster template file or directory.
   -h, --help          help for diff
 ```
 
@@ -543,10 +716,11 @@ omnictl cluster template export cluster-name [flags]
 ### Options
 
 ```
-  -c, --cluster string   cluster name
-  -f, --force            overwrite output file if it exists
-  -h, --help             help for export
-  -o, --output string    output file (default: stdout)
+  -c, --cluster string        cluster name
+  -f, --force                 overwrite output file if it exists
+  -h, --help                  help for export
+      --include-kernel-args   include kernel arguments (KernelArgs resources) in the exported template
+  -o, --output string         output file (default: stdout)
 ```
 
 ### Options inherited from parent commands
@@ -577,7 +751,7 @@ omnictl cluster template render [flags]
 ### Options
 
 ```
-  -f, --file string   path to the cluster template file.
+  -f, --file string   path to the cluster template file or directory.
   -h, --help          help for render
 ```
 
@@ -609,7 +783,7 @@ omnictl cluster template status [flags]
 ### Options
 
 ```
-  -f, --file string     path to the cluster template file.
+  -f, --file string     path to the cluster template file or directory.
   -h, --help            help for status
   -q, --quiet           suppress output
   -w, --wait duration   wait timeout, if zero, report current status and exit (default 5m0s)
@@ -635,6 +809,11 @@ Apply template to the Omni.
 ### Synopsis
 
 Query existing resources for the cluster and compare them with the resources generated from the template, create/update/delete resources as needed. This command requires API access.
+	
+If a file is specified, only that file will be processed.
+If a directory is specified, all YAML files (*.yaml, *.yml) in the directory
+and its subdirectories will be processed recursively. Each template file is
+processed independently, allowing management of multiple clusters.
 
 ```
 omnictl cluster template sync [flags]
@@ -644,7 +823,7 @@ omnictl cluster template sync [flags]
 
 ```
   -d, --dry-run       dry run
-  -f, --file string   path to the cluster template file.
+  -f, --file string   path to the cluster template file or directory.
   -h, --help          help for sync
   -v, --verbose       verbose output (show diff for each resource)
 ```
@@ -677,7 +856,7 @@ omnictl cluster template validate [flags]
 ### Options
 
 ```
-  -f, --file string   path to the cluster template file.
+  -f, --file string   path to the cluster template file or directory.
   -h, --help          help for validate
 ```
 
@@ -790,6 +969,7 @@ Commands to destroy clusters and manage cluster templates.
 * [omnictl cluster kubernetes](#omnictl-cluster-kubernetes)	 - Cluster Kubernetes management subcommands.
 * [omnictl cluster lock](#omnictl-cluster-lock)	 - Lock the cluster
 * [omnictl cluster machine](#omnictl-cluster-machine)	 - Machine related commands.
+* [omnictl cluster secret](#omnictl-cluster-secret)	 - Cluster secret management subcommands.
 * [omnictl cluster status](#omnictl-cluster-status)	 - Show cluster status, wait for the cluster to be ready.
 * [omnictl cluster template](#omnictl-cluster-template)	 - Cluster template management subcommands.
 * [omnictl cluster unlock](#omnictl-cluster-unlock)	 - Unlock the cluster
@@ -808,24 +988,25 @@ If it is not installed already, you can install it via your OS's package manager
 To load completions in your current shell session:
 
 ```
-	source <(omnictl completion bash)
+source <(omnictl completion bash)
 ```
 
 To load completions for every new session, execute once:
 
 #### Linux:
 
-```bash
-	omnictl completion bash > /etc/bash_completion.d/omnictl
+```
+omnictl completion bash > /etc/bash_completion.d/omnictl
 ```
 
 #### macOS:
 
-```bash
-	omnictl completion bash > $(brew --prefix)/etc/bash_completion.d/omnictl
+```
+omnictl completion bash > $(brew --prefix)/etc/bash_completion.d/omnictl
 ```
 
 You will need to start a new shell for this setup to take effect.
+
 
 ```
 omnictl completion bash
@@ -861,13 +1042,18 @@ Generate the autocompletion script for the fish shell.
 
 To load completions in your current shell session:
 
-	omnictl completion fish | source
+```
+omnictl completion fish | source
+```
 
 To load completions for every new session, execute once:
 
-	omnictl completion fish > ~/.config/fish/completions/omnictl.fish
+```
+omnictl completion fish > ~/.config/fish/completions/omnictl.fish
+```
 
 You will need to start a new shell for this setup to take effect.
+
 
 ```
 omnictl completion fish [flags]
@@ -903,10 +1089,13 @@ Generate the autocompletion script for powershell.
 
 To load completions in your current shell session:
 
-	omnictl completion powershell | Out-String | Invoke-Expression
+```
+omnictl completion powershell | Out-String | Invoke-Expression
+```
 
 To load completions for every new session, add the output of the above command
 to your powershell profile.
+
 
 ```
 omnictl completion powershell [flags]
@@ -944,12 +1133,13 @@ If shell completion is not already enabled in your environment you will need
 to enable it.  You can execute the following once:
 
 ```
-	echo "autoload -U compinit; compinit" >> ~/.zshrc
+echo "autoload -U compinit; compinit" >> ~/.zshrc
 ```
+
 To load completions in your current shell session:
 
 ```
-	source <(omnictl completion zsh)
+source <(omnictl completion zsh)
 ```
 
 To load completions for every new session, execute once:
@@ -957,16 +1147,17 @@ To load completions for every new session, execute once:
 #### Linux:
 
 ```
-	omnictl completion zsh > "${fpath[1]}/_omnictl"
+omnictl completion zsh > "${fpath[1]}/_omnictl"
 ```
 
 #### macOS:
 
 ```
-	omnictl completion zsh > $(brew --prefix)/share/zsh/site-functions/_omnictl
+omnictl completion zsh > $(brew --prefix)/share/zsh/site-functions/_omnictl
 ```
 
 You will need to start a new shell for this setup to take effect.
+
 
 ```
 omnictl completion zsh [flags]
@@ -1000,6 +1191,7 @@ Generate the autocompletion script for the specified shell
 
 Generate the autocompletion script for omnictl for the specified shell.
 See each sub-command's help for details on how to use the generated script.
+
 
 ### Options
 
@@ -1279,6 +1471,59 @@ Manage the client configuration file (omniconfig)
 * [omnictl config new](#omnictl-config-new)	 - Generate a new client configuration file
 * [omnictl config url](#omnictl-config-url)	 - Set the URL for the current context
 
+## omnictl configure machine
+
+Machine configuration command.
+
+```
+omnictl configure machine <uuid1> <uuid2> [flags]
+```
+
+### Options
+
+```
+  -h, --help                                                  help for machine
+      --reset-node-unique-token                               reset the node unique token for the machine
+      --siderolink-connection one of [udp,http-tunnel,auto]   configure SideroLink connection mode
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl configure](#omnictl-configure)	 - Configuration subcommands.
+
+## omnictl configure
+
+Configuration subcommands.
+
+### Options
+
+```
+  -h, --help   help for configure
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl](#omnictl)	 - A CLI for accessing Omni API.
+* [omnictl configure machine](#omnictl-configure-machine)	 - Machine configuration command.
+
 ## omnictl delete
 
 Delete a specific resource by ID or all resources of the type.
@@ -1354,6 +1599,7 @@ To download the latest Radxa ROCK PI 4 image, run:
 
     omnictl download "rpi_generic"
 
+
 ```
 omnictl download <image name> [flags]
 ```
@@ -1369,8 +1615,49 @@ omnictl download <image name> [flags]
       --output string                   Output file or directory, defaults to current working directory (default ".")
       --pxe                             Print PXE URL and exit
       --secureboot                      Download SecureBoot enabled installation media
-      --talos-version string            Talos version to be used in the generated installation media (default "1.11.5")
+      --talos-version string            Talos version to be used in the generated installation media (default "1.12.6")
       --use-siderolink-grpc-tunnel      Configure Talos to use the SideroLink (WireGuard) gRPC tunnel over HTTP/2 for Omni management traffic, instead of UDP. Only enable this if the network blocks UDP packets, as HTTP tunneling adds significant overhead for communications.
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl](#omnictl)	 - A CLI for accessing Omni API.
+
+## omnictl edit
+
+Edit Omni resources with the default editor.
+
+### Synopsis
+
+The edit command allows you to directly edit the resources
+of an Omni instance using your preferred text editor.
+
+It will open the editor defined by your OMNI_EDITOR, TALOS_EDITOR,
+or EDITOR environment variables, or fall back to 'vi' for Linux
+or 'notepad' for Windows.
+
+```
+omnictl edit <type> [<id>] [flags]
+```
+
+### Options
+
+```
+      --dry-run                  do not apply the change after editing and print the change summary instead
+  -h, --help                     help for edit
+      --id-match-regexp string   Match resource ID against a regular expression.
+      --namespace string         resource namespace (default is to use default namespace per resource)
+      --selector string          Selector (label query) to filter on, supports '=' and '==' (e.g. -l key1=value1,key2=value2)
+  -v, --verbose                  Verbose output
 ```
 
 ### Options inherited from parent commands
@@ -1404,7 +1691,7 @@ omnictl get <type> [<id>] [flags]
 ```
   -h, --help                     help for get
       --id-match-regexp string   Match resource ID against a regular expression.
-  -n, --namespace string         The resource namespace. (default "default")
+  -n, --namespace string         The resource namespace.
   -o, --output string            Output format (json, table, yaml, jsonpath). (default "table")
   -l, --selector string          Selector (label query) to filter on, supports '=' and '==' (e.g. -l key1=value1,key2=value2)
   -w, --watch                    Watch the resource state.
@@ -1730,6 +2017,35 @@ omnictl jointoken make-default <id> [flags]
 
 * [omnictl jointoken](#omnictl-jointoken)	 - Manage join tokens
 
+## omnictl jointoken omni-endpoint
+
+Get the Omni endpoint URL with the join token
+
+```
+omnictl jointoken omni-endpoint [flags]
+```
+
+### Options
+
+```
+  -h, --help                help for omni-endpoint
+      --token-id string     Generate using specific token ID (uses default if empty)
+      --token-name string   Looks up the token by name and generates the config using the token (uses default if empty)
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl jointoken](#omnictl-jointoken)	 - Manage join tokens
+
 ## omnictl jointoken renew
 
 Renew a join token
@@ -1841,6 +2157,7 @@ Manage join tokens
 * [omnictl jointoken list](#omnictl-jointoken-list)	 - List join tokens
 * [omnictl jointoken machine-config](#omnictl-jointoken-machine-config)	 - Get partial machine config to make a machine join Omni
 * [omnictl jointoken make-default](#omnictl-jointoken-make-default)	 - Make the token default one
+* [omnictl jointoken omni-endpoint](#omnictl-jointoken-omni-endpoint)	 - Get the Omni endpoint URL with the join token
 * [omnictl jointoken renew](#omnictl-jointoken-renew)	 - Renew a join token
 * [omnictl jointoken revoke](#omnictl-jointoken-revoke)	 - Revoke a join token
 * [omnictl jointoken unrevoke](#omnictl-jointoken-unrevoke)	 - Unrevoke a join token
@@ -1862,17 +2179,19 @@ omnictl kubeconfig [local-path] [flags]
 ### Options
 
 ```
-      --break-glass                 get kubeconfig that allows accessing nodes bypasing Omni (if enabled for the account)
-  -c, --cluster string              cluster to use
-  -f, --force                       force overwrite of kubeconfig if already present, force overwrite on kubeconfig merge
-      --force-context-name string   force context name for kubeconfig merge
-      --grant-type string           Authorization grant type to use. One of (auto|authcode|authcode-keyboard)
-      --groups strings              group to be used in the service account token (groups). only used when --service-account is set to true (default [system:masters])
-  -h, --help                        help for kubeconfig
-  -m, --merge                       merge with existing kubeconfig (default true)
-      --service-account             create a service account type kubeconfig instead of a OIDC-authenticated user type
-      --ttl duration                ttl for the service account token. only used when --service-account is set to true (default 8760h0m0s)
-      --user string                 user to be used in the service account token (sub). required when --service-account is set to true
+      --break-glass                  get kubeconfig that allows accessing nodes bypasing Omni (if enabled for the account)
+  -c, --cluster string               cluster to use
+  -f, --force                        force overwrite of kubeconfig if already present, force overwrite on kubeconfig merge
+      --force-context-name string    force context name in the resulting kubeconfig
+      --grant-type string            Authorization grant type to use. One of (auto|authcode|authcode-keyboard)
+      --groups strings               group to be used in the service account token (groups). only used when --service-account is set to true (default [system:masters])
+  -h, --help                         help for kubeconfig
+  -m, --merge                        merge with existing kubeconfig (default true)
+      --oidc-cache-base-dir string   override the base cache directory for kubelogin in the generated kubeconfig
+      --oidc-cache-isolation         isolate OIDC token caches across clusters by appending a per-context subdirectory to the cache directory
+      --service-account              create a service account type kubeconfig instead of a OIDC-authenticated user type
+      --ttl duration                 ttl for the service account token. only used when --service-account is set to true (default 8760h0m0s)
+      --user string                  user to be used in the service account token (sub). required when --service-account is set to true
 ```
 
 ### Options inherited from parent commands
@@ -2306,13 +2625,15 @@ A CLI for accessing Omni API.
 
 ### SEE ALSO
 
-* [omnictl apply](#omnictl-apply)	 - Create or update resource using YAML file as an input
+* [omnictl apply](#omnictl-apply)	 - Create or update resource using YAML file or directory as an input
 * [omnictl audit-log](#omnictl-audit-log)	 - Read audit log from Omni
 * [omnictl cluster](#omnictl-cluster)	 - Cluster-related subcommands.
 * [omnictl completion](#omnictl-completion)	 - Generate the autocompletion script for the specified shell
 * [omnictl config](#omnictl-config)	 - Manage the client configuration file (omniconfig)
+* [omnictl configure](#omnictl-configure)	 - Configuration subcommands.
 * [omnictl delete](#omnictl-delete)	 - Delete a specific resource by ID or all resources of the type.
 * [omnictl download](#omnictl-download)	 - Download installer media
+* [omnictl edit](#omnictl-edit)	 - Edit Omni resources with the default editor.
 * [omnictl get](#omnictl-get)	 - Get a specific resource or list of resources.
 * [omnictl infraprovider](#omnictl-infraprovider)	 - Manage infra providers
 * [omnictl jointoken](#omnictl-jointoken)	 - Manage join tokens

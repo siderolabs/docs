@@ -60,6 +60,32 @@ UserPilot contains UserPilot-related configuration.
   </tbody>
 </table>
 
+### account.posthog
+
+Posthog contains PostHog analytics configuration.
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`apiKey`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>ApiKey is the PostHog project API key (public).<br />**CLI flag:** `--account-posthog-api-key`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`apiHost`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>ApiHost is the PostHog API host events are sent to.<br />**CLI flag:** `--account-posthog-api-host`</td>
+    </tr>
+  </tbody>
+</table>
+
 ## services
 
 Services contains configuration for various services run by Omni.
@@ -777,9 +803,53 @@ Limits contains configuration for user and service account limits.
 
 Logs contains logging-related configuration.
 
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`level`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>Level is the log level for the Omni application logger. Defaults to info, unless the --debug flag is set, in which case it defaults to debug. Values: `debug`, `info`, `warn`, `error`.<br />**CLI flag:** `--log-level`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`format`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>Format is the log format for the Omni application logger. text uses a human-readable colored format (development), json uses structured JSON output (production). Defaults to text for debug builds, json otherwise. Values: `text`, `json`.<br />**CLI flag:** `--log-format`</td>
+    </tr>
+  </tbody>
+</table>
+
 ### logs.machine
 
 Machine contains machine logs configuration.
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`ingestionRateLimitBytesPerSecond`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>integer</td>
+      <td>IngestionRateLimitBytesPerSecond is the maximum bytes per second of machine logs accepted from a single machine. Zero (default) disables rate limiting. Minimum: `0`.<br />**CLI flag:** `--machine-log-ingestion-rate-limit-bps`<br />**Default:** `0`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`ingestionRateBurstBytes`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>integer</td>
+      <td>IngestionRateBurstBytes is the maximum burst bytes for machine log ingestion from a single machine. Defaults to one second worth of rate when zero. Minimum: `0`.<br />**CLI flag:** `--machine-log-ingestion-rate-burst-bytes`<br />**Default:** `0`</td>
+    </tr>
+  </tbody>
+</table>
 
 #### logs.machine.storage
 
@@ -1138,6 +1208,109 @@ Sqlite contains SQLite storage backend configuration. It is used to store machin
   </tbody>
 </table>
 
+### storage.rateLimits
+
+RateLimits contains rate-limit settings for state writes. Today the only gate is etcd-specific (bytes/sec, throttling — see the `etcd` sub-block).
+
+#### storage.rateLimits.etcd
+
+Etcd contains write rate-limit settings that only apply when the default storage backend is etcd. The bytes/sec gate throttles mutations (Create/Update/Destroy) by marshaled-payload size to protect etcd from revision/storage blowup. Throttling is bounded by the caller's context deadline and by `maxWait`, whichever is shorter.
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`maxWait`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>duration</td>
+      <td>MaxWait is the maximum time a single mutation will block waiting for tokens before failing with DeadlineExceeded. The effective wait is min(ctx.Deadline-now, maxWait). Load-bearing for callers that pass context.Background() — without this cap, a buggy controller could wait indefinitely. 0 means "no internal cap, rely on ctx deadline alone" (not recommended). Format: must be a valid Go duration (e.g., '10s', '1h30m').<br />**CLI flag:** `--storage-rate-limits-etcd-max-wait`<br />**Default:** `30s`</td>
+    </tr>
+  </tbody>
+</table>
+
+#### storage.rateLimits.etcd.user
+
+User contains write-bytes throttle settings for operations performed by end users (authenticated humans and user-owned service accounts).
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`writeBytesPerSecond`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>integer</td>
+      <td>WriteBytesPerSecond is the sustained marshaled-payload byte rate allowed for etcd mutations. 0 disables the throttle for this class. Minimum: `0`.<br />**CLI flag:** `--storage-rate-limits-etcd-user-write-bytes-per-second`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`writeBytesBurst`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>integer</td>
+      <td>WriteBytesBurst is the maximum byte burst allowed above WriteBytesPerSecond. Must be at least the size of the single largest mutation, otherwise that mutation will never admit. 0 disables the throttle for this class. Minimum: `0`.<br />**CLI flag:** `--storage-rate-limits-etcd-user-write-bytes-burst`</td>
+    </tr>
+  </tbody>
+</table>
+
+#### storage.rateLimits.etcd.infraProvider
+
+InfraProvider contains write-bytes throttle settings for operations performed by infrastructure providers.
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`writeBytesPerSecond`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>integer</td>
+      <td>WriteBytesPerSecond is the sustained marshaled-payload byte rate allowed for etcd mutations. 0 disables the throttle for this class. Minimum: `0`.<br />**CLI flag:** `--storage-rate-limits-etcd-infra-provider-write-bytes-per-second`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`writeBytesBurst`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>integer</td>
+      <td>WriteBytesBurst is the maximum byte burst allowed above WriteBytesPerSecond. Must be at least the size of the single largest mutation, otherwise that mutation will never admit. 0 disables the throttle for this class. Minimum: `0`.<br />**CLI flag:** `--storage-rate-limits-etcd-infra-provider-write-bytes-burst`</td>
+    </tr>
+  </tbody>
+</table>
+
+#### storage.rateLimits.etcd.internal
+
+Internal contains write-bytes throttle settings for operations performed by Omni's in-process controllers. Throttling internal callers naturally caps controller-driven write storms at the configured budget — see CLAUDE.md for the design rationale.
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`writeBytesPerSecond`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>integer</td>
+      <td>WriteBytesPerSecond is the sustained marshaled-payload byte rate allowed for etcd mutations. 0 disables the throttle for this class. Minimum: `0`.<br />**CLI flag:** `--storage-rate-limits-etcd-internal-write-bytes-per-second`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`writeBytesBurst`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>integer</td>
+      <td>WriteBytesBurst is the maximum byte burst allowed above WriteBytesPerSecond. Must be at least the size of the single largest mutation, otherwise that mutation will never admit. 0 disables the throttle for this class. Minimum: `0`.<br />**CLI flag:** `--storage-rate-limits-etcd-internal-write-bytes-burst`</td>
+    </tr>
+  </tbody>
+</table>
+
 ## etcdBackup
 
 EtcdBackup contains etcd backup configuration for the clusters on Omni.
@@ -1226,6 +1399,16 @@ Registries contains container image registries configuration.
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`imageFactoryPXEBaseURL`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
       <td>ImageFactoryPXEBaseURL is the base URL of the Image Factory PXE endpoint used to build custom PXE boot images.<br />**CLI flag:** `--image-factory-pxe-address`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`imageFactoryUsername`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>ImageFactoryUsername is the username used to authenticate against the Image Factory Enterprise service.<br />**CLI flag:** `--image-factory-username`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`imageFactoryPassword`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>ImageFactoryPassword is the password used to authenticate against the Image Factory Enterprise service.<br />**CLI flag:** `--image-factory-password`</td>
     </tr>
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`mirrors`</td>
@@ -1322,41 +1505,6 @@ Features contains feature flags to enable/disable various Omni features.
   </tbody>
 </table>
 
-## notifications
-
-Notifications contains configuration for system notifications emitted by controllers.
-
-### notifications.nonImageFactoryDeprecation
-
-NonImageFactoryDeprecation contains configuration for the notification shown when machines are provisioned without using ImageFactory.
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`enabled`</td>
-      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>boolean</td>
-      <td>Enabled controls whether the non-ImageFactory deprecation notification is shown when machines with invalid schematics are detected.<br />**CLI flag:** `--non-image-factory-deprecation-enabled`<br />**Default:** `false`</td>
-    </tr>
-    <tr>
-      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`title`</td>
-      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
-      <td>Title is the title of the non-ImageFactory deprecation notification.<br />**CLI flag:** `--non-image-factory-deprecation-title`<br />**Default:** `Non-ImageFactory Machines Detected`</td>
-    </tr>
-    <tr>
-      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`body`</td>
-      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
-      <td>Body is the body of the non-ImageFactory deprecation notification. Use %d as a placeholder for the number of affected machines.<br />**CLI flag:** `--non-image-factory-deprecation-body`<br />**Default:** `%d machine(s) were provisioned without ImageFactory. Support for these machines will end after a future release. Please re-provision them using ImageFactory.`</td>
-    </tr>
-  </tbody>
-</table>
-
 ## eulaAccept
 
 EulaAccept contains the identity of the person accepting the EULA via CLI flags or config.
@@ -1379,6 +1527,83 @@ EulaAccept contains the identity of the person accepting the EULA via CLI flags 
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`email`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
       <td>Email is the email address of the person accepting the EULA on behalf of this Omni instance.<br />**CLI flag:** `--eula-accept-email`</td>
+    </tr>
+  </tbody>
+</table>
+
+## support
+
+Support contains support-related configuration.
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`supportEligibleProducts`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string[]</td>
+      <td>SupportEligibleProducts is the list of Stripe product name substrings that grant access to the support portal.<br />**CLI flag:** `--support-eligible-products`<br />**Default:** `["business", "enterprise", "edge"]`</td>
+    </tr>
+  </tbody>
+</table>
+
+### support.officeHours
+
+OfficeHours contains the configuration for the monthly office hours shown in the help modal.
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`summary`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>Summary is the calendar event title.<br />**CLI flag:** `--office-hours-summary`<br />**Default:** `Sidero Labs Monthly Office Hours`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`description`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>Description is the calendar event description.<br />**CLI flag:** `--office-hours-description`<br />**Default:** `A monthly meeting to chat with Sidero Labs engineers about Talos, Omni, and more.`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`dtstartTzid`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>DtstartTzid is the DTSTART value with TZID parameter (e.g. 'America/New_York:20260413T123000').<br />**CLI flag:** `--office-hours-dtstart-tzid`<br />**Default:** `America/New_York:20260413T123000`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`dtendTzid`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>DtendTzid is the DTEND value with TZID parameter (e.g. 'America/New_York:20260413T130000').<br />**CLI flag:** `--office-hours-dtend-tzid`<br />**Default:** `America/New_York:20260413T130000`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`dtstartUtc`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>DtstartUtc is the DTSTART value in UTC (e.g. '20260413T163000Z').<br />**CLI flag:** `--office-hours-dtstart-utc`<br />**Default:** `20260413T163000Z`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`dtendUtc`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>DtendUtc is the DTEND value in UTC (e.g. '20260413T170000Z').<br />**CLI flag:** `--office-hours-dtend-utc`<br />**Default:** `20260413T170000Z`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`rrule`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>Rrule is the iCalendar RRULE string (e.g. 'FREQ=MONTHLY;BYDAY=2MO').<br />**CLI flag:** `--office-hours-rrule`<br />**Default:** `FREQ=MONTHLY;BYDAY=2MO`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`meetUrl`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>MeetUrl is the video call URL for the office hours.<br />**CLI flag:** `--office-hours-meet-url`<br />**Default:** `https://meet.google.com/ivb-kjfm-jfc`</td>
     </tr>
   </tbody>
 </table>

@@ -130,7 +130,6 @@ navigation:
             - "omni-configuration.mdx"
             - "manage-omni-resources-with-omnictl.mdx"
             - "image-factory-configuration.mdx"
-            - "generating-omnictl-cli-reference.mdx"
 
         - group: Troubleshooting and Support
           folder: omni/troubleshooting
