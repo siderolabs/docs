@@ -79,6 +79,10 @@
     {
       "source": "/omni/cluster-management/omni-terraform",
       "destination": "/omni/cluster-management/terraform-and-omni"
+    },
+    {
+      "source": "/talos/v1.13/deploy-and-manage-workloads/workers-on-controlplane",
+      "destination": "/talos/v1.13/deploy-and-manage-workloads/workloads-on-controlplane"
     }
   ],
   "navigation": {
@@ -2487,8 +2491,7 @@
               "omni/reference/cluster-templates",
               "omni/reference/omni-configuration",
               "omni/reference/manage-omni-resources-with-omnictl",
-              "omni/reference/image-factory-configuration",
-              "omni/reference/generating-omnictl-cli-reference"
+              "omni/reference/image-factory-configuration"
             ]
           },
           {

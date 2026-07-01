@@ -69,3 +69,5 @@ redirects:
     destination: "/omni/cluster-management/expose-a-workload-via-service-proxy"
   - source: "/omni/cluster-management/omni-terraform"
     destination: "/omni/cluster-management/terraform-and-omni"
+  - source: "/talos/v1.13/deploy-and-manage-workloads/workers-on-controlplane"
+    destination: "/talos/v1.13/deploy-and-manage-workloads/workloads-on-controlplane"

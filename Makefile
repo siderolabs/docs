@@ -9,6 +9,9 @@ DOCS_CONVERT_IMAGE := ghcr.io/siderolabs/docs-convert:latest
 CHANGELOG_GEN_IMAGE := ghcr.io/siderolabs/changelog-gen:latest
 VERSION_UPGRADE_IMAGE := ghcr.io/siderolabs/version-upgrade-gen:latest
 TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.14.0-alpha.2
+OMNI_CLI_GEN_IMAGE := ghcr.io/siderolabs/omni-cli-gen:latest
+OMNI_CONFIG_GEN_IMAGE := ghcr.io/siderolabs/omni-config-gen:latest
+MDX_NORMALIZE_IMAGE := ghcr.io/siderolabs/mdx-normalize:latest
 TALOS_VERSION := v1.14
 VALE_IMAGE := jdkato/vale:latest
 VALE_CONFIG ?= .vale.ini
@@ -153,12 +156,140 @@ generate-talos-reference-local: ## Generate Talos reference docs using local Go 
 
 OMNI_CONFIG_SCHEMA_URL ?= https://raw.githubusercontent.com/siderolabs/omni/refs/heads/main/internal/pkg/config/schema.json
 OMNI_CONFIG_REF_PATH := public/omni/reference/omni-configuration.mdx
+OMNI_CLI_REF_PATH := public/omni/reference/cli.mdx
+IMAGE_FACTORY_REF_PATH := public/omni/reference/image-factory-configuration.mdx
+IMAGE_FACTORY_CONFIG_URL ?= https://raw.githubusercontent.com/siderolabs/image-factory/main/docs/configuration.md
+
+# Frontmatter for the generated pages. Defined here (not read from the existing
+# file) so a page is fully restored even if it was deleted or emptied.
+OMNI_CLI_TITLE := omnictl CLI
+OMNI_CLI_DESC := omnictl CLI tool reference.
+IMAGE_FACTORY_TITLE := Image Factory Configuration
+IMAGE_FACTORY_DESC := Complete reference for configuring Omni’s Image Factory service
+
+# Pull an image only if it is not already present locally, so locally-built
+# images (from the build-*-container targets) are usable before publishing.
+pull_if_missing = docker image inspect $(1) >/dev/null 2>&1 || docker pull $(1)
+
+# ---- Container image builds ------------------------------------------------
+
+.PHONY: build-omni-cli-gen-container
+build-omni-cli-gen-container: ## Build the omni-cli-gen container locally
+	docker build -t $(OMNI_CLI_GEN_IMAGE) ./omni-cli-gen
+
+.PHONY: build-omni-config-gen-container
+build-omni-config-gen-container: ## Build the omni-config-gen container locally
+	docker build -t $(OMNI_CONFIG_GEN_IMAGE) ./omni-config-gen
+
+.PHONY: build-mdx-normalize-container
+build-mdx-normalize-container: ## Build the mdx-normalize container locally
+	docker build -t $(MDX_NORMALIZE_IMAGE) ./mdx-normalize
+
+# ---- Normalization ---------------------------------------------------------
+
+.PHONY: normalize-doc
+normalize-doc: ## Normalize the generated Omni reference .mdx files for Mintlify (container)
+	@$(call pull_if_missing,$(MDX_NORMALIZE_IMAGE))
+	@if [ -f $(OMNI_CLI_REF_PATH) ]; then docker run --rm -i $(MDX_NORMALIZE_IMAGE) < $(OMNI_CLI_REF_PATH) > $(OMNI_CLI_REF_PATH).tmp && mv $(OMNI_CLI_REF_PATH).tmp $(OMNI_CLI_REF_PATH) || { rm -f $(OMNI_CLI_REF_PATH).tmp; exit 1; }; fi
+	@if [ -f $(IMAGE_FACTORY_REF_PATH) ]; then docker run --rm -i $(MDX_NORMALIZE_IMAGE) --strip-hr < $(IMAGE_FACTORY_REF_PATH) > $(IMAGE_FACTORY_REF_PATH).tmp && mv $(IMAGE_FACTORY_REF_PATH).tmp $(IMAGE_FACTORY_REF_PATH) || { rm -f $(IMAGE_FACTORY_REF_PATH).tmp; exit 1; }; fi
+
+.PHONY: normalize-doc-local
+normalize-doc-local: ## Normalize the generated Omni reference .mdx files using local Go build
+	@if [ -f $(OMNI_CLI_REF_PATH) ]; then cd mdx-normalize && go run . ../$(OMNI_CLI_REF_PATH); fi
+	@if [ -f $(IMAGE_FACTORY_REF_PATH) ]; then cd mdx-normalize && go run . --strip-hr ../$(IMAGE_FACTORY_REF_PATH); fi
+
+# ---- omnictl CLI reference -------------------------------------------------
+
+.PHONY: generate-omni-cli-reference
+generate-omni-cli-reference: ## Generate the omnictl CLI reference (container)
+	@echo "Generating omnictl CLI reference..."
+	@$(call pull_if_missing,$(OMNI_CLI_GEN_IMAGE))
+	@tmp="$$(mktemp)"; \
+	docker run --rm --entrypoint /bin/sh $(OMNI_CLI_GEN_IMAGE) \
+		-c 'omnictl docs /tmp >/dev/null 2>&1 && cat /tmp/cli.md' > "$$tmp" \
+		|| { echo "Error: 'omnictl docs' failed"; rm -f "$$tmp"; exit 1; }; \
+	[ -s "$$tmp" ] || { echo "Error: omnictl did not produce cli.md"; rm -f "$$tmp"; exit 1; }; \
+	{ \
+		printf '%s\n' '---' 'title: $(OMNI_CLI_TITLE)' 'description: $(OMNI_CLI_DESC)' '---' ''; \
+		awk '/^---[[:space:]]*$$/{c++; next} c>=2{print}' "$$tmp" \
+			| sed '/^<!-- markdownlint-disable -->$$/d' \
+			| awk 'NF{p=1} p'; \
+	} > "$(OMNI_CLI_REF_PATH).tmp"; \
+	mv "$(OMNI_CLI_REF_PATH).tmp" "$(OMNI_CLI_REF_PATH)"; \
+	rm -f "$$tmp"
+	@$(MAKE) --no-print-directory normalize-doc
+	@echo "Reference documentation generated at $(OMNI_CLI_REF_PATH)"
+
+.PHONY: generate-omni-cli-reference-local
+generate-omni-cli-reference-local: ## Generate the omnictl CLI reference using local omnictl + Go build
+	@echo "Generating omnictl CLI reference..."
+	@command -v omnictl >/dev/null 2>&1 || { echo "Error: omnictl not found in PATH"; exit 1; }
+	@tmp="$$(mktemp -d)"; \
+	omnictl docs "$$tmp" >/dev/null || { echo "Error: 'omnictl docs' failed"; rm -rf "$$tmp"; exit 1; }; \
+	[ -f "$$tmp/cli.md" ] || { echo "Error: omnictl did not produce cli.md"; rm -rf "$$tmp"; exit 1; }; \
+	{ \
+		printf '%s\n' '---' 'title: $(OMNI_CLI_TITLE)' 'description: $(OMNI_CLI_DESC)' '---' ''; \
+		awk '/^---[[:space:]]*$$/{c++; next} c>=2{print}' "$$tmp/cli.md" \
+			| sed '/^<!-- markdownlint-disable -->$$/d' \
+			| awk 'NF{p=1} p'; \
+	} > "$(OMNI_CLI_REF_PATH).tmp"; \
+	mv "$(OMNI_CLI_REF_PATH).tmp" "$(OMNI_CLI_REF_PATH)"; \
+	rm -rf "$$tmp"
+	@$(MAKE) --no-print-directory normalize-doc-local
+	@echo "Reference documentation generated at $(OMNI_CLI_REF_PATH)"
+
+# ---- Omni configuration reference ------------------------------------------
 
 .PHONY: generate-omni-config-reference
-generate-omni-config-reference: ## Generate Omni configuration reference docs from JSON schema
+generate-omni-config-reference: ## Generate Omni configuration reference docs from JSON schema (container)
 	@echo "Generating Omni configuration reference..."
-	cd omni-config-gen && go run . $(OMNI_CONFIG_SCHEMA_URL) > ../$(OMNI_CONFIG_REF_PATH)
+	@$(call pull_if_missing,$(OMNI_CONFIG_GEN_IMAGE))
+	docker run --rm $(OMNI_CONFIG_GEN_IMAGE) $(OMNI_CONFIG_SCHEMA_URL) > $(OMNI_CONFIG_REF_PATH).tmp && mv $(OMNI_CONFIG_REF_PATH).tmp $(OMNI_CONFIG_REF_PATH) || { rm -f $(OMNI_CONFIG_REF_PATH).tmp; exit 1; }
 	@echo "Reference documentation generated at $(OMNI_CONFIG_REF_PATH)"
+
+.PHONY: generate-omni-config-reference-local
+generate-omni-config-reference-local: ## Generate Omni configuration reference docs using local Go build
+	@echo "Generating Omni configuration reference..."
+	cd omni-config-gen && go run . $(OMNI_CONFIG_SCHEMA_URL) > ../$(OMNI_CONFIG_REF_PATH).tmp && mv ../$(OMNI_CONFIG_REF_PATH).tmp ../$(OMNI_CONFIG_REF_PATH) || { rm -f ../$(OMNI_CONFIG_REF_PATH).tmp; exit 1; }
+	@echo "Reference documentation generated at $(OMNI_CONFIG_REF_PATH)"
+
+# ---- Image Factory configuration reference ---------------------------------
+
+.PHONY: generate-omni-image-factory-reference
+generate-omni-image-factory-reference: ## Generate the Image Factory configuration reference (container)
+	@echo "Generating Image Factory configuration reference..."
+	@tmp="$$(mktemp)"; \
+	curl -fsSL "$(IMAGE_FACTORY_CONFIG_URL)" -o "$$tmp" || { echo "Error: failed to fetch $(IMAGE_FACTORY_CONFIG_URL)"; rm -f "$$tmp"; exit 1; }; \
+	{ \
+		printf '%s\n' '---' 'title: $(IMAGE_FACTORY_TITLE)' 'description: $(IMAGE_FACTORY_DESC)' '---' ''; \
+		sed '1{/^# /d;}' "$$tmp" | awk 'NF{p=1} p'; \
+	} > "$(IMAGE_FACTORY_REF_PATH).tmp"; \
+	mv "$(IMAGE_FACTORY_REF_PATH).tmp" "$(IMAGE_FACTORY_REF_PATH)"; \
+	rm -f "$$tmp"
+	@$(MAKE) --no-print-directory normalize-doc
+	@echo "Reference documentation generated at $(IMAGE_FACTORY_REF_PATH)"
+
+.PHONY: generate-omni-image-factory-reference-local
+generate-omni-image-factory-reference-local: ## Generate the Image Factory configuration reference using local Go build
+	@echo "Generating Image Factory configuration reference..."
+	@tmp="$$(mktemp)"; \
+	curl -fsSL "$(IMAGE_FACTORY_CONFIG_URL)" -o "$$tmp" || { echo "Error: failed to fetch $(IMAGE_FACTORY_CONFIG_URL)"; rm -f "$$tmp"; exit 1; }; \
+	{ \
+		printf '%s\n' '---' 'title: $(IMAGE_FACTORY_TITLE)' 'description: $(IMAGE_FACTORY_DESC)' '---' ''; \
+		sed '1{/^# /d;}' "$$tmp" | awk 'NF{p=1} p'; \
+	} > "$(IMAGE_FACTORY_REF_PATH).tmp"; \
+	mv "$(IMAGE_FACTORY_REF_PATH).tmp" "$(IMAGE_FACTORY_REF_PATH)"; \
+	rm -f "$$tmp"
+	@$(MAKE) --no-print-directory normalize-doc-local
+	@echo "Reference documentation generated at $(IMAGE_FACTORY_REF_PATH)"
+
+# ---- Aggregate -------------------------------------------------------------
+
+.PHONY: generate-omni-reference
+generate-omni-reference: generate-omni-cli-reference generate-omni-config-reference generate-omni-image-factory-reference ## Regenerate all Omni reference pages (containers)
+
+.PHONY: generate-omni-reference-local
+generate-omni-reference-local: generate-omni-cli-reference-local generate-omni-config-reference-local generate-omni-image-factory-reference-local ## Regenerate all Omni reference pages using local tools
 
 .PHONY: vale
 vale: ## Run Vale on a file or directory: make vale DOC=public/path/to/file.mdx

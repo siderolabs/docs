@@ -25,9 +25,9 @@ jobs:
       - name: Regenerate Omni configuration reference
         run: |
           if [ -n "${{ inputs.schema-url }}" ]; then
-            make generate-omni-config-reference OMNI_CONFIG_SCHEMA_URL="${{ inputs.schema-url }}"
+            make generate-omni-config-reference-local OMNI_CONFIG_SCHEMA_URL="${{ inputs.schema-url }}"
           else
-            make generate-omni-config-reference
+            make generate-omni-config-reference-local
           fi
       - name: Check for changes
         run: |

@@ -131,6 +131,14 @@ To add a new page to the docs:
     make vale DOC=<link-to-the-doc-addition>
     ```
 
+### Update a generated page
+
+Some pages are **generated from upstream sources**, not written by hand, for example the Talos configuration reference, the Omni CLI, configuration, and Image Factory pages, and the changelog.
+
+Do not edit these pages directly, as your changes will be overwritten the next time they are regenerated. Instead, regenerate them with the provided `make` targets.
+
+See [Generating docs from upstream sources](./generating-docs.md) for the list of generated pages, the commands to regenerate them, and how the tooling works.
+
 ## Step 4: Commit and Push
 
 Once you have verified that everything looks good, commit your changes:
