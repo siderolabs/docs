@@ -160,6 +160,52 @@ generate-omni-config-reference: ## Generate Omni configuration reference docs fr
 	cd omni-config-gen && go run . $(OMNI_CONFIG_SCHEMA_URL) > ../$(OMNI_CONFIG_REF_PATH)
 	@echo "Reference documentation generated at $(OMNI_CONFIG_REF_PATH)"
 
+OMNI_CLI_REF_PATH := public/omni/reference/cli.mdx
+IMAGE_FACTORY_REF_PATH := public/omni/reference/image-factory-configuration.mdx
+IMAGE_FACTORY_CONFIG_URL ?= https://raw.githubusercontent.com/siderolabs/image-factory/main/docs/configuration.md
+
+.PHONY: normalize-doc
+normalize-doc: ## Normalize the generated Omni reference .mdx files for Mintlify (fence indented code, strip --- rules)
+	cd mdx-normalize && go run . ../$(OMNI_CLI_REF_PATH)
+	cd mdx-normalize && go run . --strip-hr ../$(IMAGE_FACTORY_REF_PATH)
+
+.PHONY: generate-omni-cli-reference
+generate-omni-cli-reference: ## Generate the omnictl CLI reference (public/omni/reference/cli.mdx)
+	@echo "Generating omnictl CLI reference..."
+	@command -v omnictl >/dev/null 2>&1 || { echo "Error: omnictl not found in PATH"; exit 1; }
+	@tmp="$$(mktemp -d)"; \
+	omnictl docs "$$tmp" >/dev/null || { echo "Error: 'omnictl docs' failed"; rm -rf "$$tmp"; exit 1; }; \
+	[ -f "$$tmp/cli.md" ] || { echo "Error: omnictl did not produce cli.md"; rm -rf "$$tmp"; exit 1; }; \
+	{ \
+		awk '/^---[[:space:]]*$$/{c++; print; if(c==2) exit; next} c>=1{print}' "$(OMNI_CLI_REF_PATH)"; \
+		echo ""; \
+		awk '/^---[[:space:]]*$$/{c++; next} c>=2{print}' "$$tmp/cli.md" \
+			| sed '/^<!-- markdownlint-disable -->$$/d' \
+			| awk 'NF{p=1} p'; \
+	} > "$(OMNI_CLI_REF_PATH).tmp"; \
+	mv "$(OMNI_CLI_REF_PATH).tmp" "$(OMNI_CLI_REF_PATH)"; \
+	rm -rf "$$tmp"
+	@$(MAKE) --no-print-directory normalize-doc
+	@echo "Reference documentation generated at $(OMNI_CLI_REF_PATH)"
+
+.PHONY: generate-omni-image-factory-reference
+generate-omni-image-factory-reference: ## Generate the Image Factory configuration reference (public/omni/reference/image-factory-configuration.mdx)
+	@echo "Generating Image Factory configuration reference..."
+	@tmp="$$(mktemp)"; \
+	curl -fsSL "$(IMAGE_FACTORY_CONFIG_URL)" -o "$$tmp" || { echo "Error: failed to fetch $(IMAGE_FACTORY_CONFIG_URL)"; rm -f "$$tmp"; exit 1; }; \
+	{ \
+		awk '/^---[[:space:]]*$$/{c++; print; if(c==2) exit; next} c>=1{print}' "$(IMAGE_FACTORY_REF_PATH)"; \
+		echo ""; \
+		sed '1{/^# /d;}' "$$tmp" | awk 'NF{p=1} p'; \
+	} > "$(IMAGE_FACTORY_REF_PATH).tmp"; \
+	mv "$(IMAGE_FACTORY_REF_PATH).tmp" "$(IMAGE_FACTORY_REF_PATH)"; \
+	rm -f "$$tmp"
+	@$(MAKE) --no-print-directory normalize-doc
+	@echo "Reference documentation generated at $(IMAGE_FACTORY_REF_PATH)"
+
+.PHONY: generate-omni-reference
+generate-omni-reference: generate-omni-cli-reference generate-omni-config-reference generate-omni-image-factory-reference ## Regenerate all Omni reference pages (omnictl CLI + configuration + Image Factory)
+
 .PHONY: vale
 vale: ## Run Vale on a file or directory: make vale DOC=public/path/to/file.mdx
 	@if [ -z "$(DOC)" ]; then \
