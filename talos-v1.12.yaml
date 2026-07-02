@@ -95,7 +95,7 @@ navigation:
             - "interactive-dashboard.mdx"
             - "scaling-up.mdx"
             - "scaling-down.mdx"
-            - "workers-on-controlplane.mdx"
+            - "workloads-on-controlplane.mdx"
 
         - group: "Networking"
           folder: "talos/v1.12/networking"
