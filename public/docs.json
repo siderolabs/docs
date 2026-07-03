@@ -83,6 +83,34 @@
     {
       "source": "/talos/v1.13/deploy-and-manage-workloads/workers-on-controlplane",
       "destination": "/talos/v1.13/deploy-and-manage-workloads/workloads-on-controlplane"
+    },
+    {
+      "source": "/talos/v1.12/deploy-and-manage-workloads/workers-on-controlplane",
+      "destination": "/talos/v1.12/deploy-and-manage-workloads/workloads-on-controlplane"
+    },
+    {
+      "source": "/talos/v1.11/deploy-and-manage-workloads/workers-on-controlplane",
+      "destination": "/talos/v1.11/deploy-and-manage-workloads/workloads-on-controlplane"
+    },
+    {
+      "source": "/talos/v1.10/deploy-and-manage-workloads/workers-on-controlplane",
+      "destination": "/talos/v1.10/deploy-and-manage-workloads/workloads-on-controlplane"
+    },
+    {
+      "source": "/talos/v1.9/deploy-and-manage-workloads/workers-on-controlplane",
+      "destination": "/talos/v1.9/deploy-and-manage-workloads/workloads-on-controlplane"
+    },
+    {
+      "source": "/talos/v1.8/deploy-and-manage-workloads/workers-on-controlplane",
+      "destination": "/talos/v1.8/deploy-and-manage-workloads/workloads-on-controlplane"
+    },
+    {
+      "source": "/talos/v1.7/deploy-and-manage-workloads/workers-on-controlplane",
+      "destination": "/talos/v1.7/deploy-and-manage-workloads/workloads-on-controlplane"
+    },
+    {
+      "source": "/talos/v1.6/deploy-and-manage-workloads/workers-on-controlplane",
+      "destination": "/talos/v1.6/deploy-and-manage-workloads/workloads-on-controlplane"
     }
   ],
   "navigation": {
