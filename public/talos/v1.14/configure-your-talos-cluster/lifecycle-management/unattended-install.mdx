@@ -1,0 +1,133 @@
+---
+title: "Unattended Install"
+description: "Install Talos declaratively from machine configuration."
+weight: 35
+canonical: https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/lifecycle-management/unattended-install
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos Linux can install itself to disk from a multi-document machine configuration by using `UnattendedInstallConfig`.
+Use unattended install when a node boots from an ISO, PXE, iPXE, or another ephemeral boot asset and should install to a selected local disk without invoking the installer manually.
+
+`UnattendedInstallConfig` replaces the deprecated `.machine.install` field for new configurations.
+It is especially useful with Image Factory assets and custom installer images that include system extensions.
+
+## Configure unattended install
+
+Add an `UnattendedInstallConfig` document to the machine configuration.
+The following example installs Talos to the disk whose stable path is `/dev/sda`:
+
+```yaml
+apiVersion: v1alpha1
+kind: UnattendedInstallConfig
+installer:
+  image: factory.talos.dev/metal-installer/<schematic-id>:<talos-version>
+provisioning:
+  diskSelector:
+    match: disk.dev_path == "/dev/sda"
+  wipe: true
+```
+
+The `provisioning.diskSelector.match` field is a CEL expression evaluated against discovered disks as `disk`.
+Use a selector that matches exactly one intended install target.
+For production configurations, prefer stable disk properties such as `disk.serial`, `disk.wwid`, or `disk.symlinks` instead of `/dev/sd*` names when possible.
+
+Inspect the disks reported by the node before choosing a selector:
+
+```bash
+talosctl --nodes <NODE> get disks -o yaml
+```
+
+Apply the configuration patch while the node is running from the ephemeral boot media:
+
+```bash
+talosctl --nodes <NODE> patch mc --patch @unattended-install.patch.yaml
+```
+
+After the configuration is applied, Talos waits for disks to be discovered, selects the first matching disk, runs the installer container, and records progress in `UnattendedInstallStatus`.
+If multiple disks match, Talos logs a warning and uses the first match.
+
+## Installer image
+
+Set `installer.image` to the installer image you want the node to write to disk.
+Use the Image Factory installer image for the same schematic as the boot asset when the installed system needs the same system extensions or other image customizations:
+
+```yaml
+apiVersion: v1alpha1
+kind: UnattendedInstallConfig
+installer:
+  image: factory.talos.dev/metal-installer/<schematic-id>:v1.14.0
+provisioning:
+  diskSelector:
+    match: '"/dev/disk/by-id/nvme-SAMSUNG_MZQL21T9" in disk.symlinks'
+```
+
+If `installer.image` is omitted, Talos tries to derive the installer image from the Image Factory boot entry and the current schematic.
+This requires booting from an Image Factory asset.
+Set `installer.image` explicitly for non-Image Factory boot assets or when installing a custom installer image.
+
+## Wipe behavior
+
+By default, Talos wipes the target disk during installation.
+Set `provisioning.wipe` to `false` only when you intentionally want to preserve existing partition data that the installer can reuse:
+
+```yaml
+apiVersion: v1alpha1
+kind: UnattendedInstallConfig
+installer:
+  image: factory.talos.dev/metal-installer/<schematic-id>:v1.14.0
+provisioning:
+  diskSelector:
+    match: disk.serial == "S4ABC123"
+  wipe: false
+```
+
+## Reboot behavior
+
+The optional `reboot` field controls what happens after a successful installation:
+
+- If `reboot` is not set, Talos reboots only when `installer.image` is set explicitly.
+- If `reboot: true`, Talos always requests a reboot after installation.
+- If `reboot: false`, Talos leaves the node running from the current boot media after installation.
+
+Example:
+
+```yaml
+apiVersion: v1alpha1
+kind: UnattendedInstallConfig
+reboot: true
+installer:
+  image: factory.talos.dev/metal-installer/<schematic-id>:v1.14.0
+provisioning:
+  diskSelector:
+    match: disk.serial == "S4ABC123"
+```
+
+## Inspect installation status
+
+Use the unattended install status resource to monitor progress:
+
+```bash
+$ talosctl --nodes <NODE> get unattendedinstallstatuses
+NODE         NAMESPACE   TYPE                       ID                   VERSION   PHASE
+172.20.0.5   runtime     UnattendedInstallStatus    unattended-install   1         installed
+```
+
+Request YAML output to see the installer image and any error message:
+
+```bash
+talosctl --nodes <NODE> get unattendedinstallstatuses unattended-install -o yaml
+```
+
+The phase is one of:
+
+- `pending`: no disk currently matches the selector.
+- `installing`: the installer is running.
+- `installed`: installation completed and no reboot is pending.
+- `waiting-for-reboot`: installation completed and Talos requested a reboot.
+- `failed`: installation failed; inspect the `error` field and machine logs.
+
+Once a node is installed to disk, Talos reports the install as complete and does not run the unattended installer again on that boot.
