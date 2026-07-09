@@ -381,6 +381,7 @@
                     "group": "Hardware \u0026 Drivers",
                     "pages": [
                       "talos/v1.13/configure-your-talos-cluster/hardware-and-drivers/amd-gpu",
+                      "talos/v1.13/configure-your-talos-cluster/hardware-and-drivers/hailo",
                       "talos/v1.13/configure-your-talos-cluster/hardware-and-drivers/nvidia-fabricmanager",
                       "talos/v1.13/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu",
                       "talos/v1.13/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary"
@@ -799,6 +800,7 @@
                     "group": "Hardware \u0026 Drivers",
                     "pages": [
                       "talos/v1.12/configure-your-talos-cluster/hardware-and-drivers/amd-gpu",
+                      "talos/v1.12/configure-your-talos-cluster/hardware-and-drivers/hailo",
                       "talos/v1.12/configure-your-talos-cluster/hardware-and-drivers/nvidia-fabricmanager",
                       "talos/v1.12/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu",
                       "talos/v1.12/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary"

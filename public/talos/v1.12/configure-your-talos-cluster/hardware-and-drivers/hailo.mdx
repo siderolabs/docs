@@ -1,0 +1,173 @@
+---
+title: Hailo AI Accelerators
+description: Enable Hailo edge AI accelerator cards on your Talos nodes and verify they are available to your workloads.
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+This guide shows how to enable Hailo AI accelerator support on your Talos nodes, confirm the card is detected by the operating system, and verify that the device is reachable from a workload running in your cluster.
+
+<Note>Hailo cards are edge accelerators designed for video processing and computer-vision inference, not large AI/LLM workloads. They have limited on-board memory, so they are best suited to lightweight, real-time inference at the edge.</Note>
+
+## Before you begin
+
+You'll need:
+
+- A Talos Linux cluster running v1.11 or later.
+- At least one node with a Hailo accelerator.
+- `talosctl` and `kubectl` configured and authenticated against your cluster.
+- The `siderolabs/hailort` Talos system extension:
+
+The simplest way to include the extension is at image creation time: select it on the **System Extensions** page when generating your installation media in Omni or the [Talos Image Factory](https://factory.talos.dev/). If your node is already running without it, follow [Enable Hailo support](#enable-hailo-support) below. Otherwise, skip to [Verify the card is detected](#verify-the-card-is-detected).
+
+## Enable Hailo support
+
+System extensions are baked into the Talos boot image rather than installed at runtime. If your node booted from an image that does not include `siderolabs/hailort`, add the extension by switching the node to an image that does. The node performs a standard upgrade cycle to boot into the new image.
+
+<Tabs>
+  <Tab title="Standalone Talos">
+    Generate a new schematic that includes the `siderolabs/hailort` extension using the [Talos Image Factory](https://factory.talos.dev/), then upgrade the node to the matching installer image:
+
+    ```bash
+    talosctl upgrade \
+      --image factory.talos.dev/metal-installer/<schematic-id>:<talos-version>
+    ```
+
+    For the full schematic workflow, see [Boot Assets](../../platform-specific-installations/boot-assets)
+  </Tab>
+
+  <Tab title="Omni">
+    Add the extension to a machine in an Omni cluster:
+
+    1. Select the cluster containing the target machine.
+    2. Select the machine, then open the **Extensions** tab.
+    3. Click **Update Extensions**, add `siderolabs/hailort`, and click **Update**.
+
+    Omni generates the new image and upgrades the machine to it. For more details, see [Install Talos Linux Extensions](../../../../omni/infrastructure-and-extensions/install-talos-linux-extensions)
+  </Tab>
+</Tabs>
+
+Once the node boots the image containing the extension, the kernel loads the HailoRT driver and exposes the card to the operating system as a device node at `/dev/hailo0`.
+
+## Verify Hailo support
+
+After the node boots with the extension, confirm the driver is loaded and the device is available to your workloads.
+
+### Step 1: Confirm the extension is installed
+
+Check that the `hailort` extension is loaded on the node. Replace the `<node-ip>` placeholder with the IP address of your node:
+
+```bash
+talosctl get extensions --nodes <node-ip>
+```
+
+You should see the `hailort` extension listed, along with its version:
+
+```text
+NODE        NAMESPACE   TYPE              ID            VERSION   NAME          VERSION
+<node-ip>   runtime     ExtensionStatus   0             1         hailort       4.23.0
+```
+
+Make a note of the HailoRT version reported here. If you later run the HailoRT CLI from a container, the library version inside the container must match this version.
+
+### Step 2: Create a namespace for the verification pod
+
+The verification pod needs access to the host's `/dev` directory, which requires privileged execution. Talos enforces [Pod Security Admission](../../../../kubernetes-guides/security/pod-security) at the `baseline` level by default, so rather than relaxing security on an existing namespace, create a dedicated namespace for the verification and allow privileged workloads:
+
+```bash
+kubectl create namespace hailo-check
+kubectl label namespace hailo-check pod-security.kubernetes.io/enforce=privileged
+```
+
+You can delete this namespace when the verification is complete.
+
+### Step 3: Run a verification pod
+
+Create the verification pod. The pod mounts the host's `/dev` directory and checks that the Hailo device node is present:
+
+```yaml
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hailo-check
+  namespace: hailo-check
+spec:
+  restartPolicy: Never
+  containers:
+    - name: check
+      image: busybox
+      command:
+        - sh
+        - -c
+        - "ls -l /dev/hailo0 && echo 'Hailo device is visible in the pod'"
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - name: dev
+          mountPath: /dev
+  volumes:
+    - name: dev
+      hostPath:
+        path: /dev
+EOF
+```
+
+### Step 4: Confirm the result
+
+Read the pod logs:
+
+```bash
+kubectl logs -n hailo-check hailo-check
+```
+
+If the device is available to the workload, the logs show the device node followed by the confirmation message:
+
+```text
+crw-rw-rw-    1 root     root      509,   0 Jan  1  1970 /dev/hailo0
+Hailo device is visible in the pod
+```
+
+### Step 5: Clean up
+
+Remove the verification pod and its namespace:
+
+```bash
+kubectl delete namespace hailo-check
+```
+
+## Going further: verify with the HailoRT CLI
+
+The verification above confirms the device node is present and reachable from a workload. To confirm the card itself responds — for example, to read its firmware details — you can run the HailoRT CLI (`hailortcli scan`) from a container. See the [HailoRT documentation](https://hailo.ai/developer-zone/documentation/hailort-v4-24-0/) for the available commands.
+
+## Troubleshooting
+
+Issues can show up at two layers: the device may not be detected by the operating system, or it may be detected but not visible inside a pod. The following sections outline how to diagnose each.
+
+### Device not detected
+
+If the Hailo device does not appear:
+
+1. Confirm the system extension is installed:
+
+   ```bash
+   talosctl get extensions --nodes <node-ip>
+   ```
+
+2. Review the kernel logs for driver messages:
+
+   ```bash
+   talosctl logs -k --nodes <node-ip>
+   ```
+
+### Device not visible inside the pod
+
+If the pod cannot see `/dev/hailo0`:
+
+* Confirm the namespace is labelled to allow privileged workloads.
+
+* Confirm the pod runs with `privileged: true` and mounts the host's `/dev` directory.
+
+* Confirm the device is detected on the node using the steps in [Verify the card is detected](#verify-the-card-is-detected).
