@@ -48,6 +48,19 @@ Both variants run `talosctl` from a container, so **Docker is required either wa
 
 **Versioning:** the output directory is chosen by `TALOS_VERSION` in the Makefile (e.g. `v1.14`), and the talosctl image is pinned by `TALOSCTL_IMAGE`. Older versions already committed under `public/talos/` are not touched.
 
+### Updating Talos docs for a new release
+
+When Talos cuts a new release — an alpha, beta, or stable — the docs need to point at it: the version pins, the versioned variables, the navigation, the reference pages, and the changelog. `make upgrade-talos-version` does all of that from a single tag instead of editing each by hand.
+
+```bash
+make upgrade-talos-version TAG=v1.14.0-alpha.0   # alpha
+make upgrade-talos-version TAG=v1.14.0-beta.0    # beta
+make upgrade-talos-version TAG=v1.14.0           # stable
+make upgrade-talos-version-local TAG=v1.14.0     # same, using the local Go build
+```
+
+See [`version-upgrade-gen/README.md`](../version-upgrade-gen/README.md) for the full details.
+
 ## Omni reference
 
 `make generate-omni-reference` regenerates all three Omni reference pages; each page also has its own target if you only need one:

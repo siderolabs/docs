@@ -42,12 +42,28 @@ var (
 	k8sRe   = regexp.MustCompile(`(?m)^Kubernetes:\s*(\S+)`)
 	nvCTKRe = regexp.MustCompile(`(?m)^nvidia-container-toolkit:\s*(\S+)`)
 	nvLTSRe = regexp.MustCompile(`(?m)^NVIDIA LTS:\s*(\S+)`)
+
+	// tagRe is the accepted target tag shape: vMAJOR.MINOR.PATCH with an optional
+	// -alpha.N / -beta.N / -rc.N pre-release suffix.
+	tagRe = regexp.MustCompile(`^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)\.[0-9]+)?$`)
 )
 
 func main() {
 	workspace := flag.String("workspace", ".", "Path to the workspace root (repo root)")
-	beta := flag.Bool("beta", false, "Beta release mode")
+	tag := flag.String("tag", "", "Target talosctl image tag, e.g. v1.14.0-beta.0 or v1.14.0")
 	flag.Parse()
+
+	*tag = strings.TrimSpace(*tag)
+	if *tag == "" {
+		fmt.Fprintln(os.Stderr, "Error: --tag is required (e.g. --tag v1.14.0-beta.0)")
+		os.Exit(1)
+	}
+	if !tagRe.MatchString(*tag) {
+		fmt.Fprintf(os.Stderr, "Error: invalid tag %q\n", *tag)
+		fmt.Fprintln(os.Stderr, "Expected vMAJOR.MINOR.PATCH with an optional -alpha.N / -beta.N / -rc.N suffix.")
+		fmt.Fprintln(os.Stderr, "Examples: v1.14.0, v1.14.0-alpha.0, v1.14.0-beta.2, v1.14.0-rc.1")
+		os.Exit(1)
+	}
 
 	if err := os.Chdir(*workspace); err != nil {
 		fmt.Fprintf(os.Stderr, "Error changing to workspace %s: %v\n", *workspace, err)
@@ -56,98 +72,101 @@ func main() {
 
 	token := os.Getenv("GITHUB_TOKEN")
 
+	varsFile := "public/snippets/custom-variables.mdx"
+	bannerFile := "public/snippets/version-warning-banner.jsx"
+
 	fmt.Fprintln(os.Stderr, "Reading current version from Makefile...")
-	currentVersion, currentRelease, err := readCurrentVersionFromMakefile("Makefile")
+	currentTag, err := readCurrentImageTag("Makefile")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading Makefile: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Fprintf(os.Stderr, "  Current version: %s (%s)\n", currentVersion, currentRelease)
 
-	newVersion := bumpMinorVersion(currentVersion)
-	newReleaseBranch := "release-" + strings.TrimPrefix(newVersion, "v")
-	fmt.Fprintf(os.Stderr, "  New version: %s\n", newVersion)
-
-	varsFile := "public/snippets/custom-variables.mdx"
-
-	// Ask the user interactively whether this is a beta or stable release.
-	isBeta := *beta
-	if !isBeta {
-		isBeta = promptIsBeta(newVersion)
+	currentMinor, err := minorOf(currentTag)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing current tag %q: %v\n", currentTag, err)
+		os.Exit(1)
+	}
+	targetMinor, err := minorOf(*tag)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing target tag %q: %v\n", *tag, err)
+		os.Exit(1)
 	}
 
-	if isBeta {
-		runBeta(token, newVersion, newReleaseBranch, varsFile)
+	stable := isStable(*tag)
+	sameMinor := targetMinor == currentMinor
+
+	stage := "stable"
+	if !stable {
+		stage = strings.TrimPrefix(prereleaseStage(*tag), "-")
+		if stage == "" {
+			stage = "prerelease"
+		}
+	}
+	scope := "new minor"
+	if sameMinor {
+		scope = "same minor"
+	}
+
+	fmt.Fprintf(os.Stderr, "  Current image: %s  (folder %s)\n", currentTag, currentMinor)
+	fmt.Fprintf(os.Stderr, "  Target:        %s  ->  stage: %s, folder: %s (%s)\n", *tag, stage, targetMinor, scope)
+
+	if stable {
+		runStable(token, currentTag, *tag, currentMinor, targetMinor, sameMinor, varsFile, bannerFile)
 	} else {
-		runStable(token, currentVersion, currentRelease, newVersion, newReleaseBranch, varsFile)
+		runPrerelease(token, currentTag, *tag, currentMinor, targetMinor, varsFile)
 	}
 
-	// Write the new version to a temp file so the Makefile can read it after.
-	if err := os.WriteFile(".upgrade-version-tmp", []byte(newVersion), 0o644); err != nil {
+	// Write the new folder version to a temp file so the Makefile can read it after.
+	if err := os.WriteFile(".upgrade-version-tmp", []byte(targetMinor), 0o644); err != nil {
 		fmt.Fprintf(os.Stderr, "Error writing temp version file: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-// promptIsBeta interactively asks the user whether this is a beta or stable release.
-func promptIsBeta(newVersion string) bool {
-	betaExample := newVersion + ".0-beta.0"
-	stableExample := newVersion + ".0"
-
-	fmt.Fprintln(os.Stderr, "")
-	fmt.Fprintln(os.Stderr, "What type of release is this?")
-	fmt.Fprintf(os.Stderr, "  [1] Beta   - e.g %s\n", betaExample)
-	fmt.Fprintf(os.Stderr, "  [2] Stable - e.g %s\n", stableExample)
-	fmt.Fprintln(os.Stderr, "")
-	fmt.Fprint(os.Stderr, "Enter your choice (1 or 2): ")
-
-	var input string
-	for {
-		fmt.Fscan(os.Stdin, &input)
-		input = strings.TrimSpace(input)
-		switch input {
-		case "1":
-			fmt.Fprintln(os.Stderr, "")
-			return true
-		case "2":
-			fmt.Fprintln(os.Stderr, "")
-			return false
-		default:
-			fmt.Fprint(os.Stderr, "Please enter 1 or 2: ")
-		}
-	}
-}
-
-// runBeta handles beta release mode.
-func runBeta(token, newVersion, newReleaseBranch, varsFile string) {
-	fmt.Fprintln(os.Stderr, "Mode: beta")
-
-	betaTag := newVersion + ".0-beta.0"
-	fmt.Fprintf(os.Stderr, "  Beta tag: %s\n", betaTag)
-
+// runPrerelease handles alpha/beta (and any pre-release) targets. It advances the
+// image pin and the versioned variables block, but never touches the "latest
+// stable" pointer (banner, canonical URLs, latest-stable block).
+func runPrerelease(token, currentTag, tag, currentMinor, targetMinor, varsFile string) {
 	fmt.Fprintln(os.Stderr, "Updating versioned block in custom-variables.mdx...")
-	if err := updateBetaVariables(varsFile, newVersion, betaTag); err != nil {
+	if err := updatePrereleaseVariables(varsFile, targetMinor, tag, token); err != nil {
 		fmt.Fprintf(os.Stderr, "Error updating custom-variables.mdx: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Fprintln(os.Stderr, "Updating Makefile (adding new version at bottom)...")
-	if err := updateMakefileBeta("Makefile", newVersion); err != nil {
-		fmt.Fprintf(os.Stderr, "Error updating Makefile: %v\n", err)
+	fmt.Fprintf(os.Stderr, "Updating Makefile pins (TALOSCTL_IMAGE -> %s, TALOS_VERSION -> %s)...\n", tag, targetMinor)
+	if err := setMakefilePin("Makefile", currentTag, tag, currentMinor, targetMinor); err != nil {
+		fmt.Fprintf(os.Stderr, "Error updating Makefile pins: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Alpha builds are generated but kept out of the published navigation. The
+	// version only enters the docs.json nav (at the bottom of the list) once it
+	// reaches beta. addNavBottom is idempotent, so calling it for every beta
+	// correctly adds the entry an earlier alpha deliberately skipped.
+	if prereleaseStage(tag) == "-alpha" {
+		fmt.Fprintln(os.Stderr, "Alpha release: leaving docs.json navigation unchanged.")
+		return
+	}
+
+	fmt.Fprintln(os.Stderr, "Ensuring version is in navigation (bottom of list)...")
+	if err := addNavBottom("Makefile", targetMinor); err != nil {
+		fmt.Fprintf(os.Stderr, "Error updating Makefile navigation: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-// runStable handles stable release mode.
-func runStable(token, currentVersion, currentRelease, newVersion, newReleaseBranch, varsFile string) {
-	fmt.Fprintln(os.Stderr, "Mode: stable")
-
-	newRelease := newVersion + ".0"
+// runStable handles stable targets. It advances the image pin, refreshes the
+// k8s/nvidia values from the release notes, and — when the latest stable minor
+// actually changes — promotes the version in the banner, canonical URLs and nav.
+func runStable(token, currentTag, tag, currentMinor, targetMinor string, sameMinor bool, varsFile, bannerFile string) {
+	release := tag
+	releaseBranch := "release-" + strings.TrimPrefix(targetMinor, "v")
 
 	fmt.Fprintln(os.Stderr, "Fetching Talos release from GitHub...")
-	talosRelease, err := fetchRelease("siderolabs/talos", newRelease, token)
+	talosRelease, err := fetchRelease("siderolabs/talos", release, token)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error fetching Talos release %s: %v\n", newRelease, err)
+		fmt.Fprintf(os.Stderr, "Error fetching Talos release %s: %v\n", release, err)
 		os.Exit(1)
 	}
 
@@ -158,25 +177,16 @@ func runStable(token, currentVersion, currentRelease, newVersion, newReleaseBran
 	}
 	fmt.Fprintf(os.Stderr, "  Kubernetes: %s\n", k8sVersion)
 
-	fmt.Fprintln(os.Stderr, "Fetching Extensions release from GitHub...")
-	extRelease, err := fetchRelease("siderolabs/extensions", newRelease, token)
+	// nvidia values: try the extensions release for this tag, and if they are not
+	// published there yet, fall back to the unversioned latest-stable values so a
+	// stable upgrade degrades gracefully instead of aborting.
+	fmt.Fprintln(os.Stderr, "Resolving nvidia versions...")
+	varsData, err := os.ReadFile(varsFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error fetching Extensions release %s: %v\n", newRelease, err)
+		fmt.Fprintf(os.Stderr, "Error reading %s: %v\n", varsFile, err)
 		os.Exit(1)
 	}
-
-	nvCTK := parseField(extRelease.Body, nvCTKRe)
-	if nvCTK == "" {
-		fmt.Fprintf(os.Stderr, "Error: could not find nvidia-container-toolkit version in Extensions release body\n")
-		os.Exit(1)
-	}
-	nvDriver := parseField(extRelease.Body, nvLTSRe)
-	if nvDriver == "" {
-		fmt.Fprintf(os.Stderr, "Error: could not find NVIDIA LTS driver version in Extensions release body\n")
-		os.Exit(1)
-	}
-	fmt.Fprintf(os.Stderr, "  nvidia-container-toolkit: %s\n", nvCTK)
-	fmt.Fprintf(os.Stderr, "  NVIDIA LTS driver: %s\n", nvDriver)
+	nvCTK, nvDriver := resolveNvidia(release, token, string(varsData))
 
 	fmt.Fprintln(os.Stderr, "Reading current k8s versions from custom-variables.mdx...")
 	currentK8s, err := readExportVar(varsFile, "k8s_release")
@@ -187,9 +197,9 @@ func runStable(token, currentVersion, currentRelease, newVersion, newReleaseBran
 	fmt.Fprintf(os.Stderr, "  Previous k8s: %s -> New k8s: %s\n", currentK8s, k8sVersion)
 
 	info := VersionInfo{
-		Version:             newVersion,
-		Release:             newRelease,
-		ReleaseBranch:       newReleaseBranch,
+		Version:             targetMinor,
+		Release:             release,
+		ReleaseBranch:       releaseBranch,
 		K8sRelease:          k8sVersion,
 		K8sPrevRelease:      currentK8s,
 		NvidiaCTKRelease:    nvCTK,
@@ -202,22 +212,43 @@ func runStable(token, currentVersion, currentRelease, newVersion, newReleaseBran
 		os.Exit(1)
 	}
 
-	fmt.Fprintln(os.Stderr, "Updating public/snippets/version-warning-banner.jsx...")
-	if err := updateVersionBanner("public/snippets/version-warning-banner.jsx", currentVersion, newVersion); err != nil {
-		fmt.Fprintf(os.Stderr, "Error updating version-warning-banner.jsx: %v\n", err)
+	fmt.Fprintf(os.Stderr, "Updating Makefile pins (TALOSCTL_IMAGE -> %s, TALOS_VERSION -> %s)...\n", tag, targetMinor)
+	if err := setMakefilePin("Makefile", currentTag, tag, currentMinor, targetMinor); err != nil {
+		fmt.Fprintf(os.Stderr, "Error updating Makefile pins: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Fprintln(os.Stderr, "Updating canonical URLs across all Talos versions...")
-	if err := updateCanonicalURLs("public/talos", currentVersion, newVersion); err != nil {
-		fmt.Fprintf(os.Stderr, "Error updating canonical URLs: %v\n", err)
+	// The "latest stable" pointer is tracked by the banner, not by TALOS_VERSION
+	// (which may already sit on this minor from an earlier alpha/beta). Only move
+	// it when the newly stable minor differs from the current latest stable.
+	prevStable, err := readBannerLatest(bannerFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading current latest version from banner: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Fprintln(os.Stderr, "Updating Makefile...")
-	if err := updateMakefileStable("Makefile", currentVersion, currentRelease, newVersion, newRelease); err != nil {
-		fmt.Fprintf(os.Stderr, "Error updating Makefile: %v\n", err)
-		os.Exit(1)
+	if prevStable != targetMinor {
+		fmt.Fprintf(os.Stderr, "Promoting latest stable %s -> %s...\n", prevStable, targetMinor)
+
+		fmt.Fprintln(os.Stderr, "Updating public/snippets/version-warning-banner.jsx...")
+		if err := updateVersionBanner(bannerFile, prevStable, targetMinor); err != nil {
+			fmt.Fprintf(os.Stderr, "Error updating version-warning-banner.jsx: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Fprintln(os.Stderr, "Updating canonical URLs across all Talos versions...")
+		if err := updateCanonicalURLs("public/talos", prevStable, targetMinor); err != nil {
+			fmt.Fprintf(os.Stderr, "Error updating canonical URLs: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Fprintln(os.Stderr, "Moving new version to the top of the navigation...")
+		if err := moveNavTop("Makefile", targetMinor, prevStable); err != nil {
+			fmt.Fprintf(os.Stderr, "Error updating Makefile navigation: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		fmt.Fprintf(os.Stderr, "  %s is already the latest stable; banner and nav unchanged.\n", targetMinor)
 	}
 }
 
@@ -257,7 +288,6 @@ func fetchRelease(repo, tag, token string) (*Release, error) {
 	return &release, nil
 }
 
-
 // parseField extracts the first capture group from a regex match against text.
 func parseField(text string, re *regexp.Regexp) string {
 	m := re.FindStringSubmatch(text)
@@ -267,41 +297,71 @@ func parseField(text string, re *regexp.Regexp) string {
 	return strings.TrimSpace(m[1])
 }
 
-// readCurrentVersionFromMakefile reads TALOS_VERSION and TALOSCTL_IMAGE from the Makefile.
-func readCurrentVersionFromMakefile(path string) (version, release string, err error) {
+// readCurrentImageTag reads the full talosctl image tag (including any
+// pre-release suffix) from TALOSCTL_IMAGE in the Makefile.
+func readCurrentImageTag(path string) (string, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	versionRe := regexp.MustCompile(`(?m)^TALOS_VERSION := (v[\d.]+)`)
-	releaseRe := regexp.MustCompile(`(?m)^TALOSCTL_IMAGE := ghcr\.io/siderolabs/talosctl:(v[\d.]+)`)
-
-	vm := versionRe.FindSubmatch(data)
-	if vm == nil {
-		return "", "", fmt.Errorf("TALOS_VERSION not found in Makefile")
-	}
-	rm := releaseRe.FindSubmatch(data)
-	if rm == nil {
-		return "", "", fmt.Errorf("TALOSCTL_IMAGE not found in Makefile")
+	re := regexp.MustCompile(`(?m)^TALOSCTL_IMAGE := ghcr\.io/siderolabs/talosctl:(\S+)`)
+	m := re.FindSubmatch(data)
+	if m == nil {
+		return "", fmt.Errorf("TALOSCTL_IMAGE not found in Makefile")
 	}
 
-	return string(vm[1]), string(rm[1]), nil
+	return string(m[1]), nil
 }
 
-// bumpMinorVersion increments the minor part of a version string like "v1.13" -> "v1.14".
-func bumpMinorVersion(version string) string {
-	trimmed := strings.TrimPrefix(version, "v")
-	parts := strings.Split(trimmed, ".")
-	if len(parts) < 2 {
-		return version
+// minorOf returns the "vMAJOR.MINOR" folder label for a tag like
+// "v1.14.0-beta.0" -> "v1.14".
+func minorOf(tag string) (string, error) {
+	t := strings.TrimPrefix(tag, "v")
+	if i := strings.IndexByte(t, '-'); i >= 0 {
+		t = t[:i]
+	}
+	parts := strings.Split(t, ".")
+	if len(parts) < 2 || parts[0] == "" || parts[1] == "" {
+		return "", fmt.Errorf("cannot parse major.minor from %q", tag)
+	}
+	return "v" + parts[0] + "." + parts[1], nil
+}
+
+// prereleaseStage returns the pre-release suffix marker of a tag, e.g.
+// "-beta" for "v1.14.0-beta.0", or "" for a stable tag.
+func prereleaseStage(tag string) string {
+	switch {
+	case strings.Contains(tag, "-alpha"):
+		return "-alpha"
+	case strings.Contains(tag, "-beta"):
+		return "-beta"
+	case strings.Contains(tag, "-"):
+		return "-prerelease"
+	default:
+		return ""
+	}
+}
+
+// isStable reports whether a tag is a final stable release (no pre-release suffix).
+func isStable(tag string) bool {
+	return !strings.Contains(tag, "-")
+}
+
+// readBannerLatest reads the current latestVersion constant from the banner JSX file.
+func readBannerLatest(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
 	}
 
-	minor := 0
-	fmt.Sscanf(parts[1], "%d", &minor)
-	parts[1] = fmt.Sprintf("%d", minor+1)
+	re := regexp.MustCompile(`const latestVersion = "(v[\d.]+)"`)
+	m := re.FindSubmatch(data)
+	if m == nil {
+		return "", fmt.Errorf("latestVersion not found in %s", path)
+	}
 
-	return "v" + strings.Join(parts, ".")
+	return string(m[1]), nil
 }
 
 // readExportVar reads a single `export const <name>` value from an MDX file.
@@ -320,8 +380,48 @@ func readExportVar(path, name string) (string, error) {
 	return string(m[1]), nil
 }
 
-// updateBetaVariables only updates the release tag in the versioned block (or appends it).
-func updateBetaVariables(path, newVersion, betaTag string) error {
+// exportValue returns the value of an `export const <name> = '...'` line from a
+// content string, or "" if the line is absent or its value is empty.
+func exportValue(content, name string) string {
+	re := regexp.MustCompile(`(?m)^export const ` + name + ` = ['"]([^'"]*)['"]`)
+	m := re.FindStringSubmatch(content)
+	if m == nil {
+		return ""
+	}
+	return m[1]
+}
+
+// resolveNvidia determines the nvidia-container-toolkit and NVIDIA driver values
+// for a tag. It first tries the siderolabs/extensions release notes for that exact
+// tag; if those are unavailable (a pre-release with no extensions release, a fetch
+// error, or missing fields) it falls back to the unversioned latest-stable values
+// already present in the variables content. It never fails.
+func resolveNvidia(tag, token, content string) (nvCTK, nvDriver string) {
+	if ext, err := fetchRelease("siderolabs/extensions", tag, token); err == nil {
+		ctk := parseField(ext.Body, nvCTKRe)
+		drv := parseField(ext.Body, nvLTSRe)
+		if ctk != "" && drv != "" {
+			fmt.Fprintf(os.Stderr, "  nvidia from extensions %s: container-toolkit=%s driver=%s\n", tag, ctk, drv)
+			return ctk, drv
+		}
+		fmt.Fprintf(os.Stderr, "  extensions %s missing nvidia fields; using latest-stable values\n", tag)
+	} else {
+		fmt.Fprintf(os.Stderr, "  extensions release %s unavailable (%v); using latest-stable values\n", tag, err)
+	}
+
+	nvCTK = exportValue(content, "nvidia_container_toolkit_release")
+	nvDriver = exportValue(content, "nvidia_driver_release")
+	fmt.Fprintf(os.Stderr, "  nvidia fallback (latest stable): container-toolkit=%s driver=%s\n", nvCTK, nvDriver)
+	return nvCTK, nvDriver
+}
+
+// updatePrereleaseVariables updates (or appends) the versioned block for a
+// pre-release tag. It always advances the release tag line. nvidia values are
+// resolved via resolveNvidia (extensions release notes, else the unversioned
+// latest-stable values), so a new block is never written empty and an existing
+// block with empty nvidia values is backfilled. Existing non-empty nvidia values
+// are left untouched.
+func updatePrereleaseVariables(path, newVersion, prereleaseTag, token string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -331,25 +431,40 @@ func updateBetaVariables(path, newVersion, betaTag string) error {
 	varSuffix := "_v" + strings.ReplaceAll(strings.TrimPrefix(newVersion, "v"), ".", "_")
 
 	if strings.Contains(content, "export const release"+varSuffix) {
-		// Block exists — only update the release tag line.
-		content = replaceExportLine(content, "release"+varSuffix, betaTag, '\'')
+		// Block exists — always advance the release tag line.
+		content = replaceExportLine(content, "release"+varSuffix, prereleaseTag, '\'')
+
+		// Backfill nvidia only when currently empty, so good values from an
+		// earlier stable run are never clobbered.
+		ctkEmpty := exportValue(content, "nvidia_container_toolkit_release"+varSuffix) == ""
+		drvEmpty := exportValue(content, "nvidia_driver_release"+varSuffix) == ""
+		if ctkEmpty || drvEmpty {
+			nvCTK, nvDriver := resolveNvidia(prereleaseTag, token, content)
+			if ctkEmpty {
+				content = replaceExportLine(content, "nvidia_container_toolkit_release"+varSuffix, nvCTK, '"')
+			}
+			if drvEmpty {
+				content = replaceExportLine(content, "nvidia_driver_release"+varSuffix, nvDriver, '"')
+			}
+		}
 	} else {
-		// Block doesn't exist yet — append a full new block with beta tag.
+		// Block doesn't exist yet — append a full new block, seeding nvidia values.
+		nvCTK, nvDriver := resolveNvidia(prereleaseTag, token, content)
 		newReleaseBranch := "release-" + strings.TrimPrefix(newVersion, "v")
 		block := fmt.Sprintf(`
 {/* %s talos release */}
 export const release%s = '%s'
 export const release_branch%s = '%s'
 export const version%s = '%s'
-export const nvidia_container_toolkit_release%s = ""
-export const nvidia_driver_release%s = ""
+export const nvidia_container_toolkit_release%s = "%s"
+export const nvidia_driver_release%s = "%s"
 `,
 			strings.TrimPrefix(newVersion, "v"),
-			varSuffix, betaTag,
+			varSuffix, prereleaseTag,
 			varSuffix, newReleaseBranch,
 			varSuffix, newVersion,
-			varSuffix,
-			varSuffix,
+			varSuffix, nvCTK,
+			varSuffix, nvDriver,
 		)
 		content = strings.TrimRight(content, "\n") + "\n" + block
 	}
@@ -473,8 +588,34 @@ func updateCanonicalURLs(dir, oldVersion, newVersion string) error {
 	})
 }
 
-// updateMakefileBeta adds the new yaml at the BOTTOM of the list (before omni.yaml) in all four targets.
-func updateMakefileBeta(path, newVersion string) error {
+// setMakefilePin rewrites TALOSCTL_IMAGE to the exact new tag and TALOS_VERSION to
+// the new folder minor. It matches the full current tag (suffix included) so a
+// pre-release pin like v1.14.0-alpha.2 is replaced cleanly rather than by prefix.
+func setMakefilePin(path, currentTag, newTag, currentMinor, newMinor string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	content := string(data)
+
+	oldImageLine := "TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:" + currentTag
+	newImageLine := "TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:" + newTag
+	if !strings.Contains(content, oldImageLine) {
+		return fmt.Errorf("could not find %q in Makefile", oldImageLine)
+	}
+	content = strings.ReplaceAll(content, oldImageLine, newImageLine)
+
+	// TALOS_VERSION only changes when the folder minor changes.
+	if currentMinor != newMinor {
+		content = strings.ReplaceAll(content, "TALOS_VERSION := "+currentMinor, "TALOS_VERSION := "+newMinor)
+	}
+
+	return os.WriteFile(path, []byte(content), 0o644)
+}
+
+// addNavBottom adds the new yaml at the BOTTOM of the list (before omni.yaml) in all four targets.
+func addNavBottom(path, newVersion string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -495,8 +636,9 @@ func updateMakefileBeta(path, newVersion string) error {
 	return os.WriteFile(path, []byte(content), 0o644)
 }
 
-// updateMakefileStable updates TALOSCTL_IMAGE, TALOS_VERSION, and moves/inserts the new yaml at the TOP.
-func updateMakefileStable(path, oldVersion, oldRelease, newVersion, newRelease string) error {
+// moveNavTop moves (or inserts) the new yaml at the TOP of the list, before the
+// previous top entry (prevVersion), in all four targets.
+func moveNavTop(path, newVersion, prevVersion string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -504,32 +646,18 @@ func updateMakefileStable(path, oldVersion, oldRelease, newVersion, newRelease s
 
 	content := string(data)
 	newYAML := "talos-" + newVersion + ".yaml"
-	oldYAML := "talos-" + oldVersion + ".yaml"
-
-	// Update TALOSCTL_IMAGE.
-	content = strings.ReplaceAll(
-		content,
-		"TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:"+oldRelease,
-		"TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:"+newRelease,
-	)
-
-	// Update TALOS_VERSION.
-	content = strings.ReplaceAll(
-		content,
-		"TALOS_VERSION := "+oldVersion,
-		"TALOS_VERSION := "+newVersion,
-	)
+	prevYAML := "talos-" + prevVersion + ".yaml"
 
 	if strings.Contains(content, newYAML) {
-		// Was added at bottom during beta — remove from bottom and insert at top.
+		// Was added at bottom during a pre-release — remove from bottom first.
 		content = strings.ReplaceAll(content, "\t\t"+newYAML+" \\\n\t\tomni.yaml", "\t\tomni.yaml")
 		content = strings.ReplaceAll(content, "\t\t../"+newYAML+" \\\n\t\t../omni.yaml", "\t\t../omni.yaml")
-		content = strings.ReplaceAll(content, "\t\t"+oldYAML, "\t\t"+newYAML+" \\\n\t\t"+oldYAML)
-		content = strings.ReplaceAll(content, "\t\t../"+oldYAML, "\t\t../"+newYAML+" \\\n\t\t../"+oldYAML)
-	} else {
-		// Not in list yet — insert at top.
-		content = strings.ReplaceAll(content, "\t\t"+oldYAML, "\t\t"+newYAML+" \\\n\t\t"+oldYAML)
-		content = strings.ReplaceAll(content, "\t\t../"+oldYAML, "\t\t../"+newYAML+" \\\n\t\t../"+oldYAML)
+	}
+
+	// Guard against duplicate insertion if it is already at the top.
+	if !strings.Contains(content, "\t\t"+newYAML) {
+		content = strings.ReplaceAll(content, "\t\t"+prevYAML, "\t\t"+newYAML+" \\\n\t\t"+prevYAML)
+		content = strings.ReplaceAll(content, "\t\t../"+prevYAML, "\t\t../"+newYAML+" \\\n\t\t../"+prevYAML)
 	}
 
 	return os.WriteFile(path, []byte(content), 0o644)

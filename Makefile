@@ -16,6 +16,14 @@ TALOS_VERSION := v1.14
 VALE_IMAGE := jdkato/vale:latest
 VALE_CONFIG ?= .vale.ini
 
+# Auto-fill the GitHub token from `gh` when it isn't already set in the environment.
+# An exported/CI value wins; otherwise fall back to the local gh keychain. If gh is
+# unavailable this is simply empty, matching the previous behaviour.
+# `export` makes it visible to recipe subprocesses (e.g. the local `go run` targets),
+# not just to the containers that pass it explicitly with `-e`.
+GITHUB_TOKEN ?= $(shell gh auth token 2>/dev/null)
+export GITHUB_TOKEN
+
 # Default target
 .PHONY: help
 help: ## Show this help message
@@ -131,13 +139,19 @@ test-docs-gen-race: ## Run tests with race detection
 .PHONY: test-all
 test-all: test-docs-gen ## Run all tests
 
+# talosctl is a multi-arch image and its `--arch` flag defaults to the running
+# binary's architecture (runtime.GOARCH). Pin the platform so the generated
+# reference docs are deterministic (matching CI) regardless of the contributor's
+# machine — otherwise regenerating on Apple Silicon flips defaults to arm64.
+TALOSCTL_PLATFORM := linux/amd64
+
 .PHONY: generate-talos-reference
 generate-talos-reference: ## Generate Talos reference docs and convert to MDX
 	@echo "Generating Talos reference documentation..."
-	docker pull $(TALOSCTL_IMAGE)
+	docker pull --platform=$(TALOSCTL_PLATFORM) $(TALOSCTL_IMAGE)
 	docker pull $(DOCS_CONVERT_IMAGE)
 	mkdir -p _out/docs
-	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
+	docker run --rm --platform=$(TALOSCTL_PLATFORM) -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
 	@echo "Converting generated docs to MDX..."
 	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD):/workspace $(DOCS_CONVERT_IMAGE) \
 		/workspace/_out/docs /workspace/public/talos/$(TALOS_VERSION)/reference/configuration/
@@ -147,9 +161,9 @@ generate-talos-reference: ## Generate Talos reference docs and convert to MDX
 .PHONY: generate-talos-reference-local
 generate-talos-reference-local: ## Generate Talos reference docs using local Go build
 	@echo "Generating Talos reference documentation..."
-	docker pull $(TALOSCTL_IMAGE)
+	docker pull --platform=$(TALOSCTL_PLATFORM) $(TALOSCTL_IMAGE)
 	mkdir -p _out/docs
-	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
+	docker run --rm --platform=$(TALOSCTL_PLATFORM) -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
 	@echo "Converting generated docs to MDX..."
 	cd docs-convert && go run main.go ../_out/docs ../public/talos/$(TALOS_VERSION)/reference/configuration/
 	@echo "Reference documentation generated in public/talos/$(TALOS_VERSION)/reference/configuration/"
@@ -331,29 +345,53 @@ changelog-local: ## Generate the changelog using local Go build
 validate-docs-nav: ## Validate all talos yaml nav configs match their content directories
 	cd docs-validate && go run . --workspace ..
 
+# validate-tag distinguishes the two ways a TAG can be wrong, with a tailored
+# message for each, and fails BEFORE the generator writes anything:
+#   1. malformed  -> show the expected format and examples
+#   2. unpublished -> the format is fine but no talosctl image exists for it yet
+define validate-tag
+	@echo "$(TAG)" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)\.[0-9]+)?$$' || { \
+		echo "Error: malformed TAG '$(TAG)'."; \
+		echo "  Expected: vMAJOR.MINOR.PATCH with an optional -alpha.N / -beta.N / -rc.N suffix."; \
+		echo "  Examples: v1.14.0   v1.14.0-alpha.0   v1.14.0-beta.2   v1.14.0-rc.1"; \
+		exit 1; }
+	@docker manifest inspect ghcr.io/siderolabs/talosctl:$(TAG) >/dev/null 2>&1 || { \
+		echo "Error: TAG '$(TAG)' is well-formed but not published yet."; \
+		echo "  No image 'ghcr.io/siderolabs/talosctl:$(TAG)' was found in the registry."; \
+		echo "  The release may not be cut yet — see https://github.com/siderolabs/talos/releases"; \
+		echo "  Pass a TAG whose talosctl image already exists."; \
+		exit 1; }
+endef
+
 .PHONY: upgrade-talos-version
-upgrade-talos-version: ## Upgrade docs to the next Talos minor version (fetches versions from GitHub)
-	docker run --rm -it -v $(PWD):/workspace -w /workspace \
+upgrade-talos-version: ## Upgrade Talos docs to a release tag: make upgrade-talos-version TAG=v1.14.0-beta.0
+	@test -n "$(TAG)" || { echo "Error: TAG is required, e.g. make upgrade-talos-version TAG=v1.14.0-beta.0"; exit 1; }
+	$(validate-tag)
+	docker run --rm -v $(PWD):/workspace -w /workspace \
 		-e GITHUB_TOKEN=$(GITHUB_TOKEN) \
-		$(VERSION_UPGRADE_IMAGE)
-	$(eval NEW_VERSION := $(shell cat .upgrade-version-tmp))
+		$(VERSION_UPGRADE_IMAGE) --tag $(TAG)
+	$(eval NEW_VERSION := $(shell cat .upgrade-version-tmp 2>/dev/null))
 	@rm -f .upgrade-version-tmp
+	$(MAKE) generate-talos-reference
 	$(MAKE) changelog
 	$(MAKE) docs.json
 	$(MAKE) validate-docs-nav
 	@echo ""
-	@echo "Upgrade to $(NEW_VERSION) complete! Run: make preview to preview your $(NEW_VERSION) docs"
+	@echo "Upgrade to $(TAG) complete! Run: make preview to preview your $(NEW_VERSION) docs"
 
 .PHONY: upgrade-talos-version-local
-upgrade-talos-version-local: ## Upgrade docs to the next Talos minor version using local Go build
-	cd version-upgrade-gen && go run . --workspace ..
-	$(eval NEW_VERSION := $(shell cat .upgrade-version-tmp))
+upgrade-talos-version-local: ## Same as upgrade-talos-version but using the local Go build
+	@test -n "$(TAG)" || { echo "Error: TAG is required, e.g. make upgrade-talos-version-local TAG=v1.14.0-beta.0"; exit 1; }
+	$(validate-tag)
+	cd version-upgrade-gen && go run . --workspace .. --tag $(TAG)
+	$(eval NEW_VERSION := $(shell cat .upgrade-version-tmp 2>/dev/null))
 	@rm -f .upgrade-version-tmp
+	$(MAKE) generate-talos-reference-local
 	$(MAKE) changelog
 	$(MAKE) docs.json
 	$(MAKE) validate-docs-nav
 	@echo ""
-	@echo "Upgrade to $(NEW_VERSION) complete! Run: make preview to preview your $(NEW_VERSION) docs"
+	@echo "Upgrade to $(TAG) complete! Run: make preview to preview your $(NEW_VERSION) docs"
 
 .PHONY: build-version-upgrade-container
 build-version-upgrade-container: ## Build the version-upgrade-gen container locally
