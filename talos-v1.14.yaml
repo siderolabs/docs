@@ -246,13 +246,18 @@ navigation:
                   pages:
                     - "configuration/block/existingvolumeconfig.mdx"
                     - "configuration/block/externalvolumeconfig.mdx"
+                    - "configuration/block/filesystemtrimconfig.mdx"
                     - "configuration/block/rawvolumeconfig.mdx"
                     - "configuration/block/swapvolumeconfig.mdx"
                     - "configuration/block/uservolumeconfig.mdx"
                     - "configuration/block/volumeconfig.mdx"
                     - "configuration/block/zswapconfig.mdx"
+                - group: "Cluster"
+                  pages: 
+                    - "configuration/cluster/discoveryserviceconfig.mdx"
                 - group: "CRI"
                   pages:
+                    - "configuration/cri/imagecacheconfig.mdx"
                     - "configuration/cri/registryauthconfig.mdx"
                     - "configuration/cri/registrymirrorconfig.mdx"
                     - "configuration/cri/registrytlsconfig.mdx"
@@ -262,6 +267,19 @@ navigation:
                 - group: "Hardware"
                   pages:
                     - "configuration/hardware/pcidriverrebindconfig.mdx"
+                - group: "Kubernetes"
+                  pages: 
+                    - "configuration/kubernetes/kubeadmissioncontrolconfig.mdx"
+                    - "configuration/kubernetes/kubeapiserverconfig.mdx"
+                    - "configuration/kubernetes/kubeauditpolicyconfig.mdx"
+                    - "configuration/kubernetes/kubeauthenticationconfig.mdx"
+                    - "configuration/kubernetes/kubeauthorizerconfig.mdx"
+                    - "configuration/kubernetes/kubecontrollermanagerconfig.mdx"
+                    - "configuration/kubernetes/kubeetcdencryptionconfig.mdx"
+                    - "configuration/kubernetes/kubeflannelcniconfig.mdx"
+                    - "configuration/kubernetes/kubenetworkconfig.mdx"
+                    - "configuration/kubernetes/kubeproxyconfig.mdx"
+                    - "configuration/kubernetes/kubeschedulerconfig.mdx"
                 - group: "Network"
                   pages:
                     - "configuration/network/blackholerouteconfig.mdx"
@@ -275,6 +293,7 @@ navigation:
                     - "configuration/network/hostnameconfig.mdx"
                     - "configuration/network/kubespanconfig.mdx"
                     - "configuration/network/kubespanendpointsconfig.mdx"
+                    - "configuration/network/httpprobeconfig.mdx"
                     - "configuration/network/layer2vipconfig.mdx"
                     - "configuration/network/linkaliasconfig.mdx"
                     - "configuration/network/linkconfig.mdx"
@@ -294,6 +313,8 @@ navigation:
                     - "configuration/runtime/eventsinkconfig.mdx"
                     - "configuration/runtime/kmsglogconfig.mdx"
                     - "configuration/runtime/oomconfig.mdx"
+                    - "configuration/runtime/sysctlconfig.mdx"
+                    - "configuration/runtime/sysfsconfig.mdx"
                     - "configuration/runtime/watchdogtimerconfig.mdx"
                 - group: "Misc"
                   pages:
@@ -308,6 +329,10 @@ navigation:
                 - group: "SideroLink"
                   pages:
                     - "configuration/siderolink/siderolinkconfig.mdx"
+                - group: "Storage"
+                  pages:
+                    - "configuration/storage/lvmlogicalvolumeconfig.mdx"
+                    - "configuration/storage/lvmvolumegroupconfig.mdx"
 
         - group: "Troubleshooting and support"
           folder: "talos/v1.14/troubleshooting"

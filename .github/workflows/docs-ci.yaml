@@ -29,7 +29,6 @@ jobs:
 
       - name: Validate nav configs match content directories
         run: make validate-docs-nav
-        continue-on-error: true
 
       - name: Run Vale on changed files
         run: make vale-changed
