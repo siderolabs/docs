@@ -58,5 +58,6 @@ navigation:
             - "kueue.mdx"
             - "node-labels.mdx"
             - "spegel.mdx"
+            - "support-for-third-party-cni-and-csi-components.mdx"
             - "talos-api-access-from-k8s.mdx"
             - "upgrading-kubernetes.mdx"

@@ -1,0 +1,130 @@
+---
+title: Support for Third-Party CNI and CSI Components
+description: How Sidero Labs handles support cases involving third-party container networking and storage components, and what to expect at each support tier.
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+Talos Linux is designed to support Kubernetes environments using a broad range of Container Network Interface (CNI) and Container Storage Interface (CSI) implementations. These components are an important part of the overall Kubernetes architecture, but they are developed, released, and supported independently of Talos Linux and Sidero Labs.
+
+This document explains how Sidero Labs approaches questions and support cases involving third-party CNI and CSI products. It describes our general support and collaboration practices; it does not expand or modify the scope of services provided under a customer's applicable Order Form, Master Services Agreement, Support Services Terms, or Statement of Work.
+
+## Why CNI and CSI selections matter
+
+CNI and CSI components operate at foundational layers of a Kubernetes environment. A networking or storage issue may affect node readiness, workload scheduling, service connectivity, persistent data access, cluster upgrades, or the availability of the cluster as a whole.
+
+For that reason, we recommend evaluating CNI and CSI requirements early in the architecture and implementation process. This evaluation should include:
+
+* compatibility with the selected Talos Linux and Kubernetes versions
+* the provider's documented installation and upgrade procedures
+* operational, availability, and recovery requirements
+* the provider's product and support lifecycle; and
+* the availability of an appropriate commercial support relationship for production environments
+
+Sidero Labs strongly recommends that customers operating a third-party CNI or CSI in production maintain a support agreement with the provider of that component.
+
+## Scope of Sidero Labs support
+
+Under our standard support terms, [Sidero Labs Support Services](https://www.siderolabs.com/support) cover the Sidero Labs products and components identified in the customer's applicable Order Form and Support Services Terms. Third-party CNI and CSI products are not themselves included within that standard support scope unless expressly stated otherwise in an applicable Order Form or Statement of Work.
+
+The assistance available from Sidero Labs also depends on whether the customer has purchased a Support Services subscription. A license or subscription granting access to Sidero Labs software does not, by itself, include private technical support or the service levels associated with a Business or Enterprise support offering.
+
+### Customers without a Support Services subscription
+
+Customers who do not have a current Support Services subscription may seek assistance through the
+<a href={`../../talos/${version}/overview/what-is-talos#community-&-support`}>community channels</a> made available by Sidero Labs, such as [GitHub Discussions](https://github.com/siderolabs/talos/discussions), public issue trackers, [community Slack channels](https://inviter.co/sidero-labs-community), and <a href={`../../talos/${version}/overview/what-is-talos#office-hours`}>community office hours</a>.
+
+Within those channels, Sidero Labs employees and members of the broader community may help:
+
+* identify relevant documentation
+* review publicly shared diagnostics
+* suggest troubleshooting steps
+* identify known compatibility or configuration issues
+* determine whether behavior may warrant a bug report; or
+* direct the customer to the appropriate upstream project or vendor
+
+Community assistance is provided on an informal, best-effort basis. It does not include guaranteed response times, confidential case handling, incident ownership, scheduled troubleshooting sessions, three-party vendor calls, or an obligation to investigate or resolve a particular issue.
+
+Participation by Sidero Labs personnel in community channels is subject to availability and does not create a Support Services entitlement or alter the terms of the customer's software license or subscription.
+
+Customers who require defined response times, private handling of diagnostic information, coordinated incident management, or direct participation in cross-vendor troubleshooting should maintain an applicable Sidero Labs Support Services subscription.
+
+### Customers with Business or Enterprise Support Services
+
+Customers with an active Business or Enterprise Support Services subscription may open a support case with Sidero Labs when an issue affects a supported Talos Linux or Omni environment, even when a CNI or CSI component may be involved.
+
+The boundary between Talos Linux, Kubernetes, and an installed CNI or CSI is not always apparent at the beginning of an incident. Supported customers are therefore encouraged to contact Sidero Labs rather than attempting to determine the responsible component before opening a case.
+
+Subject to the customer's applicable support tier, Order Form, and Support Services Terms, Sidero Labs will use commercially reasonable efforts to help:
+
+* collect and interpret relevant Talos Linux and Kubernetes diagnostics;
+* determine whether the behavior originates in Talos Linux, Kubernetes, the CNI or CSI, or the interaction between those components;
+* identify known configuration or compatibility issues;
+* help develop a reproducible problem statement;
+* review relevant logs, manifests, and system behavior;
+* identify the appropriate owner or vendor for the next stage of investigation;
+* collaborate with the third-party provider's support or engineering teams; and
+* address or coordinate appropriate fixes when the issue involves software maintained by Sidero Labs.
+
+In many cases, our familiarity with Talos Linux and Kubernetes allows us to identify the affected layer or help resolve the issue without requiring an immediate escalation to another vendor.
+
+This assistance does not bring the third-party CNI or CSI product itself within the contractual scope of Sidero Labs Support Services. Applicable response targets govern Sidero Labs' handling of the supported portions of the environment; they do not apply to the actions or response times of another vendor.
+
+### When another vendor must be involved
+
+If an investigation indicates that an issue is caused by, or requires a change to, a third-party CNI or CSI product, the customer is responsible for opening and maintaining the corresponding support case with that provider.
+
+The customer will ordinarily act as the coordination point between Sidero Labs and the third-party provider. This includes:
+
+* establishing the support relationship with the third-party provider
+* opening the vendor support case
+* granting each party access to the relevant technical findings
+* relaying information where direct communication is unavailable; and
+* escalating the matter under the customer's agreement with that provider when necessary
+
+For customers with an applicable Sidero Labs Support Services subscription, Sidero Labs is happy, where useful and appropriate to the circumstances, to:
+
+* participate in joint troubleshooting sessions or three-party calls
+* exchange technical findings with the provider
+* help reproduce the interaction between Talos Linux and the third-party component
+* review proposed configuration changes or workarounds
+* collaborate on upstream issue reports or code changes; and
+* make changes to Sidero Labs-maintained software when appropriate
+
+Participation in these activities remains subject to the customer's applicable support scope and tier, the technical circumstances of the incident, and the availability and cooperation of the third-party provider.
+
+Sidero Labs cannot guarantee the availability, response time, prioritization, correction, release schedule, or behavior of software maintained by another organization. Any correction or product change required in a third-party component remains subject to that provider's support policies, engineering decisions, release process, and agreement with the customer.
+
+## Vendor escalation relationships
+
+Unless expressly stated otherwise in an applicable Order Form or separate written agreement, Sidero Labs does not provide customers with a support entitlement or dedicated escalation path to a third-party CNI or CSI provider.
+
+When escalation to another provider is required, Sidero Labs ordinarily relies on the customer's own support relationship and escalation rights with that provider. The customer is responsible for opening the applicable support case and ensuring that the appropriate vendor resources are available.
+
+For customers with applicable Business or Enterprise Support Services, Sidero Labs may participate in and collaborate on that escalation, including through joint troubleshooting sessions, technical information exchange, reproduction efforts, and coordination of changes affecting Sidero Labs-maintained software.
+
+Customers without a Sidero Labs Support Services subscription may still raise questions through the applicable community channels, but Sidero Labs does not commit to participate in private or coordinated third-party escalations on their behalf.
+
+## A practical example
+
+Consider a cluster in which nodes become unavailable after a networking change.
+
+A customer without a Support Services subscription may raise the issue in a community channel. Sidero Labs personnel or community members may suggest diagnostics, identify relevant documentation, or help determine whether the behavior resembles a known Talos Linux or CNI issue. Any such assistance is informal and does not carry a response or resolution commitment.
+
+A customer with Business or Enterprise Support Services may open a private support case with Sidero Labs. We may examine Talos Linux services, kernel behavior, Kubernetes node conditions, CNI logs, routing state, and the relevant configuration to help identify the affected layer.
+
+If the investigation identifies an issue in supported Sidero Labs software, we will handle it in accordance with the customer's applicable support agreement and support lifecycle.
+
+If the investigation instead identifies a defect or required enhancement in the CNI, the customer will need to escalate the matter through the CNI provider's support process. Sidero Labs may continue participating in the investigation, provide Talos-specific expertise, and collaborate on any changes required on the Talos Linux side, but cannot commit the CNI provider to deliver a particular fix or timeline.
+
+## Summary
+
+Customers do not need to determine the responsible component before seeking assistance.
+
+Customers with Business or Enterprise Support Services are encouraged to begin with Sidero Labs when an issue affects a supported Talos Linux or Omni environment. We will help investigate the supported portions of the environment, identify the relevant technical layer, and coordinate with another provider where appropriate.
+
+Customers without a Support Services subscription may seek assistance through Sidero Labs' community channels. Assistance in those channels is public, informal, and provided without response-time or resolution commitments.
+
+Regardless of the Sidero Labs support tier, customers should maintain direct support relationships with the providers of production CNI and CSI components. Complex cross-vendor issues are most effectively resolved when each responsible provider is available to support the software it develops.
+
+This document describes Sidero Labs' general support and collaboration practices. It does not modify any Order Form, Master Services Agreement, Support Services Terms, Statement of Work, software license, or agreement with a third-party provider. In the event of a conflict, the applicable contractual documents control.
