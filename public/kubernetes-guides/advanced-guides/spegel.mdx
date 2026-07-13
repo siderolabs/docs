@@ -38,9 +38,8 @@ Create a patch file named `spegel-machine-patch.yaml` with the following content
 cat <<EOF > spegel-machine-patch.yaml
 machine:
   files:
-    - path: /var/etc/cri/conf.d/20-spegel.part
+    - path: /etc/cri/conf.d/20-customization.part
       op: create
-      permissions: 0o000
       content: |
         [plugins."io.containerd.cri.v1.images"]
           discard_unpacked_layers = false
@@ -113,9 +112,8 @@ patches:
     inline:
       machine:
         files:
-          - path: /var/etc/cri/conf.d/20-spegel.part
+          - path: /etc/cri/conf.d/20-customization.part
             op: create
-            permissions: 0o000
             content: |
               [plugins."io.containerd.cri.v1.images"]
                 discard_unpacked_layers = false
