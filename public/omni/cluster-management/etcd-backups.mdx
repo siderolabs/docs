@@ -57,6 +57,47 @@ If you use a non-AWS S3 provider:
 
 During configuration, Omni validates access by attempting to list objects in the bucket. If validation fails, the configuration is not applied.
 
+### Required S3 permissions
+
+The credentials (or IAM role) Omni uses need the following permissions on the bucket:
+
+| Permission | Why Omni needs it |
+|---|---|
+| `s3:ListBucket` | Validating the configuration, and listing existing backups. |
+| `s3:GetObject` | Reading backups, both when listing them and when restoring a cluster. |
+| `s3:PutObject` | Uploading backups. This also covers the multipart upload operations that are used for larger snapshots. |
+| `s3:AbortMultipartUpload` | Cleaning up a multipart upload if a backup upload fails partway through. |
+
+Omni never deletes objects from the bucket, so no delete permission is required.
+
+<Note>Because Omni never deletes old backups, the bucket grows without bound as long as automatic or manual backups keep running. Configure a [bucket lifecycle rule](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html) (or your provider's equivalent) to expire objects after a retention period that fits your recovery needs, so you don't have to clean up the bucket manually.</Note>
+
+An example AWS IAM policy that grants the minimum required access to a bucket named `mybucket`:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "OmniEtcdBackupsListBucket",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::mybucket"
+    },
+    {
+      "Sid": "OmniEtcdBackupsObjectAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:AbortMultipartUpload"
+      ],
+      "Resource": "arn:aws:s3:::mybucket/*"
+    }
+  ]
+}
+```
+
 ### Apply the S3 configuration
 
 To configure S3 as the backup backend, create an `EtcdBackupS3Configs.omni.sidero.dev` resource. 
