@@ -384,7 +384,8 @@
                       "talos/v1.13/configure-your-talos-cluster/hardware-and-drivers/hailo",
                       "talos/v1.13/configure-your-talos-cluster/hardware-and-drivers/nvidia-fabricmanager",
                       "talos/v1.13/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu",
-                      "talos/v1.13/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary"
+                      "talos/v1.13/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary",
+                      "talos/v1.13/configure-your-talos-cluster/hardware-and-drivers/tenstorrent"
                     ]
                   },
                   {

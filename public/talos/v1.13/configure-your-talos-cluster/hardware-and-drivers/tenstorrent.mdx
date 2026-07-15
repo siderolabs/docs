@@ -1,0 +1,253 @@
+---
+title: Tenstorrent AI Accelerators
+description: Enable Tenstorrent AI accelerator cards on your Talos nodes and expose them to Kubernetes with the Tenstorrent Operator.
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+This guide shows how to enable Tenstorrent AI accelerator support on your Talos nodes, confirm the cards are detected by the operating system, and deploy the Tenstorrent Operator so the devices are available to Kubernetes workloads.
+
+<Note>Tenstorrent cards (Wormhole, Blackhole) are PCIe AI accelerators used for inference of large language models. For details about the Kubernetes integration, see the [Tenstorrent Operator documentation](https://docs.tenstorrent.com/tt-operator/latest/).</Note>
+
+## Before you begin
+
+You'll need:
+
+- A Talos Linux cluster running v1.13 or later.
+- At least one node with a Tenstorrent accelerator installed.
+- `talosctl` and `kubectl` configured and authenticated against your cluster.
+- `helm` installed locally to deploy the operator.
+- The `siderolabs/tenstorrent` Talos system extension.
+
+The simplest way to include the extension is at image creation time: select it on the **System Extensions** page when generating your installation media in Omni or the [Talos Image Factory](https://factory.talos.dev/). If your node is already running without it, follow [Enable Tenstorrent support](#enable-tenstorrent-support) below. Otherwise, skip to [Verify Tenstorrent support](#verify-tenstorrent-support).
+
+## Enable Tenstorrent support
+
+System extensions are baked into the Talos boot image rather than installed at runtime. If your node booted from an image that does not include `siderolabs/tenstorrent`, add the extension by switching the node to an image that does. The node performs a standard upgrade cycle to boot into the new image.
+
+<Tabs>
+  <Tab title="Talos Linux">
+    Generate a new schematic that includes the `siderolabs/tenstorrent` extension using the [Talos Image Factory](https://factory.talos.dev/), then upgrade the node to the matching installer image:
+
+    ```bash
+    talosctl upgrade \
+      --image factory.talos.dev/metal-installer/<schematic-id>:<talos-version>
+    ```
+
+    Example schematic patch used when generating the image at the factory:
+
+    ```yaml
+    customization:
+      systemExtensions:
+        officialExtensions:
+          - siderolabs/tenstorrent
+    ```
+
+    For the full schematic workflow, see [Boot Assets](../../platform-specific-installations/boot-assets).
+  </Tab>
+
+  <Tab title="Omni">
+    Add the extension to a machine in an Omni cluster:
+
+    1. Select the cluster containing the target machine.
+    2. Select the machine, then open the **Extensions** tab.
+    3. Click **Update Extensions**, add `siderolabs/tenstorrent`, and click **Update**.
+
+    Alternatively, declare the extension in an Omni cluster template. Add the extension to the `Machine` document for the target machine:
+
+    ```yaml
+    kind: Machine
+    name: <machine-uuid>
+    systemExtensions:
+      - siderolabs/tenstorrent
+    ```
+
+    Omni generates the new image and upgrades the machine to it. For more details, see [Install Talos Linux Extensions](../../../../omni/infrastructure-and-extensions/install-talos-linux-extensions).
+  </Tab>
+</Tabs>
+
+Once the node boots the image containing the extension, the kernel loads the `tenstorrent` driver and exposes each card to the operating system as a device node at `/dev/tenstorrent/<N>`.
+
+## Optional: hugepages for inference workloads
+
+Tenstorrent cards use 1 GB hugepages for host↔device DMA. The upstream [`hugepages-setup.sh`](https://github.com/tenstorrent/tt-system-tools/blob/main/hugepages-setup/hugepages-setup.sh) script is the reference for how many pages the driver expects — **4 pages per chip**. On Talos the filesystem is immutable, so reserve the pages up front via kernel arguments. If you plan to run the TT inference server, add 32 pages on top for the workload pod (matching the [upstream Helm chart default](https://github.com/tenstorrent/tt-inference-server/blob/main/charts/tt-inference-server/values.yaml)).
+
+Sizing for the driver baseline plus the TT inference server pod:
+
+| Chips per node | Card examples | `hugepages=` |
+|---|---|---|
+| 1 | n150 / p150 | 36 |
+| 2 | n300 | 40 |
+| 4 | 2× n300 | 48 |
+
+Reserve hugepages via kernel arguments on the machine. The examples below use the 1-chip value — substitute the row from the table that matches your hardware:
+
+<Tabs>
+  <Tab title="Talos Linux">
+    ```yaml
+    machine:
+      install:
+        extraKernelArgs:
+          - hugepagesz=1G
+          - hugepages=36
+    ```
+  </Tab>
+
+  <Tab title="Omni">
+    ```yaml
+    kind: Machine
+    name: <machine-uuid>
+    systemExtensions:
+      - siderolabs/tenstorrent
+    kernelArgs:
+      - hugepagesz=1G
+      - hugepages=36
+    ```
+  </Tab>
+</Tabs>
+
+## Verify Tenstorrent support
+
+After the node boots with the extension, confirm the driver is loaded and the device is available.
+
+### Step 1: Confirm the extension is installed
+
+Check that the `tenstorrent` extension is loaded on the node. Replace the `<node-ip>` placeholder with the IP address of your node:
+
+```bash
+talosctl get extensions --nodes <node-ip>
+```
+
+You should see the `tenstorrent` extension listed, along with its version:
+
+```text
+NODE        NAMESPACE   TYPE              ID   VERSION   NAME           VERSION
+<node-ip>   runtime     ExtensionStatus   0    1         tenstorrent    2.7.0
+```
+
+### Step 2: Confirm the PCI device is visible
+
+Confirm the card is present on the PCI bus:
+
+```bash
+talosctl get devices.pci --nodes <node-ip> | grep -i tenstorrent
+```
+
+### Step 3: Deploy the Tenstorrent Operator
+
+With driver support enabled, deploy the Tenstorrent Operator to expose the accelerators to Kubernetes workloads.
+
+<Warning>The operator's `tt-k8s-driver-manager` cannot install the `tt-kmd` kernel driver on Talos' immutable filesystem. You **must** disable the driver-manager component when installing the operator.</Warning>
+
+Install the operator disabling `tt-k8s-driver-manager`:
+
+```bash
+helm install tt-operator oci://ghcr.io/tenstorrent/helm/tt-operator \
+  --namespace tt-operator-system --create-namespace \
+  --set tt-k8s-driver-manager.enabled=false
+```
+
+Check operator status:
+
+```bash
+kubectl get pods -n tt-operator-system
+```
+
+### Step 4: Verify Kubernetes resources
+
+Once the operator pods are `Running`, confirm that Node Feature Discovery has labelled the node with the Tenstorrent PCI vendor ID (`1e52`):
+
+```bash
+kubectl describe node <node-name> | grep 1e52
+```
+
+You should see a label such as `feature.node.kubernetes.io/pci-1200_1e52.present=true`.
+
+The operator exposes each card to Kubernetes via [Dynamic Resource Allocation](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/), so devices are not shown under a node's `Capacity` or `Allocatable`. Instead, the `tt-dra-driver` publishes them as `ResourceSlice` objects under a `DeviceClass` named `tenstorrent.com`. Confirm both are present:
+
+```bash
+kubectl get deviceclass tenstorrent.com
+kubectl get resourceslices
+```
+
+### Step 5: Deploy a workload
+
+A workload consumes a card by creating a `ResourceClaim` that references the `tenstorrent.com` `DeviceClass`, then referencing the claim from a pod. For example:
+
+```yaml
+apiVersion: resource.k8s.io/v1
+kind: ResourceClaim
+metadata:
+  name: tt-device
+  namespace: my-workload
+spec:
+  devices:
+    requests:
+      - name: tt
+        exactly:
+          deviceClassName: tenstorrent.com
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-workload
+  namespace: my-workload
+spec:
+  resourceClaims:
+    - name: tt
+      resourceClaimName: tt-device
+  containers:
+    - name: app
+      image: <your-image>
+      resources:
+        claims:
+          - name: tt
+```
+
+The pod scheduler places the pod on a node whose `ResourceSlice` matches the claim, and the DRA driver injects the device into the container via CDI — it does not require `privileged: true` or `hostPath` mount.
+
+For the full set of configuration options, custom resources, and workload examples, see the [Tenstorrent Operator documentation](https://docs.tenstorrent.com/tt-operator/latest/).
+
+## Troubleshooting
+
+Issues can show up at two layers: the device may not be detected by the operating system, or it may be detected but not visible to the operator. The following sections outline how to diagnose each.
+
+### Device not detected
+
+If the Tenstorrent device does not appear:
+
+1. Confirm the system extension is installed:
+
+   ```bash
+   talosctl get extensions --nodes <node-ip>
+   ```
+
+2. Review the kernel logs for driver messages:
+
+   ```bash
+   talosctl logs -k --nodes <node-ip>
+   ```
+
+3. Check PCI visibility:
+
+   ```bash
+   talosctl get devices.pci --nodes <node-ip>
+   ```
+
+### Operator issues
+
+If the operator fails to initialize, inspect its logs:
+
+```bash
+kubectl logs -n tt-operator-system deployment/tt-operator
+```
+
+If you see `tt-k8s-driver-manager` install pods on your nodes in a `CrashLoopBackOff` state, confirm the operator was installed with `--set tt-k8s-driver-manager.enabled=false`. The driver-manager assumes it can compile and load `tt-kmd` on the host, which is not possible on Talos.
+
+Confirm that:
+
+- The `siderolabs/tenstorrent` system extension is active on each accelerator node.
+- The card is visible on the PCI bus in Talos.
+- The driver version reported by the extension matches the version expected by the operator (see the [Tenstorrent Operator documentation](https://docs.tenstorrent.com/tt-operator/latest/)).

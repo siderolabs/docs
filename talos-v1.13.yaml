@@ -218,6 +218,7 @@ navigation:
                 - "hardware-and-drivers/nvidia-fabricmanager"
                 - "hardware-and-drivers/nvidia-gpu"
                 - "hardware-and-drivers/nvidia-gpu-proprietary"
+                - "hardware-and-drivers/tenstorrent"
             - group: "Lifecycle Management"
               pages:
                 - "lifecycle-management/upgrading-talos"
