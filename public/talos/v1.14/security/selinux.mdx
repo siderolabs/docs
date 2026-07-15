@@ -26,8 +26,14 @@ is not compatible with some of your workloads or plugins.
 
 SELinux also needs to be disabled if you are enabling AppArmor, because both security modules cannot be enabled at the same time.
 
-If you want to disable SELinux, you can do so by adding `selinux=0` to the kernel cmdline.
-This is most commonly done when creating the image via the configuration in the Image Factory.
+To disable SELinux, add `-selinux selinux=0` to the kernel cmdline. This is done when creating the image through the Image Factory configuration. In your Image Factory schematic:
+
+```yaml
+customization:
+  extraKernelArgs:
+    - -selinux
+    - selinux=0
+```
 
 ### Mode of operation
 
