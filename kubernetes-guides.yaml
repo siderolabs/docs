@@ -25,6 +25,7 @@ navigation:
             - "dell-powerstore.mdx"
             - "longhorn.mdx"
             - "simplyblock-storage.mdx"
+            - "seaweedfs.mdx"
             - "synology-csi.mdx"
 
         - group: "Security"

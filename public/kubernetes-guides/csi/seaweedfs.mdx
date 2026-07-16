@@ -1,0 +1,310 @@
+---
+title: SeaweedFS
+description: Configure and install SeaweedFS distributed storage on a Talos Linux cluster
+---
+
+import { version, release } from '/snippets/custom-variables.mdx';
+
+[SeaweedFS](https://github.com/seaweedfs/seaweedfs) is a simple, highly scalable distributed file system with an S3-compatible object store and a POSIX filer. Its [CSI driver](https://github.com/seaweedfs/seaweedfs-csi-driver) provisions persistent volumes for Kubernetes, including `ReadWriteMany` (RWX) volumes shared across pods. On Talos it is a lightweight alternative to a full Ceph/Rook cluster when you want cheap, reliable PVC storage without the operational overhead.
+
+This guide covers provisioning a dedicated disk for SeaweedFS, deploying the master, filer, and volume servers, installing the CSI driver, and verifying that volumes provision.
+
+## Prerequisites
+
+Before you begin, ensure that you have the following:
+
+- `talosctl` configured and authenticated against your cluster
+- `kubectl` configured to access the same cluster
+- Helm 3 installed
+- At least one dedicated disk per storage node, **separate from the system disk** where Talos is installed
+
+## Step 1: Provision a dedicated disk with UserVolumeConfig
+
+Talos Linux v1.10 introduced <a href={`../../talos/${version}/reference/configuration/block/uservolumeconfig`}>UserVolumeConfig</a>, which replaces the deprecated `machine.disks` API.
+
+This resource automatically mounts selected disks under `/var/mnt/<name>`. In this guide, the volume is named `seaweedfs` which mounts at `/var/mnt/seaweedfs`.
+
+How you apply the `UserVolumeConfig` depends on how your cluster is managed. Choose the tab that matches your setup.
+
+<Tabs>
+<Tab title="Standalone Talos">
+
+### 1.1: Inspect available disks
+
+Inspect the disks available on each storage node so you know which disk to select and what its `transport` is.
+
+```bash
+talosctl get disks --nodes <node-ip>
+```
+
+Note the transport (for example `nvme`, `sata`, or `virtio`) and the identifier of the disk you want to dedicate to SeaweedFS. You will use these to write the selector in the next step.
+
+Confirm which disk is the system disk, so you select a different one:
+
+```bash
+talosctl get systemdisk --nodes <node-ip>
+```
+
+The disk it reports (for example `nvme0n1`) is excluded by the `!system_disk` selector. Make sure the disk you intend to use for SeaweedFS is a *different* disk with `READ ONLY` set to `false`.
+
+### 1.2: Create the UserVolumeConfig
+
+Create a <a href={`../../talos/${version}/reference/configuration/block/uservolumeconfig`}>UserVolumeConfig</a> document that tells Talos which disk to provision. Talos mounts the volume at `/var/mnt/seaweedfs`.
+
+Two things to get right:
+
+- **A size constraint is required.** Set `minSize` (and optionally `maxSize`), or Talos rejects the config with `min size or max size is required`. The example below claims at least 10GiB and grows to fill the disk.
+- **Match a disk that actually exists on your node.** The `diskSelector.match` field is a [Common Expression Language](https://github.com/google/cel-spec) (CEL) expression. The example matches any non-system disk; narrow it using the transport and fields you saw in Step 1.1.
+
+```bash
+cat <<EOF > seaweedfs-user-disk.yaml
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: seaweedfs
+provisioning:
+  diskSelector:
+    match: "!system_disk"
+  minSize: 10GiB
+  grow: true
+EOF
+```
+
+<Info> To target a specific disk, narrow the selector using the fields from `talosctl get disks` — for example `disk.transport == 'nvme' && !system_disk`, `disk.size > 50u * GiB`, or the most stable option, matching a stable device path such as `'/dev/disk/by-id/...' in disk.symlinks`. Do not assume a transport such as `nvme`; use whatever Step 1.1 reported for your hardware. For more information, refer to the <a href={`../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/disk-management/overview`}>Disk Management documentation</a>.</Info>
+
+### 1.3: Apply the UserVolumeConfig to storage nodes
+
+Define the IP addresses of the worker nodes that will provide storage to SeaweedFS, one entry per node:
+
+```bash
+WORKER_IPS=("<WORKER_IP_1>" "<WORKER_IP_2>")
+```
+
+Then apply the patch to each node:
+
+```bash
+for ip in "${WORKER_IPS[@]}"; do
+    echo "Applying patch to worker node: $ip"
+    talosctl patch machineconfig --nodes "$ip" --patch @seaweedfs-user-disk.yaml
+done
+```
+
+### 1.4: Reboot the nodes
+
+Reboot each worker node to apply the configuration changes:
+
+```bash
+for ip in "${WORKER_IPS[@]}"; do
+  echo "Rebooting node: $ip"
+  talosctl reboot --nodes "$ip"
+done
+```
+
+After the nodes come back up, confirm the volume reached the `ready` phase. Talos prefixes user-volume IDs with `u-`, so the volume is `u-seaweedfs`:
+
+```bash
+talosctl get volumestatus u-seaweedfs --nodes <node-ip>
+```
+
+The volume should report `PHASE` `ready`, mounted at `/var/mnt/seaweedfs`.
+
+</Tab>
+<Tab title="Omni">
+
+In Omni you apply the `UserVolumeConfig` as a [cluster config patch](../../omni/omni-cluster-setup/create-a-patch-for-cluster-machines) targeted at your worker machines.
+
+### 1.1: Inspect available disks
+
+Identify the disk to dedicate to SeaweedFS on each storage machine, and note its transport. You can see a machine's disks in the Omni UI on the machine's details page, or with `talosctl` using a config downloaded from Omni:
+
+```bash
+omnictl talosconfig --cluster <cluster-name> ./talosconfig
+talosctl --talosconfig ./talosconfig get disks --nodes <machine-id>
+```
+
+Note the transport (for example `nvme`, `sata`, or `virtio`) — you will use it to write the selector.
+
+### 1.2: Create the config patch
+
+Create a config patch containing the `UserVolumeConfig`. Two things to get right:
+
+- **A size constraint is required.** Set `minSize` (and optionally `maxSize`), or the patch is rejected with `min size or max size is required`.
+- **Match a disk that exists on your machines.** The example matches any non-system disk; narrow it using the transport from Step 1.1.
+
+```yaml
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: seaweedfs
+provisioning:
+  diskSelector:
+    match: "!system_disk"
+  minSize: 10GiB
+  grow: true
+```
+
+<Info>Selectors can be tricky to write, and a selector that matches no disk fails silently — the volume simply never provisions. Narrow the match using the fields from Step 1.1, for example `disk.transport == 'nvme' && !system_disk`. Matching a stable device path such as `'/dev/disk/by-id/...' in disk.symlinks` is the most reliable option.</Info>
+
+### 1.3: Apply the patch in Omni
+
+1. Select the **Clusters** tab in the left-hand menu.
+2. Open the cluster menu (**⋯**) and select **Config Patches**. (Alternatively, open a specific cluster and select **Config Patches** from the right-hand panel.)
+3. Click **Create Patch**.
+4. Select a target from the **Patch Target** dropdown — your worker machines, either all workers or the specific machines that will provide storage.
+5. Enter the `UserVolumeConfig` from Step 1.2 into the patch editor.
+6. Click **Save**.
+
+Omni applies the configuration to the selected machines. Once they have applied it, the volume is mounted at `/var/mnt/seaweedfs`. You can verify the change from the machine's **Config History** tab, or by downloading a talosconfig and checking the volume status:
+
+```bash
+talosctl --talosconfig ./talosconfig get volumestatus u-seaweedfs --nodes <machine-id>
+```
+
+The volume should report `PHASE` `ready`.
+
+<Info>Provisioning a user volume repartitions the disk. Apply the patch only to machines whose target disk does not hold data you need to keep.</Info>
+
+</Tab>
+</Tabs>
+
+## Step 2: Enable privileged pod security
+
+The SeaweedFS containers use `hostPath` volumes and do not run as non-root, which the default Talos [Pod Security Admission Policies](../security/pod-security#override-the-pod-security-admission-configuration) block.
+
+Create the `seaweedfs` namespace and label it to allow privileged workloads:
+
+```bash
+kubectl create namespace seaweedfs
+kubectl label namespace seaweedfs pod-security.kubernetes.io/enforce=privileged
+```
+
+## Step 3: Install SeaweedFS with Helm
+
+Add the SeaweedFS Helm repository:
+
+```bash
+helm repo add seaweedfs https://seaweedfs.github.io/seaweedfs/helm
+helm repo update
+```
+
+SeaweedFS deploys three components — a master, a filer, and a volume server — and **each one writes to its own `hostPath`**. By default the chart points these at `/ssd` and `/storage`, which are not writable on Talos: the Talos root filesystem is read-only, and only paths under `/var` can be written. Installing the chart unmodified fails with `mkdir /ssd: read-only file system`.
+
+Create a values file that redirects **every** `hostPath` — for the master, filer, and volume server, including their log volumes — to the `/var/mnt/seaweedfs` mount provisioned in **Step 1**:
+
+```bash
+cat <<EOF > seaweedfs-values.yaml
+master:
+  data:
+    type: "hostPath"
+    hostPathPrefix: /var/mnt/seaweedfs
+  logs:
+    type: "hostPath"
+    hostPathPrefix: /var/mnt/seaweedfs
+filer:
+  data:
+    type: "hostPath"
+    hostPathPrefix: /var/mnt/seaweedfs
+  logs:
+    type: "hostPath"
+    hostPathPrefix: /var/mnt/seaweedfs
+volume:
+  dataDirs:
+    - name: data1
+      type: "hostPath"
+      hostPathPrefix: /var/mnt/seaweedfs
+      maxVolumes: 0
+  logs:
+    type: "hostPath"
+    hostPathPrefix: /var/mnt/seaweedfs
+EOF
+```
+
+Install SeaweedFS with the values file:
+
+```bash
+helm upgrade --install seaweedfs seaweedfs/seaweedfs \
+  --namespace seaweedfs \
+  --values seaweedfs-values.yaml
+```
+
+This configures all three SeaweedFS components to store their data and logs under `/var/mnt/seaweedfs`, which matches the disk path created in **Step 1**.
+
+Wait for the core components to become ready, then confirm the pods are `Running`:
+
+```bash
+kubectl -n seaweedfs rollout status statefulset/seaweedfs-master
+kubectl -n seaweedfs rollout status statefulset/seaweedfs-volume
+kubectl -n seaweedfs rollout status statefulset/seaweedfs-filer
+kubectl get pods -n seaweedfs
+```
+
+## Step 4: Install the SeaweedFS CSI driver
+
+The CSI driver provisions PersistentVolumes backed by the SeaweedFS filer. It ships from its own Helm repository, separate from the main SeaweedFS chart, so add that repository first:
+
+```bash
+helm repo add seaweedfs-csi-driver https://seaweedfs.github.io/seaweedfs-csi-driver/helm
+helm repo update
+```
+
+Install the driver, pointing it at the filer service created in **Step 3**:
+
+```bash
+helm upgrade --install seaweedfs-csi-driver seaweedfs-csi-driver/seaweedfs-csi-driver \
+  --namespace seaweedfs \
+  --set seaweedfsFiler=seaweedfs-filer.seaweedfs:8888
+```
+
+<Info>The `seaweedfsFiler` value is the address of the filer's HTTP service, in the form `<service>.<namespace>:8888` (port 8888 is the filer's HTTP port). Adjust the service name and namespace if you changed the release name or namespace in **Step 3**.</Info>
+
+Wait for the driver's node daemonset to roll out, then confirm all pods in the namespace are `Running`:
+
+```bash
+kubectl -n seaweedfs rollout status daemonset/seaweedfs-csi-driver-node
+kubectl get pods -n seaweedfs
+```
+
+Alongside the `master`, `filer`, and `volume` pods, you should see `seaweedfs-csi-driver-node-*` and `seaweedfs-csi-driver-controller-*`.
+
+Confirm the `StorageClass` was created:
+
+```bash
+kubectl get storageclass
+```
+
+You should see `seaweedfs-storage`, provisioned by `seaweedfs-csi-driver`.
+
+<Note>The SeaweedFS CSI driver supports both `ReadWriteOnce` (RWO) and `ReadWriteMany` (RWX) access modes, which makes it a good fit for workloads that need shared volumes across pods.</Note>
+
+## Step 5: Create a test persistent volume
+
+Create a test PersistentVolumeClaim. Set `storageClassName` to the SeaweedFS StorageClass name reported in **Step 4**.
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: seaweedfs-test-pvc
+  namespace: seaweedfs
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: seaweedfs-storage
+  resources:
+    requests:
+      storage: 1Gi
+EOF
+```
+
+Check its status:
+
+```bash
+kubectl get pvc seaweedfs-test-pvc -n seaweedfs
+```
+
+The PVC should reach the **Bound** state within a few seconds, confirming that SeaweedFS can provision volumes.
+
+Once you have confirmed it works, remove the test claim:
+
+```bash
+kubectl delete pvc seaweedfs-test-pvc -n seaweedfs
+```

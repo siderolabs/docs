@@ -2563,6 +2563,7 @@
               "kubernetes-guides/csi/dell-powerstore",
               "kubernetes-guides/csi/longhorn",
               "kubernetes-guides/csi/simplyblock-storage",
+              "kubernetes-guides/csi/seaweedfs",
               "kubernetes-guides/csi/synology-csi"
             ]
           },

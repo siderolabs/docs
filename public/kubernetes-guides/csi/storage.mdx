@@ -29,7 +29,9 @@ The following projects are known to work with Talos Linux and provide good optio
 
 - **Longhorn**: Simple, reliable, easy-to-use Kubernetes storage with easy replication and snapshots.
 
-- **Rook/Ceph**: Enterprise-scale, distributed, multi-tenant storage (block, file, and object storage)
+- **SeaweedFS**: Lightweight S3-compatible distributed storage with RWX support.
+
+- **Rook/Ceph**: Enterprise-scale, distributed, multi-tenant storage (block, file, and object storage).
 
 Also, if you need _both_ mount-once _and_ mount-many capabilities, Ceph is your answer.
 
@@ -41,7 +43,7 @@ There are all manner of locking, performance, change control, and reliability co
 
 ### Longhorn
 
-Documentation for installing Longhorn on Talos Linux is available on the [Longhorn site](https://longhorn.io/docs/1.9.0/advanced-resources/os-distro-specific/talos-linux-support/).
+[Longhorn](https://longhorn.io) is distributed block storage with replication and snapshots. See [Longhorn](./longhorn) for a full installation guide on Talos.
 
 ### Rook/Ceph
 
@@ -50,6 +52,7 @@ It scales well, and enables the operator to easily add and remove storage with n
 It comes bundled with an S3-compatible object store; CephFS, a NFS-like clustered filesystem; and RBD, a block storage system.
 
 With the help of [Rook](https://rook.io), the vast majority of the complexity of Ceph is hidden away, allowing you to control almost everything about your Ceph cluster from fairly simple Kubernetes CRDs.
+See [Rook/Ceph](./ceph-with-rook) for a full installation guide on Talos.
 
 However, Ceph can be rather slow for small clusters.
 It relies heavily on CPUs and massive parallelization for performance.
@@ -57,6 +60,10 @@ If your cluster is small, just running Ceph may eat up a significant amount of t
 
 Troubleshooting Ceph can be difficult if you do not understand its architecture.
 There are very good tools for inspection and debugging, but this is still frequently seen as a concern.
+
+### SeaweedFS
+
+[SeaweedFS](https://github.com/seaweedfs/seaweedfs) is a simple, highly scalable distributed file system with an S3-compatible object store and a POSIX filer. It supports both `ReadWriteOnce` and `ReadWriteMany` volumes, making it a lighter-weight alternative to Ceph when you want shared storage without running a full storage cluster. See [SeaweedFS](./seaweedfs) for a full installation guide on Talos.
 
 ### OpenEBS Mayastor replicated storage
 
