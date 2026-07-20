@@ -17,6 +17,12 @@ import { release_v1_14 } from '/snippets/custom-variables.mdx';
 Oracle Cloud at the moment does not have a Talos official image.
 So you can use [Bring Your Own Image (BYOI)](https://docs.oracle.com/en-us/iaas/Content/Compute/References/bringyourownimage.htm) approach.
 
+<Note>
+On current Talos releases the `qcow2` disk image does not boot on Oracle Cloud Infrastructure (OCI): imported with `UEFI_64` firmware the instance drops to the UEFI shell, and imported with `BIOS` firmware the serial console stays empty.
+
+Converting the same disk to a stream-optimized `VMDK` and importing it as a `VMDK` boots normally, so the steps below use that path. This is tracked upstream in [siderolabs/talos#12557](https://github.com/siderolabs/talos/issues/12557) (OCI is a tier-3 platform without automated testing, so the regression went unnoticed).
+</Note>
+
 Prepare an image for upload:
 
 1. Generate an image using [Image Factory](https://factory.talos.dev).
@@ -25,47 +31,30 @@ Prepare an image for upload:
   Oracle arm64
 </a>)
 
-3. Define the image metadata file called `image_metadata.json`.
-   Example for an `arm64` deployment:
-
-   ```json
-   {
-       "version": 2,
-       "externalLaunchOptions": {
-           "firmware": "UEFI_64",
-           "networkType": "PARAVIRTUALIZED",
-           "bootVolumeType": "PARAVIRTUALIZED",
-           "remoteDataVolumeType": "PARAVIRTUALIZED",
-           "localDataVolumeType": "PARAVIRTUALIZED",
-           "launchOptionsSource": "PARAVIRTUALIZED",
-           "pvAttachmentVersion": 2,
-           "pvEncryptionInTransitEnabled": true,
-           "consistentVolumeNamingEnabled": true
-       },
-       "imageCapabilityData": null,
-       "imageCapsFormatVersion": null,
-       "operatingSystem": "Talos",
-       "operatingSystemVersion": "1.7.6",
-       "additionalMetadata": {
-           "shapeCompatibilities": [
-               {
-                   "internalShapeName": "VM.Standard.A1.Flex",
-                   "ocpuConstraints": null,
-                   "memoryConstraints": null
-               }
-           ]
-       }
-   }
-   ```
-
-4. Create an archive containing the image and metadata called `talos-oracle-arm64.oci`:
+3. Convert the qcow2 image to a stream-optimized VMDK (requires `qemu-img`):
 
    ```shell
-   tar zcf oracle-arm64.oci oracle-arm64.qcow2 image_metadata.json
+   qemu-img convert -f qcow2 -O vmdk -o subformat=streamOptimized oracle-arm64.qcow2 oracle-arm64.vmdk
    ```
 
-5. Upload the image to a storage bucket.
-6. Create an image, using the *new* URL format for the storage bucket object.
+4. Upload the `oracle-arm64.vmdk` file to an object storage bucket.
+
+5. Import the image from the bucket object, using the `VMDK` source type:
+
+   ```shell
+   oci compute image import from-object \
+     --compartment-id <compartment-id> \
+     --namespace <object-storage-namespace> \
+     --bucket-name <bucket-name> \
+     --name oracle-arm64.vmdk \
+     --display-name talos \
+     --source-image-type VMDK \
+     --launch-mode PARAVIRTUALIZED \
+     --operating-system Talos \
+     --operating-system-version <talos-version>
+   ```
+
+   The `PARAVIRTUALIZED` launch mode boots the imported image with `BIOS` firmware, which is the working configuration on OCI (importing with `UEFI_64` firmware drops the instance to the UEFI shell).
 
 > Note: file names depends on configuration of deployment such as architecture, adjust accordingly.
 
