@@ -1,0 +1,53 @@
+name: Code Review
+
+# Lints the tooling that builds the docs — the Go generators, the Dockerfiles,
+# and the Makefile — via `make code-review`. That target runs every linter in a
+# container, so this job only needs Docker (preinstalled on ubuntu-latest); no
+# Go or tool setup step is required.
+
+on:
+  pull_request:
+    paths:
+      - "**/*.go"
+      - "**/go.mod"
+      - "**/go.sum"
+      - "**/Dockerfile*"
+      - "Makefile"
+      - ".golangci.yml"
+      - ".hadolint.yaml"
+      - ".checkmake.ini"
+      - ".github/workflows/code-review.yaml"
+  push:
+    branches:
+      - main
+    paths:
+      - "**/*.go"
+      - "**/go.mod"
+      - "**/go.sum"
+      - "**/Dockerfile*"
+      - "Makefile"
+      - ".golangci.yml"
+      - ".hadolint.yaml"
+      - ".checkmake.ini"
+      - ".github/workflows/code-review.yaml"
+
+# Only the latest commit on a PR/branch needs reviewing; cancel superseded runs.
+concurrency:
+  group: code-review-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: this job only reads the checked-out code.
+permissions:
+  contents: read
+
+jobs:
+  code-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Review Go code, Dockerfiles, and the Makefile
+        run: make code-review

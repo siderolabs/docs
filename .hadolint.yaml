@@ -1,0 +1,12 @@
+# hadolint configuration for `make code-review` (Dockerfile linting).
+#
+# High-signal gate, same philosophy as .golangci.yml: keep the checks that
+# catch real Dockerfile problems, and silence the purely-stylistic nag.
+#
+# DL3018 asks you to pin an exact version for every `apk add` package
+# (e.g. `apk add curl=8.5.0-r0`). Alpine's repositories only keep the latest
+# patch of each package, so pinned versions go stale and break `docker build`
+# within weeks. These images already pin their base image tag, which is the
+# meaningful reproducibility control, so this per-package nag is turned off.
+ignored:
+  - DL3018

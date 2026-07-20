@@ -666,41 +666,6 @@ func cleanLinkText(line string) string {
 	return result
 }
 
-// convertCodeBlocksToHTML converts Hugo highlight shortcodes to HTML pre/code tags
-func convertCodeBlocksToHTML(content string) string {
-	result := content
-
-	// Replace all occurrences of {{< highlight yaml >}}...{{< /highlight >}}
-	for strings.Contains(result, "{{< highlight yaml >}}") {
-		start := strings.Index(result, "{{< highlight yaml >}}")
-		end := strings.Index(result[start:], "{{< /highlight >}}")
-		if end == -1 {
-			break
-		}
-		end += start
-
-		// Extract the code between the tags
-		codeStart := start + len("{{< highlight yaml >}}")
-		code := result[codeStart:end]
-
-		// Trim leading/trailing newlines but preserve internal formatting
-		code = strings.Trim(code, "\n")
-
-		// Escape HTML entities in code
-		code = strings.Replace(code, "&", "&amp;", -1)
-		code = strings.Replace(code, "<", "&lt;", -1)
-		code = strings.Replace(code, ">", "&gt;", -1)
-
-		// Use simple code tag with preserved newlines
-		// Put opening and closing tags on separate lines from the code content
-		replacement := "<code>\n" + code + "\n</code>"
-
-		result = result[:start] + replacement + result[end+len("{{< /highlight >}}"):]
-	}
-
-	return result
-}
-
 // convertTableToHTML converts a markdown table to HTML table
 func convertTableToHTML(lines []string, startIdx int) (string, int) {
 	if len(lines) < startIdx+2 {
@@ -845,8 +810,10 @@ func main() {
 	if _, err := os.Stat(dstDir); err == nil {
 		// Directory exists, remove only .mdx files that aren't in preserve list
 		filepath.Walk(dstDir, func(path string, info os.FileInfo, err error) error {
+			// Skip entries we can't stat and directories, and keep walking:
+			// returning err here would abort the whole cleanup pass.
 			if err != nil || info.IsDir() {
-				return nil
+				return nil //nolint:nilerr // intentional: skip this entry, continue the walk
 			}
 
 			filename := filepath.Base(path)

@@ -335,11 +335,14 @@ func TestCheckMissingFiles(t *testing.T) {
 	err = checkMissingFiles(config)
 	w.Close()
 	os.Stdout = oldStdout
+	if err != nil {
+		t.Fatalf("checkMissingFiles failed: %v", err)
+	}
 
 	var n int64
 	n, err = buf.ReadFrom(r)
 	output := buf.String()
-	
+
 	if n == 0 {
 		// If nothing was captured, there might be an issue with the pipe
 		// Let's continue with the test anyway
@@ -347,7 +350,7 @@ func TestCheckMissingFiles(t *testing.T) {
 	}
 
 	if err != nil {
-		t.Fatalf("checkMissingFiles failed: %v", err)
+		t.Fatalf("reading captured output failed: %v", err)
 	}
 
 	// Check if we found missing files or if everything is included

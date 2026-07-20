@@ -112,7 +112,7 @@ func main() {
 	fmt.Fprintf(os.Stderr, "  Target:        %s  ->  stage: %s, folder: %s (%s)\n", *tag, stage, targetMinor, scope)
 
 	if stable {
-		runStable(token, currentTag, *tag, currentMinor, targetMinor, sameMinor, varsFile, bannerFile)
+		runStable(token, currentTag, *tag, currentMinor, targetMinor, varsFile, bannerFile)
 	} else {
 		runPrerelease(token, currentTag, *tag, currentMinor, targetMinor, varsFile)
 	}
@@ -159,7 +159,7 @@ func runPrerelease(token, currentTag, tag, currentMinor, targetMinor, varsFile s
 // runStable handles stable targets. It advances the image pin, refreshes the
 // k8s/nvidia values from the release notes, and — when the latest stable minor
 // actually changes — promotes the version in the banner, canonical URLs and nav.
-func runStable(token, currentTag, tag, currentMinor, targetMinor string, sameMinor bool, varsFile, bannerFile string) {
+func runStable(token, currentTag, tag, currentMinor, targetMinor string, varsFile, bannerFile string) {
 	release := tag
 	releaseBranch := "release-" + strings.TrimPrefix(targetMinor, "v")
 

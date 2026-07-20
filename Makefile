@@ -15,6 +15,29 @@ MDX_NORMALIZE_IMAGE := ghcr.io/siderolabs/mdx-normalize:latest
 TALOS_VERSION := v1.14
 VALE_IMAGE := jdkato/vale:latest
 VALE_CONFIG ?= .vale.ini
+# Linter images are pinned to exact versions so `make code-review` (and CI) is
+# reproducible: a new linter release can't turn the gate red on unchanged code.
+# Bump these deliberately. Each is overridable from the environment (?=).
+# checkmake has no semver tags, so it is pinned by image digest.
+GOLANGCI_LINT_IMAGE ?= golangci/golangci-lint:v2.12.2
+HADOLINT_IMAGE ?= hadolint/hadolint:v2.14.0
+CHECKMAKE_IMAGE ?= cytopia/checkmake:latest@sha256:ff793674494e472661bc7b4cc623c9a172515ec011c6e802be586f101bd6c043
+
+# Directories that never contain our own Go modules or Dockerfiles but are
+# expensive to walk (public/ is large) or contain throwaway copies (worktrees).
+# Pruning them keeps the discovery below fast on every make invocation.
+DISCOVERY_PRUNE := \( -path ./.git -o -path ./public -o -path ./.claude -o -name node_modules -o -name vendor \) -prune
+
+# Auto-discover every Go module in the repo (any directory with a go.mod) so
+# `code-review` audits new programs automatically — just add a folder with a
+# go.mod and it gets linted, no Makefile edit needed.
+GO_MODULES := $(shell find . $(DISCOVERY_PRUNE) \
+	-o -name go.mod -print | sed 's|^\./||; s|/go.mod$$||' | sort)
+
+# Auto-discover every Dockerfile too, on the same principle: add one and it gets
+# linted automatically.
+DOCKERFILES := $(shell find . $(DISCOVERY_PRUNE) \
+	-o -iname 'Dockerfile*' -print | sed 's|^\./||' | sort)
 
 # Auto-fill the GitHub token from `gh` when it isn't already set in the environment.
 # An exported/CI value wins; otherwise fall back to the local gh keychain. If gh is
@@ -138,6 +161,48 @@ test-docs-gen-race: ## Run tests with race detection
 
 .PHONY: test-all
 test-all: test-docs-gen ## Run all tests
+
+# ---- Code review / linting -------------------------------------------------
+#
+# `code-review` audits ALL the tooling that builds the docs in one command,
+# using the right linter for each language:
+#   * Go code    -> golangci-lint (.golangci.yml). Catches "orphaned logic" and
+#                   real bugs: `unused` (unused funcs/vars/types/fields),
+#                   `unparam` (unused params), `ineffassign`/`wastedassign`
+#                   (dead assignments), plus govet, staticcheck bug-checks,
+#                   nilerr and bodyclose. Style-only linters are left off (see
+#                   the .golangci.yml header for the rationale).
+#   * Dockerfiles -> hadolint (.hadolint.yaml). Best-practice/correctness checks.
+#   * Makefile    -> checkmake (.checkmake.ini). Structural best practices.
+# Go modules and Dockerfiles are auto-discovered, so new programs are reviewed
+# without editing this file. All three run even if one fails (so you see every
+# problem at once), and the command exits non-zero on any finding — making it a
+# drop-in CI gate.
+
+.PHONY: code-review
+code-review: ## Review all doc-building tooling: Go code, Dockerfiles, and the Makefile
+	@$(call pull_if_missing,$(GOLANGCI_LINT_IMAGE))
+	@$(call pull_if_missing,$(HADOLINT_IMAGE))
+	@$(call pull_if_missing,$(CHECKMAKE_IMAGE))
+	@failed=""; \
+	for m in $(GO_MODULES); do \
+		echo ""; echo "==> Go module: $$m"; \
+		docker run --rm -v $(PWD):/workspace -w /workspace/$$m $(GOLANGCI_LINT_IMAGE) \
+			golangci-lint run --config /workspace/.golangci.yml ./... || failed="$$failed go:$$m"; \
+	done; \
+	for f in $(DOCKERFILES); do \
+		echo ""; echo "==> Dockerfile: $$f"; \
+		docker run --rm -v $(PWD):/repo -w /repo $(HADOLINT_IMAGE) hadolint "$$f" || failed="$$failed dockerfile:$$f"; \
+	done; \
+	echo ""; echo "==> Makefile"; \
+	docker run --rm -v $(PWD):/data -w /data $(CHECKMAKE_IMAGE) \
+		--config=/data/.checkmake.ini Makefile || failed="$$failed makefile"; \
+	echo ""; \
+	if [ -n "$$failed" ]; then \
+		echo "Code review FAILED. Issues in:$$failed"; \
+		exit 1; \
+	fi; \
+	echo "Code review passed: all Go modules, Dockerfiles, and the Makefile are clean."
 
 # talosctl is a multi-arch image and its `--arch` flag defaults to the running
 # binary's architecture (runtime.GOARCH). Pin the platform so the generated

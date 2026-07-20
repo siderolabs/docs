@@ -8,7 +8,11 @@ _out/
 # Temp file written by upgrade-talos-version
 .upgrade-version-tmp
 
-# Go build artifacts
+# Go build artifacts (compiled binary in each tool dir, named after the dir)
 version-upgrade-gen/version-upgrade-gen
 changelog-gen/changelog-gen
 docs-gen/docs-gen
+docs-convert/docs-convert
+docs-validate/docs-validate
+mdx-normalize/mdx-normalize
+omni-config-gen/omni-config-gen
