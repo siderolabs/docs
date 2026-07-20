@@ -20,7 +20,7 @@ So you can use [Bring Your Own Image (BYOI)](https://docs.oracle.com/en-us/iaas/
 <Note>
 On current Talos releases the `qcow2` disk image does not boot on Oracle Cloud Infrastructure (OCI): imported with `UEFI_64` firmware the instance drops to the UEFI shell, and imported with `BIOS` firmware the serial console stays empty.
 
-Converting the same disk to a stream-optimized `VMDK` and importing it as a `VMDK` boots normally, so the steps below use that path. This is tracked upstream in [siderolabs/talos#12557](https://github.com/siderolabs/talos/issues/12557) (OCI is a tier-3 platform without automated testing, so the regression went unnoticed).
+Converting the same disk to a stream-optimized `VMDK` and importing it as a `VMDK` boots normally, so the steps below use that path. This is reported upstream in [siderolabs/talos#12557](https://github.com/siderolabs/talos/issues/12557); that issue was closed by a partial fix, but the boot failure still reproduces on current releases. OCI is a tier-3 platform for Talos with no automated testing, so the regression is not caught by CI.
 </Note>
 
 Prepare an image for upload:
@@ -54,7 +54,7 @@ Prepare an image for upload:
      --operating-system-version <talos-version>
    ```
 
-   The `PARAVIRTUALIZED` launch mode boots the imported image with `BIOS` firmware, which is the working configuration on OCI (importing with `UEFI_64` firmware drops the instance to the UEFI shell).
+   The `VMDK` image is imported with `BIOS` firmware by default, which is the working configuration on OCI — do not switch it to `UEFI_64`, which drops the instance to the UEFI shell.
 
 > Note: file names depends on configuration of deployment such as architecture, adjust accordingly.
 
