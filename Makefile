@@ -12,9 +12,8 @@ TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.14.0-alpha.2
 OMNI_CLI_GEN_IMAGE := ghcr.io/siderolabs/omni-cli-gen:latest
 OMNI_CONFIG_GEN_IMAGE := ghcr.io/siderolabs/omni-config-gen:latest
 MDX_NORMALIZE_IMAGE := ghcr.io/siderolabs/mdx-normalize:latest
+STYLE_CHECK_IMAGE := ghcr.io/siderolabs/style-guide-checker:latest
 TALOS_VERSION := v1.14
-VALE_IMAGE := jdkato/vale:latest
-VALE_CONFIG ?= .vale.ini
 # Linter images are pinned to exact versions so `make code-review` (and CI) is
 # reproducible: a new linter release can't turn the gate red on unchanged code.
 # Bump these deliberately. Each is overridable from the environment (?=).
@@ -370,31 +369,6 @@ generate-omni-reference: generate-omni-cli-reference generate-omni-config-refere
 .PHONY: generate-omni-reference-local
 generate-omni-reference-local: generate-omni-cli-reference-local generate-omni-config-reference-local generate-omni-image-factory-reference-local ## Regenerate all Omni reference pages using local tools
 
-.PHONY: vale
-vale: ## Run Vale on a file or directory: make vale DOC=public/path/to/file.mdx
-	@if [ -z "$(DOC)" ]; then \
-		echo "Usage: make vale DOC=public/path/or/file.mdx"; \
-		exit 1; \
-	fi
-	@if [ ! -f "$(VALE_CONFIG)" ]; then \
-		echo "$(VALE_CONFIG) not found at repo root."; \
-		exit 1; \
-	fi
-	@echo "Running Vale on $(DOC)"
-	docker run --rm -v $(PWD):/work -w /work $(VALE_IMAGE) \
-		--config="$(VALE_CONFIG)" $(VALE_ARGS) "$(DOC)"
-
-.PHONY: vale-changed
-vale-changed: ## Run Vale on changed file vs HEAD
-	@files="$$(git diff --name-only --diff-filter=AM HEAD | grep -E '\.mdx?$$|\.md$$' || true)"; \
-	if [ -z "$$files" ]; then \
-		echo "No changed Markdown/MDX files."; \
-		exit 0; \
-	fi; \
-	echo "Linting changed files:" $$files; \
-	docker run --rm -v $(PWD):/work -w /work $(VALE_IMAGE) \
-		--config="$(VALE_CONFIG)" $(VALE_ARGS) $$files
-
 .PHONY: changelog
 changelog: ## Generate the changelog from GitHub releases
 	docker pull $(CHANGELOG_GEN_IMAGE)
@@ -461,3 +435,64 @@ upgrade-talos-version-local: ## Same as upgrade-talos-version but using the loca
 .PHONY: build-version-upgrade-container
 build-version-upgrade-container: ## Build the version-upgrade-gen container locally
 	docker build -t $(VERSION_UPGRADE_IMAGE) ./version-upgrade-gen
+
+# ---- Style guide checker ---------------------------------------------------
+
+# Extra flags passed to the checker, e.g. STYLE_CHECK_ARGS="-strict" or "-format github".
+STYLE_CHECK_ARGS ?=
+
+.PHONY: style-check
+style-check: ## Check docs against the style guide (container). Scope with DOC=public/path
+	@$(call pull_if_missing,$(STYLE_CHECK_IMAGE))
+	docker run --rm -v $(PWD):/workspace -w /workspace $(STYLE_CHECK_IMAGE) $(STYLE_CHECK_ARGS) $(if $(DOC),$(DOC),public)
+
+.PHONY: style-check-local
+style-check-local: ## Check docs against the style guide using local Go build. Scope with DOC=public/path
+	@cd style-guide-checker && go run . $(STYLE_CHECK_ARGS) ../$(if $(DOC),$(DOC),public)
+
+# Git ref the "changed" target diffs against. Locally, HEAD catches your
+# working-tree edits; in CI set this to the PR base, e.g. STYLE_CHECK_BASE=origin/main.
+STYLE_CHECK_BASE ?= HEAD
+
+.PHONY: style-check-changed
+style-check-changed: ## Check changed .mdx files (container). Base: STYLE_CHECK_BASE (default HEAD)
+	@$(call pull_if_missing,$(STYLE_CHECK_IMAGE))
+	@files="$$( { git diff --name-only --diff-filter=AM $(STYLE_CHECK_BASE); git ls-files --others --exclude-standard; } | grep -E '\.mdx$$' | sort -u || true)"; \
+	if [ -z "$$files" ]; then \
+		echo "No changed MDX files."; \
+		exit 0; \
+	fi; \
+	echo "Checking changed files:" $$files; \
+	docker run --rm -v $(PWD):/workspace -w /workspace $(STYLE_CHECK_IMAGE) $(STYLE_CHECK_ARGS) $$files
+
+.PHONY: style-check-changed-local
+style-check-changed-local: ## Check changed .mdx files using local Go build. Base: STYLE_CHECK_BASE (default HEAD)
+	@files="$$( { git diff --name-only --diff-filter=AM $(STYLE_CHECK_BASE); git ls-files --others --exclude-standard; } | grep -E '\.mdx$$' | sort -u || true)"; \
+	if [ -z "$$files" ]; then \
+		echo "No changed MDX files."; \
+		exit 0; \
+	fi; \
+	echo "Checking changed files:" $$files; \
+	cd style-guide-checker && go run . $(STYLE_CHECK_ARGS) $$(for f in $$files; do echo "../$$f"; done)
+
+.PHONY: style-check-changed-auto
+style-check-changed-auto: ## Check changed .mdx files, preferring local Go and falling back to the container.
+	@files="$$( { git diff --name-only --diff-filter=AM $(STYLE_CHECK_BASE); git ls-files --others --exclude-standard; } | grep -E '\.mdx$$' | sort -u || true)"; \
+	if [ -z "$$files" ]; then \
+		echo "No changed MDX files."; \
+		exit 0; \
+	fi; \
+	echo "Checking changed files:" $$files; \
+	if command -v go >/dev/null 2>&1; then \
+		cd style-guide-checker && go run . $(STYLE_CHECK_ARGS) $$(for f in $$files; do echo "../$$f"; done); \
+	elif command -v docker >/dev/null 2>&1; then \
+		echo "(go not found — using the container)"; \
+		docker image inspect $(STYLE_CHECK_IMAGE) >/dev/null 2>&1 || docker build -q -t $(STYLE_CHECK_IMAGE) ./style-guide-checker >/dev/null; \
+		docker run --rm -v $(PWD):/workspace -w /workspace $(STYLE_CHECK_IMAGE) $(STYLE_CHECK_ARGS) $$files; \
+	else \
+		echo "Skipping style check: neither go nor docker is available."; \
+	fi
+
+.PHONY: build-style-check-container
+build-style-check-container: ## Build the style-guide-checker container locally
+	docker build -t $(STYLE_CHECK_IMAGE) ./style-guide-checker

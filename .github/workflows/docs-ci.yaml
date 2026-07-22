@@ -18,6 +18,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Full history so the style checker can diff against the PR base branch.
+          fetch-depth: 0
 
       - name: Install Go
         uses: actions/setup-go@v5
@@ -30,10 +33,16 @@ jobs:
       - name: Validate nav configs match content directories
         run: make validate-docs-nav
 
-      - name: Run Vale on changed files
-        run: make vale-changed
+      - name: Build style checker image
+        run: make build-style-check-container
+
+      - name: Check documentation style on changed files
+        run: make style-check-changed STYLE_CHECK_BASE=origin/${{ github.base_ref }} STYLE_CHECK_ARGS="-format github"
+        # Non-blocking for now (large legacy backlog): findings show as PR
+        # annotations but don't fail the build. Remove this line to enforce.
         continue-on-error: true
-        
+
+
       - name: Generate docs.json (must be committed)
         run: |
           make docs.json

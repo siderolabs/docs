@@ -87,7 +87,7 @@ To update an existing file:
 4. Verify that your new document follows the SideroLabs documentation style guide by running:
 
     ```bash
-    make vale DOC=<link-to-the-doc-addition>
+    make style-check DOC=<link-to-the-doc-addition>
     ```
 
 ### Add a New Page
@@ -128,7 +128,7 @@ To add a new page to the docs:
 6. Verify that your new document follows the [SideroLabs documentation style guide](./style-guide.md) by running:
 
     ```bash
-    make vale DOC=<link-to-the-doc-addition>
+    make style-check DOC=<link-to-the-doc-addition>
     ```
 
 ### Update a generated page

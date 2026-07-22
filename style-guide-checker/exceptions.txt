@@ -1,0 +1,93 @@
+# Words allowed to keep their capitalization inside a heading or title.
+#
+# You only need to list plain Capitalized words (first letter upper, rest lower)
+# that are proper nouns, product names, or CLI tools. The checker already allows,
+# without listing them here:
+#   - ALL-CAPS acronyms (SAML, YAML, JSON, CIDR, GPU, DNS, ...)
+#   - CamelCase / mixed-case names (KubeSpan, SideroLabs, PostgreSQL, ...)
+#
+# One word per line. Case-insensitive. Blank lines and #-comments are ignored.
+# Add a word here whenever the checker wrongly flags a real proper noun.
+
+# --- Sidero products & components ---
+Sidero
+Talos
+Omni
+Siderolink
+Arges
+Theila
+
+# --- CLI tools & config names (lowercase, but proper nouns) ---
+talosctl
+omnictl
+kubectl
+kubeadm
+talosconfig
+omniconfig
+kubeconfig
+omniconfig
+
+# --- Operating systems & platforms ---
+Linux
+Windows
+Azure
+Docker
+Kubernetes
+Cosmos
+
+# --- Cloud & infra providers ---
+Equinix
+Exoscale
+Hetzner
+Linode
+Scaleway
+Vultr
+Proxmox
+Akamai
+Oracle
+Upcloud
+Nocloud
+
+# --- Ecosystem tools & projects ---
+Cilium
+Flannel
+Prometheus
+Grafana
+Keycloak
+Okta
+Entra
+Kustomize
+Libvirt
+Nginx
+Helm
+Rook
+Ceph
+Longhorn
+Mayastor
+Piraeus
+Synology
+Minio
+Tailscale
+Wireguard
+Terraform
+Packer
+Bootstrap
+Calico
+Tigera
+Whisker
+
+# --- Hardware / boards ---
+Raspberry
+Pi
+Jetson
+Nano
+Radxa
+Libretech
+
+# --- Sidero tools ---
+Imager
+
+# --- Marketplace / misc proper nouns ---
+Marketplace
+Studio
+Visual
