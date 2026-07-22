@@ -34,7 +34,7 @@ How it works:
 
 1. `talosctl docs` runs from the official `ghcr.io/siderolabs/talosctl` image
    and writes Markdown into a temporary `_out/docs` directory.
-2. The [`docs-convert`](../docs-convert/README.md) tool converts that Markdown
+2. The [`docs-convert`](../tools/docs-convert/README.md) tool converts that Markdown
    into Mintlify-flavored MDX in the output directory.
 
 Targets:
@@ -59,7 +59,7 @@ make upgrade-talos-version TAG=v1.14.0           # stable
 make upgrade-talos-version-local TAG=v1.14.0     # same, using the local Go build
 ```
 
-See [`version-upgrade-gen/README.md`](../version-upgrade-gen/README.md) for the full details.
+See [`version-upgrade-gen/README.md`](../tools/version-upgrade-gen/README.md) for the full details.
 
 ## Omni reference
 
@@ -104,7 +104,7 @@ make build-mdx-normalize-container
 
 ### Normalization
 
-Raw generator output contains constructs that Mintlify (which parses `.mdx` as MDX/JSX) does not render correctly. The CLI and Image Factory pages are cleaned up by [`mdx-normalize`](../mdx-normalize/README.md), which:
+Raw generator output contains constructs that Mintlify (which parses `.mdx` as MDX/JSX) does not render correctly. The CLI and Image Factory pages are cleaned up by [`mdx-normalize`](../tools/mdx-normalize/README.md), which:
 
 - converts tab-indented code blocks into fenced code blocks,
 - keeps tab-indented "Synopsis" prose as normal paragraphs,
@@ -130,10 +130,10 @@ Each generator lives in its own directory with a `Dockerfile`, and most also hav
 
 | Directory | Role | Image ownership |
 | --- | --- | --- |
-| [`docs-convert/`](../docs-convert/README.md) | Talos Markdown → MDX | this repo |
-| [`omni-cli-gen/`](../omni-cli-gen/README.md) | packages a pinned `omnictl` | this repo (docs helper) |
-| [`omni-config-gen/`](../omni-config-gen/README.md) | Omni config reference from the JSON schema | this repo |
-| [`mdx-normalize/`](../mdx-normalize/README.md) | normalizes generated MDX for Mintlify | this repo |
+| [`docs-convert/`](../tools/docs-convert/README.md) | Talos Markdown → MDX | this repo |
+| [`omni-cli-gen/`](../tools/omni-cli-gen/README.md) | packages a pinned `omnictl` | this repo (docs helper) |
+| [`omni-config-gen/`](../tools/omni-config-gen/README.md) | Omni config reference from the JSON schema | this repo |
+| [`mdx-normalize/`](../tools/mdx-normalize/README.md) | normalizes generated MDX for Mintlify | this repo |
 | `changelog-gen/` | changelog from GitHub releases | this repo |
 
 `talosctl` is consumed from Siderolabs' **official** image; the rest are docs-repo tooling.

@@ -54,10 +54,13 @@ help: ## Show this help message
 
 .PHONY: build-mint
 build-mint: ## Build the Mintlify documentation container locally
-	docker build -t $(MINT_IMAGE) ./mintlify
+	docker build -t $(MINT_IMAGE) ./tools/mintlify
 
 .PHONY: docs-preview preview
-docs-preview: ## Build and run the documentation preview server
+docs-preview: ## Build and run the documentation preview server (style-checks changed docs first)
+	@echo "==> Style-checking changed/new docs before preview..."
+	-@$(MAKE) --no-print-directory style-check-changed-auto
+	@echo ""
 	docker run --rm -it \
 		--name $(CONTAINER_NAME) \
 		-p $(PORT):$(PORT) \
@@ -88,20 +91,20 @@ docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multipl
 		changelog.yaml \
 		> public/docs.json
 
-docs.json-local: common.yaml omni.yaml docs-gen/main.go ## Generate docs.json using local Go build
-	cd docs-gen && go run . \
-		../common.yaml \
-		../talos-v1.13.yaml \
-		../talos-v1.12.yaml \
-		../talos-v1.11.yaml \
-		../talos-v1.10.yaml \
-		../talos-v1.9.yaml \
-		../talos-v1.8.yaml \
-		../talos-v1.7.yaml \
-		../omni.yaml \
-		../kubernetes-guides.yaml \
-		../changelog.yaml \
-		> ../public/docs.json
+docs.json-local: common.yaml omni.yaml tools/docs-gen/main.go ## Generate docs.json using local Go build
+	cd tools/docs-gen && go run . \
+		../../common.yaml \
+		../../talos-v1.13.yaml \
+		../../talos-v1.12.yaml \
+		../../talos-v1.11.yaml \
+		../../talos-v1.10.yaml \
+		../../talos-v1.9.yaml \
+		../../talos-v1.8.yaml \
+		../../talos-v1.7.yaml \
+		../../omni.yaml \
+		../../kubernetes-guides.yaml \
+		../../changelog.yaml \
+		> ../../public/docs.json
 
 .PHONY: check-missing
 check-missing: ## Check for MDX files not included in config files
@@ -120,43 +123,43 @@ check-missing: ## Check for MDX files not included in config files
 
 .PHONY: check-missing-local
 check-missing-local: ## Check for missing files using local Go build
-	cd docs-gen && go run . --detect-missing \
-		../common.yaml \
-		../talos-v1.13.yaml \
-		../talos-v1.12.yaml \
-		../talos-v1.11.yaml \
-		../talos-v1.10.yaml \
-		../talos-v1.9.yaml \
-		../talos-v1.8.yaml \
-		../talos-v1.7.yaml \
-		../omni.yaml \
-		../kubernetes-guides.yaml \
-		../changelog.yaml
+	cd tools/docs-gen && go run . --detect-missing \
+		../../common.yaml \
+		../../talos-v1.13.yaml \
+		../../talos-v1.12.yaml \
+		../../talos-v1.11.yaml \
+		../../talos-v1.10.yaml \
+		../../talos-v1.9.yaml \
+		../../talos-v1.8.yaml \
+		../../talos-v1.7.yaml \
+		../../omni.yaml \
+		../../kubernetes-guides.yaml \
+		../../changelog.yaml
 
 .PHONY: generate-deps
 generate-deps: ## Install Go dependencies for the generator
-	cd docs-gen && go mod tidy
+	cd tools/docs-gen && go mod tidy
 
 .PHONY: build-docs-gen-container
 build-docs-gen-container: ## Build the docs-gen container locally
-	docker build -t $(DOCS_GEN_IMAGE) ./docs-gen
+	docker build -t $(DOCS_GEN_IMAGE) ./tools/docs-gen
 
 .PHONY: build-docs-convert-container
 build-docs-convert-container: ## Build the docs-convert container locally
-	docker build -t $(DOCS_CONVERT_IMAGE) ./docs-convert
+	docker build -t $(DOCS_CONVERT_IMAGE) ./tools/docs-convert
 
 .PHONY: test-docs-gen
 test-docs-gen: ## Run tests for the docs-gen utility
-	cd docs-gen && go test -v
+	cd tools/docs-gen && go test -v
 
 .PHONY: test-docs-gen-coverage
 test-docs-gen-coverage: ## Run tests with coverage report
-	cd docs-gen && go test -v -coverprofile=coverage.out \
+	cd tools/docs-gen && go test -v -coverprofile=coverage.out \
 		&& go tool cover -html=coverage.out -o coverage.html
 
 .PHONY: test-docs-gen-race
 test-docs-gen-race: ## Run tests with race detection
-	cd docs-gen && go test -v -race
+	cd tools/docs-gen && go test -v -race
 
 .PHONY: test-all
 test-all: test-docs-gen ## Run all tests
@@ -229,7 +232,7 @@ generate-talos-reference-local: ## Generate Talos reference docs using local Go 
 	mkdir -p _out/docs
 	docker run --rm --platform=$(TALOSCTL_PLATFORM) -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
 	@echo "Converting generated docs to MDX..."
-	cd docs-convert && go run main.go ../_out/docs ../public/talos/$(TALOS_VERSION)/reference/configuration/
+	cd tools/docs-convert && go run main.go ../../_out/docs ../../public/talos/$(TALOS_VERSION)/reference/configuration/
 	@echo "Reference documentation generated in public/talos/$(TALOS_VERSION)/reference/configuration/"
 
 OMNI_CONFIG_SCHEMA_URL ?= https://raw.githubusercontent.com/siderolabs/omni/refs/heads/main/internal/pkg/config/schema.json
@@ -253,15 +256,15 @@ pull_if_missing = docker image inspect $(1) >/dev/null 2>&1 || docker pull $(1)
 
 .PHONY: build-omni-cli-gen-container
 build-omni-cli-gen-container: ## Build the omni-cli-gen container locally
-	docker build -t $(OMNI_CLI_GEN_IMAGE) ./omni-cli-gen
+	docker build -t $(OMNI_CLI_GEN_IMAGE) ./tools/omni-cli-gen
 
 .PHONY: build-omni-config-gen-container
 build-omni-config-gen-container: ## Build the omni-config-gen container locally
-	docker build -t $(OMNI_CONFIG_GEN_IMAGE) ./omni-config-gen
+	docker build -t $(OMNI_CONFIG_GEN_IMAGE) ./tools/omni-config-gen
 
 .PHONY: build-mdx-normalize-container
 build-mdx-normalize-container: ## Build the mdx-normalize container locally
-	docker build -t $(MDX_NORMALIZE_IMAGE) ./mdx-normalize
+	docker build -t $(MDX_NORMALIZE_IMAGE) ./tools/mdx-normalize
 
 # ---- Normalization ---------------------------------------------------------
 
@@ -273,8 +276,8 @@ normalize-doc: ## Normalize the generated Omni reference .mdx files for Mintlify
 
 .PHONY: normalize-doc-local
 normalize-doc-local: ## Normalize the generated Omni reference .mdx files using local Go build
-	@if [ -f $(OMNI_CLI_REF_PATH) ]; then cd mdx-normalize && go run . ../$(OMNI_CLI_REF_PATH); fi
-	@if [ -f $(IMAGE_FACTORY_REF_PATH) ]; then cd mdx-normalize && go run . --strip-hr ../$(IMAGE_FACTORY_REF_PATH); fi
+	@if [ -f $(OMNI_CLI_REF_PATH) ]; then cd tools/mdx-normalize && go run . ../../$(OMNI_CLI_REF_PATH); fi
+	@if [ -f $(IMAGE_FACTORY_REF_PATH) ]; then cd tools/mdx-normalize && go run . --strip-hr ../../$(IMAGE_FACTORY_REF_PATH); fi
 
 # ---- omnictl CLI reference -------------------------------------------------
 
@@ -328,7 +331,7 @@ generate-omni-config-reference: ## Generate Omni configuration reference docs fr
 .PHONY: generate-omni-config-reference-local
 generate-omni-config-reference-local: ## Generate Omni configuration reference docs using local Go build
 	@echo "Generating Omni configuration reference..."
-	cd omni-config-gen && go run . $(OMNI_CONFIG_SCHEMA_URL) > ../$(OMNI_CONFIG_REF_PATH).tmp && mv ../$(OMNI_CONFIG_REF_PATH).tmp ../$(OMNI_CONFIG_REF_PATH) || { rm -f ../$(OMNI_CONFIG_REF_PATH).tmp; exit 1; }
+	cd tools/omni-config-gen && go run . $(OMNI_CONFIG_SCHEMA_URL) > ../../$(OMNI_CONFIG_REF_PATH).tmp && mv ../../$(OMNI_CONFIG_REF_PATH).tmp ../../$(OMNI_CONFIG_REF_PATH) || { rm -f ../../$(OMNI_CONFIG_REF_PATH).tmp; exit 1; }
 	@echo "Reference documentation generated at $(OMNI_CONFIG_REF_PATH)"
 
 # ---- Image Factory configuration reference ---------------------------------
@@ -378,11 +381,11 @@ changelog: ## Generate the changelog from GitHub releases
 
 .PHONY: changelog-local
 changelog-local: ## Generate the changelog using local Go build
-	cd changelog-gen && go run . --output ../public/changelog.mdx
+	cd tools/changelog-gen && go run . --output ../../public/changelog.mdx
 
 .PHONY: validate-docs-nav
 validate-docs-nav: ## Validate all talos yaml nav configs match their content directories
-	cd docs-validate && go run . --workspace ..
+	cd tools/docs-validate && go run . --workspace ../..
 
 # validate-tag distinguishes the two ways a TAG can be wrong, with a tailored
 # message for each, and fails BEFORE the generator writes anything:
@@ -422,7 +425,7 @@ upgrade-talos-version: ## Upgrade Talos docs to a release tag: make upgrade-talo
 upgrade-talos-version-local: ## Same as upgrade-talos-version but using the local Go build
 	@test -n "$(TAG)" || { echo "Error: TAG is required, e.g. make upgrade-talos-version-local TAG=v1.14.0-beta.0"; exit 1; }
 	$(validate-tag)
-	cd version-upgrade-gen && go run . --workspace .. --tag $(TAG)
+	cd tools/version-upgrade-gen && go run . --workspace ../.. --tag $(TAG)
 	$(eval NEW_VERSION := $(shell cat .upgrade-version-tmp 2>/dev/null))
 	@rm -f .upgrade-version-tmp
 	$(MAKE) generate-talos-reference-local
@@ -434,7 +437,7 @@ upgrade-talos-version-local: ## Same as upgrade-talos-version but using the loca
 
 .PHONY: build-version-upgrade-container
 build-version-upgrade-container: ## Build the version-upgrade-gen container locally
-	docker build -t $(VERSION_UPGRADE_IMAGE) ./version-upgrade-gen
+	docker build -t $(VERSION_UPGRADE_IMAGE) ./tools/version-upgrade-gen
 
 # ---- Style guide checker ---------------------------------------------------
 
@@ -448,7 +451,7 @@ style-check: ## Check docs against the style guide (container). Scope with DOC=p
 
 .PHONY: style-check-local
 style-check-local: ## Check docs against the style guide using local Go build. Scope with DOC=public/path
-	@cd style-guide-checker && go run . $(STYLE_CHECK_ARGS) ../$(if $(DOC),$(DOC),public)
+	@cd tools/style-guide-checker && go run . $(STYLE_CHECK_ARGS) ../../$(if $(DOC),$(DOC),public)
 
 # Git ref the "changed" target diffs against. Locally, HEAD catches your
 # working-tree edits; in CI set this to the PR base, e.g. STYLE_CHECK_BASE=origin/main.
@@ -473,7 +476,7 @@ style-check-changed-local: ## Check changed .mdx files using local Go build. Bas
 		exit 0; \
 	fi; \
 	echo "Checking changed files:" $$files; \
-	cd style-guide-checker && go run . $(STYLE_CHECK_ARGS) $$(for f in $$files; do echo "../$$f"; done)
+	cd tools/style-guide-checker && go run . $(STYLE_CHECK_ARGS) $$(for f in $$files; do echo "../../$$f"; done)
 
 .PHONY: style-check-changed-auto
 style-check-changed-auto: ## Check changed .mdx files, preferring local Go and falling back to the container.
@@ -484,10 +487,10 @@ style-check-changed-auto: ## Check changed .mdx files, preferring local Go and f
 	fi; \
 	echo "Checking changed files:" $$files; \
 	if command -v go >/dev/null 2>&1; then \
-		cd style-guide-checker && go run . $(STYLE_CHECK_ARGS) $$(for f in $$files; do echo "../$$f"; done); \
+		cd tools/style-guide-checker && go run . $(STYLE_CHECK_ARGS) $$(for f in $$files; do echo "../../$$f"; done); \
 	elif command -v docker >/dev/null 2>&1; then \
 		echo "(go not found — using the container)"; \
-		docker image inspect $(STYLE_CHECK_IMAGE) >/dev/null 2>&1 || docker build -q -t $(STYLE_CHECK_IMAGE) ./style-guide-checker >/dev/null; \
+		docker image inspect $(STYLE_CHECK_IMAGE) >/dev/null 2>&1 || docker build -q -t $(STYLE_CHECK_IMAGE) ./tools/style-guide-checker >/dev/null; \
 		docker run --rm -v $(PWD):/workspace -w /workspace $(STYLE_CHECK_IMAGE) $(STYLE_CHECK_ARGS) $$files; \
 	else \
 		echo "Skipping style check: neither go nor docker is available."; \
@@ -495,4 +498,4 @@ style-check-changed-auto: ## Check changed .mdx files, preferring local Go and f
 
 .PHONY: build-style-check-container
 build-style-check-container: ## Build the style-guide-checker container locally
-	docker build -t $(STYLE_CHECK_IMAGE) ./style-guide-checker
+	docker build -t $(STYLE_CHECK_IMAGE) ./tools/style-guide-checker

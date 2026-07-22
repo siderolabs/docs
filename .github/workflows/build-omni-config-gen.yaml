@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "omni-config-gen/**"
+      - "tools/omni-config-gen/**"
       - ".github/workflows/build-omni-config-gen.yaml"
 
 env:
@@ -46,7 +46,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./omni-config-gen
+          context: ./tools/omni-config-gen
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

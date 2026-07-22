@@ -20,7 +20,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version-file: omni-config-gen/go.mod
+          go-version-file: tools/omni-config-gen/go.mod
           cache: false
       - name: Regenerate Omni configuration reference
         run: |
