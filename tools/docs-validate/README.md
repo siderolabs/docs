@@ -15,7 +15,7 @@ It reports a per-version summary and exits with a non-zero status if any issues 
 
 ```bash
 # Run across all versions
-make validate-talos-docs
+make validate-docs-nav
 ```
 
 Example output:

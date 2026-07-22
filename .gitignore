@@ -1,5 +1,5 @@
 # Generated documentation files
-docs-convert/docs/
+tools/docs-convert/docs/
 _out/
 
 # Local Netlify folder
@@ -9,10 +9,10 @@ _out/
 .upgrade-version-tmp
 
 # Go build artifacts (compiled binary in each tool dir, named after the dir)
-version-upgrade-gen/version-upgrade-gen
-changelog-gen/changelog-gen
-docs-gen/docs-gen
-docs-convert/docs-convert
-docs-validate/docs-validate
-mdx-normalize/mdx-normalize
-omni-config-gen/omni-config-gen
+tools/version-upgrade-gen/version-upgrade-gen
+tools/changelog-gen/changelog-gen
+tools/docs-gen/docs-gen
+tools/docs-convert/docs-convert
+tools/docs-validate/docs-validate
+tools/mdx-normalize/mdx-normalize
+tools/omni-config-gen/omni-config-gen
