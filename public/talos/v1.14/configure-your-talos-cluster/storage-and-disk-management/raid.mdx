@@ -1,0 +1,184 @@
+---
+title: "RAID"
+description: "Provision and inspect Linux MD RAID arrays."
+weight: 40
+canonical: https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/storage-and-disk-management/raid
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos Linux can declaratively provision Linux MD software RAID arrays with `RAIDArrayConfig`.
+In Talos v1.14, `RAIDArrayConfig` supports RAID1 arrays.
+The resulting array is exposed through a stable by-id path and can be used as an install target, as a block device for user volumes, or by another storage stack.
+
+Talos reconciles RAID from machine configuration documents:
+
+- `RAIDArrayConfig` selects member disks or partitions and creates or extends an MD array.
+- `MDArraySpec` records the desired state derived from configuration.
+- `MDArrayStatus` reports the observed array device, members, sync state, and errors.
+
+## Provision a RAID1 array
+
+The following example creates a RAID1 array named `data` from NVMe disks larger than 100 GiB:
+
+```yaml
+apiVersion: v1alpha1
+kind: RAIDArrayConfig
+name: data
+level: raid1
+metadata: "1.2"
+provisioning:
+  volumeSelector:
+    match: disk.transport == "nvme" && disk.size > 100u * GiB
+```
+
+Apply the configuration patch to the node:
+
+```bash
+talosctl --nodes <NODE> patch mc --patch @raid.patch.yaml
+```
+
+The volume selector is a CEL expression evaluated against each discovered volume as `volume`.
+For whole disks, the expression can also use the `disk` variable.
+The system disk and its partitions are never eligible as members of a data array.
+
+Use selectors that match only the intended member devices.
+For production configurations, prefer stable disk identifiers such as serial number, WWID, or symlink over `/dev/sd*` names:
+
+```bash
+talosctl --nodes <NODE> get disks -o yaml
+talosctl --nodes <NODE> get discoveredvolumes -o yaml
+```
+
+Talos exposes the array at a stable MD by-id path.
+For the example above, the stable device path is `/dev/disk/by-id/md-name-talos:data`.
+
+## Configure RAIDArrayConfig
+
+A `RAIDArrayConfig` document requires:
+
+- `name`: the array name, 1-32 characters, using ASCII letters, digits, hyphens, and underscores.
+- `level`: the RAID level. Talos v1.14 supports `raid1`.
+- `provisioning.volumeSelector.match`: a CEL expression selecting member disks or partitions.
+
+Optional fields:
+
+- `metadata`: MD metadata format, either `"1.0"` or `"1.2"`.
+  The default is `"1.0"`, which stores metadata at the end of each member and is suitable for bootable arrays.
+  Use `"1.2"` for data arrays that do not need to be bootable.
+
+Provisioning is additive.
+Talos creates the array when enough members match the selector and adds matching members to an existing array, but it does not remove members or destroy arrays just because the configuration changes.
+Remove arrays explicitly with `talosctl wipe md`.
+
+In Talos v1.14 there is no way to shrink an array or remove a failed member device through machine configuration or `talosctl`.
+Narrowing the selector or dropping a member from it does not detach that member, and a failed disk cannot be replaced in place.
+The only supported destructive operation is `talosctl wipe md`, which stops the whole array and clears every member.
+To recover from a failed member, wipe the array and provision it again or use alternative means (e.g. `talosctl debug`).
+
+## Boot from a RAID1 array
+
+Talos can install and boot from an MD RAID1 array.
+This is useful when the Talos system disk itself should be mirrored.
+
+A bootable RAID setup needs:
+
+- A `RAIDArrayConfig` using `level: raid1` and `metadata: "1.0"`.
+- An `UnattendedInstallConfig` that selects the MD array as the install disk.
+- The `raid1` kernel module available during boot.
+
+Example patch:
+
+```yaml
+apiVersion: v1alpha1
+kind: RAIDArrayConfig
+name: boot
+level: raid1
+metadata: "1.0"
+provisioning:
+  volumeSelector:
+    match: disk.transport == "nvme" && disk.size >= 100u * GiB
+---
+apiVersion: v1alpha1
+kind: UnattendedInstallConfig
+provisioning:
+  diskSelector:
+    match: '"/dev/disk/by-id/md-name-talos:boot" in disk.symlinks'
+---
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: raid1
+```
+
+Boot the node from an ephemeral Talos asset that contains this configuration.
+Talos creates the RAID1 array, waits for the MD device to appear, and the unattended installer writes Talos to the array selected by `/dev/disk/by-id/md-name-talos:boot`.
+For details on the installer document, see [Unattended Install](../lifecycle-management/unattended-install).
+
+For boot arrays, use metadata `"1.0"`.
+Metadata `"1.2"` places the MD superblock near the beginning of the device and is intended for non-boot data arrays.
+
+## Use RAID with user volumes
+
+A RAID array can back a Talos user volume by selecting the MD device as the volume disk.
+For example, after creating an array named `data`, create a user volume from the array device:
+
+```yaml
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: local-storage
+provisioning:
+  diskSelector:
+    match: '"/dev/disk/by-id/md-name-talos:data" in disk.symlinks'
+  minSize: 100GiB
+  maxSize: 100GiB
+```
+
+Configure the consumer of the user volume separately.
+For details, see [User Volumes](./disk-management/user).
+
+## Inspect RAID state
+
+Inspect the desired RAID specs and observed array status:
+
+```bash
+talosctl --nodes <NODE> get mdarrayspecs
+talosctl --nodes <NODE> get mdarraystatuses
+```
+
+Example status output:
+
+```bash
+$ talosctl --nodes <NODE> get mdarraystatuses
+NODE         NAMESPACE   TYPE            ID     VERSION   LEVEL   STATUS       SYNC      DEVICE
+172.20.0.5   storage     MDArrayStatus   data   1         raid1   rebuilding   resync    /dev/disk/by-id/md-name-talos:data
+```
+
+Request YAML output to see member devices, the MD UUID, metadata version, array state, sync action, and any provisioning error:
+
+```bash
+talosctl --nodes <NODE> get mdarraystatuses data -o yaml
+```
+
+Status values include:
+
+- `unknown`: Talos has not yet determined the array state.
+- `waiting`: Talos is waiting for enough matching members.
+- `rebuilding`: the array exists and is syncing or rebuilding.
+- `ready`: the array exists and is in the expected state.
+- `error`: provisioning failed; inspect the `error` field.
+
+## Remove a RAID array
+
+First remove the `RAIDArrayConfig` document from the machine configuration.
+If the document remains in configuration, Talos will reconcile the array again.
+
+Then wipe the array with `talosctl wipe md`:
+
+```bash
+talosctl --nodes <NODE> wipe md /dev/disk/by-id/md-name-talos:data
+```
+
+This command stops the MD array and clears the superblock on each member device.
+It is destructive, and the array must not be mounted or claimed by another device.
