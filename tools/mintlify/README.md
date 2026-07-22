@@ -8,4 +8,4 @@ If Mintlify build and maintain their own published container we can drop this pa
 
 ## Updating mintlify container
 
-In order to update the mintlify container you have to make changes to a file in the mintlify/ folder.
+In order to update the mintlify container you have to make changes to a file in the tools/mintlify/ folder.

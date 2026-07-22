@@ -4,6 +4,56 @@ description: "Product updates and announcements"
 rss: true
 ---
 
+<Update label="v1.13.9" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.13.9)
+
+  ### Component Updates
+
+  Linux: 6.18.44
+  containerd: 2.2.7
+  Kubernetes: 1.36.3
+
+  Talos is built with Go 1.26.6.
+</Update>
+
+<Update label="v1.5.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.5.0)
+
+  ### Artifact Signatures
+
+  Image Factory now serves detached Sigstore v0.3 bundles (.sigstore.json) alongside downloaded assets.
+
+  Each bundle cryptographically signs the exact bytes returned by the asset endpoint using either a pinned local key or GSA keyless signing.
+  Bundles are persisted in a shared asset cache partitioned by asset, signer, and evidence format, with single-flight deduplication and graceful handling of transient cache failures.
+
+  ### Auth0 Authentication (Enterprise only)
+
+  Image Factory now supports Auth0 organization-scoped access tokens as an alternative to htpasswd authentication.
+
+  Bearer tokens are validated against the tenant's JWKS and can also be supplied through Basic authentication for OCI and Talos clients.
+  An optional OAuth2 authorization code flow with PKCE provides interactive browser login with encrypted, replica-safe session cookies.
+
+  ### Download Tokens (Enterprise only)
+
+  Image Factory can now issue short-lived, identity-scoped JWTs for image downloads through `POST /download-token`.
+
+  Tokens authenticate `GET` and `HEAD` requests under `/image/` through the `token` query parameter, and their public signing key is exposed through `/.well-known/jwks.json`.
+  Callers can request a token lifetime within configurable minimum, maximum, and default bounds.
+
+  ### Source Image Proxy
+
+  Allow pulling source images through the Image Factory.
+
+  E.g. `siderolabs/imager` image can be pulled as `factory.talos.dev/siderolabs/imager`.
+
+  ### Installer Build Evidence (Enterprise only)
+
+  Installer images built from stable Talos 1.13.0 and newer now carry signed build evidence.
+
+  Each platform manifest has an SPDX 2.3 SBOM attestation, while the multi-platform index has a SLSA Provenance v1 attestation.
+  Evidence is published as Sigstore bundles through OCI referrers, with automatic fallback to the OCI referrers-tag schema for registries without native OCI 1.1 referrers support.
+</Update>
+
 <Update label="v1.10.0" tags={["Omni"]}>
   [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.10.0)
 

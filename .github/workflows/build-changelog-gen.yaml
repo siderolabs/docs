@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "changelog-gen/**"
+      - "tools/changelog-gen/**"
       - ".github/workflows/build-changelog-gen.yaml"
 
 env:
@@ -46,7 +46,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./changelog-gen
+          context: ./tools/changelog-gen
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

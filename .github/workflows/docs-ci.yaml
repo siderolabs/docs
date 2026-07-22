@@ -10,7 +10,7 @@ on:
       - "**/*.mdx"
       - "**/*.yaml"
       - "Makefile"
-      - "docs-validate/**"
+      - "tools/docs-validate/**"
 jobs:
   docs-checks:
     runs-on: ubuntu-latest
