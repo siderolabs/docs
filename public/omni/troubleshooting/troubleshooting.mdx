@@ -8,24 +8,36 @@ The sections are unordered and can be used to troubleshoot your specific situati
 
 ## Removing stuck machines
 
-Machines connected to Omni can get in states where Omni can no longer cleanly remove them. This may be because the machine is no longer available, the machine has errors, or other reasons.
+Machines connected to Omni can sometimes become stuck and cannot be removed cleanly. This may happen because the machine is no longer reachable, has entered an error state, or another cleanup operation failed.
 
-This may block the ability to delete a cluster as Omni tries to cleanly remove machines before deleting the cluster resources. Sometimes trying to force delete the machine from the Omni UI also does not remove the machine.
+Depending on how the machine was created, the removal process differs.
 
-To delete a machine from Omni via `omnictl` you will first need to identify what SideroLink it is using.
+### Machines managed directly by Omni
 
-Identify the UUID of the machine that is stuck deleting by copying it from the menu.
+For machines managed directly by Omni, first identify the SideroLink associated with the machine.
+
+Copy the machine UUID from the UI.
 
 ![Machine menu](./images/machine-menu.png)
 
-The machine UUID should also match a SideroLink UUID from
+Verify that the UUID matches a SideroLink:
 
 ```bash
 omnictl get links
 ```
 
-Once you verify one of the link UUIDs match you can delete the link (and machine) with:
+Delete the link:
 
 ```bash
 omnictl delete link $UUID
 ```
+
+Deleting the link also removes the associated machine.
+
+### Machines managed by an infrastructure provider
+
+The same `omnictl delete link` workflow applies to machines created by an infrastructure provider, such as the Bare Metal Provider, including machines left in a broken state.
+
+If the cluster still requests the machine from the infrastructure provider, the deleted link is immediately recreated and the machine reappears. Deleting the link alone is therefore not sufficient to remove the machine permanently.
+
+To permanently remove the machine, first remove it from the cluster so it is no longer requested. If the infrastructure provider is no longer needed, deleting its provider registration also removes the machines it owns.
