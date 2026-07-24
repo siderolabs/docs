@@ -274,10 +274,9 @@ This should be the name of the `.ko` file you built in the package and put in th
 
 ```yaml
 # my-module.yaml
-machine:
-  kernel:
-    modules:
-      - name: my-module
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: my-module
 ```
 
 Apply the machine config and patch to your test machine.
@@ -306,10 +305,9 @@ Make sure you still create a patch to load the kernel module and apply it to the
 
 ```yaml
 # my-module.yaml
-machine:
-  kernel:
-    modules:
-      - name: my-module
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: my-module
 ```
 
 Apply the machine config and patch to your test machine.
