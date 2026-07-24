@@ -220,7 +220,6 @@ ProvisioningSpec describes how the volume is provisioned.
 
 
 
-
 <table>
   <thead>
     <tr>
@@ -267,7 +266,6 @@ DiskSelector selects a disk for the volume.
 
 
 
-
 <table>
   <thead>
     <tr>
@@ -300,7 +298,6 @@ FilesystemSpec configures the filesystem for the volume.
 
 
 
-
 <table>
   <thead>
     <tr>
@@ -323,8 +320,44 @@ FilesystemSpec configures the filesystem for the volume.
       <td>Enables project quota support, valid only for 'xfs' filesystem.<br /><br />Note: changing this value might require a full remount of the filesystem.</td>
       <td></td>
     </tr>
+    <tr>
+      <td>`xfs`</td>
+      <td><a href="#xfs">XFSSpec</a></td>
+      <td>XFS-specific filesystem options, valid only for 'xfs' filesystem.</td>
+      <td></td>
+    </tr>
   </tbody>
 </table>
+
+
+
+### xfs
+
+XFSSpec configures XFS-specific filesystem options.
+
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`minAllocationGroupSize`</td>
+      <td>ByteSize</td>
+      <td>The minimum size of an XFS allocation group.<br /><br />On non-rotational devices `mkfs.xfs` sizes the allocation group count to the number of<br />CPUs, which on machines with many cores and a modest disk yields hundreds of tiny<br />allocation groups. Talos bounds the allocation group size from below to keep the geometry<br />sane; this option overrides that bound.<br /><br />Set to zero to use the `mkfs.xfs` defaults unchanged.<br /><br />Note: this only affects volumes at the time they are formatted.<br /><br />Size is specified in bytes, but can be expressed in human readable format, e.g. 100MB.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
 
 
 
@@ -427,7 +460,6 @@ EncryptionKey represents configuration for disk encryption key.
 
 
 
-
 <table>
   <thead>
     <tr>
@@ -486,7 +518,6 @@ EncryptionKeyStatic represents throw away key type.
 
 
 
-
 <table>
   <thead>
     <tr>
@@ -513,7 +544,6 @@ EncryptionKeyStatic represents throw away key type.
 #### nodeID
 
 EncryptionKeyNodeID represents deterministically generated key from the node UUID and PartitionLabel.
-
 
 
 
@@ -567,7 +597,6 @@ EncryptionKeyTPM represents a key that is generated and then sealed/unsealed by 
 
 
 
-
 <table>
   <thead>
     <tr>
@@ -598,7 +627,6 @@ EncryptionKeyTPM represents a key that is generated and then sealed/unsealed by 
 ##### options
 
 EncryptionKeyTPMOptions represents the options for TPM-based key protection.
-
 
 
 
@@ -635,7 +663,6 @@ EncryptionKeyTPMOptions represents the options for TPM-based key protection.
 ## mount
 
 UserMountSpec describes how the volume is mounted.
-
 
 
 

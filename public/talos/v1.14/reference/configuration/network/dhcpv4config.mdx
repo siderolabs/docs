@@ -57,6 +57,12 @@ clientIdentifier: mac # Client identifier to use when communicating with DHCP se
       <td></td>
     </tr>
     <tr>
+      <td>`ignoreRoutes`</td>
+      <td>bool</td>
+      <td>Ignore routes received from the DHCP server (the default gateway and classless static routes).<br /><br />The connected route for the leased address is still configured.</td>
+      <td></td>
+    </tr>
+    <tr>
       <td>`clientIdentifier`</td>
       <td>ClientIdentifier</td>
       <td>Client identifier to use when communicating with DHCP servers.<br /><br />Defaults to 'mac' if not set.</td>

@@ -72,18 +72,6 @@ MachineConfig represents the machine-specific config values.
 ```yaml
 machine:
     type: controlplane
-    # InstallConfig represents the installation options for preparing a node.
-    install:
-        disk: /dev/sda # The disk used for installations.
-        image: factory.talos.dev/metal-installer/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:latest # Allows for supplying the image used to perform the installation.
-        wipe: false # Indicates if the installation disk should be wiped at installation time.
-        grubUseUKICmdline: true # Indicates if legacy GRUB bootloader should use kernel cmdline from the UKI instead of building it on the host.
-
-        # # Look up disk using disk attributes like model, size, serial and others.
-        # diskSelector:
-        #     size: 4GB # Disk size.
-        #     model: WDC* # Disk model `/sys/block/<dev>/device/model`.
-        #     busPath: /pci0000:00/0000:00:17.0/ata1/host0/target0:0:0/0:0:0:0 # Disk bus path.
 ```
 
 
@@ -128,39 +116,9 @@ machine:
       <td></td>
     </tr>
     <tr>
-      <td>`kubelet`</td>
-      <td><a href="#kubelet">KubeletConfig</a></td>
-      <td>Used to provide additional options to the kubelet.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`pods`</td>
-      <td>[]Unstructured</td>
-      <td>Used to provide static pod definitions to be run by the kubelet directly bypassing the kube-apiserver.<br /><br />Static pods can be used to run components which should be started before the Kubernetes control plane is up.<br />Talos doesn't validate the pod definition.<br />Updates to this field can be applied without a reboot.<br /><br />See https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`install`</td>
-      <td><a href="#install">InstallConfig</a></td>
-      <td>Used to provide instructions for installations.<br /><br />Note that this configuration section gets silently ignored by Talos images that are considered pre-installed.<br />To make sure Talos installs according to the provided configuration, Talos should be booted with ISO or PXE-booted.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`files`</td>
-      <td><a href="#files%5B%5D">MachineFile</a></td>
-      <td>Allows the addition of user specified files.<br />The value of `op` can be `create`, `overwrite`, or `append`.<br />In the case of `create`, `path` must not exist.<br />In the case of `overwrite`, and `append`, `path` must be a valid file.<br />If an `op` value of `append` is used, the existing file will be appended.<br />Note that the file contents are not required to be base64 encoded.</td>
-      <td></td>
-    </tr>
-    <tr>
       <td>`features`</td>
       <td><a href="#features">FeaturesConfig</a></td>
       <td>Features describe individual Talos features that can be switched on or off.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`udev`</td>
-      <td><a href="#udev">UdevConfig</a></td>
-      <td>Configures the udev system.</td>
       <td></td>
     </tr>
     <tr>
@@ -170,614 +128,13 @@ machine:
       <td></td>
     </tr>
     <tr>
-      <td>`kernel`</td>
-      <td><a href="#kernel">KernelConfig</a></td>
-      <td>Configures the kernel.</td>
-      <td></td>
-    </tr>
-    <tr>
       <td>`seccompProfiles`</td>
       <td><a href="#seccompprofiles%5B%5D">MachineSeccompProfile</a></td>
       <td>Configures the seccomp profiles for the machine.</td>
       <td></td>
     </tr>
-    <tr>
-      <td>`baseRuntimeSpecOverrides`</td>
-      <td>Unstructured</td>
-      <td>Override (patch) settings in the default OCI runtime spec for CRI containers.<br /><br />It can be used to set some default container settings which are not configurable in Kubernetes,<br />for example default ulimits.<br />Note: this change applies to all newly created containers, and it requires a reboot to take effect.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`nodeLabels`</td>
-      <td>map[string]string</td>
-      <td>Configures the node labels for the machine.<br /><br />Note: In the default Kubernetes configuration, worker nodes are restricted to set<br />labels with some prefixes (see [NodeRestriction](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction) admission plugin).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`nodeAnnotations`</td>
-      <td>map[string]string</td>
-      <td>Configures the node annotations for the machine.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`nodeTaints`</td>
-      <td>map[string]string</td>
-      <td>Configures the node taints for the machine. Effect is optional.<br /><br />Note: In the default Kubernetes configuration, worker nodes are not allowed to<br />modify the taints (see [NodeRestriction](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction) admission plugin).</td>
-      <td></td>
-    </tr>
   </tbody>
 </table>
-
-
-
-### kubelet
-
-KubeletConfig represents the kubelet config values.
-
-
-
-
-```yaml
-machine:
-    kubelet:
-        image: ghcr.io/siderolabs/kubelet:v1.36.2 # The `image` field is an optional reference to an alternative kubelet image.
-        # The `extraArgs` field is used to provide additional flags to the kubelet.
-        extraArgs:
-            feature-gates: ServerSideApply=true
-
-        # # The `ClusterDNS` field is an optional reference to an alternative kubelet clusterDNS ip list.
-        # clusterDNS:
-        #     - 10.96.0.10
-        #     - 169.254.2.53
-
-        # # The `extraMounts` field is used to add additional mounts to the kubelet container.
-        # extraMounts:
-        #     - destination: /var/lib/example # Destination is the absolute path where the mount will be placed in the container.
-        #       type: bind # Type specifies the mount kind.
-        #       source: /var/lib/example # Source specifies the source path of the mount.
-        #       # Options are fstab style mount options.
-        #       options:
-        #         - bind
-        #         - rshared
-        #         - rw
-
-        # # The `extraConfig` field is used to provide kubelet configuration overrides.
-        # extraConfig:
-        #     serverTLSBootstrap: true
-
-        # # The `KubeletCredentialProviderConfig` field is used to provide kubelet credential configuration.
-        # credentialProviderConfig:
-        #     apiVersion: kubelet.config.k8s.io/v1
-        #     kind: CredentialProviderConfig
-        #     providers:
-        #         - apiVersion: credentialprovider.kubelet.k8s.io/v1
-        #           defaultCacheDuration: 12h
-        #           matchImages:
-        #             - '*.dkr.ecr.*.amazonaws.com'
-        #             - '*.dkr.ecr.*.amazonaws.com.cn'
-        #             - '*.dkr.ecr-fips.*.amazonaws.com'
-        #             - '*.dkr.ecr.us-iso-east-1.c2s.ic.gov'
-        #             - '*.dkr.ecr.us-isob-east-1.sc2s.sgov.gov'
-        #           name: ecr-credential-provider
-
-        # # The `nodeIP` field is used to configure `--node-ip` flag for the kubelet.
-        # nodeIP:
-        #     # The `validSubnets` field configures the networks to pick kubelet node IP from.
-        #     validSubnets:
-        #         - 10.0.0.0/8
-        #         - '!10.0.0.3/32'
-        #         - fdc7::/16
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`image`</td>
-      <td>string</td>
-      <td>The `image` field is an optional reference to an alternative kubelet image.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`clusterDNS`</td>
-      <td>[]string</td>
-      <td>The `ClusterDNS` field is an optional reference to an alternative kubelet clusterDNS ip list.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`extraArgs`</td>
-      <td>Args</td>
-      <td>The `extraArgs` field is used to provide additional flags to the kubelet.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`extraMounts`</td>
-      <td><a href="#extramounts%5B%5D">ExtraMount</a></td>
-      <td>The `extraMounts` field is used to add additional mounts to the kubelet container.<br />Note that either `bind` or `rbind` are required in the `options`.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`extraConfig`</td>
-      <td>Unstructured</td>
-      <td>The `extraConfig` field is used to provide kubelet configuration overrides.<br /><br />Some fields are not allowed to be overridden: authentication and authorization, cgroups<br />configuration, ports, etc.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`credentialProviderConfig`</td>
-      <td>Unstructured</td>
-      <td>The `KubeletCredentialProviderConfig` field is used to provide kubelet credential configuration.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`defaultRuntimeSeccompProfileEnabled`</td>
-      <td>bool</td>
-      <td>Enable container runtime default Seccomp profile.</td>
-      <td>`true`<br />`yes`<br />`false`<br />`no`<br /></td>
-    </tr>
-    <tr>
-      <td>`registerWithFQDN`</td>
-      <td>bool</td>
-      <td>The `registerWithFQDN` field is used to force kubelet to use the node FQDN for registration.<br />This is required in clouds like AWS.</td>
-      <td>`true`<br />`yes`<br />`false`<br />`no`<br /></td>
-    </tr>
-    <tr>
-      <td>`nodeIP`</td>
-      <td><a href="#nodeip">KubeletNodeIPConfig</a></td>
-      <td>The `nodeIP` field is used to configure `--node-ip` flag for the kubelet.<br />This is used when a node has multiple addresses to choose from.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`skipNodeRegistration`</td>
-      <td>bool</td>
-      <td>The `skipNodeRegistration` is used to run the kubelet without registering with the apiserver.<br />This runs kubelet as standalone and only runs static pods.</td>
-      <td>`true`<br />`yes`<br />`false`<br />`no`<br /></td>
-    </tr>
-    <tr>
-      <td>`disableManifestsDirectory`</td>
-      <td>bool</td>
-      <td>The `disableManifestsDirectory` field configures the kubelet to get static pod manifests from the /etc/kubernetes/manifests directory.<br />It's recommended to configure static pods with the "pods" key instead.</td>
-      <td>`true`<br />`yes`<br />`false`<br />`no`<br /></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-#### extraMounts[]
-
-ExtraMount wraps OCI Mount specification.
-
-
-
-
-```yaml
-machine:
-    kubelet:
-        extraMounts:
-            - destination: /var/lib/example # Destination is the absolute path where the mount will be placed in the container.
-              type: bind # Type specifies the mount kind.
-              source: /var/lib/example # Source specifies the source path of the mount.
-              # Options are fstab style mount options.
-              options:
-                - bind
-                - rshared
-                - rw
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`destination`</td>
-      <td>string</td>
-      <td>Destination is the absolute path where the mount will be placed in the container.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`type`</td>
-      <td>string</td>
-      <td>Type specifies the mount kind.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`source`</td>
-      <td>string</td>
-      <td>Source specifies the source path of the mount.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`options`</td>
-      <td>[]string</td>
-      <td>Options are fstab style mount options.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`uidMappings`</td>
-      <td><a href="#uidmappings%5B%5D">LinuxIDMapping</a></td>
-      <td>UID/GID mappings used for changing file owners w/o calling chown, fs should support it.<br /><br />Every mount point could have its own mapping.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`gidMappings`</td>
-      <td><a href="#gidmappings%5B%5D">LinuxIDMapping</a></td>
-      <td>UID/GID mappings used for changing file owners w/o calling chown, fs should support it.<br /><br />Every mount point could have its own mapping.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-##### uidMappings[]
-
-LinuxIDMapping represents the Linux ID mapping.
-
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`containerID`</td>
-      <td>uint32</td>
-      <td>ContainerID is the starting UID/GID in the container.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`hostID`</td>
-      <td>uint32</td>
-      <td>HostID is the starting UID/GID on the host to be mapped to 'ContainerID'.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`size`</td>
-      <td>uint32</td>
-      <td>Size is the number of IDs to be mapped.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-##### gidMappings[]
-
-LinuxIDMapping represents the Linux ID mapping.
-
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`containerID`</td>
-      <td>uint32</td>
-      <td>ContainerID is the starting UID/GID in the container.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`hostID`</td>
-      <td>uint32</td>
-      <td>HostID is the starting UID/GID on the host to be mapped to 'ContainerID'.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`size`</td>
-      <td>uint32</td>
-      <td>Size is the number of IDs to be mapped.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-
-
-#### nodeIP
-
-KubeletNodeIPConfig represents the kubelet node IP configuration.
-
-
-
-
-```yaml
-machine:
-    kubelet:
-        nodeIP:
-            # The `validSubnets` field configures the networks to pick kubelet node IP from.
-            validSubnets:
-                - 10.0.0.0/8
-                - '!10.0.0.3/32'
-                - fdc7::/16
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`validSubnets`</td>
-      <td>[]string</td>
-      <td>The `validSubnets` field configures the networks to pick kubelet node IP from.<br />For dual stack configuration, there should be two subnets: one for IPv4, another for IPv6.<br />IPs can be excluded from the list by using negative match with `!`, e.g `!10.0.0.0/8`.<br />Negative subnet matches should be specified last to filter out IPs picked by positive matches.<br />If not specified, node IP is picked based on cluster podCIDRs: IPv4/IPv6 address or both.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-
-
-### install
-
-InstallConfig represents the installation options for preparing a node.
-
-
-
-
-```yaml
-machine:
-    install:
-        disk: /dev/sda # The disk used for installations.
-        image: factory.talos.dev/metal-installer/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:latest # Allows for supplying the image used to perform the installation.
-        wipe: false # Indicates if the installation disk should be wiped at installation time.
-        grubUseUKICmdline: true # Indicates if legacy GRUB bootloader should use kernel cmdline from the UKI instead of building it on the host.
-
-        # # Look up disk using disk attributes like model, size, serial and others.
-        # diskSelector:
-        #     size: 4GB # Disk size.
-        #     model: WDC* # Disk model `/sys/block/<dev>/device/model`.
-        #     busPath: /pci0000:00/0000:00:17.0/ata1/host0/target0:0:0/0:0:0:0 # Disk bus path.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`disk`</td>
-      <td>string</td>
-      <td>The disk used for installations.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`diskSelector`</td>
-      <td><a href="#diskselector">InstallDiskSelector</a></td>
-      <td>Look up disk using disk attributes like model, size, serial and others.<br />Always has priority over `disk`.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`image`</td>
-      <td>string</td>
-      <td>Allows for supplying the image used to perform the installation.<br />Image reference for each Talos release can be found on<br />[GitHub releases page](https://github.com/siderolabs/talos/releases).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`wipe`</td>
-      <td>bool</td>
-      <td>Indicates if the installation disk should be wiped at installation time.<br />Defaults to `true`.</td>
-      <td>`true`<br />`yes`<br />`false`<br />`no`<br /></td>
-    </tr>
-    <tr>
-      <td>`legacyBIOSSupport`</td>
-      <td>bool</td>
-      <td>Indicates if MBR partition should be marked as bootable (active).<br />Should be enabled only for the systems with legacy BIOS that doesn't support GPT partitioning scheme.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`grubUseUKICmdline`</td>
-      <td>bool</td>
-      <td>Indicates if legacy GRUB bootloader should use kernel cmdline from the UKI instead of building it on the host.<br />This changes the way cmdline is managed with GRUB bootloader to be more consistent with UKI/systemd-boot.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-#### diskSelector
-
-InstallDiskSelector represents a disk query parameters for the install disk lookup.
-
-
-
-
-```yaml
-machine:
-    install:
-        diskSelector:
-            size: '>= 1TB' # Disk size.
-            model: WDC* # Disk model `/sys/block/<dev>/device/model`.
-
-            # # Disk bus path.
-            # busPath: /pci0000:00/0000:00:17.0/ata1/host0/target0:0:0/0:0:0:0
-            # busPath: /pci0000:00/*
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`size`</td>
-      <td>InstallDiskSizeMatcher</td>
-      <td>Disk size.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`name`</td>
-      <td>string</td>
-      <td>Disk name `/sys/block/<dev>/device/name`.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`model`</td>
-      <td>string</td>
-      <td>Disk model `/sys/block/<dev>/device/model`.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`serial`</td>
-      <td>string</td>
-      <td>Disk serial number `/sys/block/<dev>/serial`.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`modalias`</td>
-      <td>string</td>
-      <td>Disk modalias `/sys/block/<dev>/device/modalias`.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`uuid`</td>
-      <td>string</td>
-      <td>Disk UUID `/sys/block/<dev>/uuid`.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`wwid`</td>
-      <td>string</td>
-      <td>Disk WWID `/sys/block/<dev>/wwid`.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`type`</td>
-      <td>InstallDiskType</td>
-      <td>Disk Type.</td>
-      <td>`ssd`<br />`hdd`<br />`nvme`<br />`sd`<br /></td>
-    </tr>
-    <tr>
-      <td>`busPath`</td>
-      <td>string</td>
-      <td>Disk bus path.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-
-
-### files[]
-
-MachineFile represents a file to write to disk.
-
-
-
-
-```yaml
-machine:
-    files:
-        - content: '...' # The contents of the file.
-          permissions: 0o666 # The file's permissions in octal.
-          path: /tmp/file.txt # The path of the file.
-          op: append # The operation to use
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`content`</td>
-      <td>string</td>
-      <td>The contents of the file.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`permissions`</td>
-      <td>FileMode</td>
-      <td>The file's permissions in octal.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`path`</td>
-      <td>string</td>
-      <td>The path of the file.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`op`</td>
-      <td>string</td>
-      <td>The operation to use</td>
-      <td>`create`<br />`append`<br />`overwrite`<br /></td>
-    </tr>
-  </tbody>
-</table>
-
-
 
 
 
@@ -787,21 +144,10 @@ FeaturesConfig describes individual Talos features that can be switched on or of
 
 
 
-
 ```yaml
 machine:
     features:
         diskQuotaSupport: true # Enable XFS project quota support for EPHEMERAL partition and user disks.
-
-        # # Configure Talos API access from Kubernetes pods.
-        # kubernetesTalosAPIAccess:
-        #     enabled: true # Enable Talos API access from Kubernetes pods.
-        #     # The list of Talos API roles which can be granted for access from Kubernetes pods.
-        #     allowedRoles:
-        #         - os:reader
-        #     # The list of Kubernetes namespaces Talos API access is available from.
-        #     allowedKubernetesNamespaces:
-        #         - kube-system
 ```
 
 
@@ -816,21 +162,9 @@ machine:
   </thead>
   <tbody>
     <tr>
-      <td>`kubernetesTalosAPIAccess`</td>
-      <td><a href="#kubernetestalosapiaccess">KubernetesTalosAPIAccessConfig</a></td>
-      <td>Configure Talos API access from Kubernetes pods.<br /><br />This feature is disabled if the feature config is not specified.</td>
-      <td></td>
-    </tr>
-    <tr>
       <td>`diskQuotaSupport`</td>
       <td>bool</td>
       <td>Enable XFS project quota support for EPHEMERAL partition and user disks.<br />Also enables kubelet tracking of ephemeral disk usage in the kubelet via quota.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`kubePrism`</td>
-      <td><a href="#kubeprism">KubePrism</a></td>
-      <td>KubePrism - local proxy/load balancer on defined port that will distribute<br />requests to all API servers in the cluster.</td>
       <td></td>
     </tr>
     <tr>
@@ -844,144 +178,11 @@ machine:
 
 
 
-#### kubernetesTalosAPIAccess
-
-KubernetesTalosAPIAccessConfig describes the configuration for the Talos API access from Kubernetes pods.
-
-
-
-
-```yaml
-machine:
-    features:
-        kubernetesTalosAPIAccess:
-            enabled: true # Enable Talos API access from Kubernetes pods.
-            # The list of Talos API roles which can be granted for access from Kubernetes pods.
-            allowedRoles:
-                - os:reader
-            # The list of Kubernetes namespaces Talos API access is available from.
-            allowedKubernetesNamespaces:
-                - kube-system
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`enabled`</td>
-      <td>bool</td>
-      <td>Enable Talos API access from Kubernetes pods.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`allowedRoles`</td>
-      <td>[]string</td>
-      <td>The list of Talos API roles which can be granted for access from Kubernetes pods.<br /><br />Empty list means that no roles can be granted, so access is blocked.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`allowedKubernetesNamespaces`</td>
-      <td>[]string</td>
-      <td>The list of Kubernetes namespaces Talos API access is available from.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-#### kubePrism
-
-KubePrism describes the configuration for the KubePrism load balancer.
-
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`enabled`</td>
-      <td>bool</td>
-      <td>Enable KubePrism support - will start local load balancing proxy.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`port`</td>
-      <td>int</td>
-      <td>KubePrism port.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
-
-
-### udev
-
-UdevConfig describes how the udev system should be configured.
-
-
-
-
-```yaml
-machine:
-    udev:
-        # List of udev rules to apply to the udev system
-        rules:
-            - SUBSYSTEM=="drm", KERNEL=="renderD*", GROUP="44", MODE="0660"
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`rules`</td>
-      <td>[]string</td>
-      <td>List of udev rules to apply to the udev system</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
 
 
 ### logging
 
 LoggingConfig struct configures Talos logging.
-
 
 
 
@@ -1035,7 +236,6 @@ LoggingDestination struct configures Talos logging destination.
 
 
 
-
 <table>
   <thead>
     <tr>
@@ -1076,7 +276,6 @@ Endpoint represents the endpoint URL parsed out of the machine config.
 
 
 
-
 <table>
   <thead>
     <tr>
@@ -1092,82 +291,6 @@ Endpoint represents the endpoint URL parsed out of the machine config.
 
 
 
-
-
-
-
-
-
-
-### kernel
-
-KernelConfig struct configures Talos Linux kernel.
-
-
-
-
-```yaml
-machine:
-    kernel:
-        # Kernel modules to load.
-        modules:
-            - name: btrfs # Module name.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`modules`</td>
-      <td><a href="#modules%5B%5D">KernelModuleConfig</a></td>
-      <td>Kernel modules to load.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-#### modules[]
-
-KernelModuleConfig struct configures Linux kernel modules to load.
-
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`name`</td>
-      <td>string</td>
-      <td>Module name.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`parameters`</td>
-      <td>[]string</td>
-      <td>Module parameters, changes applied after reboot.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
 
 
 
@@ -1178,7 +301,6 @@ KernelModuleConfig struct configures Linux kernel modules to load.
 ### seccompProfiles[]
 
 MachineSeccompProfile defines seccomp profiles for the machine.
-
 
 
 
@@ -1229,14 +351,6 @@ ClusterConfig represents the cluster-wide config values.
 
 
 
-```yaml
-cluster:
-    # ControlPlaneConfig represents the control plane configuration options.
-    controlPlane:
-        endpoint: https://1.2.3.4 # Endpoint is the canonical controlplane endpoint, which can be an IP address or a DNS hostname.
-    clusterName: talos.local
-```
-
 
 <table>
   <thead>
@@ -1249,57 +363,9 @@ cluster:
   </thead>
   <tbody>
     <tr>
-      <td>`id`</td>
-      <td>string</td>
-      <td>Globally unique identifier for this cluster (base64 encoded random 32 bytes).</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`secret`</td>
-      <td>string</td>
-      <td>Shared secret of cluster (base64 encoded random 32 bytes).<br />This secret is shared among cluster members but should never be sent over the network.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`controlPlane`</td>
-      <td><a href="#controlplane">ControlPlaneConfig</a></td>
-      <td>Provides control plane specific configuration options.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`clusterName`</td>
-      <td>string</td>
-      <td>Configures the cluster's name.</td>
-      <td></td>
-    </tr>
-    <tr>
       <td>`token`</td>
       <td>string</td>
       <td>The [bootstrap token](https://kubernetes.io/docs/reference/access-authn-authz/bootstrap-tokens/) used to join the cluster.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`ca`</td>
-      <td>PEMEncodedCertificateAndKey</td>
-      <td>The base64 encoded root certificate authority used by Kubernetes.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`acceptedCAs`</td>
-      <td>[]PEMEncodedCertificate</td>
-      <td>The list of base64 encoded accepted certificate authorities used by Kubernetes.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`aggregatorCA`</td>
-      <td>PEMEncodedCertificateAndKey</td>
-      <td>The base64 encoded aggregator certificate authority used by Kubernetes for front-proxy certificate generation.<br /><br />This CA can be self-signed.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`serviceAccount`</td>
-      <td>PEMEncodedKey</td>
-      <td>The base64 encoded private key for service account token generation.</td>
       <td></td>
     </tr>
     <tr>
@@ -1309,33 +375,9 @@ cluster:
       <td></td>
     </tr>
     <tr>
-      <td>`coreDNS`</td>
-      <td><a href="#coredns">CoreDNS</a></td>
-      <td>Core DNS specific configuration options.</td>
-      <td></td>
-    </tr>
-    <tr>
       <td>`externalCloudProvider`</td>
       <td><a href="#externalcloudprovider">ExternalCloudProviderConfig</a></td>
       <td>External cloud provider configuration.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`extraManifests`</td>
-      <td>[]string</td>
-      <td>A list of urls that point to additional manifests.<br />These will get automatically deployed as part of the bootstrap.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`extraManifestHeaders`</td>
-      <td>map[string]string</td>
-      <td>A map of key value pairs that will be added while fetching the extraManifests.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`inlineManifests`</td>
-      <td><a href="#inlinemanifests%5B%5D">ClusterInlineManifest</a></td>
-      <td>A list of inline Kubernetes manifests.<br />These will get automatically deployed as part of the bootstrap.</td>
       <td></td>
     </tr>
     <tr>
@@ -1344,77 +386,8 @@ cluster:
       <td>Settings for admin kubeconfig generation.<br />Certificate lifetime can be configured.</td>
       <td></td>
     </tr>
-    <tr>
-      <td>`allowSchedulingOnControlPlanes`</td>
-      <td>bool</td>
-      <td>Allows running workload on control-plane nodes.</td>
-      <td>`true`<br />`yes`<br />`false`<br />`no`<br /></td>
-    </tr>
   </tbody>
 </table>
-
-
-
-### controlPlane
-
-ControlPlaneConfig represents the control plane configuration options.
-
-
-
-
-```yaml
-cluster:
-    controlPlane:
-        endpoint: https://1.2.3.4 # Endpoint is the canonical controlplane endpoint, which can be an IP address or a DNS hostname.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`endpoint`</td>
-      <td><a href="#endpoint">Endpoint</a></td>
-      <td>Endpoint is the canonical controlplane endpoint, which can be an IP address or a DNS hostname.<br />It is single-valued, and may optionally include a port number.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-#### endpoint
-
-Endpoint represents the endpoint URL parsed out of the machine config.
-
-
-
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-  </tbody>
-</table>
-
-
-
-
-
 
 
 
@@ -1424,11 +397,10 @@ EtcdConfig represents the etcd configuration options.
 
 
 
-
 ```yaml
 cluster:
     etcd:
-        image: registry.k8s.io/etcd:3.7.0-rc.0-0 # The container image used to create the etcd service.
+        image: registry.k8s.io/etcd:v3.7.0 # The container image used to create the etcd service.
         # The `ca` is the root certificate authority of the PKI.
         ca:
             crt: LS0tIEVYQU1QTEUgQ0VSVElGSUNBVEUgLS0t
@@ -1490,53 +462,9 @@ cluster:
 
 
 
-### coreDNS
-
-CoreDNS represents the CoreDNS config values.
-
-
-
-
-```yaml
-cluster:
-    coreDNS:
-        image: registry.k8s.io/coredns/coredns:v1.14.2 # The `image` field is an override to the default coredns image.
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`disabled`</td>
-      <td>bool</td>
-      <td>Disable coredns deployment on cluster bootstrap.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`image`</td>
-      <td>string</td>
-      <td>The `image` field is an override to the default coredns image.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
 ### externalCloudProvider
 
 ExternalCloudProviderConfig contains external cloud provider configuration.
-
 
 
 
@@ -1580,58 +508,9 @@ cluster:
 
 
 
-### inlineManifests[]
-
-ClusterInlineManifest struct describes inline bootstrap manifests for the user.
-
-
-
-
-```yaml
-cluster:
-    inlineManifests:
-        - name: namespace-ci # Name of the manifest.
-          contents: |- # Manifest contents as a string.
-            apiVersion: v1
-            kind: Namespace
-            metadata:
-            	name: ci
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`name`</td>
-      <td>string</td>
-      <td>Name of the manifest.<br />Name should be unique.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`contents`</td>
-      <td>string</td>
-      <td>Manifest contents as a string.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-
-
 ### adminKubeconfig
 
 AdminKubeconfigConfig contains admin kubeconfig settings.
-
 
 
 

@@ -1,5 +1,5 @@
 ---
-description: KubeProxyConfig deploys Flannel CNI to the cluster.
+description: KubeProxyConfig configures kube-proxy deployment.
 title: KubeProxyConfig
 ---
 
@@ -20,7 +20,7 @@ Do not edit manually. For more information, see https://github.com/siderolabs/do
 ```yaml
 apiVersion: v1alpha1
 kind: KubeProxyConfig
-image: registry.k8s.io/kube-proxy:1.36.2 # The container image used in the kube-proxy manifest.
+image: registry.k8s.io/kube-proxy:v1.37.0-beta.0 # The container image used in the kube-proxy manifest.
 mode: nftables # description: |
 # Provide configuration for the kube-proxy.
 config:
@@ -96,7 +96,6 @@ resources:
 ## resources
 
 ResourcesConfig represents the pod resources.
-
 
 
 
