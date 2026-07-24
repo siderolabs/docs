@@ -16,7 +16,7 @@ Talos Linux provides tools to observe available disks and volumes on the machine
 To obtain a list of all available block devices (disks) on the machine, you can use the following command:
 
 ```bash
-$ talosctl get disks
+# talosctl get disks
 NODE         NAMESPACE   TYPE   ID        VERSION   SIZE    READ ONLY   TRANSPORT   ROTATIONAL   WWID                                                               MODEL            SERIAL
 172.20.0.5   runtime     Disk   loop0     1         75 MB   true
 172.20.0.5   runtime     Disk   nvme0n1   1         10 GB   false       nvme                     nvme.1b36-6465616462656566-51454d55204e564d65204374726c-00000001   QEMU NVMe Ctrl   deadbeef
@@ -66,7 +66,7 @@ Talos Linux monitors all block devices and partitions on the machine.
 Details about these devices, including their type, can be found in the `DiscoveredVolume` resource.
 
 ```bash
-$ talosctl get discoveredvolumes
+# talosctl get discoveredvolumes
 NODE         NAMESPACE   TYPE               ID        VERSION   TYPE        SIZE     DISCOVERED   LABEL       PARTITIONLABEL
 172.20.0.5   runtime     DiscoveredVolume   dm-0      1         disk        88 MB    xfs          STATE
 172.20.0.5   runtime     DiscoveredVolume   loop0     1         disk        75 MB    squashfs
@@ -131,6 +131,8 @@ The `EPHEMERAL` partition by default consumes all unallocated space, but it can 
 The `EPHEMERAL` partition is a catch-all location for storing data, while it might be desired to segregate the data into different partitions.
 Talos supports creating additional user volumes to be used for different purposes: e.g. local storage for various applications, specific volumes per applications, etc.
 
+In addition, the `ETCD`, `CRI`, `KUBELET` and `LOG` [system volumes](./system) are backed by a directory under `EPHEMERAL` by default, but each of them can be placed on a dedicated partition, on the system disk or on a separate disk.
+
 ### Single disk layout
 
 ```text
@@ -162,3 +164,27 @@ In this layout, the `EPHEMERAL` partition was limited to 200GB, and two addition
 
 In this layout, the `EPHEMERAL` partition was limited to 500GB, and two additional partitions were created for `csi-data` and `local-storage`,
 and they were created on different disks.
+
+### Dedicated system volume layout
+
+The `ETCD`, `CRI`, `KUBELET` and `LOG` [system volumes](./system) can be split out of `EPHEMERAL` onto their own partitions.
+Those partitions can live on the system disk alongside `EPHEMERAL`, or on a separate disk:
+
+```text
++--------------------------------------------------------------------------------------------------+
+| Physical Disk 1 (1TB)                                                                            |
++=============+===========+==========+============+============+============+======================+
+| EFI (boot)  | META      | STATE    | EPHEMERAL  | KUBELET    | CRI        | << Unallocated >>    |
+| [~1GB]      | [~1MB]    | [~100MB] | [~200GB]   | [~50GB]    | [~200GB]   | [~549GB]             |
++-------------+-----------+----------+------------+------------+------------+----------------------+
+| Physical Disk 2 (1TB) - dedicated to etcd                                                        |
++============+=====================================================================================+
+| ETCD       | << Unallocated Space >>                                                             |
+| [~100GB]   | [~900GB]                                                                            |
++------------+-------------------------------------------------------------------------------------+
+```
+
+In this layout, the `KUBELET` and `CRI` volumes are on dedicated partitions on the system disk, while the `ETCD` volume is placed on a separate disk to isolate `etcd` I/O.
+The `LOG` volume is left as the default directory under `EPHEMERAL`.
+
+See [System Volumes](./system#dedicated-system-volumes-etcd-cri-kubelet-log) for how to configure these volumes.
