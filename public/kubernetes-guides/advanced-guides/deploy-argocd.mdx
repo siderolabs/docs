@@ -1,6 +1,6 @@
 ---
 title: "Deploy Argo CD"
-description: "In this guide you will learn how to deploy Argo CD on Talos Linux using extraManifests, or on Omni-managed clusters using manifest sync."
+description: "In this guide you will learn how to deploy Argo CD on Talos Linux with kubectl or at bootstrap time, or on Omni-managed clusters using manifest sync."
 ---
 
 import { k8s_release } from '/snippets/custom-variables.mdx';
@@ -20,55 +20,122 @@ Before you begin, ensure you have the following:
 
 ## Installation on Talos
 
-On Talos, the recommended way to bootstrap Argo CD is through `extraManifests`. This instructs Talos to fetch and apply the Argo CD install manifest from GitHub during cluster bootstrap, so Argo CD is running as soon as the cluster is healthy.
+On Talos, you can install Argo CD after the cluster is up, or embed the install manifest in the machine configuration so it is running as soon as the cluster is healthy.
 
-`extraManifests` are best suited for publicly available, versioned manifests hosted over HTTPS. If your environment does not have outbound internet access at bootstrap time, see [inlineManifests and extraManifests](./inlinemanifests) for alternatives.
+<Tabs>
+  <Tab title="After bootstrap">
+    Install Argo CD with `kubectl` once the cluster is up and healthy.
+    
+    **Step 1.** Create the `argocd` namespace:
+    
+    ```bash
+    kubectl create namespace argocd
+    ```
+    
+    **Step 2.** Apply the Argo CD install manifest:
+    
+    ```bash
+    kubectl apply -n argocd \
+      -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+    ```
+    
+    **Step 3.** Verify that the Argo CD pods are running in the `argocd` namespace:
+    
+    ```bash
+    kubectl get pods -n argocd
+    ```
+    
+    You should see pods for `argocd-server`, `argocd-repo-server`, `argocd-application-controller`, and supporting components all in a `Running` state. 
+  </Tab>
+  <Tab title="At bootstrap time">
+    Embed the install manifest in the control plane machine configuration so Argo CD is running as soon as the cluster is healthy.
+    
+    **Step 1.** Download the Argo CD install manifest:
+    
+    ```bash
+    curl -Lo argocd-install.yaml \
+      https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+    ```
+    
+    **Step 2.** Use kustomize to set the `argocd` namespace on every resource:
+    
+    ```bash
+    cat <<EOF > kustomization.yaml
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    kind: Kustomization
+    namespace: argocd
+    resources:
+      - argocd-install.yaml
+    EOF
+    
+    kubectl kustomize . > argocd-install-namespaced.yaml
+    ```
+    
+    **Step 3.** Prepend the namespace definition so the namespace and its resources are created together:
+    
+    ```bash
+    cat <<EOF > argocd-namespace.yaml
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: argocd
+    ---
+    EOF
+    
+    cat argocd-namespace.yaml argocd-install-namespaced.yaml > argocd-complete.yaml
+    ```
+    
+    **Step 4.** Generate the patch file, embedding the manifest under `contents`:
+    
+    ```bash
+    cat <<EOF > argocd-inline-manifest.yaml
+    cluster:
+      inlineManifests:
+        - name: argocd
+          contents: |
+    $(sed 's/^\(.\)/          \1/' argocd-complete.yaml)
+    EOF
+    ```
+    
+    The `sed` command indents each line to sit correctly under `contents: |`. Generate this file rather than editing it by hand, as indentation errors in a manifest this size are difficult to spot.
+    
+    **Step 5.** Set a variable containing the IP addresses of your control plane nodes:
+    
+    ```bash
+    CP_IPS="<control-plane-ip-1>,<control-plane-ip-2>,<control-plane-ip-3>"
+    ```
+    
+    **Step 6.** Apply the patch to your control plane nodes:
+    
+    ```bash
+    talosctl patch machineconfig \
+      --patch @argocd-inline-manifest.yaml \
+      --endpoints $CP_IPS \
+      --nodes $CP_IPS \
+      --talosconfig=./talosconfig
+    ```
 
-**Step 1.** Create a patch file named `argocd-extra-manifest.yaml` that references the Argo CD install manifest:
+    **Step 7.** If this is a new cluster, bootstrap it. Run this **only once** per cluster — if you have already bootstrapped, skip to the reboot command below:
 
-```bash
-cat <<EOF > argocd-manifest.yaml
-cluster:
-  inlineManifests:
-    - name: argocd-namespace
-      contents: |
-        apiVersion: v1
-        kind: Namespace
-        metadata:
-          name: argocd
-  extraManifests:
-    - "https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml"
-EOF
-```
+    ```bash
+    talosctl bootstrap --nodes <control-plane-ip> --talosconfig=./talosconfig
+    ```
 
-**Step 2.** Set a variable containing the IP addresses of your control plane nodes:
+    If you patched an existing cluster, reboot the control plane nodes instead:
 
-```bash
-CP_IPS="<control-plane-ip-1>,<control-plane-ip-2>,<control-plane-ip-3>"
-```
+    ```bash
+    talosctl reboot --nodes $CP_IPS --endpoints $CP_IPS
+    ```
 
-**Step 3.** Apply the patch to your control plane nodes:
+   **Step 8.** Once the cluster is healthy, verify that the Argo CD pods are running in the `argocd` namespace:
 
-```bash
-talosctl patch machineconfig \
-  --patch @argocd-extra-manifest.yaml \
-  --endpoints $CP_IPS \
-  --nodes $CP_IPS
-```
+    ```bash
+    kubectl get pods -n argocd
+    ``` 
+  </Tab>
+</Tabs>
 
-If you are patching an existing cluster rather than bootstrapping a fresh one, a reboot is required for `extraManifests` to take effect:
-
-```bash
-talosctl reboot --nodes $CP_IPS --endpoints $CP_IPS
-```
-
-**Step 4.** Wait for the node to come back healthy, then verify that the Argo CD pods are running:
-
-```bash
-kubectl get pods -n argocd
-```
-
-You should see pods for the `argocd-server`, `argocd-repo-server`, `argocd-application-controller`, and supporting components all in a `Running` state. From here, Argo CD manages itself and any applications you configure in your Git repository.
+From here, Argo CD manages itself and any applications you configure in your Git repository.
 
 ## Installation on Omni
 

@@ -1,13 +1,13 @@
 ---
 title: "Deploy Flux"
-description: "In this guide you will learn how to deploy Flux on Talos Linux using extraManifests, or on Omni-managed clusters using manifest sync."
+description: "In this guide you will learn how to deploy Flux on Talos Linux with kubectl or at bootstrap time, or on Omni-managed clusters using manifest sync."
 ---
 
 import { k8s_release } from '/snippets/custom-variables.mdx';
 
 [Flux](https://fluxcd.io/) is a GitOps toolkit for Kubernetes built around a set of controllers that continuously reconcile your cluster state against configuration stored in a Git repository. It is designed to run entirely inside the cluster and requires no external UI or CLI to operate once bootstrapped.
 
-This guide walks through how to get Flux running on Talos Linux — either via the machine configuration during bootstrap, or through Omni manifest sync on clusters managed by Omni.
+This guide walks through how to get Flux running on Talos Linux and Omni.
 
 ## Prerequisites
 
@@ -20,57 +20,84 @@ Before you begin, ensure you have the following:
 
 ## Installation on Talos
 
-On Talos, you can bootstrap Flux using `extraManifests` in the machine configuration. Talos fetches the Flux install manifest from the specified URL and applies it to the cluster at bootstrap time, so the Flux controllers are available as soon as the cluster comes up.
+On Talos, you can install Flux after the cluster is up, or reference the install manifest from the machine configuration so it is running as soon as the cluster is healthy.
 
-`extraManifests` require the node to have outbound HTTPS access to the manifest URL at bootstrap time. If your environment is air-gapped, see [inlineManifests and extraManifests](./inlinemanifests) for alternatives.
+<Tabs>
+  <Tab title="After bootstrap">
+    Install Flux with `kubectl` once the cluster is up and healthy.
+    
+    **Step 1.** Apply the Flux install manifest:
+    
+    ```bash
+    kubectl apply -f https://github.com/fluxcd/flux2/releases/latest/download/install.yaml
+    ```
+    
+    **Step 2.** Confirm that the Flux controllers are running:
+    
+    ```bash
+    kubectl get pods -n flux-system
+    ```
+    
+    You should see the source, kustomize, helm, and notification controllers in a `Running` state.
+ 
+  </Tab>
+  <Tab title="At bootstrap time">
+    Reference the install manifest from the control plane machine configuration using `extraManifests`.
+    
+    <Note>
+    `extraManifests` require the node to have outbound HTTPS access to the manifest URL at bootstrap time. If your environment is air-gapped, see [inlineManifests and extraManifests](./inlinemanifests) for alternatives.
+    </Note>
+    
+    **Step 1.** Create a patch file named `flux-extra-manifest.yaml` that references the Flux install manifest:
+    
+    ```bash
+    cat <<EOF > flux-extra-manifest.yaml
+    cluster:
+      extraManifests:
+        - "https://github.com/fluxcd/flux2/releases/latest/download/install.yaml"
+    EOF
+    ```
+    
+    **Step 2.** Set a variable containing the IP addresses of your control plane nodes:
+    
+    ```bash
+    CP_IPS="<control-plane-ip-1>,<control-plane-ip-2>,<control-plane-ip-3>"
+    ```
+    
+    **Step 3.** Apply the patch to your control plane nodes:
+    
+    ```bash
+    talosctl patch machineconfig \
+      --patch @flux-extra-manifest.yaml \
+      --endpoints $CP_IPS \
+      --nodes $CP_IPS \
+      --talosconfig=./talosconfig
+    ```
+    
+    **Step 4.** If this is a new cluster, bootstrap it. Run this **only once** per cluster — if you have already bootstrapped, skip to the reboot command below:
 
-**Step 1.** Create a patch file named `flux-extra-manifest.yaml` that references the Flux install manifest:
+    ```bash
+    talosctl bootstrap --nodes <control-plane-ip> --talosconfig=./talosconfig
+    ```
 
-```bash
-cat <<EOF > flux-manifest.yaml
-cluster:
-  inlineManifests:
-    - name: flux-namespace
-      contents: |
-        apiVersion: v1
-        kind: Namespace
-        metadata:
-          name: flux-system
-  extraManifests:
-    - "https://github.com/fluxcd/flux2/releases/latest/download/install.yaml"
-EOF
-```
+    If you patched an existing cluster, reboot the control plane nodes instead:
 
-**Step 2.** Set a variable containing the IP addresses of your control plane nodes:
+    ```bash
+    talosctl reboot --nodes $CP_IPS --endpoints $CP_IPS
+    ```
 
-```bash
-CP_IPS="<control-plane-ip-1>,<control-plane-ip-2>,<control-plane-ip-3>"
-```
+   **Step 5.** Once the cluster is healthy, confirm that the Flux controllers are running:
 
-**Step 3.** Apply the patch to your control plane nodes:
+    ```bash
+    kubectl get pods -n flux-system
+    ```
+ 
+  </Tab>
+</Tabs>
 
-```bash
-talosctl patch machineconfig \
-  --patch @flux-extra-manifest.yaml \
-  --endpoints $CP_IPS \
-  --nodes $CP_IPS
-```
-
-If you are patching an existing cluster rather than bootstrapping a fresh one, a reboot is required for `extraManifests` to take effect:
-
-```bash
-talosctl reboot --nodes $CP_IPS --endpoints $CP_IPS
-```
-
-**Step 4.** Confirm that the Flux controllers are running:
-
-```bash
-kubectl get pods -n flux-system
-```
-
-You should see the `source-controller`, `kustomize-controller`, `helm-controller`, and `notification-controller` pods in a `Running` state. With the controllers up, you can point Flux at a Git repository to begin reconciling workloads.
-
-## Installation using Omni
+From here, configure Flux to reconcile against your Git repository. See the [Flux documentation](https://fluxcd.io/flux/installation/) for bootstrapping against a repository.
+ 
+## Installation on Omni
 
 If your clusters are managed by [Omni](https://www.siderolabs.com/omni-for-kubernetes-cluster-management), you can include Flux as part of your cluster template using [Omni manifest sync](../../omni/cluster-management/sync-kubernetes-manifests). Omni applies the Flux install manifest once after the cluster becomes available, and the Flux controllers handle all subsequent reconciliation themselves.
 
