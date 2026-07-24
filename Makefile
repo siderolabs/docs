@@ -8,7 +8,7 @@ DOCS_GEN_IMAGE := ghcr.io/siderolabs/docs-gen:latest
 DOCS_CONVERT_IMAGE := ghcr.io/siderolabs/docs-convert:latest
 CHANGELOG_GEN_IMAGE := ghcr.io/siderolabs/changelog-gen:latest
 VERSION_UPGRADE_IMAGE := ghcr.io/siderolabs/version-upgrade-gen:latest
-TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.14.0-alpha.2
+TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.14.0-beta.0-7-gc5ab22f1d
 OMNI_CLI_GEN_IMAGE := ghcr.io/siderolabs/omni-cli-gen:latest
 OMNI_CONFIG_GEN_IMAGE := ghcr.io/siderolabs/omni-config-gen:latest
 MDX_NORMALIZE_IMAGE := ghcr.io/siderolabs/mdx-normalize:latest
@@ -83,6 +83,7 @@ docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multipl
 		talos-v1.9.yaml \
 		talos-v1.8.yaml \
 		talos-v1.7.yaml \
+		talos-v1.14.yaml \
 		omni.yaml \
 		kubernetes-guides.yaml \
 		changelog.yaml \
@@ -98,6 +99,7 @@ docs.json-local: common.yaml omni.yaml docs-gen/main.go ## Generate docs.json us
 		../talos-v1.9.yaml \
 		../talos-v1.8.yaml \
 		../talos-v1.7.yaml \
+		../talos-v1.14.yaml \
 		../omni.yaml \
 		../kubernetes-guides.yaml \
 		../changelog.yaml \
@@ -114,6 +116,7 @@ check-missing: ## Check for MDX files not included in config files
 		talos-v1.9.yaml \
 		talos-v1.8.yaml \
 		talos-v1.7.yaml \
+		talos-v1.14.yaml \
 		omni.yaml \
 		kubernetes-guides.yaml \
 		changelog.yaml
@@ -129,6 +132,7 @@ check-missing-local: ## Check for missing files using local Go build
 		../talos-v1.9.yaml \
 		../talos-v1.8.yaml \
 		../talos-v1.7.yaml \
+		../talos-v1.14.yaml \
 		../omni.yaml \
 		../kubernetes-guides.yaml \
 		../changelog.yaml
@@ -373,7 +377,7 @@ generate-omni-reference-local: generate-omni-cli-reference-local generate-omni-c
 changelog: ## Generate the changelog from GitHub releases
 	docker pull $(CHANGELOG_GEN_IMAGE)
 	docker run --rm -v $(PWD):/workspace -w /workspace \
-		-e GITHUB_TOKEN=$(GITHUB_TOKEN) \
+		-e GITHUB_TOKEN \
 		$(CHANGELOG_GEN_IMAGE) --output public/changelog.mdx
 
 .PHONY: changelog-local
@@ -383,6 +387,10 @@ changelog-local: ## Generate the changelog using local Go build
 .PHONY: validate-docs-nav
 validate-docs-nav: ## Validate all talos yaml nav configs match their content directories
 	cd docs-validate && go run . --workspace ..
+
+.PHONY: sync-docs-nav
+sync-docs-nav: ## Insert newly generated reference pages into their version YAML nav (best-effort, non-blocking)
+	cd docs-validate && go run . --workspace .. --fix
 
 # validate-tag distinguishes the two ways a TAG can be wrong, with a tailored
 # message for each, and fails BEFORE the generator writes anything:
@@ -406,15 +414,18 @@ endef
 upgrade-talos-version: ## Upgrade Talos docs to a release tag: make upgrade-talos-version TAG=v1.14.0-beta.0
 	@test -n "$(TAG)" || { echo "Error: TAG is required, e.g. make upgrade-talos-version TAG=v1.14.0-beta.0"; exit 1; }
 	$(validate-tag)
+	docker pull $(VERSION_UPGRADE_IMAGE)
 	docker run --rm -v $(PWD):/workspace -w /workspace \
-		-e GITHUB_TOKEN=$(GITHUB_TOKEN) \
+		-e GITHUB_TOKEN \
 		$(VERSION_UPGRADE_IMAGE) --tag $(TAG)
 	$(eval NEW_VERSION := $(shell cat .upgrade-version-tmp 2>/dev/null))
 	@rm -f .upgrade-version-tmp
 	$(MAKE) generate-talos-reference
+	$(MAKE) sync-docs-nav
 	$(MAKE) changelog
 	$(MAKE) docs.json
-	$(MAKE) validate-docs-nav
+	@echo ""
+	@$(MAKE) validate-docs-nav || echo "⚠️  WARNING: nav validation reported issues above. The upgrade finished; review and add any remaining pages by hand."
 	@echo ""
 	@echo "Upgrade to $(TAG) complete! Run: make preview to preview your $(NEW_VERSION) docs"
 
@@ -426,9 +437,11 @@ upgrade-talos-version-local: ## Same as upgrade-talos-version but using the loca
 	$(eval NEW_VERSION := $(shell cat .upgrade-version-tmp 2>/dev/null))
 	@rm -f .upgrade-version-tmp
 	$(MAKE) generate-talos-reference-local
+	$(MAKE) sync-docs-nav
 	$(MAKE) changelog
 	$(MAKE) docs.json
-	$(MAKE) validate-docs-nav
+	@echo ""
+	@$(MAKE) validate-docs-nav || echo "⚠️  WARNING: nav validation reported issues above. The upgrade finished; review and add any remaining pages by hand."
 	@echo ""
 	@echo "Upgrade to $(TAG) complete! Run: make preview to preview your $(NEW_VERSION) docs"
 

@@ -84,5 +84,17 @@ serviceSubnets:
       <td>The service subnet (CIDR), this can be a single value or two values for dual-stack clusters.</td>
       <td></td>
     </tr>
+    <tr>
+      <td>`nodeCIDRMaskSizeIPv4`</td>
+      <td>int</td>
+      <td>The IPv4 per-node pod CIDR mask size, i.e. the size of the pod CIDR allocated to each node, from the IPv4 pod subnet.<br />The default is `24`.<br />Must be between 1 and 32.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`nodeCIDRMaskSizeIPv6`</td>
+      <td>int</td>
+      <td>The IPv6 per-node pod CIDR mask size, i.e. the size of the pod CIDR allocated to each node, from the IPv6 pod subnet.<br />The default is `64`.<br />Must be between 1 and 128.</td>
+      <td></td>
+    </tr>
   </tbody>
 </table>

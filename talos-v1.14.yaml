@@ -1,5 +1,5 @@
 navigation:
-  version: "v1.14"
+  version: "v1.14.0-beta.0"
   tabs:
     - tab: "Talos"
       icon: "/images/talos.svg"
@@ -254,10 +254,13 @@ navigation:
                     - "configuration/block/volumeconfig.mdx"
                     - "configuration/block/zswapconfig.mdx"
                 - group: "Cluster"
-                  pages: 
+                  pages:
+                    - "configuration/cluster/discoveryidentityconfig.mdx"
                     - "configuration/cluster/discoveryserviceconfig.mdx"
                 - group: "CRI"
                   pages:
+                    - "configuration/cri/cribaseruntimespecconfig.mdx"
+                    - "configuration/cri/cricustomizationconfig.mdx"
                     - "configuration/cri/imagecacheconfig.mdx"
                     - "configuration/cri/registryauthconfig.mdx"
                     - "configuration/cri/registrymirrorconfig.mdx"
@@ -269,20 +272,34 @@ navigation:
                   pages:
                     - "configuration/hardware/pcidriverrebindconfig.mdx"
                 - group: "Kubernetes"
-                  pages: 
+                  pages:
                     - "configuration/kubernetes/kubeadmissioncontrolconfig.mdx"
+                    - "configuration/kubernetes/kubeaggregatorcaconfig.mdx"
+                    - "configuration/kubernetes/kubeapiservercaconfig.mdx"
                     - "configuration/kubernetes/kubeapiserverconfig.mdx"
                     - "configuration/kubernetes/kubeauditpolicyconfig.mdx"
                     - "configuration/kubernetes/kubeauthenticationconfig.mdx"
                     - "configuration/kubernetes/kubeauthorizerconfig.mdx"
+                    - "configuration/kubernetes/kubeclusterconfig.mdx"
                     - "configuration/kubernetes/kubecontrollermanagerconfig.mdx"
+                    - "configuration/kubernetes/kubecorednsconfig.mdx"
+                    - "configuration/kubernetes/kubecredentialproviderconfig.mdx"
                     - "configuration/kubernetes/kubeetcdencryptionconfig.mdx"
+                    - "configuration/kubernetes/kubeexternalmanifestconfig.mdx"
                     - "configuration/kubernetes/kubeflannelcniconfig.mdx"
+                    - "configuration/kubernetes/kubeinlinemanifestconfig.mdx"
+                    - "configuration/kubernetes/kubeletconfig.mdx"
                     - "configuration/kubernetes/kubenetworkconfig.mdx"
+                    - "configuration/kubernetes/kubenodeconfig.mdx"
+                    - "configuration/kubernetes/kubeprismconfig.mdx"
                     - "configuration/kubernetes/kubeproxyconfig.mdx"
                     - "configuration/kubernetes/kubeschedulerconfig.mdx"
+                    - "configuration/kubernetes/kubeserviceaccountconfig.mdx"
+                    - "configuration/kubernetes/kubestaticpodconfig.mdx"
+                    - "configuration/kubernetes/kubetalosapiaccessconfig.mdx"
                 - group: "Network"
                   pages:
+                    - "configuration/network/bgppeerconfig.mdx"
                     - "configuration/network/blackholerouteconfig.mdx"
                     - "configuration/network/bondconfig.mdx"
                     - "configuration/network/bridgeconfig.mdx"
@@ -305,17 +322,23 @@ navigation:
                     - "configuration/network/statichostconfig.mdx"
                     - "configuration/network/tcpprobeconfig.mdx"
                     - "configuration/network/timesyncconfig.mdx"
+                    - "configuration/network/vethconfig.mdx"
                     - "configuration/network/vlanconfig.mdx"
                     - "configuration/network/vrfconfig.mdx"
                     - "configuration/network/wireguardconfig.mdx"
                 - group: "Runtime"
                   pages:
                     - "configuration/runtime/environmentconfig.mdx"
+                    - "configuration/runtime/etcfileconfig.mdx"
                     - "configuration/runtime/eventsinkconfig.mdx"
+                    - "configuration/runtime/kernelmoduleconfig.mdx"
                     - "configuration/runtime/kmsglogconfig.mdx"
                     - "configuration/runtime/oomconfig.mdx"
+                    - "configuration/runtime/securityprofileconfig.mdx"
                     - "configuration/runtime/sysctlconfig.mdx"
                     - "configuration/runtime/sysfsconfig.mdx"
+                    - "configuration/runtime/udevrulesconfig.mdx"
+                    - "configuration/runtime/unattendedinstallconfig.mdx"
                     - "configuration/runtime/watchdogtimerconfig.mdx"
                 - group: "Misc"
                   pages:
@@ -334,6 +357,7 @@ navigation:
                   pages:
                     - "configuration/storage/lvmlogicalvolumeconfig.mdx"
                     - "configuration/storage/lvmvolumegroupconfig.mdx"
+                    - "configuration/storage/raidarrayconfig.mdx"
 
         - group: "Troubleshooting and support"
           folder: "talos/v1.14/troubleshooting"

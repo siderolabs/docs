@@ -23,10 +23,15 @@ and derives everything else from the two tags:
     docs are still generated on disk, but the version stays out of the published nav.
   - **beta** — ensures `talos-vX.Y.yaml` is present at the bottom of the nav in all four
     Makefile targets so the version appears last in the dropdown. This is idempotent, so
-    a beta correctly adds the entry that an earlier alpha of the same minor skipped.
+    a beta correctly adds the entry that an earlier alpha of the same minor skipped. It
+    also sets the `navigation.version` label in `talos-vX.Y.yaml` to the full tag (e.g.
+    `v1.14.0-beta.0`) so the dropdown reads as a pre-release. This is only the display
+    label; folder paths, URLs and `TALOS_VERSION` stay on the clean minor.
 
 **Stable target**
 - Rewrites `TALOSCTL_IMAGE` to the exact tag and `TALOS_VERSION` to the folder minor
+- Resets the `navigation.version` dropdown label in `talos-vX.Y.yaml` back to the clean
+  minor (undoing a preceding beta that set it to the full tag); idempotent otherwise
 - Updates the "latest stable" block in `custom-variables.mdx` with the release's
   Kubernetes (from the `siderolabs/talos` release notes) and nvidia versions, and
   updates/creates the versioned block

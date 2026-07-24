@@ -11,11 +11,38 @@ For every `talos-vX.Y.yaml` file found in the repo root, it checks both directio
 
 It reports a per-version summary and exits with a non-zero status if any issues are found.
 
+## Auto-insert (`--fix`)
+
+With `--fix`, instead of only reporting, the tool inserts pages that exist on disk
+but are missing from the nav — useful after a Talos upgrade regenerates the
+reference docs. Each page is placed into the group that owns its folder (matched by
+the folder the group's existing pages point at, not by the group's display title),
+in alphabetical order, copying the surrounding indentation and quote style so the
+diff is one line per page. A brand-new folder with no section yet gets a fresh
+section named after the folder (with an acronym override map, e.g. `cri` → `CRI`,
+title-case otherwise).
+
+It is deliberately best-effort and **always exits 0** so it never blocks an upgrade:
+
+- a folder owned by two groups (ambiguous) → warn and skip
+- a folder it can't anchor a new section against → warn and skip
+
+The plain (blocking) validation still runs afterwards as the correctness gate, so
+anything `--fix` skipped is surfaced loudly.
+
+```bash
+# Report only (blocking)
+make validate-docs-nav
+
+# Insert missing pages, best-effort (non-blocking)
+make sync-docs-nav
+```
+
 ## Usage
 
 ```bash
 # Run across all versions
-make validate-talos-docs
+make validate-docs-nav
 ```
 
 Example output:

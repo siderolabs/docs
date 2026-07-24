@@ -154,6 +154,17 @@ func runPrerelease(token, currentTag, tag, currentMinor, targetMinor, varsFile s
 		fmt.Fprintf(os.Stderr, "Error updating Makefile navigation: %v\n", err)
 		os.Exit(1)
 	}
+
+	// A pre-release that appears in the dropdown (beta/rc) should show the full tag
+	// as its label, so it reads as a preview rather than masquerading as the clean
+	// minor. (Alpha returned above and never reaches here.) A later stable run
+	// resets the label back to the minor.
+	navYAML := "talos-" + targetMinor + ".yaml"
+	fmt.Fprintf(os.Stderr, "Setting %s dropdown label to %s...\n", navYAML, tag)
+	if err := setNavVersionLabel(navYAML, tag); err != nil {
+		fmt.Fprintf(os.Stderr, "Error updating nav version label in %s: %v\n", navYAML, err)
+		os.Exit(1)
+	}
 }
 
 // runStable handles stable targets. It advances the image pin, refreshes the
@@ -215,6 +226,15 @@ func runStable(token, currentTag, tag, currentMinor, targetMinor string, varsFil
 	fmt.Fprintf(os.Stderr, "Updating Makefile pins (TALOSCTL_IMAGE -> %s, TALOS_VERSION -> %s)...\n", tag, targetMinor)
 	if err := setMakefilePin("Makefile", currentTag, tag, currentMinor, targetMinor); err != nil {
 		fmt.Fprintf(os.Stderr, "Error updating Makefile pins: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Reset the dropdown label to the clean minor (a preceding beta may have set it
+	// to the full pre-release tag). Idempotent when it is already the minor.
+	navYAML := "talos-" + targetMinor + ".yaml"
+	fmt.Fprintf(os.Stderr, "Setting %s dropdown label to %s...\n", navYAML, targetMinor)
+	if err := setNavVersionLabel(navYAML, targetMinor); err != nil {
+		fmt.Fprintf(os.Stderr, "Error updating nav version label in %s: %v\n", navYAML, err)
 		os.Exit(1)
 	}
 
@@ -612,6 +632,33 @@ func setMakefilePin(path, currentTag, newTag, currentMinor, newMinor string) err
 	}
 
 	return os.WriteFile(path, []byte(content), 0o644)
+}
+
+// setNavVersionLabel rewrites the `navigation.version` label in a version's yaml
+// nav file. This is the string shown in the docs version dropdown; it does not
+// affect folder paths, URLs, or TALOS_VERSION. Beta sets it to the full tag;
+// stable resets it to the clean minor.
+func setNavVersionLabel(path, value string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	// Match the first `version: "..."` line (the navigation label near the top).
+	re := regexp.MustCompile(`(?m)^(\s*version:\s*)"[^"]*"`)
+	loc := re.FindIndex(data)
+	if loc == nil {
+		return fmt.Errorf("navigation version label not found in %s", path)
+	}
+	replacement := re.ReplaceAll(data[loc[0]:loc[1]], []byte(`${1}"`+value+`"`))
+
+	out := append(append([]byte{}, data[:loc[0]]...), replacement...)
+	out = append(out, data[loc[1]:]...)
+
+	if string(out) == string(data) {
+		return nil
+	}
+	return os.WriteFile(path, out, 0o644)
 }
 
 // addNavBottom adds the new yaml at the BOTTOM of the list (before omni.yaml) in all four targets.

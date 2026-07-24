@@ -1,7 +1,11 @@
 ---
 description: |
   VolumeConfig is a system volume configuration document.
-  Note: at the moment, only `STATE`, `EPHEMERAL` and `IMAGECACHE` system volumes are supported.
+  Note: at the moment, only `STATE`, `EPHEMERAL`, `IMAGECACHE`, `ETCD`, `CRI`, `KUBELET` and `LOG`
+  system volumes are supported. The `ETCD`, `CRI`, `KUBELET` and `LOG` volumes default to a
+  directory under `EPHEMERAL`, and can be placed on a dedicated partition by specifying
+  `provisioning`. The backing of these volumes (directory vs. dedicated partition) can only be
+  chosen at cluster creation time: changing it on an already-provisioned node is not supported.
 title: VolumeConfig
 ---
 
@@ -82,6 +86,12 @@ provisioning:
       <td></td>
     </tr>
     <tr>
+      <td>`filesystem`</td>
+      <td><a href="#filesystem">SystemVolumeFilesystemSpec</a></td>
+      <td>The filesystem describes how the volume is formatted.<br /><br />Note: this only takes effect at the time the volume is formatted.</td>
+      <td></td>
+    </tr>
+    <tr>
       <td>`encryption`</td>
       <td><a href="#encryption">EncryptionSpec</a></td>
       <td>The encryption describes how the volume is encrypted.</td>
@@ -107,7 +117,6 @@ provisioning:
 ## provisioning
 
 ProvisioningSpec describes how the volume is provisioned.
-
 
 
 
@@ -158,7 +167,6 @@ DiskSelector selects a disk for the volume.
 
 
 
-
 <table>
   <thead>
     <tr>
@@ -173,6 +181,70 @@ DiskSelector selects a disk for the volume.
       <td>`match`</td>
       <td>Expression</td>
       <td>The Common Expression Language (CEL) expression to match the disk.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+
+
+## filesystem
+
+SystemVolumeFilesystemSpec describes how the system volume is formatted.
+
+The filesystem type is fixed for system volumes, and project quota support is configured via
+machine features, so only the filesystem-specific tunables are exposed here.
+
+
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`xfs`</td>
+      <td><a href="#xfs">XFSSpec</a></td>
+      <td>XFS-specific filesystem options.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+### xfs
+
+XFSSpec configures XFS-specific filesystem options.
+
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`minAllocationGroupSize`</td>
+      <td>ByteSize</td>
+      <td>The minimum size of an XFS allocation group.<br /><br />On non-rotational devices `mkfs.xfs` sizes the allocation group count to the number of<br />CPUs, which on machines with many cores and a modest disk yields hundreds of tiny<br />allocation groups. Talos bounds the allocation group size from below to keep the geometry<br />sane; this option overrides that bound.<br /><br />Set to zero to use the `mkfs.xfs` defaults unchanged.<br /><br />Note: this only affects volumes at the time they are formatted.<br /><br />Size is specified in bytes, but can be expressed in human readable format, e.g. 100MB.</td>
       <td></td>
     </tr>
   </tbody>
@@ -281,7 +353,6 @@ EncryptionKey represents configuration for disk encryption key.
 
 
 
-
 <table>
   <thead>
     <tr>
@@ -340,7 +411,6 @@ EncryptionKeyStatic represents throw away key type.
 
 
 
-
 <table>
   <thead>
     <tr>
@@ -367,7 +437,6 @@ EncryptionKeyStatic represents throw away key type.
 #### nodeID
 
 EncryptionKeyNodeID represents deterministically generated key from the node UUID and PartitionLabel.
-
 
 
 
@@ -421,7 +490,6 @@ EncryptionKeyTPM represents a key that is generated and then sealed/unsealed by 
 
 
 
-
 <table>
   <thead>
     <tr>
@@ -452,7 +520,6 @@ EncryptionKeyTPM represents a key that is generated and then sealed/unsealed by 
 ##### options
 
 EncryptionKeyTPMOptions represents the options for TPM-based key protection.
-
 
 
 
@@ -489,7 +556,6 @@ EncryptionKeyTPMOptions represents the options for TPM-based key protection.
 ## mount
 
 MountSpec describes how the volume is mounted.
-
 
 
 
