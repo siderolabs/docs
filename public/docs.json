@@ -2680,6 +2680,7 @@
                         "pages": [
                           "talos/v1.14/reference/configuration/block/existingvolumeconfig",
                           "talos/v1.14/reference/configuration/block/externalvolumeconfig",
+                          "talos/v1.14/reference/configuration/block/filesystemscrubconfig",
                           "talos/v1.14/reference/configuration/block/filesystemtrimconfig",
                           "talos/v1.14/reference/configuration/block/rawvolumeconfig",
                           "talos/v1.14/reference/configuration/block/swapvolumeconfig",
@@ -2750,7 +2751,7 @@
                       {
                         "group": "Network",
                         "pages": [
-                          "talos/v1.14/reference/configuration/network/bgppeerconfig",
+                          "talos/v1.14/reference/configuration/network/bgpinstanceconfig",
                           "talos/v1.14/reference/configuration/network/blackholerouteconfig",
                           "talos/v1.14/reference/configuration/network/bondconfig",
                           "talos/v1.14/reference/configuration/network/bridgeconfig",

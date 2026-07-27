@@ -249,6 +249,7 @@ navigation:
                   pages:
                     - "configuration/block/existingvolumeconfig.mdx"
                     - "configuration/block/externalvolumeconfig.mdx"
+                    - "configuration/block/filesystemscrubconfig.mdx"
                     - "configuration/block/filesystemtrimconfig.mdx"
                     - "configuration/block/rawvolumeconfig.mdx"
                     - "configuration/block/swapvolumeconfig.mdx"
@@ -301,7 +302,7 @@ navigation:
                     - "configuration/kubernetes/kubetalosapiaccessconfig.mdx"
                 - group: "Network"
                   pages:
-                    - "configuration/network/bgppeerconfig.mdx"
+                    - "configuration/network/bgpinstanceconfig.mdx"
                     - "configuration/network/blackholerouteconfig.mdx"
                     - "configuration/network/bondconfig.mdx"
                     - "configuration/network/bridgeconfig.mdx"

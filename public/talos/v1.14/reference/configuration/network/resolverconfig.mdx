@@ -177,7 +177,7 @@ SearchDomainsConfig represents search domains configuration.
     <tr>
       <td>`domains`</td>
       <td>[]string</td>
-      <td>A list of search domains to be used for DNS resolution.<br /><br />Search domains are appended to unqualified domain names during DNS resolution.<br />For example, if "example.com" is a search domain and a user tries to resolve<br />"host", the system will attempt to resolve "host.example.com".<br /><br />This overrides any search domains obtained via DHCP or platform configuration.<br />The default configuration derives the search domain from the hostname FQDN.</td>
+      <td>A list of search domains to be used for DNS resolution.<br /><br />Search domains are appended to unqualified domain names during DNS resolution.<br />For example, if "example.com" is a search domain and a user tries to resolve<br />"host", the system will attempt to resolve "host.example.com".<br /><br />If set, this overrides any search domains obtained via DHCP or platform configuration.<br />An empty list (`domains: []`) clears search domains obtained from DHCP or platform,<br />while leaving this field unset inherits them.<br />The default configuration derives the search domain from the hostname FQDN.</td>
       <td></td>
     </tr>
     <tr>

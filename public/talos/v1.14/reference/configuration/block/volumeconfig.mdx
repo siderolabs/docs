@@ -109,6 +109,12 @@ provisioning:
       <td>The trim describes the per-volume filesystem trim (fstrim) configuration.</td>
       <td></td>
     </tr>
+    <tr>
+      <td>`scrub`</td>
+      <td><a href="#scrub">ScrubConfig</a></td>
+      <td>The scrub describes the per-volume filesystem scrub configuration.</td>
+      <td></td>
+    </tr>
   </tbody>
 </table>
 
@@ -619,6 +625,45 @@ It overrides the global FilesystemTrimConfig for the volume.
       <td>`interval`</td>
       <td>Duration</td>
       <td>The interval at which the volume is trimmed, overriding the global trim interval.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+## scrub
+
+ScrubConfig describes per-volume filesystem scrub configuration.
+
+It overrides the global FilesystemScrubConfig for the volume.
+
+
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`enabled`</td>
+      <td>bool</td>
+      <td>Enable or disable scrubbing for this volume.<br /><br />If not set, scrubbing is enabled by default when scrub section is present.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`interval`</td>
+      <td>Duration</td>
+      <td>The interval at which the volume is scrubbed, overriding the global scrub interval.</td>
       <td></td>
     </tr>
   </tbody>
