@@ -2623,6 +2623,7 @@
                         ]
                       },
                       "talos/v1.14/configure-your-talos-cluster/storage-and-disk-management/lvm",
+                      "talos/v1.14/configure-your-talos-cluster/storage-and-disk-management/raid",
                       "talos/v1.14/configure-your-talos-cluster/storage-and-disk-management/disk-encryption",
                       "talos/v1.14/configure-your-talos-cluster/storage-and-disk-management/swap"
                     ]
@@ -2648,6 +2649,7 @@
                     "group": "Lifecycle Management",
                     "pages": [
                       "talos/v1.14/configure-your-talos-cluster/lifecycle-management/upgrading-talos",
+                      "talos/v1.14/configure-your-talos-cluster/lifecycle-management/unattended-install",
                       "talos/v1.14/configure-your-talos-cluster/lifecycle-management/resetting-a-machine"
                     ]
                   }
