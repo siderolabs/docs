@@ -124,6 +124,11 @@ navigation:
                 - "advanced/vip.mdx"
                 - "advanced/vrf.mdx"
                 - "advanced/wireguard.mdx"
+            - group: "BGP"
+              pages:
+                - "bgp/overview.mdx"
+                - "bgp/cilium.mdx"
+                - "bgp/metallb.mdx"
             - "corporate-proxies.mdx"
             - "egress-domains.mdx"
             - "host-dns.mdx"

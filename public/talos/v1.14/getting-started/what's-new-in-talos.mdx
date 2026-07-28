@@ -92,6 +92,12 @@ The `.machine.install` field remains supported for backwards compatibility, and 
 The default installer image has been updated to use the [Image Factory](../learn-more/image-factory).
 The `ghcr.io/siderolabs/installer` image is no longer published with releases; use the Image Factory installer image instead.
 
+### Native BGP
+
+Talos Linux now supports multiple named native BGP routing instances in the default routing domain or a Linux VRF.
+Instances support numbered and unnumbered peers, ECMP, BFD, optional Linux route installation, and selective route imports between instances.
+See [Native BGP](../networking/bgp/overview) for configuration and Kubernetes workload-speaker examples.
+
 ### Apply configuration modes
 
 The `--mode=reboot` option has been removed from the `talosctl apply-config` command; by default, configuration is applied without a reboot.

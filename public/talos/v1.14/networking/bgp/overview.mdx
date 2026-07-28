@@ -1,0 +1,421 @@
+---
+title: "Native BGP"
+description: "Configure native BGP routing instances, peers, route installation, and route imports on Talos Linux."
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx";
+
+<VersionWarningBanner />
+
+Talos Linux can now run native Border Gateway Protocol (BGP) routing instances on the host.
+Each `BGPInstanceConfig` document creates an independent BGP Routing Information Base (RIB) backed by an embedded GoBGP server.
+An instance can run in the default routing domain or in a Linux Virtual Routing and Forwarding (VRF) domain.
+
+Use native BGP when Talos nodes need to participate directly in a routed fabric, advertise node addresses, learn routes from the fabric, or redistribute selected routes from a Kubernetes workload speaker such as Cilium or MetalLB.
+
+## How native BGP works
+
+Each named `BGPInstanceConfig` owns its sessions and BGP RIB.
+Create multiple documents to keep routing domains or responsibilities separate, for example a `fabric` instance and a `workload` instance.
+Only one instance can use the default routing domain, and only one instance can use a given VRF.
+
+Talos performs the following operations for each instance:
+
+- It originates the addresses assigned to links listed under `advertise` as `/32` IPv4 or `/128` IPv6 routes.
+- It resolves and establishes numbered or unnumbered BGP sessions.
+- It installs learned best paths into the Linux forwarding information base (FIB) unless `installRoutes` is `false`.
+- It publishes session state as `BGPPeerStatus` resources.
+- It can selectively import routes learned by another named instance and advertise those routes to its own peers.
+
+Removing a `BGPInstanceConfig` stops its sessions and withdraws routes owned by that instance.
+
+## Configure a numbered peer
+
+A numbered peer uses a configured neighbor address.
+The following example advertises an address from `lo`, peers with `192.0.2.1`, and installs learned routes in the main routing table:
+
+```yaml
+apiVersion: v1alpha1
+kind: LinkConfig
+name: lo
+addresses:
+  - address: 10.0.0.10/32
+---
+apiVersion: v1alpha1
+kind: BGPInstanceConfig
+name: fabric
+localASN: 65001
+routerID: 10.0.0.10
+routeSource: 10.0.0.10
+advertise:
+  - lo
+neighbors:
+  - address: 192.0.2.1
+    peerASN: 65000
+    holdTime: 90s
+```
+
+`routerID` must be an IPv4 address.
+If it is omitted, Talos derives it from the first address on an advertised link.
+
+`routeSource` sets the preferred source address on routes that Talos installs in Linux.
+This is equivalent to setting `RTA_PREFSRC`, or using an FRR route map with `set src`.
+The address must exist in the same routing domain as the BGP instance.
+
+## Configure an unnumbered fabric
+
+An unnumbered neighbor uses IPv6 link-local addressing on a link instead of a configured peer address.
+Talos discovers the peer from the kernel neighbor table and uses RFC 8950 extended next-hop support to exchange IPv4 routes over the IPv6 session.
+
+The following example uses two unnumbered fabric links, Equal-Cost Multipath (ECMP), and Bidirectional Forwarding Detection (BFD):
+
+```yaml
+apiVersion: v1alpha1
+kind: LinkConfig
+name: enp1s0
+up: true
+---
+apiVersion: v1alpha1
+kind: LinkConfig
+name: enp2s0
+up: true
+---
+apiVersion: v1alpha1
+kind: LinkConfig
+name: lo
+addresses:
+  - address: 10.0.0.10/32
+---
+apiVersion: v1alpha1
+kind: BGPInstanceConfig
+name: fabric
+localASN: 65001
+routerID: 10.0.0.10
+routeSource: 10.0.0.10
+advertise:
+  - lo
+multipath: true
+maxPaths: 2
+neighbors:
+  - link: enp1s0
+    peerASN: 65000
+    bfd:
+      transmitInterval: 300ms
+      receiveInterval: 300ms
+      detectMultiplier: 3
+  - link: enp2s0
+    peerASN: 65000
+    bfd:
+      transmitInterval: 300ms
+      receiveInterval: 300ms
+      detectMultiplier: 3
+```
+
+The link must have exactly one discoverable IPv6 link-local router neighbor.
+Router Advertisements or another Neighbor Discovery mechanism must populate that entry.
+
+Set `multipath: true` to install multiple equal best paths.
+`maxPaths` limits the number of next hops; zero uses the implementation default.
+
+The presence of a `bfd` block enables BFD for that neighbor.
+An empty block uses the implementation defaults.
+BFD is supported only for instances in the default routing domain and cannot be enabled on a VRF-bound instance.
+
+## Configure neighbor behavior
+
+Each neighbor selects exactly one of `address` or `link`.
+The remaining fields control session behavior:
+
+| Field      | Behavior                                                                                             |
+| ---------- | ---------------------------------------------------------------------------------------------------- |
+| `peerASN`  | Expected peer Autonomous System Number (ASN). Zero accepts the ASN presented by an external peer.    |
+| `localASN` | Overrides the instance ASN for this neighbor. Zero uses the instance `localASN`.                     |
+| `passive`  | Waits for the peer to establish the TCP session instead of initiating it.                            |
+| `holdTime` | Configures the negotiated BGP hold time. Zero uses the implementation default.                       |
+| `bfd`      | Enables BFD and optionally configures transmit interval, receive interval, and detection multiplier. |
+
+Use `passive: true` when the remote speaker must initiate the session, such as a workload speaker connecting to a listener bound to a VRF.
+Allow inbound TCP port `179` from the peer through the network and the [Talos ingress firewall](../ingress-firewall) when passive sessions are configured.
+
+## Bind an instance to a VRF
+
+Set `vrf` to the name of a [`VRFConfig`](../advanced/vrf) link.
+The BGP listener, outbound connections, and learned routes then use that VRF and its routing table.
+
+```yaml
+apiVersion: v1alpha1
+kind: LinkConfig
+name: enp3s0
+addresses:
+  - address: 198.51.100.2/30
+---
+apiVersion: v1alpha1
+kind: VRFConfig
+name: vrf-workload
+links:
+  - enp3s0
+table: "88"
+---
+apiVersion: v1alpha1
+kind: BGPInstanceConfig
+name: workload
+vrf: vrf-workload
+localASN: 4200000002
+routerID: 10.0.0.10
+neighbors:
+  - address: 198.51.100.1
+    peerASN: 4200000003
+    passive: true
+```
+
+An interface used by a VRF-bound instance must belong to that VRF.
+Advertised addresses and `routeSource` must also be in the same routing domain.
+
+## Control route installation
+
+`installRoutes` defaults to `true`.
+Talos publishes learned best paths as desired Linux routes in the instance's main or VRF routing table.
+
+Set `installRoutes: false` to keep learned paths only in the instance BGP RIB.
+Those paths remain eligible for `importRoutes`, but Talos does not install them into the Linux FIB.
+This is useful for a workload-facing instance whose only purpose is to feed selected routes into another BGP instance.
+
+```yaml
+apiVersion: v1alpha1
+kind: BGPInstanceConfig
+name: workload
+vrf: vrf-workload
+localASN: 4200000002
+routerID: 10.0.0.10
+installRoutes: false
+neighbors:
+  - address: "fda1:b2c3:d4e5:1::"
+    peerASN: 4200000003
+    passive: true
+```
+
+## Import routes between instances
+
+`importRoutes` selects best paths learned by another named instance.
+The target instance preserves the path attributes and advertises the imported route with its own next hop.
+
+The following `fabric` instance imports Service VIPs and Pod CIDRs learned by `workload`:
+
+```yaml
+apiVersion: v1alpha1
+kind: BGPInstanceConfig
+name: fabric
+localASN: 65001
+routerID: 10.0.0.10
+routeSource: 10.0.0.10
+advertise:
+  - lo
+importRoutes:
+  - bgpInstance: workload
+    prefixes:
+      - 203.0.113.0/24
+      - 10.244.0.0/16
+neighbors:
+  - link: enp1s0
+    peerASN: 65000
+```
+
+A learned route matches a selector when the route is contained by the configured prefix.
+For example, `203.0.113.100/32` matches `203.0.113.0/24`.
+
+Imports have the following constraints:
+
+- Imports are one-way; configure the opposite direction explicitly if it is required.
+- A target instance cannot import from itself.
+- Selectors in one target instance cannot overlap, including selectors for different source instances.
+- Each source instance can appear only once in a target instance.
+- Locally originated and previously imported paths are not imported again, which prevents recursive redistribution loops.
+- Only matching best paths learned from a neighbor are eligible.
+
+When the source peer withdraws a selected route, Talos removes the imported path and withdraws it from the target instance's peers.
+
+## Connect a Kubernetes workload speaker to the fabric
+
+Cilium and MetalLB can advertise Service VIPs or Pod CIDRs to a dedicated Talos workload instance.
+Talos can then selectively redistribute those routes through a separate fabric instance.
+
+The tested topology uses these components:
+
+1. A veth pair provides a host-networked workload speaker with one endpoint.
+2. The other veth endpoint belongs to a dedicated VRF.
+3. A VRF-bound Talos BGP instance peers with the workload speaker and uses `installRoutes: false`.
+4. The default-domain `fabric` instance imports only the required workload prefixes.
+5. The fabric instance advertises those prefixes to the physical network.
+
+The following documents create the shared Talos-side workload connection:
+
+```yaml
+apiVersion: v1alpha1
+kind: VethConfig
+name: veth-workload
+addresses:
+  - address: fda1:b2c3:d4e5:1::/127
+peer:
+  name: veth-router
+  addresses:
+    - address: fda1:b2c3:d4e5:1::1/127
+---
+apiVersion: v1alpha1
+kind: VRFConfig
+name: vrf-workload
+links:
+  - veth-router
+table: "88"
+---
+apiVersion: v1alpha1
+kind: BGPInstanceConfig
+name: workload
+vrf: vrf-workload
+localASN: 4200000002
+routerID: 10.0.0.10
+installRoutes: false
+neighbors:
+  - address: "fda1:b2c3:d4e5:1::"
+    peerASN: 4200000003
+    passive: true
+---
+apiVersion: v1alpha1
+kind: BGPInstanceConfig
+name: fabric
+localASN: 65001
+routerID: 10.0.0.10
+routeSource: 10.0.0.10
+advertise:
+  - lo
+importRoutes:
+  - bgpInstance: workload
+    prefixes:
+      - 203.0.113.0/24
+      - 10.244.0.0/16
+neighbors:
+  - link: enp1s0
+    peerASN: 65000
+```
+
+Replace the interface names, addresses, ASNs, VRF table, and import selectors with values from your network design.
+The `fabric` document represents the complete desired state for that named instance.
+
+Continue with the workload-specific configuration:
+
+- [Configure Cilium BGP](./cilium)
+- [Configure MetalLB with FRR-K8s](./metallb)
+
+## Inspect BGP state
+
+Set `NODE` to the address of the Talos machine that runs the BGP instances:
+
+```bash
+export NODE=<TALOS_NODE_IP>
+```
+
+List BGP sessions:
+
+```bash
+talosctl get bgppeerstatus --nodes "$NODE"
+```
+
+Peer resource IDs are instance-qualified, for example `fabric/192.0.2.1` or `workload/fda1:b2c3:d4e5:1::`.
+The default output shows the instance, peer, peer ASN, session state, establishment time, and received-prefix count.
+
+Inspect all peer counters, the local ASN, router ID, advertised-prefix count, accepted-prefix count, and BFD state:
+
+```bash
+talosctl get bgppeerstatus --nodes "$NODE" --output yaml
+```
+
+An `Established` session with zero accepted prefixes usually indicates a remote export policy, address-family, or selector problem rather than a transport problem.
+
+## Inspect links, addresses, and VRFs
+
+Verify that physical links, veth endpoints, and VRF devices are present and up:
+
+```bash
+talosctl get links --nodes "$NODE"
+```
+
+Use YAML output to verify link kind, veth peer names, and VRF master membership:
+
+```bash
+talosctl get links --nodes "$NODE" --output yaml
+```
+
+Verify the addresses used by numbered peers, `routerID`, and `routeSource`:
+
+```bash
+talosctl get addresses --nodes "$NODE"
+```
+
+For an unnumbered peer, confirm that the fabric interface is up and that the upstream router advertises exactly one discoverable IPv6 link-local router neighbor on that link.
+
+## Inspect routes and routing rules
+
+List routes observed in the Linux FIB:
+
+```bash
+talosctl get routes --nodes "$NODE"
+```
+
+Inspect YAML output to verify the destination, routing table, BGP protocol, preferred source, gateway, output link, and ECMP next hops:
+
+```bash
+talosctl get routes --nodes "$NODE" --output yaml
+```
+
+If `installRoutes` is `false`, routes learned by that instance do not appear in this output.
+Imported paths also remain in the target BGP RIB and are not installed into Linux on the importing node.
+Use the source peer's received and accepted counters, then verify that the target peer's advertised count increases for matching imports.
+
+For VRF deployments, inspect policy routing rules and confirm that the global l3mdev rule is present:
+
+```bash
+talosctl get routingrules --nodes "$NODE" --output yaml
+```
+
+Linux creates the IPv4 and IPv6 l3mdev rules at priority `1000` when the first VRF is created.
+The rules are global to the network namespace and remain after the VRF is removed.
+Avoid using priority `1000` for unrelated custom policy-routing rules on machines that use VRFs.
+
+## Inspect controller logs
+
+The `controller-runtime` service logs configuration projection, neighbor resolution, instance lifecycle, and route reconciliation errors:
+
+```bash
+talosctl logs controller-runtime --nodes "$NODE"
+```
+
+Correlate log timestamps with resource changes.
+Common messages identify a missing VRF, a link in the wrong routing domain, an invalid `routeSource`, an unresolved unnumbered neighbor, a failed listener, or overlapping import selectors.
+
+For Cilium or MetalLB, also inspect the workload speaker logs and its Kubernetes BGP status resources.
+The Talos session cannot establish until both sides agree on peer addresses, ASNs, address families, session direction, and source interface.
+
+## Troubleshoot common failures
+
+Use the following checks to narrow down a failure:
+
+| Symptom                                              | Checks                                                                                                                                       |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| No `BGPPeerStatus` for a numbered peer               | Confirm the instance is valid, the VRF exists, and the neighbor address is reachable in that routing domain.                                 |
+| No `BGPPeerStatus` for an unnumbered peer            | Confirm the link is up and exactly one IPv6 link-local router neighbor is discoverable through Neighbor Discovery.                           |
+| Session remains `Active` or `Connect`                | Check TCP port 179, peer addresses, ASNs, `passive`, VRF binding, and workload source interface.                                             |
+| Session is established but no prefixes are accepted  | Check remote advertisements, address families, import selectors, and speaker label selectors.                                                |
+| A learned route is absent from `talosctl get routes` | Check the instance routing table and `installRoutes`; a RIB-only instance intentionally does not publish Linux routes.                       |
+| An imported route is absent from the fabric          | Confirm the route was learned from a neighbor, is the source instance's best path, and is contained by exactly one non-overlapping selector. |
+| ECMP has one next hop                                | Confirm `multipath`, `maxPaths`, equal best paths, and that every relevant session is established.                                           |
+| BFD is absent                                        | Confirm a `bfd` block exists and the instance is not bound to a VRF.                                                                         |
+
+## Limitations
+
+Native BGP currently has these constraints:
+
+- BFD is available only in the default routing domain because the embedded BFD listener is not VRF-aware.
+- Only one BGP instance can own the default routing domain or a particular VRF.
+- Unnumbered sessions require one resolvable IPv6 link-local router neighbor per configured link.
+- `importRoutes` is selective and non-recursive; it is not a general-purpose route-reflector or arbitrary policy engine.
+- Import selectors in one target instance cannot overlap.
+- `advertise` originates link addresses as host routes; it does not originate connected subnets.

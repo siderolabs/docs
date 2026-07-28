@@ -1,0 +1,204 @@
+---
+title: "Cilium BGP"
+description: "Advertise Cilium Service VIPs and Pod CIDRs through Talos native BGP."
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Cilium BGP Control Plane can advertise Kubernetes Service virtual IPs (VIPs) and Pod Classless Inter-Domain Routing (CIDR) prefixes to a VRF-bound Talos BGP instance.
+Talos can then import selected routes into its fabric instance and advertise them to the physical network.
+
+This design separates the workload speaker from the host fabric and prevents Cilium-learned routes from being installed in the host's main routing table.
+
+## Prerequisites
+
+Complete the following prerequisites before configuring the BGP peers:
+
+1. Install Cilium by following [Deploy Cilium CNI](../../../../kubernetes-guides/cni/deploying-cilium).
+2. Enable Cilium BGP Control Plane in the Cilium Helm values:
+
+   ```yaml
+   bgpControlPlane:
+     enabled: true
+   ```
+
+3. Configure the [Talos workload-speaker topology](./overview#connect-a-kubernetes-workload-speaker-to-the-fabric) on each node that runs a Cilium BGP instance.
+4. Label the selected Kubernetes node and the Services that Cilium should advertise.
+
+The integration has been validated with Cilium kube-proxy replacement enabled.
+Cilium BGP Control Plane itself does not require kube-proxy replacement; keep the dataplane mode that is appropriate for your cluster.
+
+## Plan the peer values
+
+The examples use these values:
+
+| Purpose | Example value |
+|---|---|
+| Kubernetes node | `worker-1` |
+| Talos workload instance | `workload` |
+| Talos workload ASN | `4200000002` |
+| Cilium ASN | `4200000003` |
+| Cilium source interface | `veth-workload` |
+| Cilium source address | `fda1:b2c3:d4e5:1::` |
+| Talos VRF peer address | `fda1:b2c3:d4e5:1::1` |
+| Service VIP pool | `203.0.113.0/24` |
+| Advertisement label | `bgp.example.com/advertisement=workload-routes` |
+| Service label | `bgp.example.com/advertise=true` |
+
+Replace these values with addresses, ASNs, labels, and node names from your network design.
+The two peer addresses must be assigned to the corresponding veth endpoints described in the native BGP overview.
+
+## Configure Cilium advertisements
+
+Create a `CiliumLoadBalancerIPPool` for advertised Service VIPs and select only Services with the expected label:
+
+```yaml
+apiVersion: cilium.io/v2
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: workload-vips
+spec:
+  blocks:
+    - cidr: 203.0.113.0/24
+  serviceSelector:
+    matchLabels:
+      bgp.example.com/advertise: "true"
+```
+
+Create a `CiliumBGPAdvertisement` that advertises selected LoadBalancer IPs and the node Pod CIDR:
+
+```yaml
+apiVersion: cilium.io/v2
+kind: CiliumBGPAdvertisement
+metadata:
+  name: workload-routes
+  labels:
+    bgp.example.com/advertisement: workload-routes
+spec:
+  advertisements:
+    - advertisementType: Service
+      service:
+        addresses:
+          - LoadBalancerIP
+      selector:
+        matchLabels:
+          bgp.example.com/advertise: "true"
+    - advertisementType: PodCIDR
+```
+
+The corresponding Talos fabric instance must import selectors that contain the advertised VIPs and Pod CIDRs.
+For example, import `203.0.113.0/24` for this pool and the cluster Pod subnet that contains each node's Pod CIDR.
+
+## Configure the Cilium peer
+
+Create a `CiliumBGPPeerConfig` that selects the advertisement and sources the session from the workload-facing veth endpoint:
+
+```yaml
+apiVersion: cilium.io/v2
+kind: CiliumBGPPeerConfig
+metadata:
+  name: talos-workload
+spec:
+  transport:
+    peerPort: 179
+    sourceInterface: veth-workload
+  families:
+    - afi: ipv4
+      safi: unicast
+      advertisements:
+        matchLabels:
+          bgp.example.com/advertisement: workload-routes
+```
+
+The BGP session uses IPv6 transport while the selected address family carries IPv4 Service VIPs and Pod CIDRs.
+The `sourceInterface` ensures that Cilium initiates the session from the veth endpoint outside the Talos workload VRF.
+
+Create a `CiliumBGPClusterConfig` for the selected node:
+
+```yaml
+apiVersion: cilium.io/v2
+kind: CiliumBGPClusterConfig
+metadata:
+  name: talos-workload
+spec:
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/hostname: worker-1
+  bgpInstances:
+    - name: talos-workload
+      localASN: 4200000003
+      peers:
+        - name: talos-workload
+          peerASN: 4200000002
+          peerAddress: "fda1:b2c3:d4e5:1::1"
+          peerConfigRef:
+            name: talos-workload
+```
+
+The Cilium `localASN` must match the Talos neighbor `peerASN`.
+The Cilium `peerASN` must match the Talos workload instance `localASN`.
+The `peerAddress` is the Talos-side veth address inside the workload VRF.
+
+The tested Talos workload neighbor is passive, so Cilium initiates this session.
+If you change the session direction, update both configurations consistently.
+
+## Advertise a service
+
+Label a LoadBalancer Service so that both the address pool and advertisement select it:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: example-web
+  labels:
+    bgp.example.com/advertise: "true"
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    app: example-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+```
+
+`externalTrafficPolicy: Local` keeps traffic on a node with a local backend.
+Ensure that Cilium advertises the VIP only from nodes where your traffic policy can deliver it.
+
+## Apply and verify the configuration
+
+Apply the Cilium resources:
+
+```bash
+kubectl apply --filename cilium-bgp.yaml
+```
+
+Inspect the Cilium resources and peering status:
+
+```bash
+kubectl get ciliumbgpclusterconfigs,ciliumbgppeerconfigs,ciliumbgpadvertisements,ciliumloadbalancerippools
+cilium bgp peers
+```
+
+On the selected Talos node, verify the `workload` peer and then the imported fabric route:
+
+```bash
+talosctl get bgppeerstatus --nodes <TALOS_NODE_IP> --output yaml
+talosctl get routes --nodes <TALOS_NODE_IP> --output yaml
+```
+
+Because the workload instance uses `installRoutes: false`, the Cilium routes should not appear in the workload VRF or host main table on that node.
+Imported paths also remain out of the Linux FIB on the importing node; the fabric peer's advertised count should increase when matching routes are imported.
+
+Use the [native BGP troubleshooting workflow](./overview#inspect-bgp-state) when the peer or route does not appear.
+Also inspect the Cilium agent on the selected node:
+
+```bash
+kubectl --namespace kube-system logs --selector k8s-app=cilium --all-containers
+```
+
+Check for a source-interface mismatch, node-selector mismatch, peer ASN mismatch, missing advertisement labels, or an import prefix that does not contain the advertised route.
