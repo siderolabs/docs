@@ -264,7 +264,7 @@ kubernetes:
 
 A `Role` is the role to grant to the user.
 
-Possible values: `None`, `Reader`, `Operator`, `Admin`.
+Possible values: `None`, `Reader`, `Operator`, `Admin`. The `Auditor` role cannot be assigned by an ACL, because audit log access is account-wide rather than cluster-scoped.
 
 #### `Test`
 

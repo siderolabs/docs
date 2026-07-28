@@ -1,0 +1,116 @@
+---
+title: Export Audit Logs
+description: Stream the Omni audit log to a log shipper or file with the audit log exporter.
+---
+
+The [Omni audit log exporter](https://github.com/siderolabs/omni-audit-log-exporter) is a small daemon that follows the audit log of an Omni instance and writes each event to stdout as a line of JSON. It keeps up with new events as they happen, and resumes where it left off across reconnects and restarts.
+
+Use it when audit events need to live somewhere other than Omni, such as a log aggregation system or storage that outlasts Omni's retention window.
+
+For reading the audit log interactively instead, see [Audit Logs](./using-audit-log).
+
+## Prerequisites
+
+You need:
+
+- Omni v1.10.0 or later. Following the audit log arrived in that release. Earlier versions can serve the audit log but not follow it, and the exporter exits rather than retrying.
+- The audit log enabled on that instance. On self-hosted instances it is off by default, so enable it first.
+
+## Set up the exporter
+
+Setting the exporter up takes two steps: give it an identity to authenticate with, then start it against your instance.
+
+### Step 1: Create a service account
+
+Create a service account for the exporter:
+
+```bash
+omnictl serviceaccount create --use-user-role=false --role=Auditor audit-log-exporter
+```
+
+The `Auditor` role grants read-only access to Omni's resources, plus permission to read the audit log. It grants nothing beyond that: an `Auditor` cannot create, change or delete anything, and it cannot turn audit logging on or off. Avoid giving the exporter the `Admin` role, which would also let it manage users and service accounts and grant it administrative access to every managed Kubernetes cluster.
+
+<Note>
+`--use-user-role` defaults to true, which clones the role of the user running the command instead of the role you pass. Set it to false, as above, or the account will end up with your own role.
+</Note>
+
+The command prints an `OMNI_SERVICE_ACCOUNT_KEY`. It is shown once, so store it somewhere safe. Service account keys expire after a year by default.
+
+### Step 2: Run the exporter
+
+Point the exporter at your instance and give it the key:
+
+```bash
+docker run -d \
+  -v audit-log-exporter-state:/state \
+  -e OMNI_ENDPOINT=https://<account>.omni.siderolabs.io \
+  -e OMNI_SERVICE_ACCOUNT_KEY=<key> \
+  ghcr.io/siderolabs/omni-audit-log-exporter:latest --state-file=/state/position
+```
+
+Pin the image to a release tag rather than `latest`, which moves with every merge to the exporter's main branch, and set a restart policy, since this is meant to run continuously.
+
+The first run exports everything the instance still retains, then keeps following. Events land on stdout, one JSON object per line, in the format described in [Audit Logs](./using-audit-log):
+
+```json
+{"event_type":"create","resource_type":"Machines.omni.sidero.dev","resource_id":"a586f34d-0cf9-4849-8439-bb31002c66c6","event_data":{},"event_ts":1785242233000}
+```
+
+The exporter's own logs go to stderr, so a startup line there tells you it connected and where it resumed from:
+
+```json
+{"level":"info","msg":"starting the audit log export","resuming":true,"position":51}
+```
+
+Both streams carry JSON, but with different shapes, and most container log views merge them. Configure your collector to filter on which stream a line came from, which Fluent Bit, Vector, and Grafana Alloy can all do, so that events and diagnostics end up in different places.
+
+The key can also be read from a file with `--omni-service-account-key-file`, which suits a Kubernetes secret mount better than an environment variable. The endpoint has a flag too, `--omni-api-endpoint`, if you would rather not use `OMNI_ENDPOINT`. Run the image with `--help` to see every flag.
+
+If your self-hosted instance serves a certificate the exporter does not trust, add its CA to the container's trust store. There is an `--insecure-skip-tls-verify` flag, but it turns off certificate checking on a connection carrying audit records and a service account key, so keep it to temporary testing.
+
+## Configure behavior
+
+The defaults suit a long-running exporter, so most instances need no tuning. Two flags cover the rest: where a first export begins, and where the exporter records how far it has read.
+
+### Choose where the export starts
+
+The `--start-from` flag decides where a first run begins, when no position has been recorded yet:
+
+| Value | Where the export starts |
+| --- | --- |
+| `beginning` | Everything the instance still retains. This is the default. |
+| `now` | New events only. |
+| An RFC3339 timestamp | Events from that point on, for example `2026-07-01T00:00:00Z`. |
+
+Once the exporter has recorded a position, `--start-from` is ignored, so leaving it in place is harmless.
+
+### Resume across restarts
+
+The exporter tracks how far it has read and writes that position to the file given by `--state-file`, periodically while events flow and again on every reconnect and at shutdown. On restart it resumes just after the last recorded position.
+
+Treat the file as opaque and give it durable storage, such as a volume or a persistent volume claim. Without `--state-file` nothing is recorded and every start begins at `--start-from` again, which is useful for a first look at the output but not for running the exporter properly.
+
+<Warning>
+Run a single exporter against a given state file. The file is not locked, so two instances sharing one volume overwrite each other's positions and the export both duplicates and skips events. On Kubernetes that means one replica, not a scaled deployment.
+</Warning>
+
+## Understand the delivery guarantees
+
+Events are delivered at least once, in the order Omni recorded them.
+
+Reconnects, including the periodic ones the server initiates, resume exactly where they left off without repeating or skipping events. A restart resumes from the last recorded position, and because the position is written every few hundred events rather than on every one, an unclean shutdown can re-emit everything since the last write.
+
+Downstream consumers must therefore tolerate duplicates. Exported events carry no unique identifier, and two separate operations can produce identical JSON, so comparing events cannot tell a re-emitted event apart from a genuine second occurrence. Store both rather than discarding one, since dropping the wrong one loses an audit record.
+
+A stopped or slow exporter does not hold events open on the Omni side. Retention keeps deleting old events regardless, so anything that ages out before the exporter reads it is gone. Keep the exporter running, and if you need to re-export, delete the state file or point `--state-file` at a new path and use `--start-from beginning` to pick up everything still retained. Delete it rather than emptying it, because an existing file that cannot be parsed is treated as an error rather than as a fresh start.
+
+## Troubleshoot
+
+The exporter retries transient problems forever with backoff, including an unreachable server, and resumes without loss once the instance is back. A retry loop that never settles usually means one of two things: the service account key has expired, or the instance has audit logging disabled. Both look like repeating warnings rather than an exit.
+
+Four problems stop the exporter instead, because retrying cannot fix them:
+
+- The instance does not support following the audit log, meaning it predates v1.10.0.
+- The service account may not read the audit log, meaning its role is neither `Auditor` nor `Admin`.
+- The instance no longer recognizes the recorded position, which in practice means its database was restored from a backup. Delete the state file to recover, and the next start positions itself with `--start-from`.
+- The exporter cannot write an event to stdout, or the position to the state file.
