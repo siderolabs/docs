@@ -67,7 +67,7 @@ The fields in the `spec` are:
 
 | Field | Description |
 |---|---|
-| `assignrole` | The Omni role to assign to matching users. Valid values are `Reader`, `Operator`, and `Admin`. |
+| `assignrole` | The Omni role to assign to matching users. Valid values are `None`, `Reader`, `Operator`, and `Admin`. The `Auditor` role cannot be assigned this way, so it has to be set on the user directly. Note that a matching rule with `updateoneachlogin` set to true overwrites the user's role on every login, which would undo a manual `Auditor` assignment. |
 | `updateoneachlogin` | If `true`, the role is re-evaluated and updated on every login, not just the first. If `false`, the role is only assigned on the user's first login. |
 | `matchlabels` | A list of SAML-derived labels to match against. Labels follow the format `saml.omni.sidero.dev/<attribute-name>/<attribute-value>`. |
 
