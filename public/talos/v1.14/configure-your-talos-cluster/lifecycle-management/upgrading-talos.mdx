@@ -181,7 +181,8 @@ If both the deprecated `v1alpha1` field and the new document are used, the new d
   The legacy `/etc/cri/conf.d/20-customization.part` machine file is still supported and is exposed under the reserved name `customization`.
   CRI configuration changes no longer require a reboot.
 * `.machine.baseRuntimeSpecOverrides` is deprecated in favor of the new [CRIBaseRuntimeSpecConfig](../../reference/configuration/cri/cribaseruntimespecconfig) document.
-* `.machine.features.imageCache` is deprecated in favor of the new [ImageCacheConfig](../../reference/configuration/cri/imagecacheconfig) document.
+* `.machine.features.imageCache` is deprecated in favor of the new [ImageCacheConfig](../../reference/configuration/cri/imagecacheconfig) document, where `localEnabled` becomes `local.enabled`.
+  The deprecated field is still honored, so upgraded clusters keep their image cache enabled, but the field and the document cannot both be set.
 * New [SecurityProfileConfig](../../reference/configuration/runtime/securityprofileconfig) document with the `workloadIsolation` option (enabled by default for new clusters generated with Talos 1.14, absent — and therefore disabled — on upgraded clusters).
 * [OOMConfig](../../reference/configuration/runtime/oomconfig) has a new `strictCgroupClassOrdering` option (defaults to `true`) to enforce QoS class ordering when picking an OOM victim.
 

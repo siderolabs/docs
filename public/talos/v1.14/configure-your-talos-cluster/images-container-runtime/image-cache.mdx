@@ -119,16 +119,21 @@ Upon boot, Talos will expand the disk image to utilize the full disk size.
 
 ## Configuration
 
-The image cache feature (for security reasons) should be explicitly enabled in the Talos configuration:
+The image cache feature (for security reasons) should be explicitly enabled in the Talos configuration with the
+[`ImageCacheConfig`](../../reference/configuration/cri/imagecacheconfig) document:
 
 ```yaml
-machine:
-  features:
-    imageCache:
-      localEnabled: true
+apiVersion: v1alpha1
+kind: ImageCacheConfig
+local:
+  enabled: true
 ```
 
 Once enabled, Talos Linux will automatically look for the image cache contents either on the disk or in the ISO image.
+
+> Note: In Talos versions before v1.14, the image cache was enabled with the `.machine.features.imageCache.localEnabled` field of the `v1alpha1` config.
+> That field is deprecated, but still honored, so existing configurations keep working after an upgrade.
+> The two ways of enabling the image cache are mutually exclusive: if `.machine.features.imageCache` is set, the `ImageCacheConfig` document is rejected.
 
 If the image cache is bundled with the ISO, the disk volume size for the image cache should be configured to copy the image cache to the disk during the installation process:
 

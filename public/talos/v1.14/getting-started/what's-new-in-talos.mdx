@@ -189,8 +189,17 @@ to prevent overriding files owned by Talos.
 ### Image cache configuration
 
 Talos now supports the new [`ImageCacheConfig`](../reference/configuration/cri/imagecacheconfig) document for configuring the
-[Image Cache](../configure-your-talos-cluster/images-container-runtime/image-cache) feature, replacing the `.machine.features.imageCache` field in the v1alpha1 config.
-The old configuration is still supported for backwards compatibility.
+[Image Cache](../configure-your-talos-cluster/images-container-runtime/image-cache) feature, replacing the `.machine.features.imageCache` field in the v1alpha1 config:
+
+```yaml
+apiVersion: v1alpha1
+kind: ImageCacheConfig
+local:
+  enabled: true
+```
+
+The `localEnabled` field is now `local.enabled`.
+The old configuration is still supported for backwards compatibility, but the two are mutually exclusive: the document is rejected if `.machine.features.imageCache` is also set.
 
 ## Container runtime
 
