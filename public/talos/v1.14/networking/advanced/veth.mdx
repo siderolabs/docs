@@ -1,0 +1,98 @@
+---
+title: "Virtual Ethernet Pairs"
+description: "Learn how to configure virtual Ethernet (veth) pairs."
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+A virtual Ethernet (veth) pair consists of two connected virtual network interfaces.
+Traffic sent through either endpoint is received by the other endpoint.
+
+Talos Linux creates both endpoints in the host network namespace.
+You can keep both endpoints in the default routing domain or attach one endpoint to a Virtual Routing and Forwarding (VRF) device.
+
+## Configure a veth pair
+
+Create a [`VethConfig`](../../reference/configuration/network/vethconfig) document that defines both endpoints:
+
+```yaml
+apiVersion: v1alpha1
+kind: VethConfig
+name: veth-host
+mtu: 1500
+addresses:
+  - address: 192.0.2.1/30
+peer:
+  name: veth-router
+  mtu: 1500
+  addresses:
+    - address: 192.0.2.2/30
+```
+
+This configuration creates `veth-host` and `veth-router` and assigns an address to each endpoint.
+Each endpoint supports independent `up`, `mtu`, `addresses`, `routes`, and `multicast` settings.
+When `up` is omitted, Talos brings the endpoint up.
+
+The `name` and `peer.name` fields are literal kernel interface names, not [link aliases](../configuration/aliases).
+The two names must differ, and no other link configuration document can claim either name.
+
+## Attach an endpoint to a VRF
+
+List an endpoint in a [`VRFConfig`](./vrf) document to move it into that routing domain:
+
+```yaml
+apiVersion: v1alpha1
+kind: VethConfig
+name: veth-workload
+addresses:
+  - address: fda1:b2c3:d4e5:1::/127
+peer:
+  name: veth-router
+  addresses:
+    - address: fda1:b2c3:d4e5:1::1/127
+---
+apiVersion: v1alpha1
+kind: VRFConfig
+name: vrf-workload
+links:
+  - veth-router
+table: "88"
+```
+
+In this example, `veth-workload` remains in the default routing domain and `veth-router` belongs to `vrf-workload`.
+The pair provides a point-to-point connection between the two routing domains.
+
+The [native BGP workload-speaker topology](../bgp/overview#connect-a-kubernetes-workload-speaker-to-the-fabric) uses this design to connect a host-networked Cilium or MetalLB speaker to a VRF-bound Talos BGP instance.
+
+## Verify the endpoints
+
+Set `NODE` to the address of the Talos machine:
+
+```bash
+export NODE=<TALOS_NODE_IP>
+```
+
+Inspect each endpoint:
+
+```bash
+talosctl get links veth-workload --nodes "$NODE" --output yaml
+talosctl get links veth-router --nodes "$NODE" --output yaml
+```
+
+Each `LinkStatus` reports `kind: veth` and identifies the other endpoint in `veth.peerName`.
+The endpoint indices also cross-reference each other through `index` and `linkIndex`.
+
+Inspect the configured addresses:
+
+```bash
+talosctl get addresses --nodes "$NODE" --output yaml
+```
+
+Confirm that each address reports the expected endpoint in `linkName`.
+
+## Lifecycle
+
+Talos creates the two endpoints as one kernel veth pair and reconciles their common link settings independently.
+Removing the `VethConfig` removes the pair, and changing an endpoint name replaces the old pair with the newly named pair.

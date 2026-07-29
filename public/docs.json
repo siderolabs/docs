@@ -2519,6 +2519,7 @@
                       "talos/v1.14/networking/advanced/ethernet-config",
                       "talos/v1.14/networking/advanced/routing-rules",
                       "talos/v1.14/networking/advanced/vip",
+                      "talos/v1.14/networking/advanced/veth",
                       "talos/v1.14/networking/advanced/vrf",
                       "talos/v1.14/networking/advanced/wireguard"
                     ]

@@ -122,6 +122,7 @@ navigation:
                 - "advanced/ethernet-config.mdx"
                 - "advanced/routing-rules.mdx"
                 - "advanced/vip.mdx"
+                - "advanced/veth.mdx"
                 - "advanced/vrf.mdx"
                 - "advanced/wireguard.mdx"
             - group: "BGP"

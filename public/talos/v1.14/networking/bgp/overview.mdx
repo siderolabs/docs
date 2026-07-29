@@ -241,7 +241,7 @@ Talos can then selectively redistribute those routes through a separate fabric i
 
 The tested topology uses these components:
 
-1. A veth pair provides a host-networked workload speaker with one endpoint.
+1. A [virtual Ethernet pair](../advanced/veth) provides a host-networked workload speaker with one endpoint.
 2. The other veth endpoint belongs to a dedicated VRF.
 3. A VRF-bound Talos BGP instance peers with the workload speaker and uses `installRoutes: false`.
 4. The default-domain `fabric` instance imports only the required workload prefixes.
