@@ -16,14 +16,17 @@ Talos Linux tries to launch API even if the time is not sync, and if time jumps 
 Some components like `kubelet` and `etcd` wait for the time to be in sync before starting, as they don't support graceful certificate rotation.
 
 By default, Talos Linux uses `time.cloudflare.com` as the NTP server, but it can be overridden in the machine configuration, or provided via DHCP, kernel args, platform sources, etc.
-Talos Linux implements SNTP protocol to sync time with the NTP server.
+Talos Linux implements SNTP protocol to sync time with the NTP server, optionally secured with [NTS](#network-time-security-nts).
 
 ## Observing status
 
 Current time sync status can be observed with:
 
 ```shell
-$ talosctl get timestatus
+talosctl get timestatus
+```
+
+```text
 NODE         NAMESPACE   TYPE         ID     VERSION   SYNCED
 172.20.0.2   runtime     TimeStatus   node   2         true
 ```
@@ -31,20 +34,74 @@ NODE         NAMESPACE   TYPE         ID     VERSION   SYNCED
 The list of servers Talos Linux is syncing with can be observed with:
 
 ```shell
-$ talosctl get timeservers
-NODE         NAMESPACE   TYPE               ID            VERSION   TIMESERVERS
-172.20.0.2   network     TimeServerStatus   timeservers   1         ["time.cloudflare.com"]
+talosctl get timeservers
 ```
+
+```text
+NODE         NAMESPACE   TYPE               ID            VERSION   TIMESERVERS                USENTS
+172.20.0.2   network     TimeServerStatus   timeservers   1         ["time.cloudflare.com"]    true
+```
+
+The `USENTS` column shows whether the servers are queried with [NTS](#network-time-security-nts) enabled.
 
 More detailed logs about the time sync process can be queried with:
 
 ```shell
-$ talosctl logs controller-runtime | grep -i time.Sync
+talosctl logs controller-runtime | grep -i time.Sync
+```
+
+```text
 172.20.0.2: 2024-04-17T18:32:16.690Z DEBUG NTP response {"component": "controller-runtime", "controller": "time.SyncController", "clock_offset": "37.060204ms", "rtt": "3.044816ms", "leap": 0, "stratum": 3, "precision": "29ns", "root_delay": "70.617676ms", "root_dispersion": "259.399µs", "root_distance": "37.090645ms"}
 172.20.0.2: 2024-04-17T18:32:16.690Z DEBUG sample stats {"component": "controller-runtime", "controller": "time.SyncController", "jitter": "150.196588ms", "poll_interval": "34m8s", "spike": false}
 172.20.0.2: 2024-04-17T18:32:16.690Z DEBUG adjusting time (slew) by 37.060204ms via 162.159.200.1, state TIME_OK, status STA_PLL | STA_NANO {"component": "controller-runtime", "controller": "time.SyncController"}
 172.20.0.2: 2024-04-17T18:32:16.690Z DEBUG adjtime state {"component": "controller-runtime", "controller": "time.SyncController", "constant": 7, "offset": "37.060203ms", "freq_offset": -1302069, "freq_offset_ppm": -19}
 ```
+
+## Network time security (NTS)
+
+Plain NTP is unauthenticated, so an on-path attacker can skew the clock of a node, which in turn breaks TLS certificate validation, log ordering and distributed consensus.
+[NTS](https://datatracker.ietf.org/doc/html/rfc8915) fixes that: Talos Linux first performs a TLS key exchange with the time server, and the NTP packets exchanged afterwards
+are cryptographically authenticated with the keys established during the key exchange.
+
+When no time servers are configured (from the machine configuration or any other source), Talos Linux uses the default `time.cloudflare.com` server with NTS enabled.
+Once time servers are configured, NTS is only used when it is explicitly enabled with the `useNTS` field of the
+[TimeSyncConfig](../../reference/configuration/network/timesyncconfig) document:
+
+```yaml
+apiVersion: v1alpha1
+kind: TimeSyncConfig
+ntp:
+  useNTS: true
+  servers:
+    - time.cloudflare.com
+```
+
+Time servers provided by DHCP, kernel arguments or platform metadata are always queried over plain NTP.
+
+With NTS enabled, time servers have to be specified as hostnames (the hostname is required to validate the server's TLS certificate): the machine configuration is rejected
+if an IP address is used, and time servers from other sources which are IP addresses are skipped with a warning.
+The key exchange runs over TCP port `4460` (unless the server address specifies a different port), while the NTP queries keep using UDP port `123`
+(or the port negotiated during the key exchange).
+Changing the `useNTS` setting restarts the time syncer without a reboot.
+
+### NTS with an incorrect clock at boot
+
+The NTS key exchange runs over TLS, and TLS validates the server certificate against the current system clock, but the clock is exactly what has not been set yet
+at that point of the boot sequence: a machine without a working RTC (or with a badly skewed one) would never be able to establish an NTS session.
+
+To break this cycle, Talos Linux tolerates certificate validity period failures for the first few NTS session attempts of the boot sequence
+(before the time has been synced at least once).
+In that case the certificate chain and the hostname are still fully verified — only the `notBefore`/`notAfter` timestamps are ignored, with the verification time pinned
+to the certificate's own `notBefore`.
+Certificates which fail validation for any other reason (unknown authority, hostname mismatch, etc.) are always rejected.
+
+Each time this fallback is used, a warning is logged:
+
+```text
+172.20.0.2: 2026-05-14T10:15:22.418Z WARN NTS certificate time validation failed, retrying while ignoring certificate time constraints (system clock may not be set yet) {"component": "controller-runtime", "controller": "time.SyncController", "server": "time.cloudflare.com", "bootstrap_attempts_used": 1, "bootstrap_attempts_limit": 5}
+```
+
+Once the time has been synced once, or the bootstrap attempts are exhausted, certificate validation is always strict.
 
 ## Using PTP devices
 
@@ -53,7 +110,10 @@ When running in a VM on a hypervisor, instead of doing network time sync, Talos 
 To check if the PTP device is available:
 
 ```shell
-$ talosctl ls /sys/class/ptp/
+talosctl ls /sys/class/ptp/
+```
+
+```text
 NODE         NAME
 172.20.0.2   .
 172.20.0.2   ptp0
