@@ -1,0 +1,100 @@
+---
+title: "Managing User-Owned Files"
+description: "Manage user-owned files under /etc with EtcFileConfig documents."
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos Linux manages most files under `/etc`, but some software requires additional configuration files there.
+Use an [`EtcFileConfig`](../../reference/configuration/runtime/etcfileconfig) document to create and manage a user-owned file without adding it to the Talos image.
+
+Each `EtcFileConfig` document owns one complete file, including its contents and permissions.
+Use multiple documents to manage multiple files.
+
+## Configure a file
+
+1. Create a patch named `etc-file.patch.yaml` with the file path relative to `/etc`:
+
+    ```yaml
+    apiVersion: v1alpha1
+    kind: EtcFileConfig
+    name: nfsmount.conf
+    mode: 0o644
+    contents: |
+      [NFSMount_Global_Options]
+    ```
+
+1. Replace `<NODE>` with the target node IP address, then apply the patch:
+
+    ```bash
+    talosctl patch mc --patch @etc-file.patch.yaml --nodes <NODE>
+    ```
+
+This example creates `/etc/nfsmount.conf` with mode `0644`.
+The `mode` field uses octal notation and defaults to `0o644` when omitted.
+The `contents` field replaces the complete contents of the file.
+
+For a nested path, set `name` to a path such as `example/config.yaml`.
+Talos creates missing parent directories and writes content updates atomically, so readers do not observe a partially written file.
+
+Changes are reconciled while Talos is running and do not require a reboot.
+Changing `contents` updates the file, and deleting the document removes the file.
+
+## Remove a managed file
+
+1. Create a strategic merge patch named `etc-file-delete.patch.yaml` that deletes the document:
+
+    ```yaml
+    apiVersion: v1alpha1
+    kind: EtcFileConfig
+    name: nfsmount.conf
+    $patch: delete
+    ```
+
+1. Replace `<NODE>` with the target node IP address, then apply the deletion patch:
+
+    ```bash
+    talosctl patch mc --patch @etc-file-delete.patch.yaml --nodes <NODE>
+    ```
+
+Talos removes `/etc/nfsmount.conf` when it removes the document from the machine configuration.
+
+## Path restrictions
+
+The document `name` must be a non-empty local path relative to `/etc`.
+The path:
+
+- Must not include the `/etc/` prefix.
+- Must not be absolute.
+- Must not traverse to a parent directory.
+- Must not start with `.`.
+
+Talos rejects paths that it manages itself.
+The following exact paths are reserved:
+
+- `resolv.conf`
+- `hosts`
+- `machine-id`
+- `extensions.yaml`
+- `localtime`
+- `os-release`
+- `xattr.conf`
+
+Talos also rejects each of the following directories and every path below it:
+
+- `apparmor.d/`
+- `apparmor/`
+- `ca-certificates/`
+- `cni/`
+- `cri/`
+- `iscsi/`
+- `kubernetes/`
+- `lvm/`
+- `nvme/`
+- `pki/`
+- `selinux/`
+- `ssl/`
+
+See the [`EtcFileConfig` reference](../../reference/configuration/runtime/etcfileconfig) for the complete field schema.

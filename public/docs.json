@@ -2598,6 +2598,7 @@
                       "talos/v1.14/configure-your-talos-cluster/system-configuration/editing-machine-configuration",
                       "talos/v1.14/configure-your-talos-cluster/system-configuration/performance-tuning",
                       "talos/v1.14/configure-your-talos-cluster/system-configuration/time-sync",
+                      "talos/v1.14/configure-your-talos-cluster/system-configuration/managing-etc-files",
                       "talos/v1.14/configure-your-talos-cluster/system-configuration/discovery",
                       "talos/v1.14/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
                       "talos/v1.14/configure-your-talos-cluster/system-configuration/insecure",

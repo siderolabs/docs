@@ -187,6 +187,7 @@ navigation:
                 - "system-configuration/editing-machine-configuration"
                 - "system-configuration/performance-tuning"
                 - "system-configuration/time-sync"
+                - "system-configuration/managing-etc-files"
                 - "system-configuration/discovery"
                 - "system-configuration/reproducible-machine-configuration"
                 - "system-configuration/insecure"
