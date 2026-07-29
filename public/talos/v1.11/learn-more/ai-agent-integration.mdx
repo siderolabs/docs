@@ -3,6 +3,7 @@ title: AI Agent Integration
 description: Integrate Talos and Omni documentation with AI agents using llms.txt, skill.md, or MCP.
 canonical: https://docs.siderolabs.com/talos/v1.13/learn-more/ai-agent-integration
 ---
+
 import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 <VersionWarningBanner />
@@ -72,13 +73,47 @@ https://docs.siderolabs.com/mcp
 
 To register the SideroLabs documentation as an MCP server in OpenCode or Claude Code:
 
-<Tabs>
-  <Tab title="OpenCode">
 
-  Add the MCP server configuration to your OpenCode config file located at `~/.opencode/opencode.json`:
+<Tabs>
+  <Tab title="Claude Code">
+
+  The recommended way to add the server is with the `claude mcp add` command. Choose the scope that best fits how you want to use it:
+ 
+  ```bash
+  # Available in all your projects (private to you):
+  claude mcp add --scope user --transport http siderolabs-docs https://docs.siderolabs.com/mcp
+ 
+  # Shared with your team (writes .mcp.json in the repository root):
+  claude mcp add --scope project --transport http siderolabs-docs https://docs.siderolabs.com/mcp
+  ```
+ 
+  After adding the server, verify the connection:
+ 
+  ```bash
+  claude mcp list
+  ```
+ 
+  If the server is configured correctly, it appears as `✔ Connected`.
+ 
+  When you use the `--scope` project option, Claude Code creates a `.mcp.json` file in the root of your repository with the following configuration:
 
   ```json
   {
+    "mcpServers": {
+      "siderolabs-docs": {
+        "type": "http",
+        "url": "https://docs.siderolabs.com/mcp"
+      }
+    }
+  }
+  ```
+  </Tab>
+  <Tab title="OpenCode">
+  Add the MCP server configuration to your OpenCode config file (`opencode.json` or `opencode.jsonc`):
+ 
+  ```json
+  {
+    "$schema": "https://opencode.ai/config.json",
     "mcp": {
       "siderolabs-docs": {
         "type": "remote",
@@ -88,36 +123,8 @@ To register the SideroLabs documentation as an MCP server in OpenCode or Claude 
     }
   }
   ```
-  </Tab>
-  <Tab title="Claude code (user-level configuration)">
-  Add the MCP server to your [personal Claude configuration](https://code.claude.com/docs/en/settings#configuration-scopes) file located at `~/.claude.json`:
-    ```json
-    {
-      "mcpServers": {
-        "siderolabs-docs": {
-          "type": "remote",
-          "url": "https://docs.siderolabs.com/mcp"
-        }
-      }
-    }
-    ```
-  </Tab>
-  <Tab title="Claude code (project-level)">
-
-  To share the MCP configuration with your team, create or update the `.mcp.json` file in the root of your repository:
-
-  ```json
-  {
-    "mcpServers": {
-      "siderolabs-docs": {
-        "type": "remote",
-        "url": "https://docs.siderolabs.com/mcp"
-      }
-    }
-  }
-
-  ```
+ 
+  Once added, the SideroLabs documentation tools are available to the agent alongside its built-in tools.
+ 
   </Tab>
 </Tabs>
-
-For other MCP-compatible clients, refer to your client’s documentation for instructions on adding a remote server.
