@@ -215,6 +215,8 @@ navigation:
                 - "storage-and-disk-management/raid"
                 - "storage-and-disk-management/disk-encryption"
                 - "storage-and-disk-management/swap"
+                - "storage-and-disk-management/filesystem-trim"
+                - "storage-and-disk-management/filesystem-scrub"
             - group: "Logging & Telemetry"
               pages:
                 - "logging-and-telemetry/logging"

@@ -1,0 +1,196 @@
+---
+title: "Filesystem Scrub"
+description: "Periodically check mounted XFS filesystems for metadata errors with xfs_scrub."
+canonical: https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/storage-and-disk-management/filesystem-scrub
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos Linux can periodically scrub mounted filesystems, checking their metadata for errors while the filesystem stays online and in use.
+Scrubbing detects silent corruption early, before it is hit by a workload or surfaces as a filesystem shutdown.
+
+Only XFS is supported, via the `xfs_scrub` tool, which is part of the Talos base image and needs no system extension.
+Scrubbing is controlled by the [`FilesystemScrubConfig`](../../reference/configuration/block/filesystemscrubconfig) document,
+which sets the global scrub interval, and by an optional per-volume `scrub` section which overrides it.
+
+## Default behavior
+
+Scrubbing is **disabled by default**, in Talos v1.14 and in clusters upgraded to it.
+Unlike [filesystem trim](./filesystem-trim), no scrub document is emitted by `talosctl gen config`, so scrubbing has to be enabled explicitly.
+
+## Enable scrubbing
+
+Add a [`FilesystemScrubConfig`](../../reference/configuration/block/filesystemscrubconfig) document with a non-zero interval to enable scrubbing for all eligible volumes on the machine:
+
+```yaml
+apiVersion: v1alpha1
+kind: FilesystemScrubConfig
+interval: 168h0m0s
+```
+
+Apply it as a machine configuration patch:
+
+```bash
+talosctl --nodes <NODE> patch mc --patch @scrub.patch.yaml
+```
+
+The interval is a Go duration string, e.g. `168h0m0s` for a week.
+The minimum accepted value is `10s`; the document is rejected at validation time if a shorter interval is set.
+A document without an `interval` field does not enable scrubbing.
+
+Removing the document disables scrubbing for every volume which does not enable it explicitly.
+The change takes effect without a reboot.
+
+## Override the interval per volume
+
+Scrubbing can be adjusted for a single volume with a `scrub` section on the volume document.
+It is supported by [`VolumeConfig`](../../reference/configuration/block/volumeconfig),
+[`UserVolumeConfig`](../../reference/configuration/block/uservolumeconfig) and
+[`ExistingVolumeConfig`](../../reference/configuration/block/existingvolumeconfig):
+
+```yaml
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: EPHEMERAL
+scrub:
+  enabled: true
+  interval: 24h0m0s
+```
+
+The effective settings are resolved as follows:
+
+- Without a `scrub` section, the volume follows the global [`FilesystemScrubConfig`](../../reference/configuration/block/filesystemscrubconfig) interval, if any.
+- A `scrub` section enables scrubbing for the volume unless `enabled: false` is set explicitly.
+  This works even when the global document is absent: a `scrub` section with no `interval` falls back to a one week interval.
+- `scrub.interval`, when set, overrides the global interval for this volume only.
+
+So scrubbing a single volume and leaving the rest of the machine alone needs nothing but a per-volume section:
+
+```yaml
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: data
+provisioning:
+  diskSelector:
+    match: disk.transport == "nvme"
+  minSize: 100GiB
+scrub:
+  enabled: true
+```
+
+To exclude a single volume while scrubbing is enabled globally, set `enabled: false`:
+
+```yaml
+scrub:
+  enabled: false
+```
+
+## Which volumes are scrubbed
+
+A volume is scrubbed on a schedule when all of the following hold:
+
+- Scrubbing is enabled for the volume with a non-zero interval.
+- The volume is in the `ready` phase.
+- The filesystem is `xfs`.
+  No other filesystem supports online scrubbing in Talos v1.14.
+
+At the scheduled time, the volume is skipped if it is not mounted, mounted read-only, or mounted detached.
+
+## Scrub schedule
+
+Talos does not scrub all volumes at once, and it does not scrub on a fixed wall-clock time such as midnight.
+Instead, each volume gets its own offset within the interval, derived by hashing the node ID together with the volume ID.
+
+This has two consequences:
+
+- The schedule is **stable for a given machine**: the same volume on the same node is always scrubbed at the same points in time,
+  and a reboot does not shift or reset the schedule.
+- The schedule is **spread out across the cluster**: because the node ID is part of the hash,
+  every machine scrubs a given volume at a different time, and different volumes on one machine are scrubbed at different times.
+  Since a scrub is a long, I/O-heavy operation, this keeps the load off the cluster as a whole.
+
+Changing the interval changes the offset as well, so the next scrub time moves.
+
+After a machine starts, the scrub slot which is currently in progress is skipped, and the next one is handled normally.
+This avoids a burst of scrubs right after a reboot.
+
+## Resource usage
+
+A scrub reads a large amount of filesystem metadata, so Talos runs it as a background task at the lowest possible priority:
+
+- The lowest CPU priority (nice level 19) and the idle scheduling policy, so any other process on the machine preempts it.
+- The idle I/O scheduling class, so the scrub only gets disk time which no other process wants.
+- One volume at a time — scrubs are never run in parallel with each other.
+
+The scrub holds the volume mounted while it runs.
+If the volume starts to be unmounted, the in-flight scrub is aborted rather than blocking the unmount, and the result is recorded as a failure.
+
+`xfs_scrub` asks the kernel to repair the problems it finds where the kernel supports online repair.
+Damage which cannot be repaired online requires the filesystem to be unmounted and checked with `xfs_repair`, which Talos does not run automatically.
+
+## Check the scrub status
+
+The `FSScrubSchedule` resource exists for every volume which is scheduled to be scrubbed, and shows the next scrub time:
+
+```bash
+talosctl --nodes <NODE> get fsscrubschedules
+```
+
+```text
+NODE         NAMESPACE   TYPE              ID          VERSION   FILESYSTEM   INTERVAL   NEXT SCRUB
+172.20.0.5   runtime     FSScrubSchedule   EPHEMERAL   2         xfs          168h0m0s   2026-08-02T22:07:45Z
+172.20.0.5   runtime     FSScrubSchedule   u-data      2         xfs          24h0m0s    2026-07-30T11:38:12Z
+```
+
+If a volume is missing from this list, it is not being scrubbed — either because scrubbing is disabled for it,
+or because it is not eligible (see [Which volumes are scrubbed](#which-volumes-are-scrubbed)).
+
+The `FSScrubStatus` resource reports the outcome of the most recent scrub of each volume:
+
+```bash
+talosctl --nodes <NODE> get fsscrubstatuses
+```
+
+```text
+NODE         NAMESPACE   TYPE            ID          VERSION   MOUNTPOINT      INTERVAL   LATEST START TIME      LATEST RUN DURATION   LATEST STATUS
+172.20.0.5   runtime     FSScrubStatus   EPHEMERAL   1         /var            168h0m0s   2026-07-26T22:07:45Z   4m32.431s             success
+172.20.0.5   runtime     FSScrubStatus   u-data      1         /var/mnt/data   24h0m0s    2026-07-29T11:38:12Z   1m3.882s              success
+```
+
+A failed scrub records the error in place of `success`, and does not stop the volume from being scrubbed again at the next scheduled time.
+The status is kept in memory, so a volume has no `FSScrubStatus` until its first scrub completes after the machine started.
+
+The resolved scrub settings are also carried on the volume status itself, which is useful to check what the configuration resolved to:
+
+```yaml
+# talosctl --nodes <NODE> get volumestatus EPHEMERAL -o yaml
+spec:
+    phase: ready
+    filesystem: xfs
+    scrubEnabled: true
+    scrubInterval: 168h0m0s
+```
+
+The output of `xfs_scrub` itself, including every problem it reports, is available as a service log:
+
+```bash
+talosctl --nodes <NODE> logs fs_scrub
+```
+
+Scrub start, completion and failure are also logged by the controller:
+
+```bash
+talosctl --nodes <NODE> logs controller-runtime | grep scrub
+```
+
+```text
+172.20.0.5: [talos] scrubbing volume {"component": "controller-runtime", "controller": "block.FSScrubController", "volume": "EPHEMERAL", "target": "/var"}
+172.20.0.5: [talos] filesystem scrub completed {"component": "controller-runtime", "controller": "block.FSScrubController", "volume": "EPHEMERAL", "target": "/var", "duration": "4m32.431s"}
+```
+
+## Related
+
+- [Filesystem Trim](./filesystem-trim) applies the same scheduling model to discarding unused blocks.
+- [Disk Management](./disk-management/overview) documents the volume configuration these settings attach to.

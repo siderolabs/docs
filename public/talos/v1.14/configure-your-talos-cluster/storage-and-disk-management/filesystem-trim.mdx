@@ -1,0 +1,192 @@
+---
+title: "Filesystem Trim"
+description: "Periodically discard unused blocks on Talos volumes with fstrim."
+canonical: https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/storage-and-disk-management/filesystem-trim
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos Linux can periodically trim mounted filesystems, which discards blocks that are no longer used by the filesystem.
+This is the equivalent of running the `fstrim` command, and it matters for SSDs (where the device can reclaim the blocks for wear levelling)
+and for thin-provisioned storage (where the freed blocks are returned to the backing pool).
+
+Trimming is controlled by the [`FilesystemTrimConfig`](../../reference/configuration/block/filesystemtrimconfig) document,
+which sets the global trim interval, and by an optional per-volume `trim` section which overrides it.
+
+## Default behavior
+
+Trimming is enabled by default for clusters created with Talos v1.14 or later.
+
+`talosctl gen config` emits a [`FilesystemTrimConfig`](../../reference/configuration/block/filesystemtrimconfig) document with a one week interval
+as part of the default machine configuration:
+
+```yaml
+apiVersion: v1alpha1
+kind: FilesystemTrimConfig
+interval: 168h0m0s
+```
+
+Clusters upgraded from an earlier Talos version keep their existing machine configuration, which does not contain this document,
+so trimming stays disabled until the document is added.
+Upgrading does not change the configuration on its own.
+
+To enable trimming on an upgraded cluster, apply the document above as a machine configuration patch:
+
+```bash
+talosctl --nodes <NODE> patch mc --patch @trim.patch.yaml
+```
+
+## Configure the trim interval
+
+The `interval` field of the [`FilesystemTrimConfig`](../../reference/configuration/block/filesystemtrimconfig) document sets the interval for all eligible volumes on the machine:
+
+```yaml
+apiVersion: v1alpha1
+kind: FilesystemTrimConfig
+interval: 24h0m0s
+```
+
+The interval is a Go duration string, e.g. `24h0m0s` for a day or `168h0m0s` for a week.
+Removing the document, or setting `interval: 0s`, disables trimming for every volume which does not enable it explicitly.
+
+The document is applied without a reboot: the schedule is rebuilt as soon as the new configuration is applied.
+
+## Override the interval per volume
+
+Trimming can be adjusted for a single volume with a `trim` section on the volume document.
+It is supported by [`VolumeConfig`](../../reference/configuration/block/volumeconfig),
+[`UserVolumeConfig`](../../reference/configuration/block/uservolumeconfig) and
+[`ExistingVolumeConfig`](../../reference/configuration/block/existingvolumeconfig):
+
+```yaml
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: data
+provisioning:
+  diskSelector:
+    match: disk.transport == "nvme"
+  minSize: 100GiB
+trim:
+  enabled: true
+  interval: 24h0m0s
+```
+
+The effective settings are resolved as follows:
+
+- Without a `trim` section, the volume follows the global [`FilesystemTrimConfig`](../../reference/configuration/block/filesystemtrimconfig) interval.
+- A `trim` section enables trimming for the volume unless `enabled: false` is set explicitly.
+- `trim.interval`, when set, overrides the global interval for this volume only.
+
+When the global document is absent, a per-volume `trim` section must set `interval` as well.
+`enabled: true` on its own leaves the interval at zero, and trimming stays disabled for the volume:
+
+```yaml
+trim:
+  enabled: true
+  interval: 168h0m0s
+```
+
+To exclude a single volume while trimming is enabled globally, set `enabled: false`:
+
+```yaml
+trim:
+  enabled: false
+```
+
+## Which volumes are trimmed
+
+A volume is trimmed on a schedule when all of the following hold:
+
+- Trimming is enabled for the volume with a non-zero interval.
+- The volume is of type `disk` or `partition`, and is in the `ready` phase.
+  Volumes of the other types (`directory`, `symlink`, `overlay`, `tmpfs`, `external`) are never trimmed.
+- The filesystem supports discarding unused blocks: `xfs`, `ext4` or `btrfs`.
+- For encrypted volumes, [`allowDiscards`](../../reference/configuration/block/volumeconfig) is set in the encryption section.
+  Without it the discard requests never reach the underlying device, so Talos does not schedule the trim at all.
+  Passing discards through an encrypted volume leaks information about the amount and location of used blocks, so this is opt-in.
+
+At the scheduled time, the volume is skipped if it is not mounted, mounted read-only, or mounted detached.
+The volume cannot be unmounted while its trim is in progress.
+
+## Trim schedule
+
+Talos does not trim all volumes at once, and it does not trim on a fixed wall-clock time such as midnight.
+Instead, each volume gets its own offset within the interval, derived by hashing the node ID together with the volume ID.
+
+This has two consequences:
+
+- The schedule is **stable for a given machine**: the same volume on the same node is always trimmed at the same points in time,
+  and a reboot or does not shift or reset the schedule.
+- The schedule is **spread out across the cluster**: because the node ID is part of the hash,
+  every machine trims a given volume at a different time, and different volumes on one machine are trimmed at different times.
+  A cluster-wide I/O spike from all nodes trimming simultaneously is avoided without any manual staggering.
+
+Changing the interval changes the offset as well, so the next trim time moves.
+
+After a machine starts, the trim slot which is currently in progress is skipped, and the next one is handled normally.
+This avoids a burst of trims right after a reboot.
+
+## Check the trim status
+
+The `VolumeTrimSchedule` resource exists for every volume which is scheduled to be trimmed, and shows the next trim time:
+
+```bash
+talosctl --nodes <NODE> get volumetrimschedules
+```
+
+```text
+NODE         NAMESPACE   TYPE                 ID          VERSION   FILESYSTEM   INTERVAL   NEXT TRIM
+172.20.0.5   runtime     VolumeTrimSchedule   EPHEMERAL   2         xfs          168h0m0s   2026-08-03T14:22:31Z
+172.20.0.5   runtime     VolumeTrimSchedule   u-data      2         xfs          24h0m0s    2026-07-30T05:14:03Z
+```
+
+If a volume is missing from this list, it is not being trimmed — either because trimming is disabled for it,
+or because it is not eligible (see [Which volumes are trimmed](#which-volumes-are-trimmed)).
+
+The same information is available in YAML form:
+
+```yaml
+# talosctl --nodes <NODE> get volumetrimschedules EPHEMERAL -o yaml
+node: 172.20.0.5
+metadata:
+    namespace: runtime
+    type: VolumeTrimSchedules.block.talos.dev
+    id: EPHEMERAL
+    version: 2
+    owner: block.VolumeTrimScheduleController
+    phase: running
+    created: 2026-07-27T09:11:24Z
+    updated: 2026-07-27T09:11:24Z
+spec:
+    filesystem: xfs
+    interval: 168h0m0s
+    nextTrim: 2026-08-03T14:22:31Z
+```
+
+The resolved trim settings are also carried on the volume status itself, which is useful to check what the configuration resolved to:
+
+```yaml
+# talosctl --nodes <NODE> get volumestatus EPHEMERAL -o yaml
+spec:
+    phase: ready
+    filesystem: xfs
+    trimEnabled: true
+    trimInterval: 168h0m0s
+```
+
+Completed trims are reported in the `controller-runtime` logs, including the amount of space discarded:
+
+```bash
+talosctl --nodes <NODE> logs controller-runtime | grep "trimmed volume"
+```
+
+```text
+172.20.0.5: [talos] trimmed volume {"component": "controller-runtime", "controller": "block.VolumeTrimController", "volume": "EPHEMERAL", "target": "/var", "trimmed": "1.2 GB"}
+```
+
+## Related
+
+- [Filesystem Scrub](./filesystem-scrub) applies the same scheduling model to online filesystem checks.
+- [Disk Encryption](./disk-encryption) documents the `allowDiscards` encryption option.

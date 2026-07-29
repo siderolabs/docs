@@ -316,7 +316,7 @@ With `talosctl wipe lv/vg/pv <name>`, users can wipe LVM metadata from a specifi
 Talos can now periodically trim (the equivalent of the `fstrim` command) mounted filesystems which support trimming, discarding unused blocks.
 This is useful for SSDs and thin-provisioned storage.
 
-Trimming is opt-in via the new [`FilesystemTrimConfig`](../reference/configuration/block/filesystemtrimconfig) document, which sets the global trim interval:
+The global trim interval is set by the new [`FilesystemTrimConfig`](../reference/configuration/block/filesystemtrimconfig) document:
 
 ```yaml
 apiVersion: v1alpha1
@@ -324,23 +324,23 @@ kind: FilesystemTrimConfig
 interval: 168h0m0s # one week
 ```
 
-The default machine configuration for Talos 1.14+ includes a `FilesystemTrimConfig` document with a trim interval of one week,
-so trimming is enabled by default for eligible filesystems.
-For clusters which were upgraded from older versions the `FilesystemTrimConfig` document will be missing,
-so trimming will be disabled until the document is added.
+`talosctl gen config` emits this document with a trim interval of one week for Talos 1.14+, so **new clusters trim eligible filesystems by default**.
+Clusters **upgraded** from older versions do not have this document, so trimming stays disabled until it is added — upgrades change nothing on their own.
 
 When the document is present, Talos builds a stable schedule (hashed by node ID and volume ID, so that trims are spread out across volumes and across nodes
 in a cluster) and trims eligible volumes (ready disk/partition volumes with a trim-capable filesystem; for encrypted volumes, only when `allowDiscards` is set).
 
 The trim interval can be overridden or disabled per volume via a `trim` block on the volume documents
 ([`VolumeConfig`](../reference/configuration/block/volumeconfig), [`UserVolumeConfig`](../reference/configuration/block/uservolumeconfig),
-[`ExistingVolumeConfig`](../reference/configuration/block/existingvolumeconfig), [`ExternalVolumeConfig`](../reference/configuration/block/externalvolumeconfig)):
+[`ExistingVolumeConfig`](../reference/configuration/block/existingvolumeconfig)):
 
 ```yaml
 trim:
   enabled: true
   interval: 24h0m0s
 ```
+
+See [Filesystem Trim](../configure-your-talos-cluster/storage-and-disk-management/filesystem-trim) for the schedule details and for the resources reporting the trim status.
 
 ### Filesystem scrub
 
@@ -373,6 +373,8 @@ scrub:
 
 A `scrub` block enables scrubbing for the volume even when the global document is absent (defaulting to a one week interval),
 unless `enabled: false` is set explicitly.
+
+See [Filesystem Scrub](../configure-your-talos-cluster/storage-and-disk-management/filesystem-scrub) for the schedule details and for the resources reporting the scrub status.
 
 ### Dedicated system volumes
 
