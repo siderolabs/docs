@@ -28,6 +28,17 @@ To enable KubeSpan using a cluster template, add the following patch to your clu
 patches:
   - name: kubespan-enabled
     inline:
+      apiVersion: v1alpha1
+      kind: KubeSpanConfig
+      enabled: true
+```
+
+On Talos versions earlier than v1.13, you can use the older configuration field:
+
+```yaml
+patches:
+  - name: kubespan-enabled
+    inline:
       machine:
         network:
           kubespan:
@@ -35,35 +46,6 @@ patches:
 ```
 
 For more information on patching Omni clusters inline or with patch files, see the [Cluster Template reference documentation](../reference/cluster-templates#patches).
-
-</Tab>
-<Tab title="Multi-doc (Talos v1.13+)">
-
-From Talos v1.13, KubeSpan can be enabled using a multi-document config patch:
-
-```yaml
-apiVersion: v1alpha1
-kind: KubeSpan
-enabled: true
-```
-
-Apply the patch to your node, replacing the placeholders with the values for your environment:
-
-```bash
-talosctl apply \
-  -f <machine-configuration> \
-  --insecure \
-  --node <node-ip> \
-  --patch @<multi-document>
-```
-
-| Placeholder | Description |
-|---|---|
-| `<machine-configuration>` | The machine configuration file for the node. |
-| `<node-ip>` | The IP address of the node you want to apply the patch to. |
-| `<multi-document>` | The multi-document patch file containing the KubeSpan configuration. |
-
-Refer to the <a href={`../../talos/${version}$/configure-your-talos-cluster/system-configuration/patching#multi-document-patching`}>Multi-document patching documentation</a> for more information on how to use the multi-document configuration.
 
 </Tab>
 <Tab title="UI">
@@ -76,6 +58,17 @@ To enable KubeSpan using the UI:
 4. Click **Create Patch** to open the **Create Patch** page.
 5. Apply the following patch:
 
+
+```yaml
+apiVersion: v1alpha1
+kind: KubeSpanConfig
+enabled: true
+```
+
+<img src="./images/create-a-hybrid-cluster-create-patch-kubespan-enabled-v1.13.png" alt="Create a new cluster-scoped config patch" />
+
+On Talos versions earlier than v1.13, you can use the older configuration field:
+
 ```yaml
 machine:
   network:
@@ -83,7 +76,7 @@ machine:
       enabled: true
 ```
 
-<img src="./images/create-a-hybrid-cluster-create-patch-kubescan-enabled.png" alt="Create a new cluster-scoped config patch" />
+<img src="./images/create-a-hybrid-cluster-create-patch-kubespan-enabled.png" alt="Create a new cluster-scoped config patch" />
 
 </Tab>
 </Tabs>
@@ -91,4 +84,3 @@ machine:
 Once this patch is applied, all node-to-node traffic in the cluster will be encrypted using WireGuard, allowing nodes to communicate with each other securely regardless of which network they are on.
 
 <Note> WireGuard encryption adds overhead that reduces network throughput compared to a native network connection. If nodes on the same network need native throughput performance, configure <a href= {`../../talos/${version}/networking/kubespan#filtering-advertised-networks`}>`filters.excludeAdvertisedNetworks`</a> to exclude same-network traffic from the WireGuard tunnel.</Note>
-
