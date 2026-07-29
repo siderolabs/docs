@@ -52,7 +52,10 @@ Talos and Kubernetes API are mapped to a random port on the host machine, the re
 Talos API endpoint can be found using `talosctl config info`:
 
 ```bash
-$ talosctl config info
+talosctl config info
+```
+
+```text
 ...
 Endpoints:           127.0.0.1:38423
 ```
@@ -60,7 +63,10 @@ Endpoints:           127.0.0.1:38423
 Kubernetes API endpoint is available with `talosctl cluster show`:
 
 ```bash
-$ talosctl cluster show
+talosctl cluster show
+```
+
+```text
 ...
 KUBERNETES ENDPOINT   https://127.0.0.1:43083
 ```
@@ -81,7 +87,7 @@ Once the cluster is available, you can make use of `talosctl` and `kubectl` to i
 For example, to view current running containers, run `talosctl containers` for a list of containers in the `system` namespace, or `talosctl containers -k` for the `k8s.io` namespace.
 To view the logs of a container, use `talosctl logs <container>` or `talosctl logs -k <container>`.
 
-## Cleaning Up
+## Cleaning up
 
 To cleanup, run:
 
@@ -141,5 +147,6 @@ docker run --rm -it
 `}
 </CodeBlock>
 
-The machine configuration submitted to the container should have a [host DNS feature](../../reference/configuration/v1alpha1/config#Config.machine.features.hostDNS) enabled with `forwardKubeDNSToHost` enabled.
+The machine configuration submitted to the container should have [host DNS](../../networking/host-dns) enabled with `forwardKubeDNSToHost` enabled, using the
+`hostDNS` section of the [`ResolverConfig`](../../reference/configuration/network/resolverconfig) document.
 It is used to forward DNS requests to the resolver provided by Docker (or other container runtime).

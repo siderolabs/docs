@@ -103,6 +103,12 @@ Each time this fallback is used, a warning is logged:
 
 Once the time has been synced once, or the bootstrap attempts are exhausted, certificate validation is always strict.
 
+> Note: this fallback covers the NTS key exchange only.
+> If the time servers are configured as hostnames, they still have to be resolved, and [encrypted DNS](../../networking/host-dns#encrypted-dns-and-time-synchronization)
+> (`DoT`/`DoH`) validates certificates strictly at all times.
+> When all nameservers use encrypted DNS and the clock is wrong at boot, resolution of the time server names fails, and the time can never be synced:
+> keep a plain DNS nameserver as a fallback, or configure time servers by IP address (which in turn disables NTS for them).
+
 ## Using PTP devices
 
 When running in a VM on a hypervisor, instead of doing network time sync, Talos can sync the time to the hypervisor clock (if supported by the hypervisor).

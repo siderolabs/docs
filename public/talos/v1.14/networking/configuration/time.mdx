@@ -56,6 +56,11 @@ Requirements and behavior when NTS is enabled:
 See [Time Sync](../../configure-your-talos-cluster/system-configuration/time-sync#network-time-security-nts) for the way NTS is bootstrapped when the machine
 clock is wrong at boot time.
 
+> Note: NTS requires time server hostnames to be resolved, and [encrypted DNS](../host-dns#encrypted-dns-and-time-synchronization) (`DoT`/`DoH`) requires a correct
+> clock to validate certificates.
+> When every configured nameserver uses `DoT` or `DoH`, a machine which boots with a wrong clock cannot resolve its time servers, and cannot fix the clock either.
+> Keep at least one plain DNS nameserver as a fallback in that case.
+
 ## Observing status
 
 Use `talosctl` to get the current time synchronization configuration of a node:

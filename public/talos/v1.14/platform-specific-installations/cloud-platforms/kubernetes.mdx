@@ -34,11 +34,11 @@ The Talos version will be driven by the container image being used.
 The required machine configuration patch to enable using container runtime DNS:
 
 ```yaml
-machine:
-  features:
-    hostDNS:
-      enabled: true
-      forwardKubeDNSToHost: true
+apiVersion: v1alpha1
+kind: ResolverConfig
+hostDNS:
+  enabled: true
+  forwardKubeDNSToHost: true
 ```
 
 Talos and Kubernetes API can be exposed using Kubernetes services or load balancers, so they can be accessed from outside the cluster.

@@ -35,20 +35,81 @@ The `disableDefault` field, when set to `true`, prevents Talos from using the de
 
 See [Host DNS](../host-dns) for more information about DNS resolution in Talos.
 
+## Encrypted DNS (DoT and DoH)
+
+Each nameserver can be queried over an encrypted transport instead of plain DNS, by setting the `protocol` and `tlsServerName` fields:
+
+```yaml
+apiVersion: v1alpha1
+kind: ResolverConfig
+hostDNS:
+    enabled: true
+nameservers:
+    - address: 1.1.1.1
+      protocol: DoH
+      tlsServerName: cloudflare-dns.com
+    - address: 9.9.9.9
+      protocol: DoT
+      tlsServerName: dns.quad9.net
+```
+
+The `protocol` field accepts:
+
+* `Do53` (the default): plain DNS over UDP/TCP port `53`.
+* `DoT`: [DNS over TLS](https://datatracker.ietf.org/doc/html/rfc7858) over TCP port `853`.
+* `DoH`: [DNS over HTTPS](https://datatracker.ietf.org/doc/html/rfc8484) over TCP port `443`.
+
+The `tlsServerName` field is required for `DoT` and `DoH`, and must be empty for `Do53`.
+The `address` field always stays an IP address: Talos connects to that address directly, and `tlsServerName` is only used as the TLS SNI and the name verified
+against the server certificate (and, for `DoH`, as the host part of the request URL `https://<tlsServerName>/dns-query`), so encrypted DNS never needs a bootstrap resolver.
+
+The protocol is configured per nameserver, so plain and encrypted nameservers can be mixed in a single `ResolverConfig`.
+Encrypted DNS is implemented by the host DNS caching resolver, so `hostDNS.enabled` must be `true`; a configuration which uses `DoT` or `DoH` without host DNS is rejected.
+
+See [Host DNS](../host-dns#encrypted-upstream-dns-dot-and-doh) for the way encrypted upstreams are used, and for the interaction with time synchronization.
+
 ## Observing status
 
 Use `talosctl` to get the current resolver configuration of a node:
 
 ```bash
-$ talosctl get resolvers
+talosctl get resolvers
+```
+
+```text
 NODE         NAMESPACE   TYPE             ID          VERSION   RESOLVERS        SEARCH DOMAINS
 172.20.0.2   network     ResolverStatus   resolvers   4         ["172.20.0.1"]   []
+```
+
+The `RESOLVERS` column only lists the nameserver addresses; the protocol and TLS server name of each nameserver are visible in the full resource:
+
+```bash
+talosctl get resolvers -o yaml
+```
+
+```yaml
+# ...
+spec:
+    dnsServers:
+        - 1.1.1.1
+        - 9.9.9.9
+    nameServers:
+        - addr: 1.1.1.1
+          protocol: DoH
+          tlsServerName: cloudflare-dns.com
+        - addr: 9.9.9.9
+          protocol: DoT
+          tlsServerName: dns.quad9.net
+    searchDomains: []
 ```
 
 To see all resolver configuration sources, use the following:
 
 ```bash
-$ talosctl get resolverspec --namespace=network-config
+talosctl get resolverspec --namespace=network-config
+```
+
+```text
 NODE         NAMESPACE        TYPE           ID                       VERSION   LAYER      RESOLVERS               SEARCH DOMAINS
 172.20.0.2   network-config   ResolverSpec   default/resolvers        1         default    ["1.1.1.1","8.8.8.8"]
 172.20.0.2   network-config   ResolverSpec   dhcp4/enp0s2/resolvers   1         operator   ["172.20.0.1"]
