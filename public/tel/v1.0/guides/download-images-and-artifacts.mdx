@@ -1,0 +1,119 @@
+---
+title: "Download Images and Artifacts From Enterprise Image Factory"
+description: "How to download Talos Enterprise Linux boot assets, SBOMs, VEX data, and vulnerability scan reports from Enterprise Image Factory."
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+Enterprise Image Factory (`factory.siderolabs.com`) serves Talos Enterprise Linux boot assets along with the artifacts unique to it: per-schematic SBOMs, VEX data, and vulnerability scan reports. This page shows how to download each of them, through the web UI and programmatically.
+
+For what these artifacts are and how Enterprise Image Factory differs from the public Image Factory, see <a href={`../../../talos/${version}/learn-more/enterprise-image-factory.mdx`}>Enterprise Image Factory</a>
+
+All requests to Enterprise Image Factory are authenticated — the web UI, direct downloads, and registry pulls alike. This page assumes you can already authenticate.
+
+## Prerequisites
+
+Before you begin, ensure you have the following:
+
+- Access to Enterprise Image Factory on a qualifying Talos Enterprise Linux tier.
+- A schematic ID for your image configuration. Create one with the web UI wizard below, or programmatically by submitting your schematic YAML to `POST /schematics` — see the [Image Factory API reference](https://github.com/siderolabs/image-factory/blob/main/docs/api.md).
+- `curl` (or similar) for programmatic downloads.
+
+## Download boot assets from the web UI
+
+If you have used the public [Image Factory](https://factory.talos.dev/) or the **Create New Media** wizard in Omni, this is the same flow, the only difference is that you authenticate first.
+
+1. Log in to [Enterprise Image Factory](https://factory.siderolabs.com/).
+
+2. On each page of the wizard, select the appropriate options for your setup, then click **Next** to continue.
+
+   The wizard is split across multiple pages. Each page presents a different set of configuration options — such as hardware type, architecture, Talos Linux version, and system extensions — that you can use to customize your Talos Enterprise Linux image.
+
+3. On the **Schematic Ready** page, select the appropriate boot option for your machine to download the image.
+
+   The Schematic Ready page also shows your schematic ID. Note it down, you need it for programmatic downloads and for retrieving the SBOM and scan reports for this exact image.
+
+4. From the same page, download the image's SBOM, VEX data, and vulnerability scan report alongside the boot assets.
+
+<Note>Schematics in Enterprise Image Factory are owned by the account that created them, and the owner is part of the schematic ID. An identical configuration therefore produces a different schematic ID than it does on the public Image Factory, or under another customer's account.</Note>
+
+
+## Download boot assets programmatically
+
+Boot assets follow the same URL structure as the public Image Factory, served from `factory.siderolabs.com`:
+
+```text
+https://factory.siderolabs.com/image/<schematic>/<version>/<path>
+```
+
+Unlike the public Image Factory, every request must be authenticated. The examples below pass credentials with HTTP Basic Auth; export them once:
+
+```shell
+export EIF_USERNAME=<your-username>
+export EIF_TOKEN=<your-token>
+```
+
+Common asset paths:
+
+| Asset | Path pattern | Example |
+|---|---|---|
+| ISO | `<platform>-<arch>[-secureboot].iso` | `metal-amd64.iso` |
+| Disk image (raw) | `metal-<arch>[-secureboot].raw.zst` | `metal-amd64.raw.zst` |
+| Disk image (qcow2) | `metal-<arch>.qcow2` | `metal-amd64.qcow2` |
+| UKI (UEFI, SecureBoot-compatible) | `<platform>-<arch>[-secureboot]-uki.efi` | `metal-amd64-uki.efi` |
+| Kernel | `kernel-<arch>` | `kernel-amd64` |
+| Kernel command line | `cmdline-<platform>-<arch>[-secureboot]` | `cmdline-metal-amd64` |
+| Initramfs | `initramfs-<arch>.xz` | `initramfs-amd64.xz` |
+
+For example, to download a disk image with `curl`:
+
+```shell
+curl -u "${EIF_USERNAME}:${EIF_TOKEN}" -fJLO \
+  https://factory.siderolabs.com/image/<schematic>/<version>/metal-amd64.raw.zst
+```
+
+### Download the SBOM, VEX data, and scan reports
+
+These artifacts are served per schematic (SBOM, scan reports) or per Talos Linux release (VEX), from dedicated endpoints:
+
+```shell
+# Per-schematic SBOM (SPDX 2.3 JSON)
+curl -u "${EIF_USERNAME}:${EIF_TOKEN}" -fJLO \
+  https://factory.siderolabs.com/spdx/<schematic>/<version>/<arch>
+
+# VEX data for a Talos Linux release
+curl -u "${EIF_USERNAME}:${EIF_TOKEN}" -fJLO \
+  https://factory.siderolabs.com/vex/<version>/vex.json
+
+# Vulnerability scan report
+curl -u "${EIF_USERNAME}:${EIF_TOKEN}" -fJLO \
+  https://factory.siderolabs.com/scans/<schematic>/<version>/<arch>/report.json
+```
+
+Scan reports are available in several formats, replace the report suffix as needed:
+
+- `.json`: output format of the underlying scanner
+- `.table`: human-readable table
+- `.sarif`: SARIF format
+- `.cdx`: CycloneDX format
+
+## Verify checksums
+
+Appending `.sha256` or `.sha512` to any asset path returns a checksum file instead of the asset:
+
+```shell
+curl -u "${EIF_USERNAME}:${EIF_TOKEN}" -fJLO \
+  https://factory.siderolabs.com/image/<schematic>/<version>/metal-amd64.raw.zst
+curl -u "${EIF_USERNAME}:${EIF_TOKEN}" -fJLO \
+  https://factory.siderolabs.com/image/<schematic>/<version>/metal-amd64.raw.zst.sha256
+sha256sum -c metal-amd64.raw.zst.sha256
+```
+
+The checksum verifies the integrity of the asset as served to you — that your download arrived intact. Because some images are generated dynamically and are not byte-for-byte reproducible across builds, checksums are not stable identifiers to pin over time. For cryptographic verification of provenance, use signatures instead.
+
+## See also
+
+For more information, see also:
+
+- <a href={`../../../talos/${version}/learn-more/enterprise-image-factory.mdx`}>Enterprise Image Factory</a>: To learn what these artifacts are and how the enterprise service differs from the public one
+- [Image Factory](https://factory.talos.dev/): The public, unauthenticated image factory service

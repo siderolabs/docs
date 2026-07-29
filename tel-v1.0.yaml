@@ -1,0 +1,11 @@
+navigation:
+  version: "v1.0"
+  tabs:
+    - tab: "Talos Enterprise Linux"
+      icon: "/images/talos.svg"
+      groups:
+        - group: "How to Guides"
+          folder: "tel/v1.0/guides"
+          pages:
+            - "download-images-and-artifacts.mdx"
+            - "scan-tel-with-sbom-and-vex.mdx"

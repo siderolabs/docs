@@ -1,0 +1,25 @@
+navigation:
+  version: "v1.0"
+  tabs:
+    - tab: "Talos Enterprise Linux"
+      icon: "/images/talos.svg"
+      groups:
+        - group: "Overview"
+          folder: "tel/v1.0/overview"
+          pages:
+            - "file1.mdx"
+
+        - group: "Getting Started"
+          folder: "tel/v1.0/getting-started"
+          pages:
+            - "file2.mdx"
+
+        - group: "How to Guides"
+          folder: "tel/v1.0/guides"
+          pages:
+            - "download-images-and-artifacts.mdx"
+
+        - group: "Migrating"
+          folder: "tel/v1.0/migrating"
+          pages:
+            - "file3.mdx"
