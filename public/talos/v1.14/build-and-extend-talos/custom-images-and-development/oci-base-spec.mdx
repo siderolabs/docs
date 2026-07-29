@@ -19,7 +19,7 @@ However, it is important to note that the Kubernetes/CRI plugin may still overri
 To get the current OCI base runtime specification, you can use the following command (`yq -P .` is used to pretty-print the output):
 
 ```bash
-$ talosctl read /etc/cri/conf.d/base-spec.json | yq -P .
+talosctl read /etc/cri/conf.d/base-spec.json | yq -P .
 ociVersion: 1.2.0
 process:
   user:
@@ -39,16 +39,21 @@ The output might depend on a specific Talos (`containerd`) version.
 To adjust the OCI base runtime specification, the following machine configuration patch can be used:
 
 ```yaml
-machine:
-  baseRuntimeSpecOverrides:
-    process:
-      rlimits:
-        - type: RLIMIT_NOFILE
-          hard: 1024
-          soft: 1024
+apiVersion: v1alpha1
+kind: CRIBaseRuntimeSpecConfig
+overrides:
+  process:
+    rlimits:
+      - type: RLIMIT_NOFILE
+        hard: 1024
+        soft: 1024
 ```
 
 In this example, the number of open files is adjusted to be 1024 for all containers (OCI default is unset, so it inherits the Talos default of 1048576 open files).
-The contents of the `baseRuntimeSpecOverrides` field are merged with the current base runtime specification, so only the fields that need to be adjusted should be included.
+The contents of the `overrides` field are merged with the current base runtime specification, so only the fields that need to be adjusted should be included.
 
-This configuration change will be applied with a machine reboot, and OCI base runtime specification will only affect new containers created after the change on the node.
+Applying, updating, or removing a [`CRIBaseRuntimeSpecConfig`](../../reference/configuration/cri/cribaseruntimespecconfig) regenerates the base runtime specification and restarts CRI automatically.
+A Talos node reboot is not required, but the updated specification only affects containers created after the change.
+
+The deprecated `.machine.baseRuntimeSpecOverrides` field remains supported during the deprecation period.
+It is mutually exclusive with `CRIBaseRuntimeSpecConfig`; Talos rejects configurations containing both.
