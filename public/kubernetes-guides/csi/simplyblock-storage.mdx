@@ -61,6 +61,30 @@ Before installing the simplyblock storage plane on Talos, you must prepare Talos
 
 Create a machine configuration patch (for example `kernel-module-config.yaml`):
 
+<Tabs>
+<Tab title="Talos v1.14+">
+
+```yaml
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: nbd
+---
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: uio_pci_generic
+---
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: vfio_pci
+---
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: vfio_iommu_type1
+```
+
+</Tab>
+<Tab title="Talos < v1.14">
+
 ```yaml
 machine:
   kernel:
@@ -70,6 +94,9 @@ machine:
       - name: vfio_pci
       - name: vfio_iommu_type1
 ```
+
+</Tab>
+</Tabs>
 
 Apply the patch to the worker nodes:
 
@@ -111,11 +138,27 @@ Round up to avoid under-allocation. If your sizing output is fractional, always 
 
 Create a machine configuration patch (for example `huge-pages-config.yaml`):
 
+<Tabs>
+<Tab title="Talos v1.14+">
+
+```yaml
+apiVersion: v1alpha1
+kind: SysctlConfig
+params:
+    vm.nr_hugepages: "<NUMBER_OF_PAGES>"
+```
+
+</Tab>
+<Tab title="Talos < v1.14">
+
 ```yaml
 machine:
   sysctls:
     vm.nr_hugepages: "<NUMBER_OF_PAGES>"
 ```
+
+</Tab>
+</Tabs>
 
 Apply it with a reboot to activate the reservation, then restart kubelet:
 

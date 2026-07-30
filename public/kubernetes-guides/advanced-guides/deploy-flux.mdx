@@ -42,13 +42,28 @@ On Talos, you can install Flux after the cluster is up, or reference the install
 
   </Tab>
   <Tab title="At bootstrap time">
-    Reference the install manifest from the control plane machine configuration using `extraManifests`.
+    Reference the install manifest from the control plane machine configuration.
 
     <Note>
-    `extraManifests` require the node to have outbound HTTPS access to the manifest URL at bootstrap time. If your environment is air-gapped, see [inlineManifests and extraManifests](./inlinemanifests) for alternatives.
+    This requires the node to have outbound HTTPS access to the manifest URL at bootstrap time. If your environment is air-gapped, see [inlineManifests and extraManifests](./inlinemanifests) for alternatives.
     </Note>
 
     **Step 1.** Create a patch file named `flux-extra-manifest.yaml` that references the Flux install manifest:
+
+    <Tabs>
+    <Tab title="Talos v1.14+">
+
+    ```bash
+    cat <<EOF > flux-extra-manifest.yaml
+    apiVersion: v1alpha1
+    kind: KubeExternalManifestConfig
+    name: flux
+    url: "https://github.com/fluxcd/flux2/releases/latest/download/install.yaml"
+    EOF
+    ```
+
+    </Tab>
+    <Tab title="Talos < v1.14">
 
     ```bash
     cat <<EOF > flux-extra-manifest.yaml
@@ -57,6 +72,9 @@ On Talos, you can install Flux after the cluster is up, or reference the install
         - "https://github.com/fluxcd/flux2/releases/latest/download/install.yaml"
     EOF
     ```
+
+    </Tab>
+    </Tabs>
 
     **Step 2.** Set a variable containing the IP addresses of your control plane nodes:
 

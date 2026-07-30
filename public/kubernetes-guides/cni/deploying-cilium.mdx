@@ -36,10 +36,22 @@ To do that:
 
 <Tabs>
 <Tab title="With kube-proxy">
-**1. Create a patch file** that sets the CNI to `none`:
+**Step 1.** Create a patch file that sets the CNI to `none`:
+
+For Talos v1.14 and later:
 
 ```bash
-cat <<EOF > patch.yaml
+cat <<'EOF' > patch.yaml
+apiVersion: v1alpha1
+kind: KubeFlannelCNIConfig
+$patch: delete
+EOF
+```
+
+On Talos versions earlier than v1.14:
+
+```bash
+cat <<'EOF' > patch.yaml
 cluster:
   network:
     cni:
@@ -47,20 +59,34 @@ cluster:
 EOF
 ```
 
-**2. Generate the machine config** with the patch applied:
+**Step 2.** Generate the machine config with the patch applied:
 
 ```bash
 talosctl gen config \
-    my-cluster https://mycluster.local:6443 \
-    --config-patch @patch.yaml
+    <cluster-name> https://<cluster-endpoint>:6443 \
+    --config-patch-control-plane @patch.yaml
 ```
 
 </Tab>
 <Tab title="Without kube-proxy">
-**1. Create a patch file** that sets the CNI to `none` and disables kube-proxy:
+**Step 1.** Create a patch file that sets the CNI to `none` and disables kube-proxy:
 
 ```bash
-cat <<EOF > patch.yaml
+cat <<'EOF' > patch.yaml
+apiVersion: v1alpha1
+kind: KubeFlannelCNIConfig
+$patch: delete
+---
+apiVersion: v1alpha1
+kind: KubeProxyConfig
+enabled: false
+EOF
+```
+
+On Talos versions earlier than v1.14:
+
+```bash
+cat <<'EOF' > patch.yaml
 cluster:
   network:
     cni:
@@ -70,12 +96,12 @@ cluster:
 EOF
 ```
 
-**2. Generate the machine config** with the patch applied:
+**Step 2.** Generate the machine config with the patch applied:
 
 ```bash
 talosctl gen config \
-    my-cluster https://mycluster.local:6443 \
-    --config-patch @patch.yaml
+    <cluster-name> https://<cluster-endpoint>:6443 \
+    --config-patch-control-plane @patch.yaml
 ```
 </Tab>
 </Tabs>
@@ -90,6 +116,7 @@ If you are using [Omni](https://www.siderolabs.com/platform/saas-for-kubernetes/
 
 <Tabs>
 <Tab title="With kube-proxy">
+
 ```bash
 cat <<EOF > values.yaml
 ipam:
@@ -121,6 +148,7 @@ EOF
 ```
 </Tab>
 <Tab title="Without kube-proxy">
+
 ```bash
 cat <<EOF > values.yaml
 ipam:
@@ -172,16 +200,36 @@ helm template \
 
 <Tabs>
 <Tab title="With kube-proxy">
+
+For Talos v1.14 and later:
+
 <CodeBlock lang="yaml">
-  {`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: cilium\n      file: cilium.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni\n    inline:\n      cluster:\n        network:\n          cni:\n            name: none\n...\n# Include machines for template`}
+{`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: cilium\n      file: cilium.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni\n    inline:\n      apiVersion: v1alpha1\n      kind: KubeFlannelCNIConfig\n      $patch: delete\n...\n# Include machines for template`}
+</CodeBlock>
+
+On Talos versions earlier than v1.14:
+
+<CodeBlock lang="yaml">
+{`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: cilium\n      file: cilium.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni\n    inline:\n      cluster:\n        network:\n          cni:\n            name: none\n...\n# Include machines for template`}
+
 </CodeBlock>
 </Tab>
 <Tab title="Without kube-proxy">
 
 When deploying without kube-proxy, set `proxy.disabled: true` in the `patches` block:
+
+For Talos v1.14 and later, disable the CNI and kube-proxy:
+
 <CodeBlock lang="yaml">
-  {`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: cilium\n      file: cilium.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni-and-proxy\n    inline:\n      cluster:\n        network:\n          cni:\n            name: none\n        proxy:\n          disabled: true\n...\n# Include machines for template`}
+{`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: cilium\n      file: cilium.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni-and-proxy\n    inline:\n      apiVersion: v1alpha1\n      kind: KubeFlannelCNIConfig\n      $patch: delete\n  - name: disable-kube-proxy\n    inline:\n      apiVersion: v1alpha1\n      kind: KubeProxyConfig\n      enabled: false\n...\n# Include machines for template`}
 </CodeBlock>
+
+On Talos versions earlier than v1.14:
+
+<CodeBlock lang="yaml">
+{`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: cilium\n      file: cilium.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni-and-proxy\n    inline:\n      cluster:\n        network:\n          cni:\n            name: none\n        proxy:\n          disabled: true\n...\n# Include machines for template`}
+</CodeBlock>
+
 </Tab>
 </Tabs>
 
@@ -340,20 +388,22 @@ helm template \
 
 **Step 2.** Embed the generated manifest in your machine configuration:
 
+<Note>On Talos versions 1.13 and earlier, use the deprecated `cluster.inlineManifests` field instead — see [inlineManifests and extraManifests](../advanced-guides/inlinemanifests) for the older format.</Note>
+
 ```yaml
-cluster:
-  inlineManifests:
-    - name: cilium
-      contents: |
-        ---
-        # Source: cilium/templates/cilium-agent/serviceaccount.yaml
-        apiVersion: v1
-        kind: ServiceAccount
-        metadata:
-          name: "cilium"
-          namespace: kube-system
-        ---
-        # Paste the full contents of cilium.yaml here
+apiVersion: v1alpha1
+kind: KubeInlineManifestConfig
+name: cilium
+manifest: |
+  ---
+  # Source: cilium/templates/cilium-agent/serviceaccount.yaml
+  apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: "cilium"
+    namespace: kube-system
+  ---
+  # Paste the full contents of cilium.yaml here
 ```
 
 </Tab>

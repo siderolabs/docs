@@ -8,31 +8,16 @@ import { version } from '/snippets/custom-variables.mdx';
 [Kubernetes Dynamic Resource Allocation](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/) (DRA) is a new way of sharing host level resources into pods.
 These resources include GPU devices, high performance networking, and other hardware that a workload may need access to.
 
-DRA is enabled by default as a beta feature in Kubernetes 1.34 and can also be enabled in Kubernetes 1.33.
+DRA reached GA in Kubernetes 1.34, and the feature gate is locked on (always enabled, cannot be disabled) starting in Kubernetes 1.35.
 DRA replaces [device plugins](./device-plugins.mdx) for accessing resources from workloads.
 
-## Enable DRA in the cluster
+## Prerequisites
 
-Make sure the cluster has DRA enabled (Kubernetes 1.34+) or uses the following patch to enable the feature. This patch can be applied to all nodes in the cluster via `talosctl` or via Omni.
+Ensure you have the following:
 
-```yaml
-machine:
-  kubelet:
-    extraArgs:
-      feature-gates: DynamicResourceAllocation=true
-cluster:
-  apiServer:
-    extraArgs:
-      feature-gates: DynamicResourceAllocation=true
-  controllerManager:
-    extraArgs:
-      feature-gates: DynamicResourceAllocation=true
-  scheduler:
-    extraArgs:
-      feature-gates: DynamicResourceAllocation=true
-```
+- A cluster running Kubernetes 1.33 or later. DRA requires no additional configuration and is enabled by default.
 
-You should have at least one node in the cluster with NVIDIA hardware and configured via <a href={`../../talos/${version}/hardware-and-drivers/nvidia-gpu`}>NVIDIA GPU (OSS drivers)</a> or <a href={`../../talos/${version}/hardware-and-drivers/nvidia-gpu-proprietary`}>NVIDIA GPU (Proprietary drivers)</a> guides.
+- At least one node with NVIDIA hardware, configured using either <a href={`../../talos/${version}/hardware-and-drivers/nvidia-gpu`}>NVIDIA GPU (OSS drivers)</a> or <a href={`../../talos/${version}/hardware-and-drivers/nvidia-gpu-proprietary`}>NVIDIA GPU (Proprietary drivers)</a>.
 
 ## 1. Deploy the NVIDIA DRA plugin via Helm
 

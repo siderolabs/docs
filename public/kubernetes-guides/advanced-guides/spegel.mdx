@@ -34,6 +34,23 @@ Spegel relies on these unpacked layers to function as a peer-to-peer registry mi
 
 Create a patch file named `spegel-machine-patch.yaml` with the following contents:
 
+<Tabs>
+<Tab title="Talos v1.14+">
+
+```yaml
+cat <<EOF > spegel-machine-patch.yaml
+apiVersion: v1alpha1
+kind: CRICustomizationConfig
+name: spegel
+content: |
+    [plugins."io.containerd.cri.v1.images"]
+      discard_unpacked_layers = false
+EOF
+```
+
+</Tab>
+<Tab title="Talos < v1.14">
+
 ```yaml
 cat <<EOF > spegel-machine-patch.yaml
 machine:
@@ -45,6 +62,9 @@ machine:
           discard_unpacked_layers = false
 EOF
 ```
+
+</Tab>
+</Tabs>
 
 This patch creates a containerd configuration fragment that instructs containerd to preserve unpacked image layers, making them available for Spegel to serve to other nodes.
 
@@ -106,6 +126,24 @@ Proceed once all nodes report `Ready`.
 
 If your cluster is managed by Omni, apply the patch by adding it to the patches section of each machine definition in your [cluster template](../../omni/reference/cluster-templates#patches):
 
+<Tabs>
+<Tab title="Talos v1.14+">
+
+```yaml
+patches:
+  - name: spegel-containerd-config
+    inline:
+      apiVersion: v1alpha1
+      kind: CRICustomizationConfig
+      name: spegel
+      content: |
+        [plugins."io.containerd.cri.v1.images"]
+          discard_unpacked_layers = false
+```
+
+</Tab>
+<Tab title="Talos < v1.14">
+
 ```yaml
 patches:
   - name: spegel-containerd-config
@@ -118,6 +156,9 @@ patches:
               [plugins."io.containerd.cri.v1.images"]
                 discard_unpacked_layers = false
 ```
+
+</Tab>
+</Tabs>
 
 After updating the template, sync the changes to your cluster:
 

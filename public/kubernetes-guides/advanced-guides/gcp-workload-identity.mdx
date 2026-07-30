@@ -81,6 +81,28 @@ OIDC_PROVIDER_URL=$(gcloud iam workload-identity-pools providers list --location
 
 Next, create a patch file to configure the Talos cluster with the required OIDC settings for Google Workload Identity Federation.
 
+<Tabs>
+<Tab title="Talos v1.14+">
+
+```bash
+cat <<EOF > oidc-patch.yaml
+apiVersion: v1alpha1
+kind: KubeAPIServerConfig
+extraArgs:
+  # This must match the GCS bucket URL exactly
+  service-account-issuer: "https://storage.googleapis.com/${BUCKET_NAME}"
+  # GCP WIF expects this audience; you can also add "sts.googleapis.com"
+  api-audiences: "iam.googleapis.com/${OIDC_PROVIDER_URL},https://storage.googleapis.com/${BUCKET_NAME},sts.googleapis.com,https://kubernetes.default.svc.cluster.local"
+  # Where the public keys will be found (logically)
+  service-account-jwks-uri: "https://storage.googleapis.com/${BUCKET_NAME}/keys.json"
+  # How long tokens are valid (optional, but good for security)
+  service-account-max-token-expiration: 24h
+EOF
+```
+
+</Tab>
+<Tab title="Talos < v1.14">
+
 ```bash
 cat <<EOF > oidc-patch.yaml
 cluster:
@@ -96,6 +118,9 @@ cluster:
       service-account-max-token-expiration: 24h
 EOF
 ```
+
+</Tab>
+</Tabs>
 
 ### Apply OIDC patch to control plane node
 

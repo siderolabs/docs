@@ -9,21 +9,23 @@ Refer to the [official documentation](https://kubernetes.io/docs/concepts/worklo
 
 ## Enabling Usernamespaces
 
-To enable User Namespaces in Talos, you need to add the following configuration to Talos machine configuration:
+`UserNamespacesSupport` is enabled by default in the Kubernetes versions Talos supports, so no feature gates need to be set. The only configuration needed is raising the kernel's limit on the number of user namespaces.
+
+Add the following to your Talos machine configuration using the [`SysctlConfig`](../../talos/v1.14/reference/configuration/runtime/sysctlconfig) document:
 
 ```yaml
----
-cluster:
-  apiServer:
-    extraArgs:
-      feature-gates: UserNamespacesSupport=true
+apiVersion: v1alpha1
+kind: SysctlConfig
+params:
+    user.max_user_namespaces: "11255"
+```
+
+On Talos versions earlier than v1.14, use the older configuration field:
+
+```yaml
 machine:
   sysctls:
     user.max_user_namespaces: "11255"
-  kubelet:
-    extraConfig:
-      featureGates:
-        UserNamespacesSupport: true
 ```
 
 After applying the configuration, refer to the [official documentation](https://kubernetes.io/docs/tasks/configure-pod-container/user-namespaces/) to configure workloads to use User Namespaces.

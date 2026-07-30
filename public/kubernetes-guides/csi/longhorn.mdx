@@ -200,6 +200,37 @@ EOF
 
 Create a second machine configuration patch that reserves huge pages and loads the kernel modules required by SPDK.
 
+<Tabs>
+<Tab title="Talos v1.14+">
+
+```bash
+cat <<EOF > longhorn-v2-engine.yaml
+apiVersion: v1alpha1
+kind: SysctlConfig
+params:
+    vm.nr_hugepages: "1024"
+---
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: nvme_tcp
+---
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: vfio_pci
+---
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: uio_pci_generic
+---
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: ublk_drv
+EOF
+```
+
+</Tab>
+<Tab title="Talos < v1.14">
+
 ```bash
 cat <<EOF > longhorn-v2-engine.yaml
 machine:
@@ -213,6 +244,9 @@ machine:
       - name: ublk_drv
 EOF
 ```
+
+</Tab>
+</Tabs>
 
 ### 1.4: Apply the configuration to storage nodes
 

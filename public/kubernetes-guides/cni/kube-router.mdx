@@ -11,8 +11,30 @@ import { k8s_release } from '/snippets/custom-variables.mdx';
 
 When generating the machine config for a node, set the CNI to none and disable the default kube-proxy since kube-router replaces it.
 
+<Tabs>
+<Tab title="Talos v1.14+">
+
+For Talos v1.14 and later, delete the default CNI and disable kube-proxy:
+
 ```bash
-cat <<EOF > patch.yaml
+cat <<'EOF' > patch.yaml
+apiVersion: v1alpha1
+kind: KubeFlannelCNIConfig
+$patch: delete
+---
+apiVersion: v1alpha1
+kind: KubeProxyConfig
+enabled: false
+EOF
+```
+
+</Tab>
+<Tab title="Talos < v1.14">
+
+On Talos versions earlier than v1.14, set the CNI to `none` and disable kube-proxy:
+
+```bash
+cat <<'EOF' > patch.yaml
 cluster:
   network:
     cni:
@@ -22,10 +44,15 @@ cluster:
 EOF
 ```
 
+</Tab>
+</Tabs>
+
+Generate the machine config with the patch applied to the control plane:
+
 ```bash
 talosctl gen config \
-    my-cluster https://mycluster.local:6443 \
-    --config-patch @patch.yaml
+  <cluster-name> https://<cluster-endpoint>:6443 \
+  --config-patch-control-plane @patch.yaml
 ```
 
 If you want to use kube-router alongside kube-proxy instead of replacing it, omit `proxy.disabled: true` from the patch and set `kubeRouter.run_router=--run-service-proxy=false` in the kube-router DaemonSet arguments.
@@ -44,6 +71,14 @@ curl -Lo kube-router.yaml https://raw.githubusercontent.com/cloudnativelabs/kube
 ```
 
 **Step 2.** Reference the manifest in your Omni cluster template using the `file` field:
+
+**For Talos v1.14 and later**:
+
+<CodeBlock lang="yaml">
+  {`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: kube-router\n      file: kube-router.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni\n    inline:\n      apiVersion: v1alpha1\n      kind: KubeFlannelCNIConfig\n      $patch: delete\n  - name: disable-kube-proxy\n    inline:\n      apiVersion: v1alpha1\n      kind: KubeProxyConfig\n      enabled: false\n...\n# Include machines for template`}
+</CodeBlock>
+
+**On Talos versions earlier than v1.14**:
 
 <CodeBlock lang="yaml">
   {`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: kube-router\n      file: kube-router.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni-and-proxy\n    inline:\n      cluster:\n        network:\n          cni:\n            name: none\n        proxy:\n          disabled: true\n...\n# Include machines for template`}

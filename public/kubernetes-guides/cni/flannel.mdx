@@ -12,22 +12,42 @@ Flannel encapsulates the network traffic between pods using VXLAN (Talos default
 which allows for seamless communication between pods across different nodes in the cluster without requiring any additional configuration on the underlying network infrastructure.
 With Flannel, `kube-proxy` handles the routing of traffic between pods and services, while Flannel manages the overlay network and ensures that pods can communicate with each other regardless of their physical location in the cluster.
 
-Starting with Talos 1.13, Flannel can be configured to support [Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) by using the following machine configuration patch:
+Starting with Talos 1.13, Flannel can be configured to support [Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/).
 
-```yaml
-cluster:
-  network:
-    cni:
-      name: flannel
-      flannel:
-        kubeNetworkPoliciesEnabled: true
-```
+## Configure Flannel to support network policies
 
-Network policies allow you to control the traffic flow between pods and services in your Kubernetes cluster, providing an additional layer of security and isolation.
+Depending on your Talos version your Flannel CNI can be configured to support Network Policies with the following configuration:
+
+<Tabs>
+  <Tab title="Talos v1.14+">
+  For Talos 1.14 and later, enable Flannel Network Policies using the [`KubeFlannelCNIConfig`](../../talos/v1.14/reference/configuration/kubernetes/kubeflannelcniconfig) document:
+
+  ```yaml
+  apiVersion: v1alpha1
+  kind: KubeFlannelCNIConfig
+  kubeNetworkPoliciesEnabled: true
+  ```
+  </Tab>
+
+  <Tab title="Talos v1.13">
+  For Talos versions earlier than 1.14, use the legacy machine configuration:
+
+  ```yaml
+  cluster:
+    network:
+      cni:
+        name: flannel
+        flannel:
+          kubeNetworkPoliciesEnabled: true
+  ```
+  </Tab>
+</Tabs>
+
+Once you have enabled network policies in your Flannel CNI you can deploy a network policy to restrict traffics to specific pods.
 
 ### Example network policy
 
-The following example demonstrates a network policy that restricts ingress traffic to pods with the label `app: web` in the `default` namespace, allowing only traffic from pods with the label `app: api`:
+In the example below, the network policy `allow-api-to-web` restricts ingress traffic to pods with the label `app: web` in the `default` namespace, allowing only traffic from pods with the label `app: api`:
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -61,9 +81,23 @@ Once applied, only pods with the label `app: api` can reach port 80 on pods labe
 
 <Note>Network policies require `kubeNetworkPoliciesEnabled: true` in the Flannel configuration as shown above. Without this setting, NetworkPolicy resources are accepted but not enforced.</Note>
 
-## Custom Flannel deployment with Omni
+## Customize your Flannel configuration
 
-By default, Talos manages the Flannel installation automatically. However, if you need to customize Flannel settings that are not exposed through the Talos API — such as changing the backend type (e.g. from VXLAN to host-gw or WireGuard), adjusting MTU, or modifying other Flannel configuration — you can deploy a custom Flannel manifest using Omni's [manifest sync](../../omni/cluster-management/sync-kubernetes-manifests) feature.
+Most Flannel customization is available directly through the `KubeFlannelCNIConfig` document — including the backend type, backend port, and MTU. For example, to change the backend from the default VXLAN to host-gw:
+
+```yaml
+apiVersion: v1alpha1
+kind: KubeFlannelCNIConfig
+backendType: host-gw
+```
+
+See the [`KubeFlannelCNIConfig` reference](../../talos/v1.14/reference/configuration/kubernetes/kubeflannelcniconfig) for the full set of configurable fields.
+
+If you need to customize Flannel beyond what `KubeFlannelCNIConfig` exposes, you can deploy a custom Flannel manifest using Omni's [manifest sync](../../omni/cluster-management/sync-kubernetes-manifests) feature.
+
+### Deploy a fully custom Flannel manifest with Omni
+
+Follow these steps to deploy a custom Flannel manifest through an Omni cluster template:
 
 **Step 1.** Download the upstream Flannel manifest:
 
@@ -84,9 +118,26 @@ curl -Lo flannel.yaml https://github.com/flannel-io/flannel/releases/latest/down
 
 **Step 3.** Reference the manifest in your Omni cluster template. Set the default CNI to `none` so Talos does not install its own Flannel:
 
+<Tabs>
+<Tab title="Talos v1.14+">
+
+For Talos v1.14 and later, disable the default CNI with the `KubeFlannelCNIConfig` document:
+
+<CodeBlock lang="yaml">
+  {`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: flannel\n      file: flannel.yaml\n      mode: full\npatches:\n  - name: disable-default-cni\n    inline:\n      apiVersion: v1alpha1\n      kind: KubeFlannelCNIConfig\n      $patch: delete\n...\n# Include machines for template`}
+</CodeBlock>
+
+</Tab>
+<Tab title="Talos < v1.14">
+
+On Talos versions earlier than v1.14, disable the default CNI with `cni.name: none`:
+
 <CodeBlock lang="yaml">
   {`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: flannel\n      file: flannel.yaml\n      mode: full\npatches:\n  - name: disable-default-cni\n    inline:\n      cluster:\n        network:\n          cni:\n            name: none\n...\n# Include machines for template`}
 </CodeBlock>
+
+</Tab>
+</Tabs>
 
 **Step 4.** Apply the cluster template:
 
@@ -97,3 +148,4 @@ omnictl cluster template sync --file cluster-template.yaml
 Using `mode: full` ensures that Omni continuously syncs the manifest, so any changes you make to the Flannel configuration in the cluster template are applied to the cluster automatically. See [Sync Kubernetes Manifests](../../omni/cluster-management/sync-kubernetes-manifests) for more details.
 
 Talos Linux ships with all necessary base CNI plugins for Flannel, so a default Flannel installation done by Talos can be replaced with a custom one based on [Flannel documentation](https://github.com/flannel-io/flannel).
+

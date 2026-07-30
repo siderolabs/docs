@@ -118,6 +118,28 @@ There are 3 types of bridges: `bridge`, `macvlan` and `ipvlan`:
 When using the `bridge` interface you must also configure a bridge on your Talos nodes.
 That can be done by updating Talos Linux machine configuration:
 
+<Tabs>
+<Tab title="Talos v1.14+">
+
+```yaml
+apiVersion: v1alpha1
+kind: BridgeConfig
+name: br0
+links:
+  - eno1 # This must be changed to your matching interface name
+stp:
+  enabled: true
+addresses:
+  - 172.16.1.60/24
+routes:
+  - destination: 0.0.0.0/0 # The route's destination network.
+    gateway: 172.16.1.254 # The route's gateway (if empty, creates link scope route).
+    metric: 1024 # The optional metric for the route.
+```
+
+</Tab>
+<Tab title="Talos < v1.14">
+
 ```yaml
 machine:
     network:
@@ -135,6 +157,9 @@ machine:
               gateway: 172.16.1.254 # The route's gateway (if empty, creates link scope route).
               metric: 1024 # The optional metric for the route.
 ```
+
+</Tab>
+</Tabs>
 
 More information about the configuration of bridges can be found [here](https://github.com/k8snetworkplumbingwg/multus-cni/tree/master/docs)
 

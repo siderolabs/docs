@@ -10,21 +10,43 @@ This documentation is designed to get you up and running with Talos and Calico C
 ## Configuring Talos
 
 To install Calico, you first need to disable the default CNI. This can be done by applying a patch file during cluster creation.
-```bash
-cat <<EOF > patch.yaml
-cluster:
-  network:
-    cni:
-      name: none
-EOF
-```
+
+<Tabs>
+  <Tab title="Talos v1.14+">
+
+    For Talos v1.14 and later, delete the default Flannel CNI document:
+
+    ```bash
+    cat <<'EOF' > patch.yaml
+    apiVersion: v1alpha1
+    kind: KubeFlannelCNIConfig
+    $patch: delete
+    EOF
+    ```
+
+  </Tab>
+  <Tab title="Talos < v1.14">
+
+    On Talos versions earlier than v1.14, set the CNI to `none`:
+
+    ```bash
+    cat <<'EOF' > patch.yaml
+    cluster:
+      network:
+        cni:
+          name: none
+    EOF
+  ```
+
+  </Tab>
+</Tabs>
 
 After generating the patch file add the `--config-patch` argument to your `talosctl gen config`.
 
 ```bash
 talosctl gen config \
-    my-cluster https://calico-talos.local:6443 \
-    --config-patch @patch.yaml
+    <cluster-name> https://<cluster-endpoint>:6443 \
+    --config-patch-control-plane @patch.yaml
 ```
 
 ### Installation using Omni
@@ -111,9 +133,25 @@ EOF
 
 **Step 3.** Reference both manifests in your Omni cluster template:
 
-<CodeBlock lang="yaml">
-  {`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: tigera-operator\n      file: tigera-operator.yaml\n      mode: one-time\n    - name: calico-installation\n      file: installation.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni\n    inline:\n      cluster:\n        network:\n          cni:\n            name: none\n...\n# Include machines for template`}
-</CodeBlock>
+<Tabs>
+  <Tab title="Talos v1.14+">
+
+    For Talos v1.14 and later, disable the default CNI with the `KubeFlannelCNIConfig` document:
+
+    <CodeBlock lang="yaml">
+      {`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: tigera-operator\n      file: tigera-operator.yaml\n      mode: one-time\n    - name: calico-installation\n      file: installation.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni\n    inline:\n      apiVersion: v1alpha1\n      kind: KubeFlannelCNIConfig\n      $patch: delete\n...\n# Include machines for template`}
+    </CodeBlock>
+
+  </Tab>
+  <Tab title="Talos < v1.14">
+
+    On Talos versions earlier than v1.14, disable the default CNI with `cni.name: none`:
+
+    <CodeBlock lang="yaml">
+      {`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: tigera-operator\n      file: tigera-operator.yaml\n      mode: one-time\n    - name: calico-installation\n      file: installation.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni\n    inline:\n      cluster:\n        network:\n          cni:\n            name: none\n...\n# Include machines for template`}
+    </CodeBlock>
+  </Tab>
+</Tabs>
 
 **Step 4.** Apply the cluster template:
 
