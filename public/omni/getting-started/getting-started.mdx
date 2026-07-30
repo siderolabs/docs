@@ -37,7 +37,7 @@ If you just want to evaluate Omni quickly, you can register a few disposable loc
   **Tear down** when you're done:
 
   ```bash
-    sudo -E talosctl cluster destroy --name talos-omni-cluster-default 
+    sudo -E talosctl cluster destroy --name talos-omni-cluster-default
   ```
 </Accordion>
 
@@ -77,21 +77,6 @@ You must have the following to create a cluster with Omni:
   ```
 
   For manual and Windows installation, refer to the <a href={`../../talos/${version}/getting-started/talosctl#alternative-install`}>alternate installation methods</a> in the Talos documentation.
-
-- `talosconfig` **and** `omniconfig` **files**: Download the `talosconfig` and `omniconfig` configuration files from your Omni dashboard.
-
-  These files let you manage your Talos nodes and connect to Omni from your local environment.
-
-  ![Talosconfig and Omniconfig](./images/getting-started-talosconfig-omniconfig.png)
-
-  Alternatively, you can download the `talosconfig` file from the CLI by running the following command.
-  Replace the `<cluster-name>` placeholder with your cluster’s name:
-
-  ```bash
-  omnictl talosconfig --cluster <cluster-name>
-  ```
-
-  Once you’ve set up these prerequisites, you can move on to creating your cluster with Omni.
 
 ## Step 1: Download installation media
 
@@ -225,7 +210,20 @@ If the cluster remains in a pending or provisioning state after you click Create
 If the issue persists, see the cluster [troubleshooting documentation](../troubleshooting/troubleshooting).
 </Warning>
 
-## Step 4: Download the `kubeconfig` file
+## Step 4: Download the `talosconfig` and `omniconfig` configuration files
+
+These files let you manage your Talos nodes and connect to Omni from your local environment.
+
+![Talosconfig and Omniconfig](./images/getting-started-talosconfig-omniconfig.png)
+
+**Alternatively**, you can download the `talosconfig` file from the CLI by running the following command.
+Replace the `<cluster-name>` placeholder with your cluster’s name:
+
+```bash
+omnictl talosconfig --cluster <cluster-name>
+```
+
+## Step 5: Download the `kubeconfig` file
 
 To make `omnictl`, `talosctl`, and `kubectl` automatically detect your cluster configuration:
 
@@ -248,7 +246,7 @@ talosctl config merge $HOME/Downloads/talosconfig.yaml
 omnictl kubeconfig --cluster $CLUSTER_NAME
 ```
 
-## Step 5: Access your Kubernetes cluster
+## Step 6: Access your Kubernetes cluster
 
 Once your cluster is created, you can confirm that your nodes are registered in Kubernetes by running:
 
@@ -262,7 +260,7 @@ The first time you run `kubectl`, a browser window will open prompting you to si
 If you see the error `error: unknown command "oidc-login"`, ensure you’ve installed the kubectl-oidc-login plugin as described in the [prerequisites section](#install-cli-tools).
 </Note>
 
-## Step 6: Deploy your first workload
+## Step 7: Deploy your first workload
 
 To run your first application on the cluster:
 
@@ -306,4 +304,3 @@ From here, you can explore what else Omni can do, such as:
 * [Machine classes](../omni-cluster-setup/create-a-machine-class)
 * [Cluster templates](../reference/cluster-templates)
 * [Infrastructure providers](../infrastructure-and-extensions/infrastructure-providers)
-
