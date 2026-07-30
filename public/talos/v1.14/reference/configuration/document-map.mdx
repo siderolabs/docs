@@ -1,0 +1,245 @@
+---
+title: Configuration document map
+description: Which configuration document replaces each v1alpha1 field, release by release.
+mode: "wide"
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+import { ConfigEvolution } from "/snippets/config-evolution.jsx"
+import { CONFIG_EVOLUTION } from "/snippets/config-evolution-data-v1.14.jsx"
+
+<VersionWarningBanner />
+
+<ConfigEvolution data={CONFIG_EVOLUTION} />
+
+### How to read it
+
+| Marker | Meaning |
+| --- | --- |
+| Green | Still configured in `v1alpha1`. No document replaces it as of v1.14. |
+| Red, struck through | Moved out. A document replaces it and is where the setting now belongs. |
+| Amber | Moved out along with its parent block, which a document replaces as a whole. |
+| Grey | Removed. Deprecated with no replacement document. |
+| Violet | New in v1.14 — new documents, and fields that moved out in this release. |
+
+A field only turns red once its replacement has actually shipped in a release.
+Before v1.14, `.machine.kubelet` was green, because `KubeletConfig` did not arrive until v1.14 and `v1alpha1` genuinely was the only way to configure the kubelet.
+
+<Note>
+  Moving a setting into a document is not required at upgrade time.
+  An existing `v1alpha1` configuration keeps working; deprecated fields are still honoured until they are removed.
+  See [upgrading Talos](../../configure-your-talos-cluster/lifecycle-management/upgrading-talos) before you change anything.
+</Note>
+
+## Reference tables
+
+The same data as the map above, in a form you can search, link to and copy.
+
+{/* BEGIN GENERATED: config-evolution-tables */}
+
+### Top-level `v1alpha1` fields
+
+Where each top-level field of the `v1alpha1` document is configured as of v1.14.
+
+| Field | Status | Configure with |
+| --- | --- | --- |
+| `.machine.type` | Still `v1alpha1` | `v1alpha1` |
+| `.machine.token` | Still `v1alpha1` | `v1alpha1` |
+| `.machine.ca` | Still `v1alpha1` | `v1alpha1` |
+| `.machine.acceptedCAs` | Still `v1alpha1` | `v1alpha1` |
+| `.machine.certSANs` | Still `v1alpha1` | `v1alpha1` |
+| `.machine.controlPlane` | Moved out | [`KubeControllerManagerConfig`](./kubernetes/kubecontrollermanagerconfig), [`KubeSchedulerConfig`](./kubernetes/kubeschedulerconfig) |
+| `.machine.kubelet` | Moved out | [`KubeletConfig`](./kubernetes/kubeletconfig) |
+| `.machine.pods` | Moved out | [`KubeStaticPodConfig`](./kubernetes/kubestaticpodconfig) |
+| `.machine.network` | Moved out | [`HostnameConfig`](./network/hostnameconfig), [`KubeSpanConfig`](./network/kubespanconfig), [`LinkConfig`](./network/linkconfig), [`ResolverConfig`](./network/resolverconfig), [`StaticHostConfig`](./network/statichostconfig) |
+| `.machine.disks` | Moved out | [`UserVolumeConfig`](./block/uservolumeconfig) |
+| `.machine.install` | Moved out | [`UnattendedInstallConfig`](./runtime/unattendedinstallconfig) |
+| `.machine.files` | Moved out | [`CRICustomizationConfig`](./cri/cricustomizationconfig), [`EtcFileConfig`](./runtime/etcfileconfig) |
+| `.machine.env` | Moved out | [`EnvironmentConfig`](./runtime/environmentconfig) |
+| `.machine.time` | Moved out | [`TimeSyncConfig`](./network/timesyncconfig) |
+| `.machine.sysctls` | Moved out | [`SysctlConfig`](./runtime/sysctlconfig) |
+| `.machine.sysfs` | Moved out | [`SysfsConfig`](./runtime/sysfsconfig) |
+| `.machine.registries` | Moved out | [`RegistryAuthConfig`](./cri/registryauthconfig), [`RegistryMirrorConfig`](./cri/registrymirrorconfig), [`RegistryTLSConfig`](./cri/registrytlsconfig) |
+| `.machine.systemDiskEncryption` | Moved out | [`VolumeConfig`](./block/volumeconfig) |
+| `.machine.features` | Still `v1alpha1` | `v1alpha1` |
+| `.machine.udev` | Moved out | [`UdevRulesConfig`](./runtime/udevrulesconfig) |
+| `.machine.logging` | Still `v1alpha1` | `v1alpha1` |
+| `.machine.kernel` | Moved out | [`KernelModuleConfig`](./runtime/kernelmoduleconfig) |
+| `.machine.seccompProfiles` | Still `v1alpha1` | `v1alpha1` |
+| `.machine.baseRuntimeSpecOverrides` | Moved out | [`CRIBaseRuntimeSpecConfig`](./cri/cribaseruntimespecconfig) |
+| `.machine.nodeLabels` | Moved out | [`KubeNodeConfig`](./kubernetes/kubenodeconfig) |
+| `.machine.nodeAnnotations` | Moved out | [`KubeNodeConfig`](./kubernetes/kubenodeconfig) |
+| `.machine.nodeTaints` | Moved out | [`KubeNodeConfig`](./kubernetes/kubenodeconfig) |
+| `.cluster.id` | Moved out | [`DiscoveryIdentityConfig`](./cluster/discoveryidentityconfig) |
+| `.cluster.secret` | Moved out | [`DiscoveryIdentityConfig`](./cluster/discoveryidentityconfig) |
+| `.cluster.controlPlane` | Moved out | [`KubeClusterConfig`](./kubernetes/kubeclusterconfig) |
+| `.cluster.clusterName` | Moved out | [`KubeClusterConfig`](./kubernetes/kubeclusterconfig) |
+| `.cluster.network` | Moved out | [`KubeFlannelCNIConfig`](./kubernetes/kubeflannelcniconfig), [`KubeNetworkConfig`](./kubernetes/kubenetworkconfig) |
+| `.cluster.token` | Still `v1alpha1` | `v1alpha1` |
+| `.cluster.aescbcEncryptionSecret` | Moved out | [`KubeEtcdEncryptionConfig`](./kubernetes/kubeetcdencryptionconfig) |
+| `.cluster.secretboxEncryptionSecret` | Moved out | [`KubeEtcdEncryptionConfig`](./kubernetes/kubeetcdencryptionconfig) |
+| `.cluster.ca` | Moved out | [`KubeAPIServerCAConfig`](./kubernetes/kubeapiservercaconfig) |
+| `.cluster.acceptedCAs` | Moved out | [`KubeAPIServerCAConfig`](./kubernetes/kubeapiservercaconfig) |
+| `.cluster.aggregatorCA` | Moved out | [`KubeAggregatorCAConfig`](./kubernetes/kubeaggregatorcaconfig) |
+| `.cluster.serviceAccount` | Moved out | [`KubeServiceAccountConfig`](./kubernetes/kubeserviceaccountconfig) |
+| `.cluster.apiServer` | Moved out | [`KubeAPIServerConfig`](./kubernetes/kubeapiserverconfig) |
+| `.cluster.controllerManager` | Moved out | [`KubeControllerManagerConfig`](./kubernetes/kubecontrollermanagerconfig) |
+| `.cluster.proxy` | Moved out | [`KubeProxyConfig`](./kubernetes/kubeproxyconfig) |
+| `.cluster.scheduler` | Moved out | [`KubeSchedulerConfig`](./kubernetes/kubeschedulerconfig) |
+| `.cluster.discovery` | Moved out | [`DiscoveryServiceConfig`](./cluster/discoveryserviceconfig) |
+| `.cluster.etcd` | Still `v1alpha1` | `v1alpha1` |
+| `.cluster.coreDNS` | Moved out | [`KubeCoreDNSConfig`](./kubernetes/kubecorednsconfig) |
+| `.cluster.externalCloudProvider` | Still `v1alpha1` | `v1alpha1` |
+| `.cluster.extraManifests` | Moved out | [`KubeExternalManifestConfig`](./kubernetes/kubeexternalmanifestconfig) |
+| `.cluster.extraManifestHeaders` | Moved out | [`KubeExternalManifestConfig`](./kubernetes/kubeexternalmanifestconfig) |
+| `.cluster.inlineManifests` | Moved out | [`KubeInlineManifestConfig`](./kubernetes/kubeinlinemanifestconfig) |
+| `.cluster.adminKubeconfig` | Still `v1alpha1` | `v1alpha1` |
+| `.cluster.allowSchedulingOnMasters` | Moved out | [`KubeNodeConfig`](./kubernetes/kubenodeconfig) |
+| `.cluster.allowSchedulingOnControlPlanes` | Moved out | [`KubeNodeConfig`](./kubernetes/kubenodeconfig) |
+
+### Config documents by release
+
+Every configuration document available in v1.14, listed under the release that introduced it.
+
+#### Talos 1.8 and earlier
+
+10 documents.
+
+| Document | Area | Replaces |
+| --- | --- | --- |
+| [`KubeSpanEndpointsConfig`](./network/kubespanendpointsconfig) | Networking | *new capability* |
+| [`NetworkDefaultActionConfig`](./network/networkdefaultactionconfig) | Networking | *new capability* |
+| [`NetworkRuleConfig`](./network/networkruleconfig) | Networking | *new capability* |
+| [`VolumeConfig`](./block/volumeconfig) | Block and volumes | `.machine.systemDiskEncryption` |
+| [`EventSinkConfig`](./runtime/eventsinkconfig) | Runtime and OS | *new capability* |
+| [`KmsgLogConfig`](./runtime/kmsglogconfig) | Runtime and OS | *new capability* |
+| [`WatchdogTimerConfig`](./runtime/watchdogtimerconfig) | Runtime and OS | *new capability* |
+| [`TrustedRootsConfig`](./security/trustedrootsconfig) | Security | *new capability* |
+| [`ExtensionServiceConfig`](./extensions/extensionserviceconfig) | Extensions | *new capability* |
+| [`SideroLinkConfig`](./siderolink/siderolinkconfig) | SideroLink | *new capability* |
+
+#### Talos 1.10
+
+3 documents.
+
+| Document | Area | Replaces |
+| --- | --- | --- |
+| [`EthernetConfig`](./network/ethernetconfig) | Networking | *new capability* |
+| [`UserVolumeConfig`](./block/uservolumeconfig) | Block and volumes | `.machine.disks` |
+| [`PCIDriverRebindConfig`](./hardware/pcidriverrebindconfig) | Hardware | *new capability* |
+
+#### Talos 1.11
+
+4 documents.
+
+| Document | Area | Replaces |
+| --- | --- | --- |
+| [`ExistingVolumeConfig`](./block/existingvolumeconfig) | Block and volumes | *new capability* |
+| [`RawVolumeConfig`](./block/rawvolumeconfig) | Block and volumes | *new capability* |
+| [`SwapVolumeConfig`](./block/swapvolumeconfig) | Block and volumes | *new capability* |
+| [`ZswapConfig`](./block/zswapconfig) | Block and volumes | *new capability* |
+
+#### Talos 1.12
+
+19 documents.
+
+| Document | Area | Replaces |
+| --- | --- | --- |
+| [`BondConfig`](./network/bondconfig) | Networking | *new capability* |
+| [`BridgeConfig`](./network/bridgeconfig) | Networking | *new capability* |
+| [`DHCPv4Config`](./network/dhcpv4config) | Networking | *new capability* |
+| [`DHCPv6Config`](./network/dhcpv6config) | Networking | *new capability* |
+| [`DummyLinkConfig`](./network/dummylinkconfig) | Networking | *new capability* |
+| [`HCloudVIPConfig`](./network/hcloudvipconfig) | Networking | *new capability* |
+| [`HostnameConfig`](./network/hostnameconfig) | Networking | `.machine.network`, `.machine.network.hostname`, `.machine.features.stableHostname` |
+| [`Layer2VIPConfig`](./network/layer2vipconfig) | Networking | *new capability* |
+| [`LinkAliasConfig`](./network/linkaliasconfig) | Networking | *new capability* |
+| [`LinkConfig`](./network/linkconfig) | Networking | `.machine.network` |
+| [`ResolverConfig`](./network/resolverconfig) | Networking | `.machine.network`, `.machine.network.nameservers`, `.machine.network.searchDomains`, `.machine.network.disableSearchDomain`, `.machine.features.hostDNS` |
+| [`StaticHostConfig`](./network/statichostconfig) | Networking | `.machine.network`, `.machine.network.extraHostEntries` |
+| [`TimeSyncConfig`](./network/timesyncconfig) | Networking | `.machine.time` |
+| [`VLANConfig`](./network/vlanconfig) | Networking | *new capability* |
+| [`WireguardConfig`](./network/wireguardconfig) | Networking | *new capability* |
+| [`RegistryAuthConfig`](./cri/registryauthconfig) | CRI and registries | `.machine.registries` |
+| [`RegistryMirrorConfig`](./cri/registrymirrorconfig) | CRI and registries | `.machine.registries` |
+| [`RegistryTLSConfig`](./cri/registrytlsconfig) | CRI and registries | `.machine.registries` |
+| [`OOMConfig`](./runtime/oomconfig) | Runtime and OS | *new capability* |
+
+#### Talos 1.13
+
+8 documents.
+
+| Document | Area | Replaces |
+| --- | --- | --- |
+| [`BlackholeRouteConfig`](./network/blackholerouteconfig) | Networking | *new capability* |
+| [`KubeSpanConfig`](./network/kubespanconfig) | Networking | `.machine.network`, `.machine.network.kubespan` |
+| [`RoutingRuleConfig`](./network/routingruleconfig) | Networking | *new capability* |
+| [`TCPProbeConfig`](./network/tcpprobeconfig) | Networking | *new capability* |
+| [`VRFConfig`](./network/vrfconfig) | Networking | *new capability* |
+| [`ExternalVolumeConfig`](./block/externalvolumeconfig) | Block and volumes | *new capability* |
+| [`EnvironmentConfig`](./runtime/environmentconfig) | Runtime and OS | `.machine.env` |
+| [`ImageVerificationConfig`](./security/imageverificationconfig) | Security | *new capability* |
+
+#### Talos 1.14
+
+44 documents.
+
+| Document | Area | Replaces |
+| --- | --- | --- |
+| [`BGPInstanceConfig`](./network/bgpinstanceconfig) | Networking | *new capability* |
+| [`HTTPProbeConfig`](./network/httpprobeconfig) | Networking | *new capability* |
+| [`VethConfig`](./network/vethconfig) | Networking | *new capability* |
+| [`KubeAPIServerCAConfig`](./kubernetes/kubeapiservercaconfig) | Kubernetes | `.cluster.ca`, `.cluster.acceptedCAs` |
+| [`KubeAPIServerConfig`](./kubernetes/kubeapiserverconfig) | Kubernetes | `.cluster.controlPlane.localAPIServerPort`, `.cluster.apiServer` |
+| [`KubeAdmissionControlConfig`](./kubernetes/kubeadmissioncontrolconfig) | Kubernetes | `.cluster.apiServer.admissionControl` |
+| [`KubeAggregatorCAConfig`](./kubernetes/kubeaggregatorcaconfig) | Kubernetes | `.cluster.aggregatorCA` |
+| [`KubeAuditPolicyConfig`](./kubernetes/kubeauditpolicyconfig) | Kubernetes | `.cluster.apiServer.auditPolicy` |
+| [`KubeAuthenticationConfig`](./kubernetes/kubeauthenticationconfig) | Kubernetes | *new capability* |
+| [`KubeAuthorizerConfig`](./kubernetes/kubeauthorizerconfig) | Kubernetes | `.cluster.apiServer.authorizationConfig` |
+| [`KubeClusterConfig`](./kubernetes/kubeclusterconfig) | Kubernetes | `.cluster.controlPlane`, `.cluster.clusterName` |
+| [`KubeControllerManagerConfig`](./kubernetes/kubecontrollermanagerconfig) | Kubernetes | `.machine.controlPlane`, `.machine.controlPlane.controllerManager`, `.cluster.controllerManager` |
+| [`KubeCoreDNSConfig`](./kubernetes/kubecorednsconfig) | Kubernetes | `.cluster.coreDNS` |
+| [`KubeCredentialProviderConfig`](./kubernetes/kubecredentialproviderconfig) | Kubernetes | *new capability* |
+| [`KubeEtcdEncryptionConfig`](./kubernetes/kubeetcdencryptionconfig) | Kubernetes | `.cluster.aescbcEncryptionSecret`, `.cluster.secretboxEncryptionSecret` |
+| [`KubeExternalManifestConfig`](./kubernetes/kubeexternalmanifestconfig) | Kubernetes | `.cluster.extraManifests`, `.cluster.extraManifestHeaders` |
+| [`KubeFlannelCNIConfig`](./kubernetes/kubeflannelcniconfig) | Kubernetes | `.cluster.network` |
+| [`KubeInlineManifestConfig`](./kubernetes/kubeinlinemanifestconfig) | Kubernetes | `.cluster.inlineManifests` |
+| [`KubeNetworkConfig`](./kubernetes/kubenetworkconfig) | Kubernetes | `.cluster.network` |
+| [`KubeNodeConfig`](./kubernetes/kubenodeconfig) | Kubernetes | `.machine.kubelet.registerWithFQDN`, `.machine.kubelet.nodeIP`, `.machine.kubelet.skipNodeRegistration`, `.machine.nodeLabels`, `.machine.nodeAnnotations`, `.machine.nodeTaints`, `.cluster.allowSchedulingOnMasters`, `.cluster.allowSchedulingOnControlPlanes` |
+| [`KubePrismConfig`](./kubernetes/kubeprismconfig) | Kubernetes | `.machine.features.kubePrism` |
+| [`KubeProxyConfig`](./kubernetes/kubeproxyconfig) | Kubernetes | `.cluster.proxy` |
+| [`KubeSchedulerConfig`](./kubernetes/kubeschedulerconfig) | Kubernetes | `.machine.controlPlane`, `.machine.controlPlane.scheduler`, `.cluster.scheduler` |
+| [`KubeServiceAccountConfig`](./kubernetes/kubeserviceaccountconfig) | Kubernetes | `.cluster.serviceAccount` |
+| [`KubeStaticPodConfig`](./kubernetes/kubestaticpodconfig) | Kubernetes | `.machine.pods` |
+| [`KubeTalosAPIAccessConfig`](./kubernetes/kubetalosapiaccessconfig) | Kubernetes | `.machine.features.kubernetesTalosAPIAccess` |
+| [`KubeletConfig`](./kubernetes/kubeletconfig) | Kubernetes | `.machine.kubelet`, `.machine.kubelet.image`, `.machine.kubelet.clusterDNS`, `.machine.kubelet.extraArgs`, `.machine.kubelet.extraConfig`, `.machine.kubelet.defaultRuntimeSeccompProfileEnabled` |
+| [`FilesystemScrubConfig`](./block/filesystemscrubconfig) | Block and volumes | *new capability* |
+| [`FilesystemTrimConfig`](./block/filesystemtrimconfig) | Block and volumes | *new capability* |
+| [`LVMLogicalVolumeConfig`](./storage/lvmlogicalvolumeconfig) | Storage (LVM/RAID) | *new capability* |
+| [`LVMVolumeGroupConfig`](./storage/lvmvolumegroupconfig) | Storage (LVM/RAID) | *new capability* |
+| [`RAIDArrayConfig`](./storage/raidarrayconfig) | Storage (LVM/RAID) | *new capability* |
+| [`CRIBaseRuntimeSpecConfig`](./cri/cribaseruntimespecconfig) | CRI and registries | `.machine.baseRuntimeSpecOverrides` |
+| [`CRICustomizationConfig`](./cri/cricustomizationconfig) | CRI and registries | `.machine.files` |
+| [`ImageCacheConfig`](./cri/imagecacheconfig) | CRI and registries | `.machine.features.imageCache` |
+| [`EtcFileConfig`](./runtime/etcfileconfig) | Runtime and OS | `.machine.files` |
+| [`KernelModuleConfig`](./runtime/kernelmoduleconfig) | Runtime and OS | `.machine.kernel`, `.machine.kernel.modules`, `.machine.kernel.modules.name`, `.machine.kernel.modules.parameters` |
+| [`SecurityProfileConfig`](./runtime/securityprofileconfig) | Runtime and OS | *new capability* |
+| [`SysctlConfig`](./runtime/sysctlconfig) | Runtime and OS | `.machine.sysctls` |
+| [`SysfsConfig`](./runtime/sysfsconfig) | Runtime and OS | `.machine.sysfs` |
+| [`UdevRulesConfig`](./runtime/udevrulesconfig) | Runtime and OS | `.machine.udev`, `.machine.udev.rules` |
+| [`UnattendedInstallConfig`](./runtime/unattendedinstallconfig) | Runtime and OS | `.machine.install` |
+| [`DiscoveryIdentityConfig`](./cluster/discoveryidentityconfig) | Cluster and discovery | `.cluster.id`, `.cluster.secret` |
+| [`DiscoveryServiceConfig`](./cluster/discoveryserviceconfig) | Cluster and discovery | `.cluster.discovery`, `.cluster.discovery.enabled`, `.cluster.discovery.registries`, `.cluster.discovery.registries.kubernetes`, `.cluster.discovery.registries.service` |
+
+<Note>
+  Talos 1.9 introduced no new configuration documents.
+</Note>
+
+{/* END GENERATED: config-evolution-tables */}
+
+## See also
+
+* [Configuration overview](./overview) — how multi-document configuration is parsed and merged
+* [`v1alpha1` reference](./v1alpha1/config) — every field of the legacy document
+* [Configuration patches](../../configure-your-talos-cluster/system-configuration/patching) — applying documents to an existing configuration
+* [Editing live machine configuration](../../configure-your-talos-cluster/system-configuration/editing-machine-configuration)

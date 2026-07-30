@@ -16,6 +16,7 @@ Each document represents a partial machine configuration. Talos parses and valid
 
 The [v1alpha1](./v1alpha1/config) document is the only mandatory document in the configuration file, and it carries the settings which have not been split out yet, such as the machine type, cluster secrets and `etcd`.
 Talos keeps moving settings out of it into focused documents: as of Talos 1.14, networking, Kubernetes, kernel and installation settings are configured with dedicated documents, and the matching `v1alpha1` fields are deprecated (but still supported).
+The [configuration document map](./document-map) shows which document replaces each `v1alpha1` field, and in which release.
 
 Configuration documents may be named (contain a `name:` field) or unnamed. Unnamed documents can appear only once in the machine configuration, while named documents can be supplied multiple times, provided each has a unique name.
 
