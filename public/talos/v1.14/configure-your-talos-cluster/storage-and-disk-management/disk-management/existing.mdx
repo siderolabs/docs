@@ -36,7 +36,7 @@ discovery:
 For example, this machine configuration patch can be applied using the following command:
 
 ```bash
-talosctl --nodes <NODE> patch mc --patch @raw-volume.patch.yaml
+talosctl --nodes <NODE> patch mc --patch raw-volume.patch.yaml
 ```
 
 In this example, a existing partition with partition label `MY-DATA` will be mounted as under `/var/mnt/my-data-volume`.

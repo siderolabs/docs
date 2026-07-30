@@ -29,7 +29,7 @@ Use multiple documents to manage multiple files.
 1. Replace `<NODE>` with the target node IP address, then apply the patch:
 
     ```bash
-    talosctl patch mc --patch @etc-file.patch.yaml --nodes <NODE>
+    talosctl patch mc --patch etc-file.patch.yaml --nodes <NODE>
     ```
 
 This example creates `/etc/nfsmount.conf` with mode `0644`.
@@ -56,7 +56,7 @@ Changing `contents` updates the file, and deleting the document removes the file
 1. Replace `<NODE>` with the target node IP address, then apply the deletion patch:
 
     ```bash
-    talosctl patch mc --patch @etc-file-delete.patch.yaml --nodes <NODE>
+    talosctl patch mc --patch etc-file-delete.patch.yaml --nodes <NODE>
     ```
 
 Talos removes `/etc/nfsmount.conf` when it removes the document from the machine configuration.

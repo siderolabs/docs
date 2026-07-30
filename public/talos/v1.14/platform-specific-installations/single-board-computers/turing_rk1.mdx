@@ -119,13 +119,7 @@ tpi uart -n <NODENUMBER> get
 ```
 
 Wait until instructions for bootstrapping appear.
-Follow the UART instructions to connect to the interactive installer:
-
-```bash
-talosctl apply-config --insecure --mode=interactive --nodes <node IP or DNS name>
-```
-
-Alternatively, generate and apply a configuration:
+Generate a machine configuration and apply it to the node:
 
 ```bash
 talosctl gen config

@@ -62,7 +62,7 @@ name: nvidia_modeset
 Now apply the patch to all Talos nodes in the cluster having NVIDIA GPU's installed:
 
 ```bash
-talosctl patch mc --patch @gpu-worker-patch.yaml
+talosctl patch mc --patch gpu-worker-patch.yaml
 ```
 
 The NVIDIA modules should be loaded and the system extension should be installed.

@@ -35,7 +35,7 @@ Upgrading does not change the configuration on its own.
 To enable trimming on an upgraded cluster, apply the document above as a machine configuration patch:
 
 ```bash
-talosctl --nodes <NODE> patch mc --patch @trim.patch.yaml
+talosctl --nodes <NODE> patch mc --patch trim.patch.yaml
 ```
 
 ## Configure the trim interval

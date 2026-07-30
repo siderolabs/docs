@@ -42,7 +42,7 @@ provisioning:
 For example, this machine configuration patch can be applied using the following command:
 
 ```bash
-talosctl --nodes <NODE> patch mc --patch @raw-volume.patch.yaml
+talosctl --nodes <NODE> patch mc --patch raw-volume.patch.yaml
 ```
 
 In this example, a raw volume named `openebs-vol1` is created on the first disk which is not the system disk and has `2GB` of disk space available.

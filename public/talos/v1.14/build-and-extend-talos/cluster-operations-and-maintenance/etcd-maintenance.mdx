@@ -229,7 +229,7 @@ Apply patch to the machine with same configuration but with the new `etcd` versi
   <Tab title="Command">
 
     ```bash
-    talosctl -n <IP1> patch machineconfig --patch @etcd-patch.yaml --mode reboot
+    talosctl -n <IP1> patch machineconfig --patch etcd-patch.yaml
     ```
 
   </Tab>
@@ -237,11 +237,19 @@ Apply patch to the machine with same configuration but with the new `etcd` versi
 
     ```text
     patched MachineConfigs.config.talos.dev/v1alpha1 at the node 172.20.0.2
-    Applied configuration with a reboot
+    Applied configuration without a reboot
     ```
 
   </Tab>
 </Tabs>
+
+The `etcd` service picks up the new image only when it starts, and Talos does not restart it on a configuration change, so reboot the node:
+
+```bash
+talosctl -n <IP1> reboot
+```
+
+See [Changes which might need a reboot](../../configure-your-talos-cluster/system-configuration/editing-machine-configuration#changes-which-might-need-a-reboot) for details.
 
 Verify that each member, and then the entire cluster, becomes healthy with the new v3.5 `etcd`:
 

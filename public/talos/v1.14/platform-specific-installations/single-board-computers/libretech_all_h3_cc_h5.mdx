@@ -57,14 +57,15 @@ sudo dd if=metal-arm64.raw of=/dev/mmcblk0 conv=fsync bs=4M
 
 Insert the SD card to your board, turn it on and wait for the console to show you the instructions for bootstrapping the node.
 
-Create a `installer-patch.yaml` containing reference to the `installer` image generated from an overlay:
-Following the instructions in the console output to connect to the interactive installer:
+Generate the machine configuration for the cluster (see [Getting Started](../../getting-started/getting-started)
+for the full flow), and apply it to the node:
 
 ```bash
-talosctl apply-config --insecure --mode=interactive --nodes <node IP or DNS name>
+talosctl gen config <cluster-name> https://<endpoint>:6443
+talosctl apply-config --insecure --nodes <node IP or DNS name> --file <controlplane|worker>.yaml
 ```
 
-Once the interactive installation is applied, the cluster will form and you can then use `kubectl`.
+Once the configuration is applied, the cluster will form and you can then use `kubectl`.
 
 ## Retrieve the `kubeconfig`
 

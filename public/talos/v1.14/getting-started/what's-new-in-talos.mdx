@@ -101,7 +101,8 @@ See [Native BGP](../networking/bgp/overview) for configuration and Kubernetes wo
 ### Apply configuration modes
 
 The `--mode=reboot` option has been removed from the `talosctl apply-config` command; by default, configuration is applied without a reboot.
-Most configuration changes don't require a reboot; the [documentation](../configure-your-talos-cluster/system-configuration/editing-machine-configuration) lists the changes which do.
+Reboot the node explicitly with `talosctl reboot` when it is needed, which allows the reboot to be sequenced with cordoning and draining the node.
+See [Changes which might need a reboot](../configure-your-talos-cluster/system-configuration/editing-machine-configuration#changes-which-might-need-a-reboot) for the changes which are not fully picked up by a running node.
 
 ## Machine configuration
 

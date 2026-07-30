@@ -74,13 +74,15 @@ Proceed to [bootstrapping the node](#bootstrapping-the-node).
 ## Bootstrapping the node
 
 Wait for the console to show you the instructions for bootstrapping the node.
-Following the instructions in the console output to connect to the interactive installer:
+Generate the machine configuration for the cluster (see [Getting Started](../../getting-started/getting-started)
+for the full flow), and apply it to the node:
 
 ```bash
-talosctl apply-config --insecure --mode=interactive --nodes <node IP or DNS name>
+talosctl gen config <cluster-name> https://<endpoint>:6443
+talosctl apply-config --insecure --nodes <node IP or DNS name> --file <controlplane|worker>.yaml
 ```
 
-Once the interactive installation is applied, the cluster will form and you can then use `kubectl`.
+Once the configuration is applied, the cluster will form and you can then use `kubectl`.
 
 ## Retrieve the `kubeconfig`
 

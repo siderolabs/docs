@@ -76,15 +76,17 @@ sudo dd if=metal-arm64.raw of=/dev/mmcblk0 conv=fsync bs=4M
 ## Bootstrapping the node
 
 Insert the SD card to your board, turn it on and wait for the console to show you the instructions for bootstrapping the node.
-Following the instructions in the console output to connect to the interactive installer:
+Generate the machine configuration for the cluster (see [Getting Started](../../getting-started/getting-started)
+for the full flow), and apply it to the node:
+
+```bash
+talosctl gen config <cluster-name> https://<endpoint>:6443
+talosctl apply-config --insecure --nodes <node IP or DNS name> --file <controlplane|worker>.yaml
+```
 
 > Note: Add the [vc4 System Extension](https://github.com/siderolabs/extensions/pkgs/container/vc4) for V3D/VC4 Broadcom VideoCore GPU support.
 
-```bash
-talosctl apply-config --insecure --mode=interactive --nodes <node IP or DNS name>
-```
-
-Once the interactive installation is applied, the cluster will form and you can then use `kubectl`.
+Once the configuration is applied, the cluster will form and you can then use `kubectl`.
 
 > Note: if you have an HDMI display attached and it shows only a rainbow splash,
 > please use the other HDMI port, the one closest to the power/USB-C port.

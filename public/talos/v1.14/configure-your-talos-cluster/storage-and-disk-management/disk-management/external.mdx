@@ -53,7 +53,7 @@ mount:
 For example, this machine configuration patch can be applied using the following command:
 
 ```bash
-talosctl --nodes <NODE> patch mc --patch @external-volume.patch.yaml
+talosctl --nodes <NODE> patch mc --patch external-volume.patch.yaml
 ```
 
 In this example, an external volume named `virtiofs-data` is created, which will be mounted at `/var/mnt/virtiofs-data` on the node.

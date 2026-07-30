@@ -44,7 +44,7 @@ talosctl --nodes <NODE> get disks -o yaml
 Apply the configuration patch while the node is running from the ephemeral boot media:
 
 ```bash
-talosctl --nodes <NODE> patch mc --patch @unattended-install.patch.yaml
+talosctl --nodes <NODE> patch mc --patch unattended-install.patch.yaml
 ```
 
 After the configuration is applied, Talos waits for disks to be discovered, selects the first matching disk, runs the installer container, and records progress in `UnattendedInstallStatus`.

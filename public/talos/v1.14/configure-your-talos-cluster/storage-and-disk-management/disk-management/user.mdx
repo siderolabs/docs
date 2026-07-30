@@ -42,7 +42,7 @@ provisioning:
 For example, this machine configuration patch can be applied using the following command:
 
 ```bash
-talosctl --nodes <NODE> patch mc --patch @user-volume.patch.yaml
+talosctl --nodes <NODE> patch mc --patch user-volume.patch.yaml
 ```
 
 In this example, a user volume named `local-volume` is created on the first NVMe disk which has `100GB` of disk space available, and it will be created as maximum
@@ -171,7 +171,7 @@ filesystem:
 Apply the user volume configuration:
 
 ```bash
-talosctl --nodes <NODE> patch mc --patch @user-volume-on-lvm.patch.yaml
+talosctl --nodes <NODE> patch mc --patch user-volume-on-lvm.patch.yaml
 ```
 
 Talos formats the logical volume, mounts it at `/var/mnt/lvm-user`, and propagates the mount into the `kubelet` container.

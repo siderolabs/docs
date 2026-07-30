@@ -272,13 +272,13 @@ Follow these steps to patch your machine configuration:
     - **For control plane**:
 
     ```bash
-    talosctl machineconfig patch controlplane.yaml --patch @controlplane-patch-1.yaml --output controlplane.yaml
+    talosctl machineconfig patch controlplane.yaml --patch controlplane-patch-1.yaml --output controlplane.yaml
     ```
 
    - **For worker**:
 
     ```bash
-    talosctl machineconfig patch worker.yaml --patch @worker-patch-1.yaml --output worker.yaml
+    talosctl machineconfig patch worker.yaml --patch worker-patch-1.yaml --output worker.yaml
     ```
 
 Additionally, you can learn more about [patches](../configure-your-talos-cluster/system-configuration/patching) from the configuration patches documentation.

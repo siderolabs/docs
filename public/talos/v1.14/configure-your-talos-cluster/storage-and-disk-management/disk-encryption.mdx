@@ -173,10 +173,11 @@ encryption:
       slot: 1
 ```
 
-Run:
+Apply the configuration, and reboot the node so that the keys are re-encrypted:
 
 ```bash
-talosctl apply-config -n <node> --mode=reboot -f config.yaml
+talosctl apply-config -n <node> -f config.yaml
+talosctl -n <node> reboot
 ```
 
 Then remove the old key:
@@ -192,10 +193,11 @@ encryption:
       slot: 1
 ```
 
-Run:
+Apply the configuration and reboot the node again:
 
 ```bash
-talosctl apply-config -n <node> --mode=reboot -f config.yaml
+talosctl apply-config -n <node> -f config.yaml
+talosctl -n <node> reboot
 ```
 
 ## Going from unencrypted to encrypted and vice versa

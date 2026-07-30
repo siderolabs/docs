@@ -37,7 +37,7 @@ provisioning:
 Apply the configuration patch to the node:
 
 ```bash
-talosctl --nodes <NODE> patch mc --patch @raid.patch.yaml
+talosctl --nodes <NODE> patch mc --patch raid.patch.yaml
 ```
 
 The volume selector is a CEL expression evaluated against each discovered volume as `volume`.

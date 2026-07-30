@@ -33,7 +33,7 @@ interval: 168h0m0s
 Apply it as a machine configuration patch:
 
 ```bash
-talosctl --nodes <NODE> patch mc --patch @scrub.patch.yaml
+talosctl --nodes <NODE> patch mc --patch scrub.patch.yaml
 ```
 
 The interval is a Go duration string, e.g. `168h0m0s` for a week.
