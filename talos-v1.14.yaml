@@ -375,6 +375,7 @@ navigation:
           folder: "talos/v1.14/troubleshooting"
           pages:
             - "troubleshooting.mdx"
+            - "support-bundle.mdx"
             - "talosctl-debug.mdx"
             - "faqs.mdx"
 

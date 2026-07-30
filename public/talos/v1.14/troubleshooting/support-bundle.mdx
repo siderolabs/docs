@@ -1,0 +1,100 @@
+---
+title: "Support Bundle"
+description: "Collect a support bundle with talosctl support and share it securely."
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+While the state of the cluster can be queried node by node with the Talos API, it is often easier to collect everything at once and analyze it offline.
+The `talosctl support` command gathers logs, resourcci es and diagnostics from the nodes you specify into a single archive, called a support bundle.
+
+Attach a support bundle when you report a problem in a [GitHub issue](https://github.com/siderolabs/talos/issues) or open a ticket with Sidero Labs support: it usually contains everything needed to diagnose the issue without another round of questions.
+
+## Collect a support bundle
+
+Pass the nodes to collect from with the `--nodes` flag (multiple nodes are supported):
+
+```bash
+talosctl -n <IP1>,<IP2>,<IP3> support
+```
+
+Include all control plane nodes, and the worker nodes affected by the problem.
+
+The bundle is written to `support-<cluster>.zip.age` in the current directory, or to `support.zip.age` if the cluster name can't be determined.
+Use the `--output` (`-O`) flag to write it somewhere else.
+Collection runs one worker per node by default; raise it with `--num-workers` (`-w`) to speed up collection on larger clusters.
+
+The bundle contains the following information:
+
+* for each node: kernel logs, logs of all Talos services, logs of all `kube-system` pods, Talos COSI resources (without secrets), the COSI runtime state graph, a processes snapshot, an IO pressure snapshot, the list of mounts, PCI devices info and the Talos version;
+* for the cluster: Kubernetes nodes and `kube-system` pod manifests.
+
+Secrets are excluded from the collected resources, but logs and configuration may still reveal details about your environment, such as hostnames, IP addresses and workload names.
+This is why support bundles are encrypted by default.
+
+## Encryption
+
+<Note>Support bundle encryption was introduced in Talos 1.14.</Note>
+
+By default `talosctl support` encrypts the bundle with [age](https://age-encryption.org/), so that the archive can be safely attached to a public GitHub issue.
+The default recipients are the public SSH keys of the public members of the `siderolabs` GitHub organization, embedded in `talosctl`, so a bundle produced with the defaults can only be decrypted by the Sidero Labs team.
+
+The recipients used are printed when the collection starts:
+
+```bash
+talosctl -n <IP1>,<IP2>,<IP3> support
+```
+
+```text
+Encrypting support bundle to the following recipients:
+  - alongwill (Andy Longwill)
+  - ...
+```
+
+Encrypted bundles are written with an `.age` extension appended to the archive name.
+
+### Encrypt to yourself as well
+
+To be able to read the bundle yourself while still allowing Sidero Labs to decrypt it, add your own recipients with `--encryption-recipients`.
+Each value is a single age recipient (`age1...`) or an SSH public key (`ssh-ed25519 ...` or `ssh-rsa ...`), and the flag can be repeated:
+
+```bash
+talosctl -n <IP1>,<IP2>,<IP3> support \
+    --encryption-recipients "$(cat ~/.ssh/id_ed25519.pub)" \
+    --encryption-recipients age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p
+```
+
+### Encrypt to your recipients only
+
+To keep the bundle for internal use, drop the default recipients with `--encryption-no-default-recipients`.
+At least one `--encryption-recipients` value is required in this case:
+
+```bash
+talosctl -n <IP1>,<IP2>,<IP3> support \
+    --encryption-no-default-recipients \
+    --encryption-recipients "$(cat ~/.ssh/id_ed25519.pub)"
+```
+
+### Disable encryption
+
+Use `--no-encryption` to write a plain `.zip` archive, e.g. to inspect the contents right away:
+
+```bash
+talosctl -n <IP1>,<IP2>,<IP3> support --no-encryption -O support.zip
+```
+
+`--no-encryption` can't be combined with `--encryption-recipients` or `--encryption-no-default-recipients`.
+
+Handle unencrypted bundles as sensitive data: keep them local, and don't attach them to public issues.
+
+## Decrypt a support bundle
+
+Decrypt the archive with the [age](https://github.com/FiloSottile/age) CLI, using the private key matching one of the recipients the bundle was encrypted to:
+
+```bash
+age --decrypt --identity ~/.ssh/id_ed25519 --output support.zip support-<cluster>.zip.age
+```
+
+The result is a regular ZIP archive which can be extracted with any ZIP tool.

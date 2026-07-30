@@ -2847,6 +2847,7 @@
                 "group": "Troubleshooting and support",
                 "pages": [
                   "talos/v1.14/troubleshooting/troubleshooting",
+                  "talos/v1.14/troubleshooting/support-bundle",
                   "talos/v1.14/troubleshooting/talosctl-debug",
                   "talos/v1.14/troubleshooting/faqs"
                 ]
