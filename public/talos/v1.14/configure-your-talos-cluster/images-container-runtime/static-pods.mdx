@@ -20,20 +20,24 @@ See [Kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-co
 
 ## Configuration
 
-Static pod definitions are specified in the Talos machine configuration:
+Each static pod is defined with a [`KubeStaticPodConfig`](../../reference/configuration/kubernetes/kubestaticpodconfig) document in the Talos machine configuration:
 
 ```yaml
-machine:
-  pods:
-    - apiVersion: v1
-       kind: Pod
-       metadata:
-         name: nginx
-       spec:
-         containers:
-           - name: nginx
-             image: nginx
+apiVersion: v1alpha1
+kind: KubeStaticPodConfig
+name: nginx
+pod:
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: nginx
+  spec:
+    containers:
+      - name: nginx
+        image: nginx
 ```
+
+Use one document per static pod, with a unique `name` for each.
 
 Talos renders static pod definitions to the `kubelet` using a local HTTP server, `kubelet` picks up the definition and launches the pod.
 

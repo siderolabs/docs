@@ -105,7 +105,7 @@ The table below shows which of those recommendations Talos satisfies out of the 
 | No static token auth file | Token-based auth is not configured |
 | Node and RBAC authorization | Always enabled; cannot be removed via machine configuration |
 | Audit logging | Enabled with a `Metadata`-level audit policy |
-| Secrets encrypted at rest | `secretboxEncryptionSecret` is configured during cluster creation |
+| Secrets encrypted at rest | A `secretbox` provider is configured in `KubeEtcdEncryptionConfig` during cluster creation |
 | etcd mutual TLS | API server communicates with etcd over mutual TLS |
 | Kubelet certificate-based auth | Established via cluster PKI bootstrapping |
 | Profiling disabled | Disabled on the API server, controller manager, and scheduler |

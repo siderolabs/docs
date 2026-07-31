@@ -81,31 +81,41 @@ talosctl -n $VM_IP get links --insecure
 ## Talos configuration
 
 As any other Talos instance, generate the Talos machineconfig, with the following patch :
-```
+```yaml
 # controlplane.patch.yaml
 machine:
-    install:
-        disk: /dev/vdb
-        wipe: true
     network:
         interfaces:
             - interface: eth0
               dhcp: true
-
-cluster:
-  allowSchedulingOnControlPlanes: true
-  apiServer:
-    extraArgs:
-      "advertise-address": "0.0.0.0"
-    apiServer:
-        certSANs:
-            - 127.0.0.1
-            - <public_ip>
+---
+apiVersion: v1alpha1
+kind: UnattendedInstallConfig
+provisioning:
+    diskSelector:
+        match: disk.dev_path == "/dev/vdb"
+    wipe: true
+---
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+taints:
+    node-role.kubernetes.io/control-plane:
+        $patch: delete
+---
+apiVersion: v1alpha1
+kind: KubeAPIServerConfig
+extraArgs:
+    advertise-address: 0.0.0.0
+certExtraSANs:
+    - 127.0.0.1
+    - <public_ip>
 ```
+
+The control plane taint is removed so that workloads can run on this single node, and the patch is applied to the control plane configuration only (the worker configuration has no taint to remove).
 
 Generate the Talos config :
-```
-talosctl gen config talos-cluster https://$VM_IP:6443 --config-patch=@controlplane.patch.yaml --output-dir _out/ --with-docs=false --with-examples=false
+```bash
+talosctl gen config talos-cluster https://$VM_IP:6443 --config-patch-control-plane=@controlplane.patch.yaml --output-dir _out/ --with-docs=false --with-examples=false
 ```
 
 Also add a VolumeConfig for the EPHEMERAL partition of Talos :

@@ -24,7 +24,7 @@ In Talos, these addresses are controlled using the `cluster.etcd.advertisedSubne
 ## Multihoming and kubelets
 
 Stable IP addressing for kubelets (i.e., nodeIP) is not strictly necessary but highly recommended as it ensures that, e.g., kube-proxy and CNI routing take the desired routes.
-Analogously to etcd, for kubelets this is controlled via `machine.kubelet.nodeIP.validSubnets`.
+Analogously to etcd, for kubelets this is controlled via the `nodeIP.validSubnets` field of the [`KubeNodeConfig`](../reference/configuration/kubernetes/kubenodeconfig) document.
 
 For example, let’s assume that we have a cluster with two networks:
 
@@ -34,16 +34,16 @@ For example, let’s assume that we have a cluster with two networks:
 We want to use the private network for etcd and kubelet communication:
 
 ```yaml
-machine:
-  kubelet:
-    nodeIP:
-      validSubnets:
-        - 192.168.0.0/16
-#...
 cluster:
   etcd:
     advertisedSubnets: # listenSubnets defaults to advertisedSubnets if not set explicitly
       - 192.168.0.0/16
+---
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+nodeIP:
+  validSubnets:
+    - 192.168.0.0/16
 ```
 
 This way we ensure that the `etcd` cluster will use the private network for communication and the kubelets will use the private network for communication with the control plane.

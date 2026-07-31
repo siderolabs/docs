@@ -189,8 +189,10 @@ Kubernetes pods might need to be restarted manually to pick up changes to the Ku
 
 ### Manual steps for Kubernetes API CA rotation
 
-Steps are similar [to the Talos API CA rotation](#manual-steps-for-talos-api-ca-rotation), but use:
+Steps are similar [to the Talos API CA rotation](#manual-steps-for-talos-api-ca-rotation), but the Kubernetes API CA lives in the [`KubeAPIServerCAConfig`](../reference/configuration/kubernetes/kubeapiservercaconfig) document, so use:
 
-- `.cluster.acceptedCAs` in place of `.machine.acceptedCAs`;
-- `.cluster.ca` in place of `.machine.ca`;
+- `acceptedCAs` of `KubeAPIServerCAConfig` in place of `.machine.acceptedCAs`;
+- `issuingCA` of `KubeAPIServerCAConfig` in place of `.machine.ca` (on worker nodes only `acceptedCAs` is set);
 - `kubeconfig` in place of `talosconfig`.
+
+The Kubernetes API aggregator CA is configured separately with the [`KubeAggregatorCAConfig`](../reference/configuration/kubernetes/kubeaggregatorcaconfig) document, which has the same `issuingCA` and `acceptedCAs` fields.

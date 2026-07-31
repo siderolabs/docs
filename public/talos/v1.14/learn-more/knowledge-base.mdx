@@ -15,16 +15,16 @@ import { release_v1_14 } from '/snippets/custom-variables.mdx';
 
 Talos Linux enables [Graceful Node Shutdown](https://kubernetes.io/docs/concepts/architecture/nodes/#graceful-node-shutdown) Kubernetes feature by default.
 
-If this feature should be disabled, modify the `kubelet` part of the machine configuration with:
+If this feature should be disabled, patch the [`KubeletConfig`](../reference/configuration/kubernetes/kubeletconfig) document of the machine configuration with:
 
 ```yaml
-machine:
-  kubelet:
-    extraArgs:
-      feature-gates: GracefulNodeShutdown=false
-    extraConfig:
-      shutdownGracePeriod: 0s
-      shutdownGracePeriodCriticalPods: 0s
+apiVersion: v1alpha1
+kind: KubeletConfig
+extraArgs:
+  feature-gates: GracefulNodeShutdown=false
+config:
+  shutdownGracePeriod: 0s
+  shutdownGracePeriodCriticalPods: 0s
 ```
 
 ## Generating Talos Linux ISO image with custom kernel arguments
@@ -98,10 +98,20 @@ machine:
 
 Talos Linux enables admission control in the API Server by default.
 
-Although it is not recommended from a security point of view, admission control can be removed by patching your control plane machine configuration:
+Each admission control plugin is configured with its own [`KubeAdmissionControlConfig`](../reference/configuration/kubernetes/kubeadmissioncontrolconfig) document, so removing the plugin means removing the document.
+
+Although it is not recommended from a security point of view, the default `PodSecurity` plugin can be removed by patching your control plane machine configuration with:
+
+```yaml
+# no-pod-security.yaml
+apiVersion: v1alpha1
+kind: KubeAdmissionControlConfig
+name: PodSecurity
+$patch: delete
+```
 
 ```bash
 talosctl gen config \
     my-cluster https://mycluster.local:6443 \
-    --config-patch-control-plane '[{"op": "remove", "path": "/cluster/apiServer/admissionControl"}]'
+    --config-patch-control-plane @no-pod-security.yaml
 ```

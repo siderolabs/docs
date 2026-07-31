@@ -98,11 +98,11 @@ Refer to [Tuning Swap for Kubernetes](https://kubernetes.io/blog/2025/08/19/tuni
 At the very minimum, enable swap usage in the `kubelet` configuration with the following machine configuration patch:
 
 ```yaml
-machine:
-  kubelet:
-    extraConfig:
-      memorySwap:
-        swapBehavior: LimitedSwap
+apiVersion: v1alpha1
+kind: KubeletConfig
+config:
+  memorySwap:
+    swapBehavior: LimitedSwap
 ```
 
 Current swap and zwap usage and limits can be checked using the `talosctl cgroups` [command](../../build-and-extend-talos/cluster-operations-and-maintenance/cgroups-analysis):

@@ -14,7 +14,8 @@ This file is a multi-document configuration that may contain multiple YAML docum
 
 Each document represents a partial machine configuration. Talos parses and validates each document independently, then merges them into a single effective configuration before applying it to the machine. Documents are processed sequentially, and later documents take precedence over earlier ones.
 
-At present, most configuration options are defined within the [v1alpha1](./v1alpha1/config) document, which is the only mandatory document in the configuration file.
+The [v1alpha1](./v1alpha1/config) document is the only mandatory document in the configuration file, and it carries the settings which have not been split out yet, such as the machine type, cluster secrets and `etcd`.
+Talos keeps moving settings out of it into focused documents: as of Talos 1.14, networking, Kubernetes, kernel and installation settings are configured with dedicated documents, and the matching `v1alpha1` fields are deprecated (but still supported).
 
 Configuration documents may be named (contain a `name:` field) or unnamed. Unnamed documents can appear only once in the machine configuration, while named documents can be supplied multiple times, provided each has a unique name.
 

@@ -89,16 +89,17 @@ you can do the following:
     - `.networking.podSubnet`
     - `.networking.serviceSubnet`
 
-6. Replace the following information in the generated `controlplane.yaml`:
-    - `.cluster.network.cni.name` with `none`
-    - `.cluster.network.podSubnets[0]` with the value of the `networking.podSubnet` from the previous step
-    - `.cluster.network.serviceSubnets[0]` with the value of the `networking.serviceSubnet` from the previous step
-    - `.cluster.network.dnsDomain` with the value of the `networking.dnsDomain` from the previous step
+6. Replace the following information in the [`KubeNetworkConfig`](../reference/configuration/kubernetes/kubenetworkconfig) document of the generated `controlplane.yaml`:
+    - `podSubnets[0]` with the value of the `networking.podSubnet` from the previous step
+    - `serviceSubnets[0]` with the value of the `networking.serviceSubnet` from the previous step
+    - `dnsDomain` with the value of the `networking.dnsDomain` from the previous step
+
+   The existing cluster already runs a CNI, so remove the [`KubeFlannelCNIConfig`](../reference/configuration/kubernetes/kubeflannelcniconfig) document to keep Talos from deploying Flannel.
 
 7. Go through the rest of `controlplane.yaml` and `worker.yaml` to customize them according to your needs, especially :
-    - `.cluster.secretboxEncryptionSecret` should be either removed if you don't currently use `EncryptionConfig` on your `kube-apiserver` or set to the correct value
+    - the [`KubeEtcdEncryptionConfig`](../reference/configuration/kubernetes/kubeetcdencryptionconfig) document should be either removed if you don't currently use `EncryptionConfig` on your `kube-apiserver` or set to the encryption configuration you use
 
-8. Make sure that, on your current Kubeadm cluster, the first `--service-account-issuer=` parameter in `/etc/kubernetes/manifests/kube-apiserver.yaml` is equal to the value of `.cluster.controlPlane.endpoint` in `controlplane.yaml`.
+8. Make sure that, on your current Kubeadm cluster, the first `--service-account-issuer=` parameter in `/etc/kubernetes/manifests/kube-apiserver.yaml` is equal to the `endpoint` value of the [`KubeClusterConfig`](../reference/configuration/kubernetes/kubeclusterconfig) document in `controlplane.yaml`.
    If it's not, add a new `--service-account-issuer=` parameter with the correct value before your current one in `/etc/kubernetes/manifests/kube-apiserver.yaml` on all of your control planes nodes, and restart the kube-apiserver containers.
 
 9. Bring up a Talos node to be the initial Talos control plane node.

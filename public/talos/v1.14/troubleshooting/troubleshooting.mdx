@@ -191,7 +191,7 @@ csr-vlghg   14m   kubernetes.io/kube-apiserver-client-kubelet   system:bootstrap
 
 ### `kubectl get nodes` Reports Wrong Internal IP
 
-Configure the correct internal IP address with [`.machine.kubelet.nodeIP`](../reference/configuration/v1alpha1/config#Config.machine.kubelet.nodeIP)
+Configure the correct internal IP address with the `nodeIP` field of the [`KubeNodeConfig`](../reference/configuration/kubernetes/kubenodeconfig) document.
 
 ### `kubectl get nodes` Reports Wrong External IP
 

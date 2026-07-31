@@ -36,11 +36,12 @@ values overriding machine configuration values.
 There are some special rules:
 
 - If the field value is a list, the patch value is appended to the list, with the following exceptions:
-  - values of the fields `cluster.network.podSubnets` and `cluster.network.serviceSubnets` are overwritten on merge
+  - values of the fields `KubeNetworkConfig.podSubnets` and `KubeNetworkConfig.serviceSubnets` are overwritten on merge
   - `network.interfaces` section is merged with the value in the machine config if there is a match on `interface:` or `deviceSelector:` keys
   - `network.interfaces.vlans` section is merged with the value in the machine config if there is a match on the `vlanId:` key
-  - `cluster.apiServer.auditPolicy` value is replaced on merge
   - `ExtensionServiceConfig.configFiles` section is merged matching on `mountPath` (replacing `content` if matches)
+
+- Some fields are replaced instead of merged: `KubeAuditPolicyConfig.configuration`, `KubeAuthenticationConfig.configuration`, `KubeCredentialProviderConfig.configuration` and `KubeStaticPodConfig.pod`
 
 - When patching a [multi-document machine configuration](../../reference/configuration/overview), following rules apply:
   - for each document in the patch, the document is merged with the respective document in the machine configuration (matching by `kind`, `apiVersion` and `name` for named documents)
@@ -149,70 +150,76 @@ link: eth0
 Base machine configuration:
 
 ```yaml
-cluster:
-  network:
-    dnsDomain: cluster.local
-    podSubnets:
-      - 10.244.0.0/16
-    serviceSubnets:
-      - 10.96.0.0/12
+apiVersion: v1alpha1
+kind: KubeNetworkConfig
+dnsDomain: cluster.local
+podSubnets:
+  - 10.244.0.0/16
+serviceSubnets:
+  - 10.96.0.0/12
+---
+apiVersion: v1alpha1
+kind: KubeFlannelCNIConfig
+backendType: vxlan
+backendPort: 4789
 ```
 
-The goal is to update pod and service subnets and disable default CNI (Flannel).
+The goal is to update pod and service subnets and disable the default CNI (Flannel).
+The subnet lists are replaced on merge, and the whole `KubeFlannelCNIConfig` document is removed with `$patch: delete`:
 
 ```yaml
-cluster:
-  network:
-    podSubnets:
-      - 192.168.0.0/16
-    serviceSubnets:
-      - 192.0.0.0/12
-    cni:
-      name: none
+apiVersion: v1alpha1
+kind: KubeNetworkConfig
+podSubnets:
+  - 192.168.0.0/16
+serviceSubnets:
+  - 192.0.0.0/12
+---
+apiVersion: v1alpha1
+kind: KubeFlannelCNIConfig
+$patch: delete
 ```
 
 Patched machine configuration:
 
 ```yaml
-cluster:
-  network:
-    dnsDomain: cluster.local
-    podSubnets:
-      - 192.168.0.0/16
-    serviceSubnets:
-      - 192.0.0.0/12
-    cni:
-      name: none
+apiVersion: v1alpha1
+kind: KubeNetworkConfig
+dnsDomain: cluster.local
+podSubnets:
+  - 192.168.0.0/16
+serviceSubnets:
+  - 192.0.0.0/12
 ```
 
-### Kubelet
+### Kubelet node IP
 
 Base machine configuration:
 
 ```yaml
-# ...
-machine:
-  kubelet: {}
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+nodeIP: {}
 ```
 
 The goal is to set the `kubelet` node IP to come from the subnet `192.168.10.0/24`:
 
 ```yaml
-machine:
-  kubelet:
-    nodeIP:
-      validSubnets:
-        - 192.168.10.0/24
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+nodeIP:
+  validSubnets:
+    - 192.168.10.0/24
 ```
 
 Patched machine configuration:
 
 ```yaml
-machine:
-  kubelet:
-    nodeIP:
-      validSubnets:
-        - 192.168.10.0/24
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+nodeIP:
+  validSubnets:
+    - 192.168.10.0/24
 ```
 
 ### Admission control: Pod security policy
@@ -220,25 +227,24 @@ machine:
 Base machine configuration:
 
 ```yaml
-cluster:
-  apiServer:
-    admissionControl:
-      - name: PodSecurity
-        configuration:
-          apiVersion: pod-security.admission.config.k8s.io/v1alpha1
-          defaults:
-            audit: restricted
-            audit-version: latest
-            enforce: baseline
-            enforce-version: latest
-            warn: restricted
-            warn-version: latest
-          exemptions:
-            namespaces:
-              - kube-system
-            runtimeClasses: []
-            usernames: []
-          kind: PodSecurityConfiguration
+apiVersion: v1alpha1
+kind: KubeAdmissionControlConfig
+name: PodSecurity
+configuration:
+  apiVersion: pod-security.admission.config.k8s.io/v1alpha1
+  defaults:
+    audit: restricted
+    audit-version: latest
+    enforce: baseline
+    enforce-version: latest
+    warn: restricted
+    warn-version: latest
+  exemptions:
+    namespaces:
+      - kube-system
+    runtimeClasses: []
+    usernames: []
+  kind: PodSecurityConfiguration
 ```
 
 The goal is to add an exemption for the namespace `rook-ceph`.
@@ -246,39 +252,37 @@ The goal is to add an exemption for the namespace `rook-ceph`.
 Patch:
 
 ```yaml
-  cluster:
-    apiServer:
-      admissionControl:
-        - name: PodSecurity
-          configuration:
-            exemptions:
-              namespaces:
-                - rook-ceph
+apiVersion: v1alpha1
+kind: KubeAdmissionControlConfig
+name: PodSecurity
+configuration:
+  exemptions:
+    namespaces:
+      - rook-ceph
 ```
 
 Patched machine configuration:
 
 ```yaml
-cluster:
-  apiServer:
-    admissionControl:
-      - name: PodSecurity
-        configuration:
-          apiVersion: pod-security.admission.config.k8s.io/v1alpha1
-          defaults:
-            audit: restricted
-            audit-version: latest
-            enforce: baseline
-            enforce-version: latest
-            warn: restricted
-            warn-version: latest
-          exemptions:
-            namespaces:
-              - kube-system
-              - rook-ceph
-            runtimeClasses: []
-            usernames: []
-          kind: PodSecurityConfiguration
+apiVersion: v1alpha1
+kind: KubeAdmissionControlConfig
+name: PodSecurity
+configuration:
+  apiVersion: pod-security.admission.config.k8s.io/v1alpha1
+  defaults:
+    audit: restricted
+    audit-version: latest
+    enforce: baseline
+    enforce-version: latest
+    warn: restricted
+    warn-version: latest
+  exemptions:
+    namespaces:
+      - kube-system
+      - rook-ceph
+    runtimeClasses: []
+    usernames: []
+  kind: PodSecurityConfiguration
 ```
 
 ## Configuration patching with `talosctl` CLI
