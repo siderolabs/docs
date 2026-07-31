@@ -247,6 +247,7 @@ navigation:
           folder: "talos/v1.14/reference"
           pages:
             - "configuration/overview.mdx"
+            - "configuration/document-map.mdx"
             - "configuration/v1alpha1/config.mdx"
             - "kernel.mdx"
             - "cli.mdx"

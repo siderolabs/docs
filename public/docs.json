@@ -2679,6 +2679,7 @@
                 "group": "Reference",
                 "pages": [
                   "talos/v1.14/reference/configuration/overview",
+                  "talos/v1.14/reference/configuration/document-map",
                   "talos/v1.14/reference/configuration/v1alpha1/config",
                   "talos/v1.14/reference/kernel",
                   "talos/v1.14/reference/cli",
