@@ -19,7 +19,7 @@ including the ones initiated by the Talos operating system itself, as well as th
 The image signature verification policy is a top-down list of rules which are evaluated in order.
 The first rule that matches the image being pulled is applied, and the rest of the rules are ignored.
 The rules can be configured to verify the signature, ignore the signature, or reject the image.
-A rule matches on the image reference without the tag or digest, e.g. for the image `ghcr.io/siderolabs/installer:v1.13.0`, the reference matched is `ghcr.io/siderolabs/installer`.
+A rule matches on the image reference without the tag or digest, e.g. for the image `ghcr.io/siderolabs/kubelet:v1.36.1`, the reference matched is `ghcr.io/siderolabs/kubelet`.
 
 The policy is configured using the [ImageVerificationConfig](../reference/configuration/security/imageverificationconfig) configuration document.
 

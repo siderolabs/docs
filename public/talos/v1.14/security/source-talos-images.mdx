@@ -10,11 +10,15 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 Sidero Labs signs the container images generated for the Talos release with [cosign](https://docs.sigstore.dev/cosign/overview/):
 
-* `ghcr.io/siderolabs/installer` (Talos installer)
+* `ghcr.io/siderolabs/installer-base` (base layer of the Talos installer)
 * `ghcr.io/siderolabs/talos` (Talos image for container runtime)
 * `ghcr.io/siderolabs/talosctl` (`talosctl` client packaged as a container image)
 * `ghcr.io/siderolabs/imager` (Talos install image generator)
 * all [system extension images](https://github.com/siderolabs/extensions/)
+
+Starting with Talos 1.14, the `ghcr.io/siderolabs/installer` image is no longer published: installer images are built and served by the
+[Image Factory](../learn-more/image-factory) as `factory.talos.dev/<platform>-installer/<schematic-id>:<version>`, and are signed by the
+Image Factory service account rather than by the Talos release pipeline (see [verifying image signatures](./verifying-image-signatures)).
 
 ## Verifying container image signatures
 

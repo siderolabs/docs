@@ -101,7 +101,7 @@ The install should be performed using SecureBoot installer (put it Talos machine
 
 <CodeBlock>
 {`
-factory.talos.dev/installer-secureboot/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:${release_v1_14}
+factory.talos.dev/metal-installer-secureboot/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:${release_v1_14}
 `}
 </CodeBlock>
 
@@ -131,25 +131,30 @@ Now we will generate the machine configuration for the node supplying the `insta
 
 ```yaml
 # tpm-disk-encryption.yaml
-machine:
-  systemDiskEncryption:
-    ephemeral:
-      provider: luks2
-      keys:
-        - slot: 0
-          tpm: {}
-    state:
-      provider: luks2
-      keys:
-        - slot: 0
-          tpm: {}
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: STATE
+encryption:
+  provider: luks2
+  keys:
+    - slot: 0
+      tpm: {}
+---
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: EPHEMERAL
+encryption:
+  provider: luks2
+  keys:
+    - slot: 0
+      tpm: {}
 ```
 
 Generate machine configuration:
 
 <CodeBlock lang="sh">
 {`
-talosctl gen config <cluster-name> https://<endpoint>:6443 --install-image=factory.talos.dev/installer-secureboot/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:${release_v1_14} --install-disk=/dev/sda --config-patch @tpm-disk-encryption.yaml
+talosctl gen config <cluster-name> https://<endpoint>:6443 --install-image=factory.talos.dev/metal-installer-secureboot/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:${release_v1_14} --install-disk=/dev/sda --config-patch @tpm-disk-encryption.yaml
 `}
 </CodeBlock>
 
@@ -412,7 +417,7 @@ input:
   sdBoot:
     path: /usr/install/amd64/systemd-boot.efi
   baseInstaller:
-    imageRef: ghcr.io/siderolabs/installer:v1.5.0-alpha.3-35-ge0f383598-dirty
+    imageRef: ghcr.io/siderolabs/installer-base:v1.5.0-alpha.3-35-ge0f383598-dirty
   secureboot:
     signingKeyPath: /secureboot/uki-signing-key.pem
     signingCertPath: /secureboot/uki-signing-cert.pem
@@ -452,7 +457,7 @@ input:
   sdBoot:
     path: /usr/install/amd64/systemd-boot.efi
   baseInstaller:
-    imageRef: ghcr.io/siderolabs/installer:${release_v1_14}
+    imageRef: ghcr.io/siderolabs/installer-base:${release_v1_14}
   secureboot:
     signingKeyPath: /secureboot/uki-signing-key.pem
     signingCertPath: /secureboot/uki-signing-cert.pem

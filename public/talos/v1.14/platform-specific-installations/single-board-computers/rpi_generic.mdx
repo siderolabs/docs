@@ -105,7 +105,7 @@ For example, to upgrade to the latest version of Talos, you can run:
 
 <CodeBlock lang="sh">
   {`
-talosctl -n <node IP or DNS name> upgrade --image=factory.talos.dev/installer/ee21ef4a5ef808a9b7484cc0dda0f25075021691c8c09a276591eedb638ea1f9:${release_v1_14}
+talosctl -n <node IP or DNS name> upgrade --image=factory.talos.dev/metal-installer/ee21ef4a5ef808a9b7484cc0dda0f25075021691c8c09a276591eedb638ea1f9:${release_v1_14}
   `}
 </CodeBlock>
 
@@ -164,14 +164,14 @@ Now we can download the metal arm64 image:
 Once installed, the machine can be upgraded to a new version of Talos by referencing new installer image:
 
 ```shell
-talosctl upgrade --image factory.talos.dev/installer/0db665edfda21c70194e7ca660955425d16cec2aa58ff031e2abf72b7c328585:<new_version>
+talosctl upgrade --image factory.talos.dev/metal-installer/0db665edfda21c70194e7ca660955425d16cec2aa58ff031e2abf72b7c328585:<new_version>
 ```
 
 Same way upgrade process can be used to transition to a new set of system extensions: generate new schematic with the new set of system extensions, and upgrade the machine to the new schematic ID:
 
 <CodeBlock lang="sh">
   {`
-talosctl upgrade --image factory.talos.dev/installer/<new_schematic_id>:${release_v1_14}
+talosctl upgrade --image factory.talos.dev/metal-installer/<new_schematic_id>:${release_v1_14}
   `}
 </CodeBlock>
 
@@ -234,7 +234,7 @@ input:
   initramfs:
     path: /usr/install/arm64/initramfs.xz
   baseInstaller:
-    imageRef: ghcr.io/siderolabs/installer:${release_v1_14}
+    imageRef: ghcr.io/siderolabs/installer-base:${release_v1_14}
   systemExtensions:
     - imageRef: ghcr.io/siderolabs/vc4:v0.1.4@sha256:a68c268d40694b7b93c8ac65d6b99892a6152a2ee23fdbffceb59094cc3047fc
 overlay:
@@ -413,13 +413,12 @@ The default may be too small for GPU-intensive tasks, and oversizing reduces sys
 
 Set CMA size with the `cma` parameter (e.g., `cma=256M`, `cma=384M`).
 
-Locate and apply the `machine.kernel` section to the machine config:
+Kernel parameters are baked into the boot asset, so add the parameter to the [Image Factory](../../learn-more/image-factory) schematic used to build the image:
 
 ```yaml
-machine:
-  kernel:
-    extraArgs:
-      - cma=256M
+customization:
+  extraKernelArgs:
+    - cma=256M
 ```
 
 **Bootloader via Talos Image Factory**:

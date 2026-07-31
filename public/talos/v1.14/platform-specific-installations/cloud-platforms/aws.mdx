@@ -277,10 +277,11 @@ You can create [additional patches](../../reference/configuration/v1alpha1/confi
 
 ```bash
 cat <<EOF > time-server-patch.yaml
-machine:
-  time:
-    servers:
-      - 169.254.169.123
+apiVersion: v1alpha1
+kind: TimeSyncConfig
+ntp:
+  servers:
+    - 169.254.169.123
 EOF
 ```
 

@@ -45,20 +45,18 @@ Now you can configure your bridge properly.
 This can be done in the machine config of your node:
 
 ```yaml
-machine:
-      interfaces:
-      - interface: br0
-        addresses:
-          - 10.99.101.9/24
-        bridge:
-          stp:
-            enabled: true
-          interfaces:
-              - eth0 # This must be changed to your matching interface name
-        routes:
-            - network: 0.0.0.0/0 # The route's network (destination).
-              gateway: 10.99.101.254 # The route's gateway (if empty, creates link scope route).
-              metric: 1024 # The optional metric for the route.
+apiVersion: v1alpha1
+kind: BridgeConfig
+name: br0
+links:
+  - eth0 # This must be changed to your matching interface name
+stp:
+  enabled: true
+addresses:
+  - address: 10.99.101.9/24
+routes:
+  - gateway: 10.99.101.254 # a route without a destination is the default route
+    metric: 1024 # The optional metric for the route.
 ```
 
 ### Install the `local-path-provisioner`

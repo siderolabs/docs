@@ -148,10 +148,11 @@ Swap can benefit some workloads by evicting inactive memory pages, keeping more 
 These settings influence swap usage and behavior:
 
 ```yaml
-machine:
-  sysctls:
-    vm.swappiness: 130
-    vm.page-cluster: 0
+apiVersion: v1alpha1
+kind: SysctlConfig
+params:
+  vm.swappiness: "130"
+  vm.page-cluster: "0"
 ```
 
 * `vm.swappiness`: controls how aggressively the kernel moves pages from RAM to swap.

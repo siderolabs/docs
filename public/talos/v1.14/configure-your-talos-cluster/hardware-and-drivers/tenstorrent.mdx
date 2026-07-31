@@ -86,12 +86,16 @@ Reserve hugepages via kernel arguments on the machine. The examples below use th
 
 <Tabs>
   <Tab title="Talos Linux">
+    Kernel arguments are baked into the image, so add them to the same schematic which carries the extension, and upgrade the node to the resulting installer image:
+
     ```yaml
-    machine:
-      install:
-        extraKernelArgs:
-          - hugepagesz=1G
-          - hugepages=36
+    customization:
+      extraKernelArgs:
+        - hugepagesz=1G
+        - hugepages=36
+      systemExtensions:
+        officialExtensions:
+          - siderolabs/tenstorrent
     ```
   </Tab>
 

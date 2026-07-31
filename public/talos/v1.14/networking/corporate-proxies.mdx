@@ -16,33 +16,32 @@ See [Custom Certificate Authorities](../security/certificate-authorities) to app
 
 ## Configuring a machine to use the proxy
 
-To configure Talos to use an HTTP or HTTPS proxy, set the appropriate environment variables in the machine configuration:
+To configure Talos to use an HTTP or HTTPS proxy, set the appropriate environment variables with the [`EnvironmentConfig`](../reference/configuration/runtime/environmentconfig) document:
 
 ```yaml
-machine:
-  env:
-    http_proxy: <http proxy>
-    https_proxy: <https proxy>
-    no_proxy: <no proxy>
+apiVersion: v1alpha1
+kind: EnvironmentConfig
+variables:
+  http_proxy: <http proxy>
+  https_proxy: <https proxy>
+  no_proxy: <no proxy>
 ```
 
-In proxy-restricted environments, you may also need to configure DNS (`nameservers`) and NTP (`timeservers`) explicitly:
+In proxy-restricted environments, you may also need to configure DNS with [`ResolverConfig`](../reference/configuration/network/resolverconfig) and NTP with [`TimeSyncConfig`](../reference/configuration/network/timesyncconfig) explicitly:
 
 ```yaml
-machine:
-  env:
-  ...
-  time:
-    servers:
-      - <server 1>
-      - <server ...>
-      - <server n>
-  ...
-  network:
-    nameservers:
-      - <ip 1>
-      - <ip ...>
-      - <ip n>
+apiVersion: v1alpha1
+kind: ResolverConfig
+nameservers:
+  - address: <ip 1>
+  - address: <ip 2>
+---
+apiVersion: v1alpha1
+kind: TimeSyncConfig
+ntp:
+  servers:
+    - <server 1>
+    - <server 2>
 ```
 
 If proxy access is required before the machine configuration is applied (for example, during initial boot), provide the proxy settings via [kernel command line arguments](../reference/kernel):
@@ -50,5 +49,3 @@ If proxy access is required before the machine configuration is applied (for exa
 ```text
 talos.environment=http_proxy=<http-proxy> talos.environment=https_proxy=<https-proxy>
 ```
-
-DNS and NTP settings can also be managed using their dedicated configuration documents: [ResolverConfig](../reference/configuration/network/resolverconfig) and [TimeSyncConfig](../reference/configuration/network/timesyncconfig) respectively.

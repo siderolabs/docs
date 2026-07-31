@@ -79,20 +79,19 @@ promtail:
 
 ## Setting CPU scaling governor
 
-While its possible to set [CPU scaling governor](https://kernelnewbies.org/Linux_5.9#CPU_Frequency_scaling) via `.machine.sysfs` it's sometimes cumbersome to set it for all CPU's individually.
+While its possible to set [CPU scaling governor](https://kernelnewbies.org/Linux_5.9#CPU_Frequency_scaling) via the [`SysfsConfig`](../reference/configuration/runtime/sysfsconfig) document, it's sometimes cumbersome to set it for all CPU's individually.
 A more elegant approach would be set it via a kernel commandline parameter.
 This also means that the options are applied way early in the boot process.
 
-This can be set in the machineconfig via the snippet below:
+Bake the argument into the boot asset and the installer image with an [Image Factory](./image-factory) schematic instead:
 
 ```yaml
-machine:
-  install:
-    extraKernelArgs:
-      - cpufreq.default_governor=performance
+customization:
+  extraKernelArgs:
+    - cpufreq.default_governor=performance
 ```
 
-> Note: Talos needs to be upgraded for the `extraKernelArgs` to take effect.
+> Note: the node needs to be upgraded to (or installed from) an image built with this schematic for the argument to take effect.
 
 ## Disable `admissionControl` on control plane nodes
 

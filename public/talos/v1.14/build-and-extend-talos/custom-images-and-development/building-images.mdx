@@ -85,6 +85,9 @@ make imager PUSH=true IMAGE_REGISTRY=docker.io USERNAME=<username> # ghcr.io/sid
 make installer IMAGE_REGISTRY=docker.io USERNAME=<username> # ghcr.io/siderolabs/installer
 ```
 
+> Note: the `installer` image is built locally from `installer-base` and the `imager`; Sidero Labs doesn't publish `ghcr.io/siderolabs/installer` since Talos 1.14,
+> as released installer images are served by the [Image Factory](../../learn-more/image-factory).
+
 The [local registry](./developing-talos) running on `127.0.0.1:5005` can be used as well to avoid pushing/pulling over the network:
 
 ```bash

@@ -184,24 +184,26 @@ DEV        MODEL   SERIAL   TYPE   UUID   WWID   MODALIAS                    NAM
 
 Pick an endpoint IP in the `vagrant-libvirt` subnet but not used by any nodes, for example `192.168.121.100`.
 
-Create a patch.yaml file with the following contents and add the virtual IP you picked to a network interface under `.machine.network.interfaces`:
-
-```bash
-talosctl gen config my-cluster https://192.168.121.100:6443 --install-disk /dev/vda
-```
-
-Edit `controlplane.yaml` to add the virtual IP you picked to a network interface under `.machine.network.interfaces`, for example:
+Create a `patch.yaml` file which assigns the virtual IP you picked to the network interface of the machine:
 
 ```yaml
-machine:
-  network:
-    interfaces:
-      - deviceSelector:
-          physical: true # should select any hardware network device, if you have just one, it will be selected
-        dhcp: true
-        vip:
-          ip: 192.168.121.100
+apiVersion: v1alpha1
+kind: LinkAliasConfig
+name: net0
+selector:
+  match: true # as there is a single physical link only, we can match it this way
+---
+apiVersion: v1alpha1
+kind: DHCPv4Config
+name: net0
+---
+apiVersion: v1alpha1
+kind: Layer2VIPConfig
+name: 192.168.121.100
+link: net0
 ```
+
+The [`LinkAliasConfig`](../../reference/configuration/network/linkaliasconfig) document gives the single physical interface a stable name, which is then used by the [`DHCPv4Config`](../../reference/configuration/network/dhcpv4config) and [`Layer2VIPConfig`](../../reference/configuration/network/layer2vipconfig) documents.
 
 Generate a machine configuration:
 

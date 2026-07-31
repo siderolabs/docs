@@ -126,17 +126,7 @@ The specified `extraTags` are added to every message sent to the destination ver
 
 ### Kernel logs
 
-Kernel log delivery can be enabled with the `talos.logging.kernel` kernel command line argument, which can be specified
-in the `.machine.installer.extraKernelArgs`:
-
-```yaml
-machine:
-  install:
-    extraKernelArgs:
-      - talos.logging.kernel=tcp://host:5044/
-```
-
-Also kernel logs delivery can be configured using the [document](../../reference/configuration/runtime/kmsglogconfig) in machine configuration:
+Kernel log delivery is configured with the [`KmsgLogConfig`](../../reference/configuration/runtime/kmsglogconfig) document in the machine configuration:
 
 ```yaml
 apiVersion: v1alpha1
@@ -144,6 +134,9 @@ kind: KmsgLogConfig
 name: remote-log
 url: tcp://host:5044/
 ```
+
+It can also be enabled with the `talos.logging.kernel=tcp://host:5044/` kernel command line argument, which is useful to capture logs from the early boot:
+add it to the boot asset with [Image Factory](../../learn-more/image-factory) or pass it on the command line of the boot loader.
 
 Kernel log destination is specified in the same way as service log endpoint.
 The only supported format is `json_lines`.
@@ -162,8 +155,7 @@ Sample message:
 }
 ```
 
-> `extraKernelArgs` in the machine configuration are only applied on Talos upgrades, not just by applying the config.
-> (Upgrading to the same version is fine).
+> `KmsgLogConfig` is applied to a running node, while a change of the kernel command line only takes effect on the next boot with the updated boot asset.
 
 ### Receive logs
 

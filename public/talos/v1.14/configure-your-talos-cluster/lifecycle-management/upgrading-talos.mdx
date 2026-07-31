@@ -89,6 +89,10 @@ There are no specific actions to be taken after an upgrade.
 To upgrade a Talos node, specify the node's IP address and the
 installer container image for the version of Talos to upgrade to.
 
+Starting with Talos 1.14, the `ghcr.io/siderolabs/installer` image is no longer published: installer images are served by the [Image Factory](../../learn-more/image-factory)
+as `factory.talos.dev/metal-installer/<schematic-id>:<version>`.
+Use the schematic ID of the image the node was installed from (the one which carries its system extensions), or the empty schematic `376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba` for a machine without customizations.
+
 For instance, if your Talos node has the IP address `10.20.30.40` and you want
 to install the current version, you would enter a command such
 as:
@@ -96,9 +100,11 @@ as:
 <CodeBlock lang="sh">
 {`
   talosctl upgrade --nodes 10.20.30.40 \\
-  --image ghcr.io/siderolabs/installer:${release_v1_14}
+  --image factory.talos.dev/metal-installer/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:${release_v1_14}
 `}
 </CodeBlock>
+
+The `--image` flag defaults to the installer image of the `talosctl` version in use, so it can be omitted when upgrading a machine without system extensions to the version matching `talosctl`.
 
 Note that because Talos Linux reboots via the `kexec` syscall, the extra reboot adds very little time.
 

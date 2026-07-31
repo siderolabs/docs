@@ -72,7 +72,7 @@ As NVIDIA extension is not required for the initial boot and install step, it is
 
 1. Use a generic Talos ISO to boot the machine.
 2. Prepare a custom `installer` container image with NVIDIA extension included, push the image to a registry.
-3. Ensure that machine configuration field `.machine.install.image` points to the custom `installer` image.
+3. Ensure that the `installer.image` field of the [`UnattendedInstallConfig`](../../reference/configuration/runtime/unattendedinstallconfig) document points to the custom `installer` image.
 4. Boot the machine using the ISO, apply the machine configuration.
 5. Talos pulls a custom installer image from the registry (containing NVIDIA extension), installs Talos on the machine, and reboots.
 

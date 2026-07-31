@@ -43,7 +43,7 @@ Partition layout for `systemd-boot`:
 On UEFI systems, the `EFI` partition is automatically detected by the system firmware.
 Since UKIs are EFI binaries, they can also be booted directly from the EFI shell or firmware boot menu, including HTTP boot.
 
-With `systemd-boot`, the `.machine.install.extraKernelArgs` field in the machine configuration is ignored, as kernel arguments are embedded in the UKI and cannot be modified without upgrading the UKI.
+With `systemd-boot`, kernel arguments are embedded in the UKI and cannot be modified without upgrading the UKI: set them with an [Image Factory](../../learn-more/image-factory) schematic (`customization.extraKernelArgs`) when building the boot asset.
 
 ## GRUB
 
@@ -59,7 +59,7 @@ Partition layout for GRUB:
 * `BOOT`: Contains the GRUB configuration file and Talos boot assets (`vmlinuz`, `initramfs`).
 
 With GRUB, kernel arguments are stored in the GRUB configuration file.
-The `.machine.install.extraKernelArgs` field in the machine configuration can be used to modify these arguments, followed by an upgrade.
+They are taken from the installer image, so build the image with an [Image Factory](../../learn-more/image-factory) schematic (`customization.extraKernelArgs`) and upgrade the machine to it to modify them.
 
 ### Controlling kernel command line behavior
 
@@ -74,3 +74,5 @@ When set to `false`, GRUB will ignore the UKI-provided kernel command line and i
 construct its own command line based on Talos defaults and configuration (the legacy behavior).
 
 For existing installations upgrading to v1.12, this option will default to false to preserve the legacy behavior.
+
+With Talos v1.14 and later, the `grubUseUKICmdline` is set to `true` when using the [`UnattendedInstallConfig`](../../reference/configuration/runtime/unattendedinstallconfig) document.

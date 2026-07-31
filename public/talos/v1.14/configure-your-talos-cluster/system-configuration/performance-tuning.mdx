@@ -21,8 +21,8 @@ If you find more performance tuning knobs, please let us know by editing this do
 Talos Linux kernel parameters can be adjusted in the following ways:
 
 * temporary, one-time adjustments can be done via console access, and editing the kernel command line in the bootloader (doesn't work for Secure Boot enabled systems)
-* on initial install (when booting off ISO/PXE), `.machine.install.extraKernelArgs` can be used to set kernel parameters
-* after the initial install (or when booting off a disk image), `.machine.install.extraKernelArgs` changes require a no-op upgrade (e.g. to the same version of Talos) to take effect
+* permanent adjustments are baked into the boot assets and the installer image with an [Image Factory](../../learn-more/image-factory) schematic (`customization.extraKernelArgs`)
+* on a machine which is already installed, boot the new asset or upgrade to the installer image built from the schematic for the change to take effect
 
 ### CPU scaling
 

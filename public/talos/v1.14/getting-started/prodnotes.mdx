@@ -245,28 +245,34 @@ Follow these steps to patch your machine configuration:
 
     ```yaml
     # controlplane-patch-1 file
-    machine:
-      network:
-        interfaces:
-          - interface: <control-plane-network-interface>  # From control plane node
-            dhcp: true
-      install:
-        disk: /dev/<control-plane-disk-name> # From control plane node
+    apiVersion: v1alpha1
+    kind: DHCPv4Config
+    name: <control-plane-network-interface>  # From control plane node
+    ---
+    apiVersion: v1alpha1
+    kind: UnattendedInstallConfig
+    provisioning:
+      diskSelector:
+        match: disk.dev_path == "/dev/<control-plane-disk-name>" # From control plane node
     ```
 
    For `worker-patch-1.yaml`, use network interface and disk information from your worker nodes:
 
     ```yaml
     # worker-patch-1.yaml file
+    apiVersion: v1alpha1
+    kind: DHCPv4Config
+    name: <worker-network-interface>  # From worker node
+    ---
+    apiVersion: v1alpha1
+    kind: UnattendedInstallConfig
+    provisioning:
+      diskSelector:
+        match: disk.dev_path == "/dev/<worker-disk-name>" # From worker node
+    ```
 
-    machine:
-      network:
-        interfaces:
-          - interface: <worker-network-interface>  # From worker node
-            dhcp: true
-      install:
-        disk: /dev/<worker-disk-name> # From worker node
-   ```
+   The [`DHCPv4Config`](../reference/configuration/network/dhcpv4config) document enables DHCP on the interface, and [`UnattendedInstallConfig`](../reference/configuration/runtime/unattendedinstallconfig) selects the install disk with a CEL expression.
+   For production nodes, prefer a stable disk property such as `disk.serial` or `disk.wwid` over the `/dev/sd*` name.
 
 1. Apply the different patch files for the different machine configuration:
     - **For control plane**:

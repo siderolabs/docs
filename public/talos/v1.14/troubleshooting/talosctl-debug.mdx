@@ -107,9 +107,10 @@ Second, `pwru` needs to decode function names from kernel pointers, which Talos 
 Temporarily relax this restriction by applying the following machine configuration patch:
 
 ```yaml
-machine:
-  sysctls:
-    kernel.kptr_restrict: 1
+apiVersion: v1alpha1
+kind: SysctlConfig
+params:
+  kernel.kptr_restrict: "1"
 ```
 
 Finally, use the `pwru` image to start the debug shell:
