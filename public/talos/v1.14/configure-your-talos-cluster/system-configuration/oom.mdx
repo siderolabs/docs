@@ -1,5 +1,5 @@
 ---
-title: "OOM handler"
+title: "OOM Handler"
 description: "Configuring userspace out-of-memory handler."
 canonical: https://docs.siderolabs.com/talos/v1.13/configure-your-talos-cluster/system-configuration/oom
 ---
@@ -27,6 +27,58 @@ conditions should it activate, and which cgroups should it prioritize when it do
 [Configuration reference](../../reference/configuration/runtime/oomconfig) lists all supported configuration options
 and a sample configuration document that can be applied to customize OOM controller behavior.
 
+## How the OOM handler works
+
+The OOM handler is a controller running as part of `machined`, the Talos PID 1 process.
+It is enabled by default and requires no configuration.
+It is disabled when Talos itself runs in a container (`talosctl cluster create` with the Docker provisioner).
+
+Every `sampleInterval` the controller runs a single cycle:
+
+1. Collect memory metrics: pressure stall information for the root cgroup and for each quality of service (QoS) class,
+   plus memory usage of each class.
+2. Evaluate the `triggerExpression` against those metrics.
+   If it evaluates to `false`, the cycle ends here and nothing is killed.
+3. Score every candidate cgroup with the `cgroupRankingExpression`.
+4. Select a single victim cgroup out of the scored candidates.
+5. Kill the victim: every process in it receives `SIGKILL` (via the `cgroup.kill` cgroup control file),
+   and the kernel is asked to reclaim their memory immediately with `process_mrelease`.
+
+The default sampling interval is 500ms.
+The value shown in the sample document of the configuration reference is an example of an override, not the default.
+
+The handler always kills at most one cgroup per cycle, and it kills the cgroup as a whole — never a single process
+inside it.
+If no cgroup is eligible, nothing is killed even though the trigger fired.
+
+The kernel OOM killer stays enabled and keeps working alongside the Talos OOM handler.
+The difference is what they react to: the kernel acts when an allocation can no longer be satisfied,
+while the Talos OOM handler acts on memory *pressure* — processes spending a significant fraction of their time
+waiting for memory — which happens well before the machine runs out of pages.
+
+## Cgroup classes
+
+Talos assigns every cgroup it monitors to one of five QoS classes.
+The classes are listed here from the least important to the most important, which is the order in which
+they are considered for killing:
+
+| Class        | Cgroups                                                                          | Killed by the default configuration                        |
+|--------------|----------------------------------------------------------------------------------|------------------------------------------------------------|
+| `Besteffort` | `kubepods/besteffort/*` — Kubernetes pods of the BestEffort QoS class             | yes, first                                                  |
+| `Burstable`  | `kubepods/burstable/*` — Kubernetes pods of the Burstable QoS class               | yes, but only if the pod cgroup has no memory limit         |
+| `Guaranteed` | `kubepods/*` — Kubernetes pods of the Guaranteed QoS class                        | no                                                          |
+| `Podruntime` | `podruntime/*` — `containerd`, CRI shims, `kubelet`, `etcd`                       | no                                                          |
+| `System`     | `system/*` — Talos services such as `apid`, `trustd`, `udevd`, extension services | no                                                          |
+
+The kubelet does not create a dedicated cgroup for the Guaranteed QoS class: Guaranteed pods live directly under
+`kubepods`, next to the `besteffort` and `burstable` cgroups.
+
+The `init` cgroup (`machined` itself) is accounted as `System` when metrics are collected,
+but it is never considered as a kill candidate.
+
+Candidates are always the *immediate children* of the cgroups listed above.
+For Kubernetes this means a whole pod with all of its containers, and for Talos a single service.
+
 ## Trigger
 
 The `triggerExpression` is a boolean condition used by the OOM controller to
@@ -38,7 +90,10 @@ in order to free up memory.
 expression, it should be the primary indication for determining whether or not OOM killing is required.
 To find more information on the meaning of the PSI parameters, please read the linked page.
 
-These are the variables provided to this expression, also listing their types:
+The `avg10`, `avg60` and `avg300` values are percentages of time stalled over the last 10, 60 and 300 seconds,
+while the `total` values are the absolute stall time accumulated since boot, in microseconds.
+
+These variables describe the root cgroup, that is the machine as a whole:
 
 - `memory_some_avg10` - double - `some` memory pressure value, averaged over 10 seconds
 - `memory_some_avg60` - double - `some` memory pressure value, averaged over 60 seconds
@@ -49,58 +104,108 @@ These are the variables provided to this expression, also listing their types:
 - `memory_full_avg300` - double - `full` memory pressure value, averaged over 300 seconds
 - `memory_full_total` - double - `full` memory pressure value, absolute cumulative value
 
-`d_` prefixed variants of the aforementioned variables (such as `d_memory_some_avg10`) are also available –
-these are `double`s representing the current derivative of that value, in absolute units per second.
+The same metrics are also available per QoS class, as maps keyed by the class constants
+(`Besteffort`, `Burstable`, `Guaranteed`, `Podruntime`, `System`):
+
+- `qos_memory_some_avg10`, `qos_memory_some_avg60`, `qos_memory_some_avg300`, `qos_memory_some_total`
+- `qos_memory_full_avg10`, `qos_memory_full_avg60`, `qos_memory_full_avg300`, `qos_memory_full_total`
+
+Memory usage of each class is available in the same map form, in bytes:
+
+- `qos_memory_current` - current memory usage
+- `qos_memory_peak` - peak registered memory usage
+- `qos_memory_max` - configured memory limit
+
+Every class is always present in these maps: a class with no cgroups (for example, when no Guaranteed pods are
+scheduled) reports zeroes rather than being absent.
+Values for a class are the sum over all cgroups of that class.
+
+`d_` prefixed variants of all of the aforementioned variables (such as `d_memory_full_avg10` or
+`d_qos_memory_full_total`) are also available – these represent the current derivative of that value,
+in absolute units per second.
+The derivative is normalized by the sampling interval, so changing `sampleInterval` does not change the scale
+of these values.
 
 Additionally, `time_since_trigger` variable is provided, representing the time past since the previous OOM trigger
-as the CEL `duration` type. You may use this variable to rate limit OOM triggers to ensure the monitored
+as the CEL `duration` type.
+You may use this variable to rate limit OOM triggers to ensure the monitored
 parameters have time to reflect the updated system state before new trigger decision.
+
+The `multiply_qos_vectors(values, weights)` function is provided to combine a per-class map into a single number:
+it returns the sum of `values[class] * weights[class]` over the classes listed in `weights`.
+Classes which are not listed in the `weights` map contribute nothing, which makes it a convenient way to both
+select and weigh the classes of interest.
 
 ### Default condition in detail
 
 The default value for `triggerExpression` is:
 
 ```cel
-memory_full_avg10 > 12.0 &&
-d_memory_full_avg10 > 0.0 &&
-time_since_trigger > duration("500ms")
+multiply_qos_vectors(d_qos_memory_full_total, {System: 8.0, Podruntime: 4.0}) > 3000.0 &&
+multiply_qos_vectors(qos_memory_full_avg10, {System: 1.0, Podruntime: 1.0}) > 5.0 &&
+time_since_trigger > duration("5s")
 ```
 
+The default condition deliberately ignores memory pressure experienced by the workloads themselves and only looks
+at the pressure experienced by the `System` and `Podruntime` classes — Talos services, the container runtime,
+`kubelet` and `etcd`.
+The goal is not to keep any particular pod alive, but to keep the node itself responsive and manageable:
+the OOM handler steps in exactly when workload memory usage starts to starve the components which have to
+keep running.
+
 This expression checks if all these are true to trigger the OOM killer:
-- The full memory pressure (averaged over 10 seconds) is over 12
-  - Processes spend more time than a threshold
-waiting for the requested memory
-- The derivative of the memory pressure (averaged over 10 seconds) is positive
-  - The system is slowing down due to memory pressure, indicated by increasing wait time
-- The last OOM kill happened no less than 500 milliseconds ago
+
+- The `System` and `Podruntime` cgroups are accumulating memory stall time *right now*, weighted 8:4 in favour of
+  the Talos system services
+  - This term is built on the derivative of the cumulative stall time, measured in microseconds of stall per second,
+    so it only holds while pressure is actively being accumulated
+  - Without it, the handler would keep firing on the decaying 10 second average after the pressure has already
+    subsided
+- The `full` memory pressure of the `System` and `Podruntime` cgroups combined, averaged over 10 seconds, is over 5%
+  - This confirms the pressure is sustained and not a short spike
+- The last OOM kill happened no less than 5 seconds ago
   - Prevent the OOM killer from being triggered repeatedly without waiting for it to have an effect on the metrics used
 
-## Cgroup ranking expression
+<Note>
+In Talos 1.13 and earlier the default expression had an additional clause which triggered on the memory pressure of
+the machine as a whole (`memory_full_avg10 > 75.0`).
+It was removed in Talos 1.14, because a pod running with a memory limit and doing heavy I/O can drive up the overall
+memory pressure of the machine (the limit leaves little room for the page cache) while plenty of RAM is free,
+which resulted in false triggers.
+</Note>
 
-After the OOM killer is triggered, the controller will create a list of cgroups that can be killed to free up memory.
-The expression configured by the `cgroupRankingExpression` property is then used to compute an OOM score for each
-of these cgroups.
+## Selecting a victim
 
-The cgroup with the highest OOM score is the one that will be killed.
-
-This setting enables the user to customize the priority of killing cgroups by modifying the evaluation rules
-dependent on the cgroup class. These are the class constants passed to the expression alongside variables:
-
-- `Besteffort` - Kubernetes pods of the BestEffort QoS class
-- `Burstable` - Kubernetes pods of the Burstable QoS class
-- `Guaranteed` - Kubernetes pods of the Guaranteed QoS class
-- `Podruntime` - container runtime, usually containerd and accompanying processes
-- `System` - Talos Linux system services, such as machined, apid and udevd
-
-These constants can be used to index CEL maps or in ternary operators used to apply different
-expressions for different cgroup classes.
+Once the trigger fires, the controller enumerates the candidate cgroups and computes an OOM score for each of them
+using the expression configured by the `cgroupRankingExpression` property.
 
 These variables are supplied to the expression and can be used for computing OOM score:
+
 - `memory_max` - optional\<uint\> - if reported for the cgroup: max allowed memory usage, in bytes
 - `memory_current` - optional\<uint\> - if reported for the cgroup: current memory usage, in bytes
 - `memory_peak` - optional\<uint\> - if reported for the cgroup: peak registered memory usage, in bytes
 - `path` - string - absolute path to the cgroup being evaluated
-- `class` - int - one of the aforementioned cgroup classes, should be matched against those constants
+- `class` - int - one of the cgroup classes, should be matched against the class constants
+
+The class constants (`Besteffort`, `Burstable`, `Guaranteed`, `Podruntime` and `System`) can be used to index CEL maps
+or in ternary operators used to apply different expressions for different cgroup classes.
+
+A cgroup is a candidate for killing only if its score is strictly greater than zero.
+A score of zero does not mean "killed last" — it means the cgroup is never killed at all.
+If no cgroup scores above zero, the trigger is logged and nothing is killed.
+
+### Strict QoS class ordering
+
+Among the eligible cgroups the victim is picked according to the `strictCgroupClassOrdering` setting:
+
+- when it is enabled, which is the default, the controller first picks the least important class which has any
+  eligible cgroup in it, and then the highest-scoring cgroup within that class;
+- when it is disabled, the controller picks the highest-scoring cgroup regardless of its class.
+
+With strict ordering enabled, the score only ever breaks ties within a single class, so a large Burstable pod
+can never be picked over a small BestEffort pod.
+This is usually what is wanted: without it, a big Burstable pod such as `kube-apiserver` could outscore a small
+BestEffort pod and be killed first, as the default ranking expression only weighs BestEffort twice over Burstable.
 
 ### Default formula in detail
 
@@ -110,9 +215,120 @@ memory_max.hasValue() ? 0.0 :
 double(memory_current.orValue(0u))
 ```
 
-- If there is a maximum value defined, return 0 - those are processes with well-defined resource demands
-and the least likely to be killed by the OOM handler (score 0 cgroups are the last to be killed)
-- Prioritize BestEffort pods over Burstable, and ignore other classes
+- If the cgroup has a memory limit configured, return 0 — those are processes with well-defined resource demands,
+  and the kernel already enforces their limit, so the Talos OOM handler leaves them alone
+- Otherwise, score by current memory usage, weighted by the cgroup class
   - A map is used here to look up a coefficient depending on the cgroup class
   - `orValue` is a method of the `optional` type allowing to unwrap the option,
   choosing a default value in case the value is not available
+- `Guaranteed`, `Podruntime` and `System` cgroups get a coefficient of 0, so they are never eligible
+
+### Which pods can be killed
+
+Combining the default ranking expression with the default strict class ordering, this is how a pod is treated:
+
+| Pod QoS class                                              | Pod cgroup `memory.max` | Score                     | Outcome                                        |
+|------------------------------------------------------------|-------------------------|---------------------------|------------------------------------------------|
+| BestEffort                                                  | not set                 | `memory_current`          | eligible, killed first                          |
+| Burstable, at least one container without a memory limit    | not set                 | `0.5 * memory_current`    | eligible, only if no BestEffort pod is eligible |
+| Burstable, every container has a memory limit               | set                     | 0.0                       | never killed                                    |
+| Guaranteed                                                  | set                     | 0.0                       | never killed                                    |
+| Talos services, container runtime, `kubelet`, `etcd`        | irrelevant              | 0.0                       | never killed                                    |
+
+The kubelet sets a memory limit on the pod cgroup only when **every** container in the pod declares
+`resources.limits.memory` — including init containers.
+A single container without a memory limit is enough to leave the pod cgroup unlimited, and therefore to make the
+whole pod a candidate for the Talos OOM handler.
+This is easy to miss with an init container which has already terminated: the pod cgroup keeps no memory limit for
+the whole lifetime of the pod.
+
+## Protecting a workload
+
+If a workload must not be killed by the Talos OOM handler, there are two options.
+
+The first one is to set `resources.limits.memory` on every container of the pod, including init containers.
+The pod cgroup then gets a memory limit, the default ranking expression scores it zero, and it is never selected
+by the Talos OOM handler.
+The trade-off is that the pod is now bounded by that limit and the kernel OOM killer enforces it,
+so an overrunning container is killed by the kernel instead.
+
+The second one is to customize the `cgroupRankingExpression` so that the workload scores zero, for example
+by giving its QoS class a coefficient of zero.
+Note that the cgroup `path` available to the expression is built from the pod UID
+(such as `/sys/fs/cgroup/kubepods/burstable/podf3a1b0c2-...`), not from the pod name or namespace,
+so matching on `path` is not a practical way to exempt a specific application.
+
+Whichever option is used, keep in mind that if every cgroup is exempted, the userspace OOM handler has nothing to
+kill and the machine is back to relying on the kernel OOM killer alone.
+
+## Observing OOM handler activity
+
+The OOM controller logs each trigger to the controller runtime log:
+
+```bash
+talosctl -n <IP> logs controller-runtime
+```
+
+Relevant messages come from the `runtime.OOMController` controller:
+
+```text
+[talos] OOM controller triggered {"component": "controller-runtime", "controller": "runtime.OOMController"}
+[talos] Sending SIGKILL to cgroup {"component": "controller-runtime", "controller": "runtime.OOMController", "cgroup": "/sys/fs/cgroup/kubepods/besteffort/pod..."}
+```
+
+A trigger which found nothing to kill is logged as `no eligible cgroup to kill`.
+
+The last 50 actions are also kept as resources, which record the score of the victim, the command lines of the
+killed processes, and a JSON dump of the metrics which caused the trigger:
+
+```bash
+talosctl -n <IP> get oomactions -o yaml
+```
+
+<Note>
+`OOMActions` is a sensitive resource (it contains process command lines), so reading it requires the `os:admin`
+role, which the generated `talosconfig` has by default.
+The records are kept in memory only and are lost on reboot.
+</Note>
+
+## Tuning examples
+
+Make the handler act sooner, by lowering the sustained pressure threshold and sampling more often:
+
+```yaml
+apiVersion: v1alpha1
+kind: OOMConfig
+triggerExpression: |-
+  multiply_qos_vectors(d_qos_memory_full_total, {System: 8.0, Podruntime: 4.0}) > 3000.0 &&
+  multiply_qos_vectors(qos_memory_full_avg10, {System: 1.0, Podruntime: 1.0}) > 2.0 &&
+  time_since_trigger > duration("5s")
+sampleInterval: 250ms
+```
+
+Rank cgroups by their peak memory usage instead of the current one, which favours killing the workload which
+caused the spike rather than the one which is currently the largest:
+
+```yaml
+apiVersion: v1alpha1
+kind: OOMConfig
+cgroupRankingExpression: |-
+  memory_max.hasValue() ? 0.0 :
+    {Besteffort: 1.0, Burstable: 0.5, Guaranteed: 0.0, Podruntime: 0.0, System: 0.0}[class] *
+      double(memory_peak.orValue(0u))
+```
+
+Go back to pure score-based selection, ignoring the QoS class ordering:
+
+```yaml
+apiVersion: v1alpha1
+kind: OOMConfig
+strictCgroupClassOrdering: false
+```
+
+Disable the userspace OOM handler completely, leaving only the kernel OOM killer:
+
+```yaml
+apiVersion: v1alpha1
+kind: OOMConfig
+triggerExpression: "false"
+```
