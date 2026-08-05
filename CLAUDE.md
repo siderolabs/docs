@@ -9,23 +9,28 @@ This repository contains the documentation for Siderolabs products, particularly
 ## Architecture
 
 ### Documentation Structure
-- **Single documentation site**: All docs are organized under the `omni/`, `talos/`, and `kubernetes` directories.
-- **Mintlify-based**: Uses Mintlify documentation platform with configuration in `docs.json`
+- **Single documentation site**: All content lives under `public/`, in the `omni/`, `talos/`, and `kubernetes-guides/` directories.
+- **Mintlify-based**: Uses Mintlify documentation platform with configuration in `public/docs.json`
 - **MDX format**: All documentation files use `.mdx` extension for enhanced markdown with React components
 - **Hierarchical organization**: Content is organized into logical groups (Overview, Getting Started, Infrastructure, etc.)
 
 ### Key Directories
-- `omni/overview/` - High-level product information
-- `omni/getting-started/` - User onboarding guides  
-- `omni/infrastructure-and-extensions/` - Infrastructure setup and extensions
-- `omni/omni-cluster-setup/` - Cluster configuration guides
-- `omni/cluster-management/` - Ongoing cluster operations
-- `omni/security-and-authentication/` - Security and auth configuration
-- `omni/reference/` - Reference documentation
-- `images/` - Static assets and screenshots
+- `public/omni/overview/` - High-level product information
+- `public/omni/getting-started/` - User onboarding guides
+- `public/omni/infrastructure-and-extensions/` - Infrastructure setup and extensions
+- `public/omni/omni-cluster-setup/` - Cluster configuration guides
+- `public/omni/cluster-management/` - Ongoing cluster operations
+- `public/omni/security-and-authentication/` - Security and auth configuration
+- `public/omni/reference/` - Reference documentation, much of it generated
+- `public/images/` - Static assets and screenshots
 
 ### Navigation Configuration
-The site navigation is entirely defined in `docs.json` with a tab-based structure. All pages must be explicitly listed in the navigation configuration to appear in the documentation site.
+
+**`public/docs.json` is generated. Never hand-edit it.** Navigation is defined in the per-product YAML files at the repository root: `omni.yaml`, `talos-v*.yaml`, `kubernetes-guides.yaml`, `common.yaml`, and `changelog.yaml`. Every page must be listed in one of them to appear on the site.
+
+`make docs.json` compiles those YAML files into `public/docs.json`, which **is** committed. CI regenerates it and fails if the result differs from the committed copy, so **run `make docs.json` and commit the result in the same change whenever you touch a nav YAML or add a page.**
+
+Note that `make check-missing` passing is not enough on its own. It only checks that every `.mdx` file is referenced by some YAML, and says nothing about whether the committed `docs.json` is current.
 
 ## Content Standards
 
@@ -40,6 +45,21 @@ The site navigation is entirely defined in `docs.json` with a tab-based structur
 - Includes step-by-step guides with screenshots stored in adjacent `images/` directories
 
 ## Development Workflow
+
+### Before you push
+
+CI (`.github/workflows/docs-ci.yaml`) runs exactly four checks. Run the same four locally and a red PR becomes rare:
+
+```bash
+make broken-links                                    # every internal link resolves
+make validate-docs-nav                               # nav YAMLs match the content directories
+make style-check-changed STYLE_CHECK_BASE=upstream/main   # style guide, changed files only
+make docs.json && git diff --exit-code               # the committed docs.json is current
+```
+
+Only the style check reports at two levels. Warnings do not fail CI, errors do, and plenty of existing pages carry warnings, so check whether a warning is on a line you actually touched before chasing it.
+
+Most targets run in a container pulled from ghcr.io. When an image is unavailable, the `-local` variants (`style-check-local`, `docs.json-local`, `check-missing-local`) build the Go tool instead and are equivalent. `make help` lists everything.
 
 ### Local Development with Docker
 To preview the documentation locally without installing Mintlify, use the provided Makefile:

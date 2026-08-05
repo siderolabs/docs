@@ -36,7 +36,11 @@ Log files are retained for 30 days, including the current day. Files older than 
 
 ## Access the audit log
 
-Audit logs can be accessed through the Omni UI or via `omnictl`. Access requires an Admin role.
+Audit logs can be accessed through the Omni UI or via `omnictl`. Access requires the `Auditor` or `Admin` role.
+
+<Note>
+Audit log access is granted by exact role rather than by seniority. The `Operator` role does not include it, even though it is otherwise more privileged than `Auditor`. Use `Auditor` for accounts that only need to read the audit log, such as an audit log exporter, so they do not need full `Admin` access.
+</Note>
 
 <Tabs>
 <Tab title="CLI">
@@ -81,6 +85,7 @@ The following is an example log entry, formatted for readability:
 {
   "event_type": "create",
   "resource_type": "Clusters.omni.sidero.dev",
+  "resource_id": "talos-default",
   "event_ts": 1723466435280,
   "event_data": {
     "cluster": {
@@ -91,7 +96,6 @@ The following is an example log entry, formatted for readability:
     },
     "session": {
       "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
-      "ip_address": "<snip>",
       "user_id": "fa02ea7c-6eb1-491e-b053-b5db63a4384f",
       "role": "Admin",
       "email": "user@example.com",
@@ -107,6 +111,7 @@ The following is an example log entry, formatted for readability:
 |---|---|
 | `event_type` | The type of action that occurred. See [Event types](#event-types) below. |
 | `resource_type` | The type of resource that was affected, e.g. `Clusters.omni.sidero.dev`. |
+| `resource_id` | The ID of the resource that was affected. |
 | `event_ts` | The timestamp of the event in milliseconds since Unix epoch. |
 | `event_data` | A JSON object containing details about the event. See [Event data fields](#event-data-fields) below. |
 
@@ -121,6 +126,7 @@ The following is an example log entry, formatted for readability:
 | `teardown` | A resource is being torn down and will be destroyed shortly. |
 | `k8s_access` | A user accessed a Kubernetes cluster. |
 | `talos_access` | A user accessed a Talos cluster. |
+| `audit_log_access` | The audit log itself was read, including each time the exporter connects to follow it. |
 
 ### Event data fields
 
@@ -133,11 +139,12 @@ The `session` field describes the user session associated with the event.
 | Field | Description |
 |---|---|
 | `user_agent` | The HTTP user agent. For actions performed internally by Omni, this will be `Omni-Internal-Agent` and all other session fields will be empty. |
-| `ip_address` | The IP address of the client. Empty for `k8s_access` events. |
 | `user_id` | The ID of the user who performed the action. |
 | `role` | The role of the user at the time of the action. |
 | `email` | The email address of the user. |
 | `fingerprint` | The fingerprint of the user's public key. |
+| `confirmation_type` | How the key was confirmed, when applicable. |
+| `public_key_expiration` | When the user's public key expires, in seconds since Unix epoch. |
 
 #### Resource-specific fields
 
@@ -172,7 +179,6 @@ The `k8s_access` field is present on `k8s_access` events and contains:
 |---|---|
 | `full_method_name` | The full HTTP/2 method name called on the Kubernetes API. |
 | `command` | The kubectl command that was run. |
-| `body` | The request body, if any. |
 | `kube_session` | The Kubernetes user session details. |
 | `cluster_name` | The name of the cluster that was accessed. |
 | `cluster_uuid` | The UUID of the cluster that was accessed. |
@@ -198,16 +204,10 @@ In addition to resource operations, Omni also logs `kubectl` access to Kubernete
 
 ## Export audit logs
 
-At this time, Omni does not provide a built-in integration for exporting audit logs to external logging platforms (such as SIEM or log aggregation systems).
-
-For now, audit logs can be accessed via the CLI using `omnictl audit-log`, which allows you to stream logs to stdout and pipe them into external tools for processing or storage.
-
-For example:
+For a one-off export, `omnictl audit-log` streams to stdout and pipes into any external tool:
 
 ```bash
 omnictl audit-log | jq .
 ```
 
-This can be used to forward logs to other systems or integrate with existing tooling.
-
-Support for direct export or integration with external log platforms may be added in a future release.
+To keep audit events flowing into a log aggregation or SIEM system continuously, use the audit log exporter, which follows the audit log and resumes where it left off across restarts. See [Export Audit Logs](./export-audit-logs).
