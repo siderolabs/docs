@@ -87,6 +87,7 @@ navigation:
             - "etcd-backups.mdx"
             - "restore-etcd-of-a-cluster-managed-by-cluster-templates.mdx"
             - "using-audit-log.mdx"
+            - "monitor-omni-with-prometheus.mdx"
             - "importing-talos-clusters.mdx"
             - "manage-omni-cluster-with-nautik.mdx"
             - "wipe-a-machine.mdx"
