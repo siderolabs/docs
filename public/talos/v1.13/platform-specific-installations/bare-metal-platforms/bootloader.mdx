@@ -74,3 +74,12 @@ When set to `false`, GRUB will ignore the UKI-provided kernel command line and i
 construct its own command line based on Talos defaults and configuration (the legacy behavior).
 
 For existing installations upgrading to v1.12, this option will default to false to preserve the legacy behavior.
+
+`grubUseUKICmdline` and `.machine.install.extraKernelArgs` are mutually exclusive: a machine configuration which sets both is rejected during validation.
+To customize kernel arguments with `grubUseUKICmdline` set to `true`, build the arguments into the UKI when generating [boot assets](../boot-assets).
+
+<Warning>
+    The new upgrade API introduced in Talos v1.13 does not apply `.machine.install.extraKernelArgs` when `grubUseUKICmdline` is set to `false`.
+    Either upgrade with `talosctl upgrade --legacy`, which still applies them, or migrate to the UKI command line as described above.
+    See [Upgrading Talos Linux](../../configure-your-talos-cluster/lifecycle-management/upgrading-talos) for details.
+</Warning>

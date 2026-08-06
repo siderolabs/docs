@@ -118,6 +118,25 @@ The `--reboot-mode` flag now supports three values: `default`, `powercycle`, and
 > The legacy upgrade flags (`--force`, `--insecure`, `--preserve`, `--stage`) are deprecated and will be removed in Talos 1.18.
 > These flags are only used when falling back to the legacy `MachineService.Upgrade` API for older Talos versions.
 
+<Warning>
+    **Known limitation: `.machine.install.extraKernelArgs` is not applied by the new upgrade API**
+
+    The new upgrade API does not pass `.machine.install.extraKernelArgs` to the installer, so a GRUB node with `.machine.install.grubUseUKICmdline` set to `false` gets a `grub.cfg` written without those arguments.
+    The upgrade succeeds and reports no error, but the node reboots with a kernel command line that no longer matches its machine configuration.
+
+    `grubUseUKICmdline` defaults to `false` for machine configurations generated before Talos v1.12, so existing GRUB clusters are affected without opting in.
+
+    If you rely on `extraKernelArgs`, pick one of:
+
+    * **Upgrade with `--legacy`.** This uses the legacy `MachineService.Upgrade` API, which still applies `extraKernelArgs`: `talosctl upgrade --nodes 10.20.30.40 --legacy --image <installer-image>`.
+      The legacy API is supported until Talos 1.18, so treat this as a stopgap rather than a permanent arrangement.
+    * **Migrate to the UKI command line.** Build the arguments into the UKI when generating [boot assets](../../platform-specific-installations/boot-assets), then set `grubUseUKICmdline: true` and remove `extraKernelArgs` from the machine configuration.
+      This is the recommended option, and the only one that keeps working past Talos 1.18.
+
+    Nodes booting with `systemd-boot`, and GRUB nodes with `grubUseUKICmdline` set to `true`, are unaffected: in both cases the kernel command line comes from the UKI rather than from `extraKernelArgs`.
+    See [Boot Loader](../../platform-specific-installations/bare-metal-platforms/bootloader) for details.
+</Warning>
+
 ## Machine configuration changes
 
 * [VolumeConfig](../../reference/configuration/block/volumeconfig) and [UserVolumeConfig](../../reference/configuration/block/uservolumeconfig) now support negative byte sizes and percentages to specify space left on the disk
