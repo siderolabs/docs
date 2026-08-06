@@ -1,181 +1,182 @@
 ---
-title: "Multus CNI"
-description: "A brief instruction on how to use Multus on Talos Linux"
+title: "Deploy Multus CNI"
+description: "Learn how to install and configure Multus CNI on Talos Linux to attach multiple network interfaces to a pod."
 ---
 
 [Multus CNI](https://github.com/k8snetworkplumbingwg/multus-cni) is a container network interface (CNI) plugin for Kubernetes that enables attaching multiple network interfaces to pods.
-Typically, in Kubernetes each pod only has one network interface (apart from a loopback) -- with Multus you can create a multi-homed pod that has multiple interfaces.
+Typically, in Kubernetes each pod only has one network interface (apart from a loopback). With Multus, you can create a multi-homed pod that has multiple interfaces.
 This is accomplished by Multus acting as a "meta-plugin", a CNI plugin that can call multiple other CNI plugins.
 
-## Installation
+This guide covers:
 
-Multus can be deployed by simply applying the `thick` `DaemonSet` with `kubectl`.
+- **Install and configure Multus for Talos**: The upstream Multus DaemonSet assumes a network namespace path that doesn't match Talos's filesystem layout, so it needs a Talos-specific patch before pod networking will work correctly.
+- **Configure a multi-homed pod**: Define a NetworkAttachmentDefinition and attach it to a pod, giving it a second network interface. This is the actual point of installing Multus.
+- **Known issues**: Current upstream bugs and their workarounds.
+- **Compatibility notes**: What changes when running Multus alongside KubeVirt or Cilium.
 
-```bash
-kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/master/deployments/multus-daemonset-thick.yml
-```
+## Install and configure Multus for Talos
 
-This will create a `DaemonSet` and a CRD: `NetworkAttachmentDefinition`.
-This can be used to specify your network configuration.
+1. Deploy the `thick` DaemonSet with `kubectl`:
 
-## Configuration
+   ```bash
+   kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/master/deployments/multus-daemonset-thick.yml
+   ```
 
-### Patching the `DaemonSet`
+   This creates a DaemonSet and a CRD, `NetworkAttachmentDefinition`, which you'll use to specify your network configuration in [Configure a multi-homed pod](#configure-a-multi-homed-pod).
 
-For Multus to properly work with Talos a change needs to be made to the `DaemonSet`.
-Instead of mounting the volume called `host-run-netns` on `/run/netns` it has to be mounted on `/var/run/netns`.
+2. Patch the DaemonSet for Talos. The upstream manifest mounts the `host-run-netns` volume at `/run/netns`, but Talos mounts network namespaces at `/var/run/netns` instead, so edit the DaemonSet and change the volume path:
 
-Edit the `DaemonSet` and change the volume `host-run-netns` from `/run/netns` to `/var/run/netns`.
+   ```yaml
+   ...
+           - name: host-run-netns
+             hostPath:
+               path: /var/run/netns/
+   ```
 
-```yaml
-...
-        - name: host-run-netns
-          hostPath:
-            path: /var/run/netns/
-```
+<Warning>
+Skipping this patch leaves your cluster crippled. Existing pods keep running, but new pods and deployments fail to schedule.
+</Warning>
 
-Failing to do so will leave your cluster crippled.
-Running pods will remain running but new pods and deployments will give you the following error in the events:
+   The failure surfaces in the pod's events as:
 
-```text
-  Normal   Scheduled               3s    default-scheduler  Successfully assigned virtualmachines/samplepod to virt2
-  Warning  FailedCreatePodSandBox  3s    kubelet            Failed to create pod sandbox: rpc error: code = Unknown desc = failed to setup network for sandbox "3a6a58386dfbf2471a6f86bd41e4e9a32aac54ccccd1943742cb67d1e9c58b5b": plugin type="multus-shim" name="multus-cni-network" failed (add): CmdAdd (shim): CNI request failed with status 400: 'ContainerID:"3a6a58386dfbf2471a6f86bd41e4e9a32aac54ccccd1943742cb67d1e9c58b5b" Netns:"/var/run/netns/cni-1d80f6e3-fdab-4505-eb83-7deb17431293" IfName:"eth0" Args:"IgnoreUnknown=1;K8S_POD_NAMESPACE=virtualmachines;K8S_POD_NAME=samplepod;K8S_POD_INFRA_CONTAINER_ID=3a6a58386dfbf2471a6f86bd41e4e9a32aac54ccccd1943742cb67d1e9c58b5b;K8S_POD_UID=8304765e-fd7e-4968-9144-c42c53be04f4" Path:"" ERRORED: error configuring pod [virtualmachines/samplepod] networking: [virtualmachines/samplepod/8304765e-fd7e-4968-9144-c42c53be04f4:cbr0]: error adding container to network "cbr0": DelegateAdd: cannot set "" interface name to "eth0": validateIfName: no net namespace /var/run/netns/cni-1d80f6e3-fdab-4505-eb83-7deb17431293 found: failed to Statfs "/var/run/netns/cni-1d80f6e3-fdab-4505-eb83-7deb17431293": no such file or directory
-': StdinData: {"capabilities":{"portMappings":true},"clusterNetwork":"/host/etc/cni/net.d/10-flannel.conflist","cniVersion":"0.3.1","logLevel":"verbose","logToStderr":true,"name":"multus-cni-network","type":"multus-shim"}
-```
+   ```text
+     Normal   Scheduled               3s    default-scheduler  Successfully assigned virtualmachines/samplepod to virt2
+     Warning  FailedCreatePodSandBox  3s    kubelet            Failed to create pod sandbox: rpc error: code = Unknown desc = failed to setup network for sandbox "3a6a58386dfbf2471a6f86bd41e4e9a32aac54ccccd1943742cb67d1e9c58b5b": plugin type="multus-shim" name="multus-cni-network" failed (add): CmdAdd (shim): CNI request failed with status 400: 'ContainerID:"3a6a58386dfbf2471a6f86bd41e4e9a32aac54ccccd1943742cb67d1e9c58b5b" Netns:"/var/run/netns/cni-1d80f6e3-fdab-4505-eb83-7deb17431293" IfName:"eth0" Args:"IgnoreUnknown=1;K8S_POD_NAMESPACE=virtualmachines;K8S_POD_NAME=samplepod;K8S_POD_INFRA_CONTAINER_ID=3a6a58386dfbf2471a6f86bd41e4e9a32aac54ccccd1943742cb67d1e9c58b5b;K8S_POD_UID=8304765e-fd7e-4968-9144-c42c53be04f4" Path:"" ERRORED: error configuring pod [virtualmachines/samplepod] networking: [virtualmachines/samplepod/8304765e-fd7e-4968-9144-c42c53be04f4:cbr0]: error adding container to network "cbr0": DelegateAdd: cannot set "" interface name to "eth0": validateIfName: no net namespace /var/run/netns/cni-1d80f6e3-fdab-4505-eb83-7deb17431293 found: failed to Statfs "/var/run/netns/cni-1d80f6e3-fdab-4505-eb83-7deb17431293": no such file or directory
+   ': StdinData: {"capabilities":{"portMappings":true},"clusterNetwork":"/host/etc/cni/net.d/10-flannel.conflist","cniVersion":"0.3.1","logLevel":"verbose","logToStderr":true,"name":"multus-cni-network","type":"multus-shim"}
+   ```
 
-As of March 21, 2025, Multus has a [bug](https://github.com/k8snetworkplumbingwg/multus-cni/issues/1221) in the `install-multus-binary` container that can lead to race problems after a node reboot.
-To prevent this issue, it is necessary to patch this container.
-Set the following command to the `install-multus-binary` container.
+## Configure a multi-homed pod
 
-```yaml
-      initContainers:
-        - name: install-multus-binary
-          command:
-            - "/usr/src/multus-cni/bin/install_multus"
-            - "-d"
-            - "/host/opt/cni/bin"
-            - "-t"
-            - "thick"
-```
+Installing Multus doesn't do anything on its own: A pod only gets a second network interface once you define a NetworkAttachmentDefinition and attach it to that pod.
 
-As of February 03, 2025, Multus has a [bug](https://github.com/k8snetworkplumbingwg/multus-cni/issues/1346) when deployed with the default resource limits. The issue can lead to primary CNI plugin getting OOM-killed in the kube-multus-ds DaemonSet pod because the 50Mi memory limit is too low. To mitigate this issue, increase the resource limits on the daemonset:
+1. Create a NetworkAttachmentDefinition. This configures the bridge that a pod's second interface attaches to:
 
-```yaml
-  resources:
-    limits:
-      cpu: 300m
-      memory: 150Mi
-    requests:
-      cpu: 200m
-      memory: 100Mi
-```
+   ```yaml
+   apiVersion: "k8s.cni.cncf.io/v1"
+   kind: NetworkAttachmentDefinition
+   metadata:
+     name: macvlan-conf
+   spec:
+     config: '{
+         "cniVersion": "0.3.0",
+         "type": "macvlan",
+         "master": "eth0",
+         "mode": "bridge",
+         "ipam": {
+           "type": "host-local",
+           "subnet": "192.168.1.0/24",
+           "rangeStart": "192.168.1.200",
+           "rangeEnd": "192.168.1.216",
+           "routes": [
+             { "dst": "0.0.0.0/0" }
+           ],
+           "gateway": "192.168.1.1"
+         }
+       }'
+   ```
 
-### Creating your `NetworkAttachmentDefinition`
+   This example uses `macvlan` as the bridge type. There are three types available:
 
-The `NetworkAttachmentDefinition` configuration is used to define your bridge where your second pod interface needs to be attached to.
+   - **`bridge`** connects two Ethernet segments together in a protocol-independent way. Packets are forwarded based on Ethernet address rather than IP address, so all protocols pass through transparently at Layer 2. For containers or VMs, a bridge connects each one's virtual interface to the host network, letting them communicate.
+   - **`macvlan`** creates virtual network interfaces that appear as distinct physical devices, each with its own MAC address. The underlying interface routes traffic to each virtual interface separately, so each macvlan interface can have its own IP subnet and routing. This suits containers or VMs that need the same network access as the host.
+   - **`ipvlan`** is similar to `macvlan`, but shares the parent's MAC address, which needs less configuration from the networking equipment. This is useful where MAC address control or limits are in place. It offers two modes: L2 (default, behaves like macvlan) and L3 (routing-based traffic isolation instead of bridged).
 
-```yaml
-apiVersion: "k8s.cni.cncf.io/v1"
-kind: NetworkAttachmentDefinition
-metadata:
-  name: macvlan-conf
-spec:
-  config: '{
-      "cniVersion": "0.3.0",
-      "type": "macvlan",
-      "master": "eth0",
-      "mode": "bridge",
-      "ipam": {
-        "type": "host-local",
-        "subnet": "192.168.1.0/24",
-        "rangeStart": "192.168.1.200",
-        "rangeEnd": "192.168.1.216",
-        "routes": [
-          { "dst": "0.0.0.0/0" }
-        ],
-        "gateway": "192.168.1.1"
-      }
-    }'
-```
+   If you use the `bridge` type, also configure a bridge on your Talos nodes. Replace `<INTERFACE_NAME>` with your node's actual interface (for example, `eno1`):
 
-In this example `macvlan` is used as a bridge type.
-There are 3 types of bridges: `bridge`, `macvlan` and `ipvlan`:
+   ```yaml
+   machine:
+     network:
+       interfaces:
+         - interface: br0
+           addresses:
+             - 172.16.1.60/24
+           bridge:
+             stp:
+               enabled: true
+             interfaces:
+               - <INTERFACE_NAME>
+           routes:
+             - network: 0.0.0.0/0 # The route's network (destination).
+               gateway: 172.16.1.254 # The route's gateway (if empty, creates link scope route).
+               metric: 1024 # The optional metric for the route.
+   ```
 
-1. `bridge` is a way to connect two Ethernet segments together in a protocol-independent way.
-   Packets are forwarded based on Ethernet address, rather than IP address (like a router).
-   Since forwarding is done at Layer 2, all protocols can go transparently through a bridge.
-   In terms of containers or virtual machines, a bridge can also be used to connect the virtual interfaces of each container/VM to the host network, allowing them to communicate.
+   See the [Multus bridge documentation](https://github.com/k8snetworkplumbingwg/multus-cni/tree/master/docs) for more on configuring bridges.
 
-2. `macvlan` is a driver that makes it possible to create virtual network interfaces that appear as distinct physical devices each with unique MAC addresses.
-  The underlying interface can route traffic to each of these virtual interfaces separately, as if they were separate physical devices.
-  This means that each macvlan interface can have its own IP subnet and routing.
-  Macvlan interfaces are ideal for situations where containers or virtual machines require the same network access as the host system.
+2. Attach the NetworkAttachmentDefinition to a pod or deployment. Reference it by name in the pod's annotations:
 
-3. `ipvlan` is similar to `macvlan`, with the key difference being that ipvlan shares the parent's MAC address, which requires less configuration from the networking equipment.
-   This makes deployments simpler in certain situations where MAC address control or limits are in place.
-   It offers two operational modes: L2 mode (the default) where it behaves similarly to a MACVLAN, and L3 mode for routing based traffic isolation (rather than bridged).
+   ```yaml
+   apiVersion: v1
+   kind: Pod
+   metadata:
+     name: samplepod
+     annotations:
+       k8s.v1.cni.cncf.io/networks: macvlan-conf
+   spec:
+     containers:
+     - name: samplepod
+       command: ["/bin/ash", "-c", "trap : TERM INT; sleep infinity & wait"]
+       image: alpine
+   ```
 
-When using the `bridge` interface you must also configure a bridge on your Talos nodes.
-That can be done by updating Talos Linux machine configuration:
+## Known issues
 
-```yaml
-machine:
-    network:
-      interfaces:
-      - interface: br0
-        addresses:
-          - 172.16.1.60/24
-        bridge:
-          stp:
-            enabled: true
-          interfaces:
-              - eno1 # This must be changed to your matching interface name
-        routes:
-            - network: 0.0.0.0/0 # The route's network (destination).
-              gateway: 172.16.1.254 # The route's gateway (if empty, creates link scope route).
-              metric: 1024 # The optional metric for the route.
-```
+The following are known issues when running Multus on Talos Linux. Each entry includes a workaround where one exists; these are pinned to the date they were last verified, so check the linked issue for current status before relying on them.
 
-More information about the configuration of bridges can be found [here](https://github.com/k8snetworkplumbingwg/multus-cni/tree/master/docs)
+- **`install-multus-binary` race condition after reboot** (last verified March 21, 2025): A [known bug](https://github.com/k8snetworkplumbingwg/multus-cni/issues/1221) in the `install-multus-binary` container can cause race problems after a node reboot. Patch the container's command:
 
-## Attaching the `NetworkAttachmentDefinition` to your `Pod` or `Deployment`
+  ```yaml
+        initContainers:
+          - name: install-multus-binary
+            command:
+              - "/usr/src/multus-cni/bin/install_multus"
+              - "-d"
+              - "/host/opt/cni/bin"
+              - "-t"
+              - "thick"
+  ```
 
-After the `NetworkAttachmentDefinition` is configured, you can attach that interface to your `Deployment` or `Pod`.
-In this example we use a pod:
+- **Primary CNI plugin OOM-killed** (last verified February 3, 2025): The default 50Mi memory limit on the `kube-multus-ds` DaemonSet is too low, which can [OOM-kill the primary CNI plugin](https://github.com/k8snetworkplumbingwg/multus-cni/issues/1346). Increase the resource limits on the DaemonSet's container:
 
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: samplepod
-  annotations:
-    k8s.v1.cni.cncf.io/networks: macvlan-conf
-spec:
-  containers:
-  - name: samplepod
-    command: ["/bin/ash", "-c", "trap : TERM INT; sleep infinity & wait"]
-    image: alpine
-```
+  ```yaml
+    resources:
+      limits:
+        cpu: 300m
+        memory: 150Mi
+      requests:
+        cpu: 200m
+        memory: 100Mi
+  ```
 
-## Notes on using KubeVirt in combination with Multus
+- **ARM64 images built incorrectly** (last verified July 29, 2024): The [official Multus images](https://github.com/k8snetworkplumbingwg/multus-cni/issues/1251) are built incorrectly for ARM64. Self-building the image is an adequate workaround for now.
 
-If you would like to use KubeVirt and expose your virtual machine to the outside world with Multus, make sure to configure a `bridge` instead of `macvlan` or `ipvlan`, because that doesn't work, according to the KubeVirt [Documentation](https://kubevirt.io/user-guide/virtual_machines/interfaces_and_networks/#invalid-cnis-for-secondary-networks).
+## Compatibility notes
 
-> Invalid CNIs for secondary networks
-> The following list of CNIs is known not to work for bridge interfaces - which are most common for secondary interfaces.
->
-> * macvlan
-> * ipvlan
->
-> The reason is similar: the bridge interface type moves the pod interface MAC address to the VM, leaving the pod interface with a different address.
-> The aforementioned CNIs require the pod interface to have the original MAC address.
+Running Multus alongside certain other tools requires extra configuration. This section covers KubeVirt and Cilium specifically. If you're not using either, you can skip it.
 
-## Notes on using Cilium in combination with Multus
+### Using Multus with KubeVirt
 
-### CNI reference plugins
+If you want to use KubeVirt and expose a virtual machine to the outside world with Multus, configure the `bridge` type instead of `macvlan` or `ipvlan`; neither works for this case.
 
-Cilium does not ship the CNI reference plugins, which most multus setups are expecting (e.g. macvlan).
-This can be addressed by extending the daemonset with an additional init-container, setting them up, e.g. using the following kustomize strategic-merge patch:
+<Note>
+The KubeVirt documentation lists `macvlan` and `ipvlan` as invalid CNIs for secondary networks using a bridge interface, since a bridge interface moves the pod interface's MAC address to the VM, leaving the pod interface with a different address, but `macvlan` and `ipvlan` require the pod interface to keep its original MAC address.
+</Note>
+
+See the [KubeVirt documentation](https://kubevirt.io/user-guide/virtual_machines/interfaces_and_networks/#invalid-cnis-for-secondary-networks) for details.
+
+### Using Cilium with Multus
+
+Cilium needs two adjustments to work correctly alongside Multus.
+
+#### Missing CNI reference plugins (Talos < v1.8)
+
+Cilium doesn't ship the CNI reference plugins that most Multus setups expect (for example, `macvlan`).
+
+<Note>
+Starting with Talos v1.8, the essential CNI plugins are bundled with Talos Linux itself, so Multus and most CNIs work with Talos's bundled plugins out of the box. You generally don't need the `siderolabs/install-cni` image below anymore; it's kept here for historical context and for cases with a custom plugin requirement. For additional or custom CNI plugins, use the official upstream builds or build your own plugin image and deploy it with a DaemonSet. CNI plugins are distributed as static binaries, so they're generally compatible across Talos versions.
+</Note>
+
+If you're on an older Talos version, or need a custom plugin, extend the DaemonSet with an additional init container using a kustomize strategic-merge patch. Replace `<TALOS_VERSION>` with your Talos version:
 
 ```yaml
 apiVersion: apps/v1
@@ -189,7 +190,7 @@ spec:
       initContainers:
       - command:
         - /install-cni.sh
-        image: ghcr.io/siderolabs/install-cni:v1.7.0  # adapt to your talos version
+        image: ghcr.io/siderolabs/install-cni:<TALOS_VERSION>
         name: install-cni
         securityContext:
           privileged: true
@@ -199,33 +200,6 @@ spec:
           name: cnibin
 ```
 
-#### Updates on the `install-cni` image.
+#### Exclusive CNI
 
-In earlier Talos versions, an image called `siderolabs/install-cni` was required to provide the standard [CNI reference plugins](https://www.cni.dev/plugins/current/).
-This image has since been deprecated.
-
-Starting with Talos v1.8, the essential CNI plugins are already bundled with Talos Linux itself.
-This means you generally do not need to use `siderolabs/install-cni` anymore.
-
-Multus and most CNIs should work with the plugins shipped in Talos out of the box.
-
-If you need additional or custom CNI plugins that are not included, you can:
-
-* Use the official upstream builds, or
-* Build your own plugin image and deploy it with a DaemonSet
-
-Since CNI plugins are distributed as static binaries, they are generally compatible across Talos versions.
-
-The references to `siderolabs/install-cni` in this guide remain for historical context and compatibility examples, but new deployments should rely on the bundled plugins in Talos unless a custom requirement exists.
-
-### Exclusive CNI
-
-By default, Cilium is an exclusive CNI, meaning it removes other CNI configuration files.
-However, when using Multus, this behavior needs to be disabled.
-To do so, set the Helm variable `cni.exclusive=false`.
-For more information, refer to the [Cilium documentation](https://docs.cilium.io/en/stable/network/kubernetes/configuration/#adjusting-cni-configuration).
-
-## Notes on ARM64 nodes
-
-The official images (as of 29.07.24) are built incorrectly for ARM64 ([ref](https://github.com/k8snetworkplumbingwg/multus-cni/issues/1251)).
-Self-building them is an adequate workaround for now.
+By default, Cilium is an exclusive CNI: It removes other CNI configuration files. When using Multus, disable this by setting the Helm variable `cni.exclusive=false`. See the [Cilium documentation](https://docs.cilium.io/en/stable/network/kubernetes/configuration/#adjusting-cni-configuration) for more.

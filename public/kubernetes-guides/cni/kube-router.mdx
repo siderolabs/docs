@@ -5,80 +5,147 @@ description: "In this guide you will learn how to set up kube-router CNI on Talo
 
 import { k8s_release } from '/snippets/custom-variables.mdx';
 
-[kube-router](https://www.kube-router.io/) is a turnkey solution for Kubernetes networking that provides pod networking, network policy enforcement, and service proxy using Linux kernel technologies (BGP, IPVS, IPTables, and eBPF).
+[kube-router](https://www.kube-router.io/) is a turnkey CNI (Container Network Interface) solution for Kubernetes networking that provides pod networking, network policy enforcement, and service proxy using Linux kernel technologies (BGP, IPVS, IPTables, and eBPF).
 
-## Machine configuration preparation
+## Install kube-router CNI
 
-When generating the machine config for a node, set the CNI to none and disable the default kube-proxy since kube-router replaces it.
-
-```bash
-cat <<EOF > patch.yaml
-cluster:
-  network:
-    cni:
-      name: none
-  proxy:
-    disabled: true
-EOF
-```
-
-```bash
-talosctl gen config \
-    my-cluster https://mycluster.local:6443 \
-    --config-patch @patch.yaml
-```
-
-If you want to use kube-router alongside kube-proxy instead of replacing it, omit `proxy.disabled: true` from the patch and set `kubeRouter.run_router=--run-service-proxy=false` in the kube-router DaemonSet arguments.
-
-## Installation
+Choose the tab that matches how you manage your cluster.
 
 <Tabs>
-<Tab title="Omni">
+  <Tab title="Manifest install">
 
-If you are using [Omni](https://www.siderolabs.com/platform/saas-for-kubernetes/), you can deploy kube-router using the [manifest sync](../../omni/cluster-management/sync-kubernetes-manifests) feature in a cluster template.
+kube-router can replace kube-proxy entirely, or run alongside it. Choose the tab that matches how you want to run it.
 
-**Step 1.** Download the kube-router manifest:
+<Tabs>
+  <Tab title="With kube-proxy">
 
-```bash
-curl -Lo kube-router.yaml https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter-all-features.yaml
-```
+1. Create a patch file that disables the default CNI. This keeps kube-proxy running, and uses kube-router for pod networking and network policies only:
 
-**Step 2.** Reference the manifest in your Omni cluster template using the `file` field:
+   ```bash
+   cat <<EOF > patch.yaml
+   cluster:
+     network:
+       cni:
+         name: none
+   EOF
+   ```
+
+2. Replace `<CLUSTER_NAME>` with a name for your cluster and `<CLUSTER_ENDPOINT>` with your control plane endpoint, then generate the machine config:
+
+   ```bash
+   talosctl gen config \
+       <CLUSTER_NAME> <CLUSTER_ENDPOINT> \
+       --config-patch @patch.yaml
+   ```
+
+<Note>
+After applying the machine config and bootstrapping, Talos will appear to hang at phase 18/19 with the message `retrying error: node not ready`. This is expected — nodes are only marked ready once a CNI is running. You have about 10 minutes to apply kube-router before the node reboots to retry.
+</Note>
+
+3. During this window, deploy kube-router:
+
+   ```bash
+   kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter.yaml
+   ```
+
+   After kube-router is installed, the boot process continues and completes.
+
+  </Tab>
+  <Tab title="Without kube-proxy">
+
+1. Create a patch file that disables the default CNI and kube-proxy — kube-router replaces both:
+
+   ```bash
+   cat <<EOF > patch.yaml
+   cluster:
+     network:
+       cni:
+         name: none
+     proxy:
+       disabled: true
+   EOF
+   ```
+
+2. Replace `<CLUSTER_NAME>` with a name for your cluster and `<CLUSTER_ENDPOINT>` with your control plane endpoint, then generate the machine config:
+
+   ```bash
+   talosctl gen config \
+       <CLUSTER_NAME> <CLUSTER_ENDPOINT> \
+       --config-patch @patch.yaml
+   ```
+
+<Note>
+After applying the machine config and bootstrapping, Talos will appear to hang at phase 18/19 with the message `retrying error: node not ready`. This is expected — nodes are only marked ready once a CNI is running. You have about 10 minutes to apply kube-router before the node reboots to retry.
+</Note>
+
+3. During this window, deploy kube-router with all features (pod networking, network policies, and service proxy):
+
+   ```bash
+   kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter-all-features.yaml
+   ```
+
+   After kube-router is installed, the boot process continues and completes.
+
+  </Tab>
+</Tabs>
+
+  </Tab>
+  <Tab title="Omni">
+
+If you are using [Omni](https://www.siderolabs.com/platform/saas-for-kubernetes/), deploy kube-router using the [manifest sync](../../omni/cluster-management/sync-kubernetes-manifests) feature.
+
+kube-router can replace kube-proxy entirely, or run alongside it. Choose the tab that matches how you want to run it.
+
+<Tabs>
+  <Tab title="With kube-proxy">
+
+1. Download the kube-router manifest:
+
+   ```bash
+   curl -Lo kube-router.yaml https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter.yaml
+   ```
+
+2. Reference the manifest in your Omni cluster template using the `file` field. The template's `patches` block disables the default CNI and leaves kube-proxy running:
+
+<CodeBlock lang="yaml">
+  {`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: kube-router\n      file: kube-router.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni\n    inline:\n      cluster:\n        network:\n          cni:\n            name: none\n...\n# Include machines for template`}
+</CodeBlock>
+
+3. Apply the cluster template:
+
+   ```bash
+   omnictl cluster template sync --file cluster-template.yaml
+   ```
+
+   Omni waits until the Kubernetes API is available and the cluster is healthy before applying the kube-router manifest. See [Sync Kubernetes manifests](../../omni/cluster-management/sync-kubernetes-manifests) for more on manifest sync modes and status monitoring.
+
+  </Tab>
+  <Tab title="Without kube-proxy">
+
+1. Download the kube-router manifest:
+
+   ```bash
+   curl -Lo kube-router.yaml https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter-all-features.yaml
+   ```
+
+2. Reference the manifest in your Omni cluster template using the `file` field. The template's `patches` block disables the default CNI and kube-proxy:
 
 <CodeBlock lang="yaml">
   {`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: kube-router\n      file: kube-router.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni-and-proxy\n    inline:\n      cluster:\n        network:\n          cni:\n            name: none\n        proxy:\n          disabled: true\n...\n# Include machines for template`}
 </CodeBlock>
 
-**Step 3.** Apply the cluster template:
+3. Apply the cluster template:
 
-```bash
-omnictl cluster template sync --file cluster-template.yaml
-```
+   ```bash
+   omnictl cluster template sync --file cluster-template.yaml
+   ```
 
-Omni will wait until the Kubernetes API is available and the cluster is healthy before applying the kube-router manifests. See [Sync Kubernetes Manifests](../../omni/cluster-management/sync-kubernetes-manifests) for more details on manifest sync modes and status monitoring.
+   Omni waits until the Kubernetes API is available and the cluster is healthy before applying the kube-router manifest. See [Sync Kubernetes manifests](../../omni/cluster-management/sync-kubernetes-manifests) for more on manifest sync modes and status monitoring.
 
-</Tab>
-<Tab title="Manifest install">
+  </Tab>
+</Tabs>
 
-After applying the machine config and bootstrapping, Talos will appear to hang on phase 18/19 with the message: retrying error: node not ready.
-This happens because nodes in Kubernetes are only marked as ready once the CNI is up.
-As there is no CNI defined, the boot process is pending and will reboot the node to retry after 10 minutes, this is expected behavior.
-
-**Step 1.** During this window, deploy kube-router with all features (pod networking, network policies, and service proxy) by applying the upstream manifest:
-
-```bash
-kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter-all-features.yaml
-```
-
-After kube-router is installed the boot process should continue and complete successfully.
-
-If you only want kube-router for pod networking and network policies (keeping kube-proxy for service proxy), use the following manifest instead and do **not** disable kube-proxy in your machine config:
-
-```bash
-kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter.yaml
-```
-
-</Tab>
+  </Tab>
 </Tabs>
 
 ## Cleanup of kube-proxy

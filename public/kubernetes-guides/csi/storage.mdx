@@ -22,16 +22,18 @@ Sidero Labs recommends having separate disks (separate from the Talos install di
 
 Redundancy, scaling capabilities, reliability, speed, maintenance load, and ease of use are all factors you must consider when managing your own storage.
 
-Running a storage cluster can be a very good choice when managing your own storage.
+Running a storage cluster can be a very good choice.
 The following projects are known to work with Talos Linux and provide good options, depending on your situation.
-
-- **Mayastor**: Ultra-low latency and high-performance workloads.
 
 - **Longhorn**: Simple, reliable, easy-to-use Kubernetes storage with easy replication and snapshots.
 
+- **Rook/Ceph**: Enterprise-scale, distributed, multi-tenant storage (block, file, and object storage).
+
 - **SeaweedFS**: Lightweight S3-compatible distributed storage with RWX support.
 
-- **Rook/Ceph**: Enterprise-scale, distributed, multi-tenant storage (block, file, and object storage).
+- **Mayastor**: Ultra-low latency and high-performance workloads.
+
+- **Piraeus / LINSTOR**: Replicated block storage built on LINSTOR and DRBD, with low overhead.
 
 Also, if you need _both_ mount-once _and_ mount-many capabilities, Ceph is your answer.
 
@@ -67,14 +69,14 @@ There are very good tools for inspection and debugging, but this is still freque
 
 ### OpenEBS Mayastor replicated storage
 
-[Mayastor](https://github.com/openebs/Mayastor) is an OpenEBS project built in Rust utilizing the modern NVMEoF system.
+[Mayastor](https://github.com/openebs/Mayastor) is an OpenEBS project built in Rust utilizing the modern NVMEoF system. It has its own installation guide, but needs a couple of Talos-specific adjustments first.
 
-#### Deploy Mayastor
+#### Configure Mayastor for Talos
 
-Mayastor has documentation specific to installing on Talos Linux in their official [documentation](https://openebs.io/docs/Solutioning/openebs-on-kubernetes-platforms/talos)
+Mayastor has documentation specific to installing on Talos Linux in their official [documentation](https://openebs.io/docs/Solutioning/openebs-on-kubernetes-platforms/talos).
 
 Installing on Talos Linux requires patching the Pod Security policies, enabling Huge Page support, and labels.
-This is all covered in the Mayastor documentation,
+This is all covered in the Mayastor documentation.
 
 We need to disable the init container that checks for the `nvme_tcp` module, since Talos has that module built-in.
 
@@ -107,55 +109,53 @@ Follow the Post-Installation from official [documentation](https://openebs.io/do
 
 [Piraeus](https://piraeus.io/) is a Kubernetes storage solution built on top of [LINSTOR](https://linbit.com/drbd/) and DRBD. It provides replicated block storage with low overhead and is a solid choice for clusters where performance and reliability matter. To use it with Talos, you will also need the [DRBD extension](https://github.com/siderolabs/extensions#storage).
 
-#### Install Piraeus Operator V2
+Follow these steps to install the Piraeus Operator and create a storage pool:
 
-Piraeus maintains a dedicated how-to guide for Talos that covers the full installation process, including the necessary Talos-specific configuration. Follow it [here](https://piraeus.io/docs/stable/how-to/talos/) before proceeding.
+1. To install the Piraeus Operator V2, follow Piraeus's dedicated [how-to guide for Talos](https://piraeus.io/docs/stable/how-to/talos/), which covers the full installation process, including the necessary Talos-specific configuration.
 
-#### Create a storage pool and PVC
+2. Install the `linstor` plugin for `kubectl`, which you'll need to manage storage resources. Install it directly from the [kubectl-linstor repository](https://github.com/piraeusdatastore/kubectl-linstor), or via [krew](https://krew.sigs.k8s.io/):
 
-Once the operator is installed, you will need the `linstor` plugin for `kubectl` to manage storage resources. Install it directly from the [kubectl-linstor repository](https://github.com/piraeusdatastore/kubectl-linstor), or via [krew](https://krew.sigs.k8s.io/):
+   ```bash
+   kubectl krew install linstor
+   ```
 
-```sh
-kubectl krew install linstor
-```
+3. With the plugin in place, create a device pool on a blank disk (one with no existing partition table) on your target node:
 
-With the plugin in place, create a device pool on a blank disk (one with no existing partition table) on your target node:
+   ```bash
+   kubectl linstor physical-storage create-device-pool \
+     --pool-name nvme_lvm_pool LVM node01 /dev/nvme0n1 \
+     --storage-pool nvme_pool
+   ```
 
-```sh
-kubectl linstor physical-storage create-device-pool \
-  --pool-name nvme_lvm_pool LVM node01 /dev/nvme0n1 \
-  --storage-pool nvme_pool
-```
+4. Define a StorageClass that uses the pool you just created. Run the following command to generate a `piraeus-sc.yml` file containing the StorageClass definition:
 
-Next, define a StorageClass that uses the pool you just created. Run the following command to generate a `piraeus-sc.yml` file containing the StorageClass definition:
+   ```bash
+   cat <<EOF > piraeus-sc.yml
+   apiVersion: storage.k8s.io/v1
+   kind: StorageClass
+   metadata:
+     name: simple-nvme
+   parameters:
+     csi.storage.k8s.io/fstype: xfs
+     linstor.csi.linbit.com/autoPlace: "3"
+     linstor.csi.linbit.com/storagePool: nvme_pool
+   provisioner: linstor.csi.linbit.com
+   volumeBindingMode: WaitForFirstConsumer
+   EOF
+   ```
 
-```bash
-cat <<EOF > piraeus-sc.yml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: simple-nvme
-parameters:
-  csi.storage.k8s.io/fstype: xfs
-  linstor.csi.linbit.com/autoPlace: "3"
-  linstor.csi.linbit.com/storagePool: nvme_pool
-provisioner: linstor.csi.linbit.com
-volumeBindingMode: WaitForFirstConsumer
-EOF
-```
+   Then apply it:
 
-Then apply it:
-
-```sh
-kubectl apply -f piraeus-sc.yml
-```
+   ```bash
+   kubectl apply -f piraeus-sc.yml
+   ```
 
 ## NFS
 
 NFS is slow, has all kinds of bottlenecks involving contention, distributed locking, single points of service, and more.
 However, it is supported by a wide variety of systems, such as NetApp storage arrays.
 
-The NFS client is part of the [`kubelet` image](https://github.com/talos-systems/kubelet) maintained by the Talos team.
+The NFS client is part of the [`kubelet` image](https://github.com/siderolabs/kubelet) maintained by the Talos team.
 This means that the version installed in your running `kubelet` is the version of NFS supported by Talos.
 You can reduce some of the contention problems by parceling Persistent Volumes from separate underlying directories.
 
@@ -169,7 +169,7 @@ Pod a large Persistent Volume to serve your object store.
 
 One of the most popular open source add-on object stores is [MinIO](https://min.io/).
 
-## Others (iSCSI)
+## iSCSI
 
 The most common remaining systems involve iSCSI in one form or another.
 iSCSI in Linux is facilitated by [open-iscsi](https://github.com/open-iscsi/open-iscsi).
