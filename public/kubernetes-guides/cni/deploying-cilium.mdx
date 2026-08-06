@@ -30,7 +30,7 @@ Talos Linux has specific requirements that apply regardless of which installatio
 
 ### Machine configuration prerequisites
 
-In addition to the above prerequisites, the Cilium CLI and Helm methods all require that you first configure your machine with CNI set to `none`. Set this before bootstrapping.
+In addition to the above prerequisites, the **Cilium CLI** and **Helm** methods all require that you first configure your machine with CNI set to `none`. Set this before bootstrapping.
 
 To do that:
 
@@ -106,7 +106,11 @@ talosctl gen config \
 </Tab>
 </Tabs>
 
-<Note> After applying the machine config with CNI set to `none` and bootstrapping, Talos will appear to hang at phase 18/19 with the message `retrying error: node not ready`. This is expected, nodes are only marked ready once a CNI is running. You have approximately 10 minutes to apply Cilium before the node reboots to retry.</Note>
+<Note>
+  Things to note:
+    - This step applies only to the Helm and Cilium CLI methods, if you're using Omni, skip it. The CNI-disable patch for Omni clusters is applied via the cluster template in [Method 1](#method-1-omni-manifest-sync) instead.
+    - After bootstrapping, Talos will hang at phase 18/19 with `retrying error: node not ready` — expected, since nodes aren't marked ready until a CNI is running. You have about 10 minutes to apply Cilium before the node retries.
+</Note>
 
 ## Method 1: Omni manifest sync
 

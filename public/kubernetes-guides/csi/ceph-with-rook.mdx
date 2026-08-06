@@ -7,262 +7,216 @@ aliases:
 
 import { version } from '/snippets/custom-variables.mdx';
 
-## Preparation
+This guide walks through deploying a Ceph storage cluster on Talos Linux using [Rook](https://rook.io), the Kubernetes operator that manages Ceph so you don't have to run it by hand.
 
-Talos Linux reserves an entire disk for the OS installation, so machines with multiple available disks are needed for a reliable Ceph cluster with Rook and Talos Linux.
-Rook requires that the block devices or partitions used by Ceph have no partitions or formatted filesystems before use.
-Rook also requires a minimum Kubernetes version of `v1.16` and Helm `v3.0` for installation of charts.
-It is highly recommended that the [Rook Ceph overview](https://rook.io/docs/rook/v1.8/ceph-storage.html) is read and understood before deploying a Ceph cluster with Rook.
+Ceph's actual storage work is done by **OSDs** (Object Storage Daemons) — one OSD per disk, each responsible for writing, replicating, and reporting on the data on that disk. Ceph's total capacity is the sum of its OSDs: mons and the manager keep the cluster coordinated, but no OSDs means no usable storage. Every spare disk mentioned in this guide becomes an OSD.
 
-## Installation
+## Prerequisites
 
-Creating a Ceph cluster with Rook requires two steps; first the Rook Operator needs to be installed which can be done with a Helm Chart.
-The example below installs the Rook Operator into the `rook-ceph` namespace, which is the default for a Ceph cluster with Rook.
+Before deploying, make sure your cluster and machines meet the following:
 
-```shell
-$ helm repo add rook-release https://charts.rook.io/release
-"rook-release" has been added to your repositories
+- Talos Linux reserves an entire disk for the OS installation, so you need machines with at least one additional, unused disk for Ceph to use. Only nodes with a spare disk can host an OSD, Rook will not create one on a node without unused storage.
+- The block devices or partitions Ceph will use must have no existing partitions or formatted filesystems.
+- A supported Kubernetes version. Current Rook (v1.20.x) supports Kubernetes `v1.31` through `v1.36`, check the [Rook compatibility matrix](https://rook.io/docs/rook/latest/Getting-Started/Prerequisites/prerequisites/) for the version you're installing, since this range shifts with each Rook release.
+- Helm `v3`.
+- Enough non-control-plane nodes for your mon count. Rook runs 3 mons by default, one per node, and control-plane nodes are tainted against them, plan for at least 3 worker nodes, or see the mon quorum note under step 5 for smaller clusters.
+- Headroom for the CSI driver stack. On top of the mons, the CSI drivers (RBD, CephFS, NFS, NVMe-oF) add real overhead. Since an OSD pod can only run on the node holding its disk, it has nowhere to go if that node is already full.
+- Read the [Rook Ceph overview](https://rook.io/docs/rook/latest/Getting-Started/intro/) before deploying, Ceph is a large system, and the overview explains concepts this guide doesn't repeat.
 
-$ helm install --create-namespace --namespace rook-ceph rook-ceph rook-release/rook-ceph
-W0327 17:52:44.277830   54987 warnings.go:70] policy/v1beta1 PodSecurityPolicy is deprecated in v1.21+, unavailable in v1.25+
-W0327 17:52:44.612243   54987 warnings.go:70] policy/v1beta1 PodSecurityPolicy is deprecated in v1.21+, unavailable in v1.25+
-NAME: rook-ceph
-LAST DEPLOYED: Sun Mar 27 17:52:42 2022
-NAMESPACE: rook-ceph
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-The Rook Operator has been installed. Check its status by running:
-  kubectl --namespace rook-ceph get pods -l "app=rook-ceph-operator"
+## Install Rook and create a Ceph cluster
 
-Visit https://rook.io/docs/rook/latest for instructions on how to create and configure Rook clusters
+Current Rook installs in three parts: the operator, the Ceph-CSI drivers, and the cluster itself.
 
-Important Notes:
-- You must customize the 'CephCluster' resource in the sample manifests for your cluster.
-- Each CephCluster must be deployed to its own namespace, the samples use `rook-ceph` for the namespace.
-- The sample manifests assume you also installed the rook-ceph operator in the `rook-ceph` namespace.
-- The helm chart includes all the RBAC required to create a CephCluster CRD in the same namespace.
-- Any disk devices you add to the cluster in the 'CephCluster' must be empty (no filesystem and no partitions).
+1. Add the Rook Helm repository:
+
+   ```bash
+   helm repo add rook-release https://charts.rook.io/release
+   ```
+
+2. Install the Rook Operator into the `rook-ceph` namespace:
+
+   ```bash
+   helm install --create-namespace --namespace rook-ceph rook-ceph rook-release/rook-ceph
+   ```
+
+3. Label the `rook-ceph` namespace so its privileged pods (Ceph daemons need privileged access) aren't blocked by default Pod Security admission:
+
+   ```bash
+   kubectl label namespace rook-ceph pod-security.kubernetes.io/enforce=privileged
+   ```
+
+4. Install the Ceph-CSI drivers chart:
+
+   ```bash
+   helm repo add ceph-csi-operator https://ceph.github.io/ceph-csi-operator/
+   helm install --create-namespace --namespace rook-ceph ceph-csi-drivers ceph-csi-operator/ceph-csi-drivers
+   ```
+
+5. Install the Ceph cluster chart. The defaults will attempt to use all nodes and all unused disks in the cluster — see the [Rook cluster CRD documentation](https://rook.io/docs/rook/latest/CRDs/Cluster/ceph-cluster-crd/) for more specific node, device, and cluster configuration options.
+
+   ```bash
+   helm install --create-namespace --namespace rook-ceph rook-ceph-cluster --set operatorNamespace=rook-ceph rook-release/rook-ceph-cluster
+   ```
+
+   <Note>
+   If your cluster has fewer non-control-plane nodes than the default mon count (3), cluster creation will stall indefinitely with an event like:
+
+   ```
+   failed to perform validation before cluster creation: cannot start 3 mons on 2 node(s) when allowMultiplePerNode is false
+   ```
+
+   Relaxing this via `helm upgrade --set cephClusterSpec.mon.allowMultiplePerNode=true` will fail with a field-ownership conflict, since the operator's own reconciliation has already taken ownership of several `CephCluster` spec fields. Patch the resource directly instead:
+
+   ```bash
+   kubectl -n rook-ceph patch cephcluster rook-ceph --type merge -p '{"spec":{"mon":{"allowMultiplePerNode":true}}}'
+   ```
+
+   Note that this direct patch means the Helm release's recorded values will drift from the live `CephCluster` spec; a later `helm upgrade` on this release may hit the same conflict again.
+   </Note>
+
+## Verify the cluster
+
+The Rook operator needs time to bring the Ceph cluster online after the cluster chart is installed. Watch its progress:
+
+```bash
+kubectl --namespace rook-ceph get cephcluster rook-ceph --watch
 ```
 
-Default PodSecurity configuration prevents execution of privileged pods.
-Adding a label to the namespace will allow ceph to start.
+<Note>
+The `cephcluster` resource's `PHASE`/`MESSAGE` fields can lag noticeably behind what the operator is actually doing. For a more real-time view, check the operator's own logs:
 
-```shell
-kubectl label namespace rook-ceph pod-security.kubernetes.io/enforce=privileged
+```bash
+kubectl -n rook-ceph logs deploy/rook-ceph-operator --tail=30
 ```
 
-Once that is complete, the Ceph cluster can be installed with the official Helm Chart.
-The Chart can be installed with default values, which will attempt to use all nodes in the Kubernetes cluster, and all unused disks on each node for Ceph storage, and make available block storage, object storage, as well as a shared filesystem.
-Generally more specific node/device/cluster configuration is used, and the [Rook documentation](https://rook.io/docs/rook/v1.8/ceph-cluster-crd.html) explains all the available options in detail.
-For this example the defaults will be adequate.
+Storage classes (`ceph-block`, `ceph-bucket`, `ceph-filesystem`) are created by the Helm chart at install time, independent of cluster health — their presence does not confirm the cluster is actually ready. To check whether OSDs are genuinely up, look for OSD pods directly:
 
-```shell
-$ helm install --create-namespace --namespace rook-ceph rook-ceph-cluster --set operatorNamespace=rook-ceph rook-release/rook-ceph-cluster
-NAME: rook-ceph-cluster
-LAST DEPLOYED: Sun Mar 27 18:12:46 2022
-NAMESPACE: rook-ceph
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-The Ceph Cluster has been installed. Check its status by running:
-  kubectl --namespace rook-ceph get cephcluster
+```bash
+kubectl -n rook-ceph get pods -l app=rook-ceph-osd
+```
+</Note>
 
-Visit https://rook.github.io/docs/rook/latest/ceph-cluster-crd.html for more information about the Ceph CRD.
+Once the cluster reaches `HEALTH_OK`, the storage classes it creates are ready to use:
 
-Important Notes:
-- You can only deploy a single cluster per namespace
-- If you wish to delete this cluster and start fresh, you will also have to wipe the OSD disks using `sfdisk`
+```bash
+kubectl --namespace rook-ceph get cephcluster rook-ceph
+kubectl get storageclass
 ```
 
-Now the Ceph cluster configuration has been created, the Rook operator needs time to install the Ceph cluster and bring all the components online.
-The progression of the Ceph cluster state can be followed with the following command.
+## Maintain the cluster during Talos upgrades
 
-```shell
-$ watch kubectl --namespace rook-ceph get cephcluster rook-ceph
-Every 2.0s: kubectl --namespace rook-ceph get cephcluster rook-ceph
+By default, Rook configures Ceph with 3 `mon` instances, so the data in `dataDirHostPath` can be regenerated from the other mons. Even so, when performing maintenance on a Talos node running Rook (such as a Talos upgrade), take care to keep the Ceph cluster healthy throughout.
 
-NAME        DATADIRHOSTPATH   MONCOUNT   AGE   PHASE         MESSAGE                 HEALTH   EXTERNAL
-rook-ceph   /var/lib/rook     3          57s   Progressing   Configuring Ceph Mons
+Before upgrading a node, confirm the cluster is healthy:
+
+```bash
+kubectl --namespace rook-ceph get cephclusters.ceph.rook.io rook-ceph
 ```
 
-Depending on the size of the Ceph cluster and the availability of resources the Ceph cluster should become available, and with it the storage classes that can be used with Kubernetes Persistent Volumes.
+Only proceed if `HEALTH` reports `HEALTH_OK`. Upgrade one node at a time, and wait for the cluster to return to `HEALTH_OK` before touching the next node:
 
-```shell
-$ kubectl --namespace rook-ceph get cephcluster rook-ceph
-NAME        DATADIRHOSTPATH   MONCOUNT   AGE   PHASE   MESSAGE                        HEALTH      EXTERNAL
-rook-ceph   /var/lib/rook     3          40m   Ready   Cluster created successfully   HEALTH_OK
+<Tabs>
+  <Tab title="Talos-native">
 
-$ kubectl  get storageclass
-NAME                   PROVISIONER                     RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
-ceph-block (default)   rook-ceph.rbd.csi.ceph.com      Delete          Immediate           true                   77m
-ceph-bucket            rook-ceph.ceph.rook.io/bucket   Delete          Immediate           false                  77m
-ceph-filesystem        rook-ceph.cephfs.csi.ceph.com   Delete          Immediate           true                   77m
+```bash
+talosctl upgrade --nodes <node-ip> --image ghcr.io/siderolabs/installer:<talos-version>
 ```
 
-## Talos Linux considerations
+  </Tab>
+  <Tab title="Omni">
 
-By default, Rook configures Ceph to have 3 `mon` instances, in which case the data stored in `dataDirHostPath` can be regenerated from the other `mon` instances.
-So when performing maintenance on a Talos Linux node with a Rook Ceph cluster (e.g. upgrading the Talos Linux version), it is imperative that care be taken to maintain the health of the Ceph cluster.
-Before upgrading, you should always check the health status of the Ceph cluster to ensure that it is healthy.
+Omni manages Talos upgrades itself rather than through a direct `talosctl upgrade` call:
 
-```shell
-$ kubectl --namespace rook-ceph get cephclusters.ceph.rook.io rook-ceph
-NAME        DATADIRHOSTPATH   MONCOUNT   AGE   PHASE   MESSAGE                        HEALTH      EXTERNAL
-rook-ceph   /var/lib/rook     3          98m   Ready   Cluster created successfully   HEALTH_OK
+- For a cluster not managed by a template, open the cluster in the Omni UI and click **Update Talos** (or the version indicator), select the target version, and click **Upgrade**.
+- For a template-managed cluster, update the `talos.version` field in the cluster template and sync it:
+
+  ```bash
+  omnictl cluster template sync --file cluster-template.yaml
+  ```
+
+Omni performs the upgrade one node at a time and waits for each node to be healthy before continuing, which pairs well with the mon-health caution above.
+
+  </Tab>
+</Tabs>
+
+Wait for the cluster to report `HEALTH_OK` again before continuing to the next node:
+
+```bash
+kubectl --namespace rook-ceph wait --timeout=1800s --for=jsonpath='{.status.ceph.health}=HEALTH_OK' cephclusters.ceph.rook.io rook-ceph
 ```
 
-If it is, you can begin the upgrade process for the Talos Linux node, during which time the Ceph cluster will become unhealthy as the node is reconfigured.
-Before performing any other action on the Talos Linux nodes, the Ceph cluster must return to a healthy status.
+## Clean up
 
-```shell
-$ talosctl upgrade --nodes 172.20.15.5 --image ghcr.io/talos-systems/installer:v0.14.3
-NODE          ACK                        STARTED
-172.20.15.5   Upgrade request received   2022-03-27 20:29:55.292432887 +0200 CEST m=+10.050399758
+Cleaning up a Rook Ceph deployment happens in two stages: removing the Ceph cluster itself, then removing the metadata and disk data it left behind on each Talos node.
 
-$ kubectl --namespace rook-ceph get cephclusters.ceph.rook.io
-NAME        DATADIRHOSTPATH   MONCOUNT   AGE   PHASE         MESSAGE                   HEALTH        EXTERNAL
-rook-ceph   /var/lib/rook     3          99m   Progressing   Configuring Ceph Mgr(s)   HEALTH_WARN
+### Remove the Ceph cluster
 
-$ kubectl --namespace rook-ceph wait --timeout=1800s --for=jsonpath='{.status.ceph.health}=HEALTH_OK' cephclusters.ceph.rook.io rook-ceph
-cephcluster.ceph.rook.io/rook-ceph condition met
-```
+To remove the ceph cluster:
 
-The above steps need to be performed for each Talos Linux node undergoing maintenance, one at a time.
+1. Confirm cluster deletion, then delete the storage classes and Ceph storage types:
 
-## Cleaning up
+   ```bash
+   kubectl --namespace rook-ceph patch cephcluster rook-ceph --type merge -p '{"spec":{"cleanupPolicy":{"confirmation":"yes-really-destroy-data"}}}'
+   kubectl delete storageclasses ceph-block ceph-bucket ceph-filesystem
+   kubectl --namespace rook-ceph delete cephblockpools ceph-blockpool
+   kubectl --namespace rook-ceph delete cephobjectstore ceph-objectstore
+   kubectl --namespace rook-ceph delete cephfilesystem ceph-filesystem
+   ```
 
-### Rook Ceph cluster removal
+2. Delete the Ceph cluster and its Helm release:
 
-Removing a Rook Ceph cluster requires a few steps, starting with signalling to Rook that the Ceph cluster is really being destroyed.
-Then all Persistent Volumes (and Claims) backed by the Ceph cluster must be deleted, followed by the Storage Classes and the Ceph storage types.
+   ```bash
+   kubectl --namespace rook-ceph delete cephcluster rook-ceph
+   helm --namespace rook-ceph uninstall rook-ceph-cluster
+   helm --namespace rook-ceph uninstall ceph-csi-drivers
+   ```
 
-```shell
-$ kubectl --namespace rook-ceph patch cephcluster rook-ceph --type merge -p '{"spec":{"cleanupPolicy":{"confirmation":"yes-really-destroy-data"}}}'
-cephcluster.ceph.rook.io/rook-ceph patched
+3. If you also want to remove the operator and everything it created, uninstall it, then find and delete the CRDs it left behind. The exact CRD list has changed across Rook versions (the CSI-related ones especially, given the chart restructuring above), so list them from your cluster rather than relying on a hardcoded list:
 
-$ kubectl delete storageclasses ceph-block ceph-bucket ceph-filesystem
-storageclass.storage.k8s.io "ceph-block" deleted
-storageclass.storage.k8s.io "ceph-bucket" deleted
-storageclass.storage.k8s.io "ceph-filesystem" deleted
+   ```bash
+   helm --namespace rook-ceph uninstall rook-ceph
+   kubectl get crds -o name | grep -E 'ceph\.rook\.io|objectbucket\.io'
+   ```
 
-$ kubectl --namespace rook-ceph delete cephblockpools ceph-blockpool
-cephblockpool.ceph.rook.io "ceph-blockpool" deleted
+   Review the output, then delete the CRDs it returns.
 
-$ kubectl --namespace rook-ceph delete cephobjectstore ceph-objectstore
-cephobjectstore.ceph.rook.io "ceph-objectstore" deleted
+### Remove Rook metadata and wipe the disks
 
-$ kubectl --namespace rook-ceph delete cephfilesystem ceph-filesystem
-cephfilesystem.ceph.rook.io "ceph-filesystem" deleted
-```
+If the Rook Operator was cleanly removed following the steps above, node metadata and disks should already be clean. If cleanup was interrupted, some metadata may remain on the system disk and partition information may remain on the storage disks.
 
-Once that is complete, the Ceph cluster itself can be removed, along with the Rook Ceph cluster Helm chart installation.
+1. Remove leftover node metadata. Replace `<storage-node-name>` with the node's name and `<dataDirHostPath>` with the Rook `dataDirHostPath` value used when installing the chart (`/var/lib/rook` if you used the default values). Repeat this for each storage node:
 
-```shell
-$ kubectl --namespace rook-ceph delete cephcluster rook-ceph
-cephcluster.ceph.rook.io "rook-ceph" deleted
+   ```bash
+   cat <<EOF | kubectl apply -f -
+   apiVersion: v1
+   kind: Pod
+   metadata:
+     name: disk-clean
+   spec:
+     restartPolicy: Never
+     nodeName: <storage-node-name>
+     volumes:
+     - name: rook-data-dir
+       hostPath:
+         path: <dataDirHostPath>
+     containers:
+     - name: disk-clean
+       image: busybox
+       securityContext:
+         privileged: true
+       volumeMounts:
+       - name: rook-data-dir
+         mountPath: /node/rook-data
+       command: ["/bin/sh", "-c", "rm -rf /node/rook-data/*"]
+   EOF
+   kubectl wait --timeout=900s --for=jsonpath='{.status.phase}=Succeeded' pod disk-clean
+   kubectl delete pod disk-clean
+   ```
 
-$ helm --namespace rook-ceph uninstall rook-ceph-cluster
-release "rook-ceph-cluster" uninstalled
-```
+2. Wipe the partition and filesystem data from each disk used in the Ceph cluster. On Talos, <a href={`../../talos/${version}/reference/cli#talosctl-wipe`}>disks are wiped directly</a> using `talosctl`:
 
-If needed, the Rook Operator can also be removed along with all the Custom Resource Definitions that it created.
-
-```shell
-$ helm --namespace rook-ceph uninstall rook-ceph
-W0328 12:41:14.998307  147203 warnings.go:70] policy/v1beta1 PodSecurityPolicy is deprecated in v1.21+, unavailable in v1.25+
-These resources were kept due to the resource policy:
-[CustomResourceDefinition] cephblockpools.ceph.rook.io
-[CustomResourceDefinition] cephbucketnotifications.ceph.rook.io
-[CustomResourceDefinition] cephbuckettopics.ceph.rook.io
-[CustomResourceDefinition] cephclients.ceph.rook.io
-[CustomResourceDefinition] cephclusters.ceph.rook.io
-[CustomResourceDefinition] cephfilesystemmirrors.ceph.rook.io
-[CustomResourceDefinition] cephfilesystems.ceph.rook.io
-[CustomResourceDefinition] cephfilesystemsubvolumegroups.ceph.rook.io
-[CustomResourceDefinition] cephnfses.ceph.rook.io
-[CustomResourceDefinition] cephobjectrealms.ceph.rook.io
-[CustomResourceDefinition] cephobjectstores.ceph.rook.io
-[CustomResourceDefinition] cephobjectstoreusers.ceph.rook.io
-[CustomResourceDefinition] cephobjectzonegroups.ceph.rook.io
-[CustomResourceDefinition] cephobjectzones.ceph.rook.io
-[CustomResourceDefinition] cephrbdmirrors.ceph.rook.io
-[CustomResourceDefinition] objectbucketclaims.objectbucket.io
-[CustomResourceDefinition] objectbuckets.objectbucket.io
-
-release "rook-ceph" uninstalled
-
-$ kubectl delete crds cephblockpools.ceph.rook.io cephbucketnotifications.ceph.rook.io cephbuckettopics.ceph.rook.io \
-                      cephclients.ceph.rook.io cephclusters.ceph.rook.io cephfilesystemmirrors.ceph.rook.io \
-                      cephfilesystems.ceph.rook.io cephfilesystemsubvolumegroups.ceph.rook.io \
-                      cephnfses.ceph.rook.io cephobjectrealms.ceph.rook.io cephobjectstores.ceph.rook.io \
-                      cephobjectstoreusers.ceph.rook.io cephobjectzonegroups.ceph.rook.io cephobjectzones.ceph.rook.io \
-                      cephrbdmirrors.ceph.rook.io objectbucketclaims.objectbucket.io objectbuckets.objectbucket.io
-customresourcedefinition.apiextensions.k8s.io "cephblockpools.ceph.rook.io" deleted
-customresourcedefinition.apiextensions.k8s.io "cephbucketnotifications.ceph.rook.io" deleted
-customresourcedefinition.apiextensions.k8s.io "cephbuckettopics.ceph.rook.io" deleted
-customresourcedefinition.apiextensions.k8s.io "cephclients.ceph.rook.io" deleted
-customresourcedefinition.apiextensions.k8s.io "cephclusters.ceph.rook.io" deleted
-customresourcedefinition.apiextensions.k8s.io "cephfilesystemmirrors.ceph.rook.io" deleted
-customresourcedefinition.apiextensions.k8s.io "cephfilesystems.ceph.rook.io" deleted
-customresourcedefinition.apiextensions.k8s.io "cephfilesystemsubvolumegroups.ceph.rook.io" deleted
-customresourcedefinition.apiextensions.k8s.io "cephnfses.ceph.rook.io" deleted
-customresourcedefinition.apiextensions.k8s.io "cephobjectrealms.ceph.rook.io" deleted
-customresourcedefinition.apiextensions.k8s.io "cephobjectstores.ceph.rook.io" deleted
-customresourcedefinition.apiextensions.k8s.io "cephobjectstoreusers.ceph.rook.io" deleted
-customresourcedefinition.apiextensions.k8s.io "cephobjectzonegroups.ceph.rook.io" deleted
-customresourcedefinition.apiextensions.k8s.io "cephobjectzones.ceph.rook.io" deleted
-customresourcedefinition.apiextensions.k8s.io "cephrbdmirrors.ceph.rook.io" deleted
-customresourcedefinition.apiextensions.k8s.io "objectbucketclaims.objectbucket.io" deleted
-customresourcedefinition.apiextensions.k8s.io "objectbuckets.objectbucket.io" deleted
-```
-
-### Talos Linux Rook metadata removal
-
-If the Rook Operator is cleanly removed following the above process, the node metadata and disks should be clean and ready to be re-used.
-In the case of an unclean cluster removal, there may be still a few instances of metadata stored on the system disk, as well as the partition information on the storage disks.
-First the node metadata needs to be removed, make sure to update the `nodeName` with the actual name of a storage node that needs cleaning, and `path` with the Rook configuration `dataDirHostPath` (this is `/var/lib/rook` when using the default values.yaml) set when installing the chart.
-The following will need to be repeated for each node used in the Rook Ceph cluster.
-
-```shell
-$ cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: disk-clean
-spec:
-  restartPolicy: Never
-  nodeName: <storage-node-name>
-  volumes:
-  - name: rook-data-dir
-    hostPath:
-      path: <dataDirHostPath>
-  containers:
-  - name: disk-clean
-    image: busybox
-    securityContext:
-      privileged: true
-    volumeMounts:
-    - name: rook-data-dir
-      mountPath: /node/rook-data
-    command: ["/bin/sh", "-c", "rm -rf /node/rook-data/*"]
-EOF
-pod/disk-clean created
-
-$ kubectl wait --timeout=900s --for=jsonpath='{.status.phase}=Succeeded' pod disk-clean
-pod/disk-clean condition met
-
-$ kubectl delete pod disk-clean
-pod "disk-clean" deleted
-```
-
-Lastly, the disks themselves need the partition and filesystem data wiped before they can be reused.
-
-On Talos Linux, <a href={`../../talos/${version}/reference/cli#talosctl-wipe`}> disks can be wiped directly</a> using `talosctl`.
-
-Run the following command for each disk on each node used in the Rook Ceph cluster.
+<Tabs>
+  <Tab title="Talos-native">
 
 ```bash
 talosctl wipe disk <device> -n <node-ip>
@@ -273,3 +227,15 @@ talosctl wipe disk <device> -n <node-ip>
 ```bash
 talosctl wipe disk sdb -n 192.168.1.10
 ```
+
+  </Tab>
+  <Tab title="Omni">
+
+Download a talosconfig for the cluster, then run the same command with it:
+
+```bash
+omnictl talosconfig --cluster <cluster-name> ./talosconfig
+talosctl --talosconfig ./talosconfig wipe disk <device> -n <node-ip>
+```
+  </Tab>
+</Tabs>

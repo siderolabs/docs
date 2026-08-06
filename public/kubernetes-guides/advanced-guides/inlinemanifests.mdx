@@ -3,17 +3,19 @@ title: "inlineManifests and extraManifests"
 description: "Learn what inlineManifests and extraManifests are, how they differ, and why they matter."
 ---
 
-`inlineManifests` and `extraManifests` allow you to automatically apply Kubernetes resources to your cluster during initial bootstrap.
+`inlineManifests` and `extraManifests` are Talos machine configuration fields that let you automatically apply Kubernetes resources to your cluster during the initial bootstrap.
 
-Both are designed to automate the provisioning of components like CNIs and other static infrastructure, but they differ in how the manifest content is sourced and applied.
-They are not meant for deploying applications or frequently changing services.
-For those, it's better to use a GitOps or CI/CD tool.
+This guide explains how to use these fields to apply Kubernetes resources to Talos clusters that aren't managed by Omni. If you're using Omni, use [Omni manifest sync](../../omni/cluster-management/sync-kubernetes-manifests) instead. See [Applying manifests on Omni](#applying-manifests-on-omni) below for more information.
+
+Both fields are useful for automating the provisioning of components such as CNIs and other static infrastructure. However, they differ in how the manifest content is sourced and applied.
+
+Because these fields are intended for resources that are provisioned during bootstrap, they aren't suitable for applications or services that change frequently. For those workloads, use a GitOps or CI/CD tool instead.
 
 ## inlineManifests
 
 `inlineManifests` embed Kubernetes resources directly in the machine configuration. The manifest content lives alongside the rest of your config, making it ideal for tightly coupled resources that need to be provisioned as soon as the node boots up.
 
-Here’s an example of how to configure a cluster using an `inlineManifest`:
+Here's an example of how to configure a cluster using an `inlineManifest`:
 
 ```yaml
 apiVersion: v1alpha1
@@ -98,7 +100,7 @@ Talos automatically sorts all manifests, including `inlineManifests`, `extraMani
 A common use case for `inlineManifests` or `extraManifests` is to install a GitOps controller like Flux or ArgoCD.
 Once the controller is running, it connects to your Git repository and automatically applies the rest of your Kubernetes configuration.
 
-Here's how to install the Flux GitOps controller using an `extraManifest`:
+Here's how to install the Flux GitOps controller using an `extraManifest` on a Talos-native cluster. If you're using Omni, follow the [Installation on Omni](./deploy-flux#installation-on-omni) section of the Flux guide instead, it uses Omni's manifest sync and includes a namespace-injection step this walkthrough doesn't cover, which manifest sync requires.
 
 1. Create a patch file named `flux-extra-manifest.yaml` that automatically downloads and applies the Flux installation manifest from GitHub:
 
@@ -141,15 +143,15 @@ You can skip this step if you've already done it:
     kubectl get pods -n flux-system -w
     ```
 
-## Omni patches
+## Applying manifests on Omni
 
-You can also apply `inlineManifests` or `extraManifests` patches to Talos clusters managed by Omni.
+For most manifest use cases on Omni, [Omni manifest sync](../../omni/cluster-management/sync-kubernetes-manifests) is the recommended approach. Unlike `inlineManifests` and `extraManifests`, which are part of the per-machine Talos configuration, manifest sync is a cluster-wide Omni resource that Omni applies and reconciles directly, independent of machine configuration.
 
-Refer to [Create a Patch For Cluster Machines](https://omni.siderolabs.com/how-to-guides/create-a-patch-for-cluster-machines) to learn how to create and apply the patches.
+Alternatively, you can also apply `inlineManifests` or `extraManifests` patches to Talos clusters managed by Omni, the same way you'd patch any other machine configuration field. Refer to [Create a Patch for Cluster Machines](../../omni/omni-cluster-setup/create-a-patch-for-cluster-machines) to learn how to create and apply the patches.
 
 ## Summary: inlineManifests vs extraManifests
 
-Here’s a quick overview of the key differences between `inlineManifests` and `extraManifests`:
+Here's a quick overview of the key differences between `inlineManifests` and `extraManifests`:
 
 |                        | `inlineManifests`                              | `extraManifests`                                             |
 | ---------------------- | ---------------------------------------------- | ------------------------------------------------------------ |

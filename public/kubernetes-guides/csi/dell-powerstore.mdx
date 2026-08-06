@@ -9,15 +9,30 @@ import { version, release } from '/snippets/custom-variables.mdx';
 
 ## Prerequisites
 
-Before you begin, ensure that you have the following:
+Before you begin, make sure you have the following. The prerequisites would be group into three areas:
+
+- Tooling
+- PowerStore access
+- Talos node requirements
+
+### Tooling
+
+Install the following on your workstation:
 
 - `talosctl` installed
 - `kubectl` installed (v1.25 or higher)
 - Helm installed (v3.7 or higher)
+
+### PowerStore access
+
+You'll need the following from your PowerStore administrator:
+
 - Access to a Dell PowerStore array with the **Storage Operator** role or higher
 - Network connectivity from your nodes to the PowerStore array
 
-Dell PowerStore CSI requires four Talos system extensions on every node:
+### Talos node requirements
+
+Use Talos Linux v1.13.3 or higher. Every node also needs four Talos system extensions:
 
 - `siderolabs/nvme-cli` — provides the `nvme` CLI used for NVMe/TCP connections
 - `siderolabs/multipath-tools` — provides `multipathd` for device multipathing
@@ -41,7 +56,7 @@ helm pull dell/csi-powerstore --untar --version 2.17.0
 
 ## Step 2: Create a privileged namespace
 
-Talos enables the [Pod Security Admission Policies](https://docs.siderolabs.com/kubernetes-guides/security/pod-security#override-the-pod-security-admission-configuration) by default, which blocks the privileged containers the CSI driver requires.
+Talos enables the [Pod Security Admission Policies](../security/pod-security#override-the-pod-security-admission-configuration) by default, which blocks the privileged containers the CSI driver requires.
 
 Create the `csi-powerstore` namespace and label it to allow privileged workloads:
 
@@ -121,7 +136,7 @@ Then in the `volumes` section, comment out the matching `mpath` volume:
         #     type: FileOrCreate
 ```
 
-### Volume Health Monitoring (optional)
+### Volume health monitoring (optional)
 
 Volume Health Monitoring is disabled by default. To enable it, add the configuration below to your `my-powerstore-values.yaml` file before installing the driver. Set `enabled: true` under `controller.healthMonitor` to check the health condition of CSI volumes, and under `node.healthMonitor` to enable volume stats monitoring.
 

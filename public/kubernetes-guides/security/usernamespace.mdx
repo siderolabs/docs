@@ -5,9 +5,9 @@ description: "Guide on how to configure Talos Cluster to support User Namespaces
 
 User Namespaces are a feature of the Linux kernel that allows unprivileged users to have their own range of UIDs and GIDs, without needing to be root.
 
-Refer to the [official documentation](https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/) for more information on Usernamespaces.
+Refer to the [Kubernetes User Namespaces documentation](https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/) for more information.
 
-## Enabling Usernamespaces
+## Prerequisites
 
 `UserNamespacesSupport` is enabled by default in the Kubernetes versions Talos supports, so no feature gates need to be set. The only configuration needed is raising the kernel's limit on the number of user namespaces.
 
@@ -28,4 +28,6 @@ machine:
     user.max_user_namespaces: "11255"
 ```
 
-After applying the configuration, refer to the [official documentation](https://kubernetes.io/docs/tasks/configure-pod-container/user-namespaces/) to configure workloads to use User Namespaces.
+## Using User Namespaces
+
+After applying the configuration, set `hostUsers: false` on your pod spec to opt in. Refer to the [Kubernetes User Namespaces task guide](https://kubernetes.io/docs/tasks/configure-pod-container/user-namespaces/) for workload configuration details.
