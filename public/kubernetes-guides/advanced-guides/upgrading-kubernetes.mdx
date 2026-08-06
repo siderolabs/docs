@@ -5,13 +5,13 @@ aliases:
   - guides/upgrading-kubernetes
 ---
 
-import { k8s_prev_release, k8s_release } from '/snippets/custom-variables.mdx';
+import { k8s_prev_release, k8s_release, version } from '/snippets/custom-variables.mdx';
 
 This guide covers upgrading Kubernetes on Talos Linux clusters.
 
-For a list of Kubernetes versions compatible with each Talos release, see the [Support Matrix](../../talos/v1.10/getting-started/support-matrix).
+For a list of Kubernetes versions compatible with each Talos release, see the <a href={`../../talos/${version}/getting-started/support-matrix`}>Support Matrix</a>.
 
-For upgrading the Talos Linux operating system, see [Upgrading Talos](../../talos/v1.10/configure-your-talos-cluster/lifecycle-management/upgrading-talos)
+For upgrading the Talos Linux operating system, see <a href={`../../talos/${version}/configure-your-talos-cluster/lifecycle-management/upgrading-talos`}>Upgrading Talos</a>.
 
 ## Video walkthrough
 
@@ -21,7 +21,7 @@ To see a demo of this process, watch this video:
 
 ## Automated Kubernetes upgrade
 
-The recommended method to upgrade Kubernetes is to use the `talosctl upgrade-k8s` command.
+The recommended method to upgrade Kubernetes on a Talos-native cluster is to use the `talosctl upgrade-k8s` command. If you're using Omni, see [Upgrade Kubernetes on Omni-managed clusters](#upgrade-kubernetes-on-omni-managed-clusters) below instead.
 This will automatically update the components needed to upgrade Kubernetes safely.
 Kubernetes upgrades are non-disruptive from Talos, but Kubelet upgrades may cause workloads to restart.
 
@@ -112,7 +112,7 @@ A Talos version change might also cause changes in the bootstrap manifests.
 The updated bootstrap manifests, inline manifests and extra manifests are applied to the cluster as part of the Kubernetes upgrade process.
 
 If any services were deleted or disabled, the resources associated with them will be pruned.
-For example if [kube-proxy](https://docs.siderolabs.com/talos/latest/reference/configuration/v1alpha1/config#proxy) was disabled in the machine configuration the resources associated with it would be deleted at this stage.
+For example if <a href={`../../talos/${version}/reference/configuration/v1alpha1/config#proxy`}>kube-proxy</a> was disabled in the machine configuration the resources associated with it would be deleted at this stage.
 Pruning can be disabled by passing the `--manifests-no-prune` flag.
 
 <Note>Pruning is supported from Talos and talosctl v1.13 onwards.</Note>
@@ -143,8 +143,27 @@ Re-applying those stale files later could unintentionally downgrade components.
 That is why we do not recommend storing full machine configurations.
 
 Version numbers for Talos, etcd, Kubernetes components, and add-ons change frequently. Maintaining these across upgrades requires editing many fields by hand.
+See the <a href={`../../talos/${version}/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration`}> Reproducible Machine Configuration</a> guide for full instructions on handling machine configurations after version bumps.
 
-See the [Reproducible Machine Configuration](../../talos/v1.10/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration) guide for full instructions on handling machine configurations after version bumps.
+## Upgrade Kubernetes on Omni-managed clusters
+
+On a cluster managed by Omni, upgrade Kubernetes from the Omni UI rather than using `talosctl upgrade-k8s` directly:
+
+1. Open the cluster in Omni.
+2. Click the upgrade indicator next to the current Kubernetes version, or click **Update Kubernetes** on the cluster overview.
+3. Select the target Kubernetes version and confirm.
+
+Omni performs the same phases described above (pre-pulling images, updating control plane components, then kubelet on each node), non-disruptively to workloads.
+
+<Note>
+Unlike `talosctl upgrade-k8s`, Omni does not automatically re-apply Kubernetes bootstrap manifests as part of a Kubernetes upgrade, to avoid overwriting manifest changes you've applied manually. After upgrading, review the Bootstrap Manifests panel for the cluster in Omni and apply any changes shown there if they're appropriate.
+</Note>
+
+For a template-managed cluster, you can alternatively update the `kubernetes.version` field in the cluster template and sync it:
+
+```bash
+omnictl cluster template sync --file cluster-template.yaml
+```
 
 ## Manual Kubernetes upgrade
 
@@ -326,7 +345,7 @@ spec:
 
 In this example, new version is `3`.
 
-WWait for the new pod definition to propagate, then confirm the running `kube-scheduler` pods are using the new image version:
+Wait for the new pod definition to propagate, then confirm the running `kube-scheduler` pods are using the new image version:
 
 ```bash
 kubectl get pods -n kube-system -l k8s-app=kube-scheduler -o jsonpath='{.items[*].spec.containers[*].image}'
