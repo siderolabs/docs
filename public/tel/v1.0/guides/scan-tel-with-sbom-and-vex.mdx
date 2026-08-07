@@ -1,0 +1,79 @@
+---
+title: "Scan TEL Images With SBOM and VEX"
+description: "How to scan Talos Enterprise Linux images for vulnerabilities using the per-schematic SBOM and Sidero-curated VEX data from Enterprise Image Factory."
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+Talos Enterprise Linux images can be scanned for vulnerabilities using the per-schematic SBOM, which describes exactly what is in your image, and Sidero-curated VEX data, which filters out CVEs that do not apply to Talos as built. Together they produce accurate scan results with fewer false positives.
+
+There are two ways to run the scan:
+
+- **Download a scan report from Enterprise Image Factory**: Enterprise Image Factory runs the scan and provides a completed report.
+- **Run the scan locally with Grype**: You run the scan yourself using the downloaded SBOM and VEX data.
+
+## Prerequisites
+
+Before you begin, make sure you have the following:
+
+- The SBOM and VEX data for your image. You can download both from Enterprise Image Factory using your credentials. For instructions, see [Download images and artifacts from Enterprise Image Factory](./download-images-and-artifacts).
+- [Grype](https://github.com/anchore/grype#installation), if you want to run the scan locally. Grype is a free, open-source vulnerability scanner that analyses an SBOM and reports known vulnerabilities in the components it contains.
+
+The commands below assume the SBOM is saved as `image.spdx.json` and the VEX data as `talos.vex.json`.
+
+## Get a scan report from Enterprise Image Factory
+
+Enterprise Image Factory can run the scan for you and return a finished report, combining the schematic's SBOM, the VEX data, and its vulnerability database server-side. Reports are available in several formats:
+
+- `.json` — output format of the underlying scanner
+- `.table` — human-readable table
+- `.sarif` — SARIF format, for import into code-scanning systems
+- `.cdx` — CycloneDX format, consumed by supply-chain platforms
+
+For how to download a report in each format, see [Download images and artifacts from Enterprise Image Factory](./download-images-and-artifacts#download-the-sbom-vex-data-and-scan-reports).
+
+## Scan locally with Grype
+
+Scanning locally has two variants: a basic scan against the SBOM, and the same scan with the VEX data added to filter out CVEs that do not apply to Talos. You can run either on its own.
+
+### Scan the SBOM
+
+Run Grype directly against the SBOM:
+
+```shell
+grype sbom:image.spdx.json
+```
+
+Grype matches every component listed in the SBOM against its vulnerability database and reports the CVEs it finds, with severity, fixed-in version, and match details.
+
+Because the SBOM is generated per schematic, it describes your exact image — the Talos base plus every system extension in your configuration. This differs from the release SBOMs published on GitHub, which cover only the unmodified base OS. For base-OS SBOMs and reading SBOMs from a running node, see <a href={`../../../talos/${version}/advanced-guides/SBOM.mdx`}>SBOMs</a>.
+
+### Filter non-applicable CVEs with VEX
+
+A raw scan includes CVEs that match a component but do not affect Talos as built. VEX (Vulnerability Exploitability eXchange) statements are Sidero's curated, per-statement-signed declarations of which CVEs actually apply:
+
+```shell
+grype sbom:image.spdx.json --vex talos.vex.json
+```
+
+The result is the same list you would get from a raw scan, minus the findings Sidero has assessed as not applicable, which Grype reports as `ignored` rather than dropping silently. This is the same VEX suppression reflected in the Enterprise Image Factory UI, where the Schematic Ready page reports the vulnerability count "after VEX suppression." Local and factory totals can differ, because each uses its own vulnerability database snapshot.
+
+<Note>VEX data for Talos Linux is available exclusively through Enterprise Image Factory, and is downloaded with your Enterprise Image Factory credentials — it is not delivered through support tickets or a separate database.</Note>
+
+## When to scan locally vs. use a factory scan report
+
+Both approaches combine the same three inputs—the SBOM, the VEX data, and a vulnerability database—to produce a vulnerability report. The difference is where the scan runs and which vulnerability database it uses:
+
+- **Scan locally with Grype**: Grype runs on your machine using your local copy of the vulnerability database. Because the results are tied to the version of the database you use, repeated scans produce the same results. This makes local scanning well suited for reproducible CI pipelines and allows you to scan without reconnecting to Enterprise Image Factory.
+- **Download a factory scan report**: Enterprise Image Factory runs the scan using its vulnerability database at the time you request the report. This requires no local tooling, and the database is always up to date. However, results can change over time as new vulnerabilities are added to the database.
+
+Both approaches produce the same type of report. Choose local scanning if you need reproducible results, or a factory scan report if you want the latest vulnerability data without any local setup.
+
+## See also
+
+For more information, see also:
+
+- [Download images and artifacts from Enterprise Image Factory](./download-images-and-artifacts): How to retrieve the SBOM, VEX data, and scan reports used on this page
+- <a href={`../../../talos/${version}/learn-more/enterprise-image-factory.mdx`}>Enterprise Image Factory</a>: What these artifacts are and how the enterprise service differs from the public one
+- <a href={`../../../talos/${version}/advanced-guides/SBOM.mdx`}>SBOMs</a>: Base-OS release SBOMs and reading SBOMs from a running Talos Linux node
+- [Grype](https://github.com/anchore/grype): The vulnerability scanner used on this page
