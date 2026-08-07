@@ -10,9 +10,9 @@ Local storage is not replicated, so in case of a machine failure contents of the
 
 ## User volumes
 
-The simplest way to use local storage is to use <a href= {`../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/disk-management/user`}>user volume</a>.
+The simplest way to use local storage is to use <a href={`../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/disk-management/user`}>user volumes</a>.
 
-Once the user volume is created, it is automatically mounted under `/var/mnt/u-<user-volume-name>` path on the node.
+Once the user volume is created, it is automatically mounted under `/var/mnt/<user-volume-name>` path on the node.
 
 For example, create a configuration patch for a user volume named `local-storage`:
 
@@ -29,11 +29,13 @@ provisioning:
 
 Apply the patch to the machine configuration:
 
-```bash
+```bash theme={null}
 talosctl --nodes <worker-ip> patch mc --patch @local-storage.yaml
 ```
 
-If there is enough space available on a non-system disk (see `diskSelector`), the user volume will be created and mounted under `/var/mnt/u-local-storage` path on the node.
+If you're using Omni, apply this as a cluster config patch instead of running `talosctl` directly, see [Create a patch for cluster machines](../../omni/omni-cluster-setup/create-a-patch-for-cluster-machines) for the exact steps.
+
+If there is enough space available on a non-system disk (see `diskSelector`), the user volume will be created and mounted under `/var/mnt/local-storage` path on the node.
 
 ```bash
 talosctl -n <worker-ip> get volumestatus u-local-storage
@@ -65,10 +67,11 @@ spec:
 
 [Local Path Provisioner](https://github.com/rancher/local-path-provisioner) can be used to dynamically provision local storage.
 
-First, we will create a separate [user volume](../../talos/v1.10/configure-your-talos-cluster/storage-and-disk-management/disk-management#user-volumes) for the Local Path Provisioner to use.
+First, we will create a separate <a href= "../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/disk-management/user">user volume</a> for the Local Path Provisioner to use.
+
 Apply the following machine configuration patch:
 
-<Note>Ensure that you have [enough space](../../talos/v1.10/configure-your-talos-cluster/storage-and-disk-management/disk-management#disk-layout) available to provision the user volume.</Note>
+<Note>Ensure that you have <a href= "../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/disk-management/layout">enough space</a> available to provision the user volume.</Note>
 
 ```yaml
 apiVersion: v1alpha1
@@ -123,10 +126,15 @@ patches:
         pod-security.kubernetes.io/enforce: privileged
 ```
 
-Put `kustomization.yaml` into a new directory, and run `kustomize build | kubectl apply -f -` to install Local Path Provisioner to a Talos Linux cluster.
-There are three patches applied:
+Put `kustomization.yaml` into a new directory, and run this command to install Local Path Provisioner to a Talos Linux cluster.
 
-* change default `/opt/local-path-provisioner` path to `/var/mnt/local-path-provisioner`
+```bash
+kustomize build | kubectl apply -f -
+```
+
+This applies the following changes:
+
+* Change default `/opt/local-path-provisioner` path to `/var/mnt/local-path-provisioner`
 * make `local-path` storage class the default storage class (optional)
 * label the `local-path-storage` namespace as privileged to allow privileged pods to be scheduled there
 
