@@ -27,14 +27,23 @@ Only a limited set of labels may be modified by the node itself, such as:
 - `kubernetes.io/os`
 - some `node.kubernetes.io/*` labels
 
-Labels outside this set—including the conventional Kubernetes role labels  
-`node-role.kubernetes.io/<role>`—are rejected by the API server when applied by the node.
+Labels outside this set—including the conventional Kubernetes role labels `node-role.kubernetes.io/<role>`—are rejected by the API server when applied by the node.
 
 This prevents worker nodes from assigning themselves privileged roles.
 
 ### Apply `nodeLabels`
 
-You can add labels to a node by specifying them under `machine.nodeLabels` in the machine configuration:
+You can add labels to a node by specifying them in a `KubeNodeConfig` document:
+
+```yaml
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+labels:
+  topology.kubernetes.io/zone: "pve03"
+  topology.kubernetes.io/region: "Region-1"
+```
+
+On Talos versions earlier than v1.14, use the older configuration field:
 
 ```yaml
 machine:
@@ -43,7 +52,7 @@ machine:
     topology.kubernetes.io/region: "Region-1"
 ```
 
-After applying the machine config and rebooting the node, verify the labels with:
+After applying the machine config, verify the labels with:
 
 ```bash
 kubectl describe node <node-name>
@@ -78,18 +87,23 @@ This behaviour is expected and required for Kubernetes hardening.
 
 ### Apply taints
 
-Talos supports setting initial taints only during first node registration, using the kubelet's `registerWithTaints` configuration.
+Talos can manage node taints through the `KubeNodeConfig` document. These taints are reconciled by Talos onto the Node object.
 
 These must be configured under:
 
 ```yaml
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+taints:
+  <key>: <value>:<effect>
+```
+
+On Talos versions earlier than v1.14, use the older configuration field:
+
+```yaml
 machine:
-  kubelet:
-    extraConfig:
-      registerWithTaints:
-        - key: <key>
-          value: <value>
-          effect: <effect>
+  nodeTaints:
+    node.kubernetes.io/assignment: infra:NoSchedule
 ```
 
 #### Example: Add a NoSchedule taint to a worker node
@@ -97,18 +111,13 @@ machine:
 To add a taint to a worker node, create a patch with this example `NoSchedule` taint:
 
 ```yaml
-machine:
-  kubelet:
-    extraConfig:
-      registerWithTaints:
-        - key: node.kubernetes.io/assignment
-          value: infra
-          effect: NoSchedule
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+taints:
+  node.kubernetes.io/assignment: infra:NoSchedule
 ```
 
 Apply this patch to your worker node’s configuration file.
-
-The taint will be applied once, during the node’s initial registration with the Kubernetes API server. After the node has joined the cluster, updating this field will no longer have any effect.
 
 ### Modify taints after bootstrap
 

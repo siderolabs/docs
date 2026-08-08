@@ -15,6 +15,15 @@ This can be solved by either configuring metrics-server to do no validation of t
 To enable kubelet certificate rotation, all nodes should have the following Machine Config snippet:
 
 ```yaml
+apiVersion: v1alpha1
+kind: KubeletConfig
+extraArgs:
+  rotate-server-certificates: true
+```
+
+On Talos versions 1.13 and earlier, use the older deprecated configuration field:
+
+```yaml
 machine:
   kubelet:
     extraArgs:
@@ -28,11 +37,18 @@ This can easily be done with the [Kubelet Serving Certificate Approver](https://
 
 We can have Kubelet Serving Certificate Approver and metrics-server installed on the cluster automatically during bootstrap by adding the following snippet to the Cluster Config of the node that will be handling the bootstrap process:
 
+<Note>On Talos versions 1.13 and earlier, use the deprecated `cluster.extraManifests` field instead — see [inlineManifests and extraManifests](../advanced-guides/inlinemanifests) for the older format.</Note>
+
 ```yaml
-cluster:
-  extraManifests:
-    - https://raw.githubusercontent.com/alex1989hu/kubelet-serving-cert-approver/main/deploy/standalone-install.yaml
-    - https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+apiVersion: v1alpha1
+kind: KubeExternalManifestConfig
+name: kubelet-serving-cert-approver
+url: https://raw.githubusercontent.com/alex1989hu/kubelet-serving-cert-approver/main/deploy/standalone-install.yaml
+---
+apiVersion: v1alpha1
+kind: KubeExternalManifestConfig
+name: metrics-server
+url: https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 ```
 
 ## Install after bootstrap

@@ -11,10 +11,26 @@ For those, it's better to use a GitOps or CI/CD tool.
 
 ## inlineManifests
 
-`inlineManifests` are defined directly within the machine configuration file.
-The YAML content is embedded inside the `inlineManifests` section, making it ideal for tightly coupled resources that need to be provisioned as soon as the node boots up.
+`inlineManifests` embed Kubernetes resources directly in the machine configuration. The manifest content lives alongside the rest of your config, making it ideal for tightly coupled resources that need to be provisioned as soon as the node boots up.
 
 Here’s an example of how to configure a cluster using an `inlineManifest`:
+
+```yaml
+apiVersion: v1alpha1
+kind: KubeInlineManifestConfig
+name: my-app
+manifest: |
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: my-application
+  spec:
+    # ... deployment specification
+```
+
+Each inline manifest is its own [`KubeInlineManifestConfig` document](../../talos/v1.14/reference/configuration/kubernetes/kubeinlinemanifestconfig); add more by separating documents with `---`.
+
+On Talos versions earlier than v1.14, use the older configuration field:
 
 ```yaml
 cluster:
@@ -31,17 +47,36 @@ cluster:
 
 ## extraManifests
 
-`extraManifests` are Kubernetes manifests fetched from external, unauthenticated HTTP sources such as GitHub, raw file servers, or gists.
+`extraManifests` are Kubernetes manifests hosted at external HTTP sources such as GitHub, raw file servers, or gists. Rather than carrying the content itself, the configuration points to a URL that the node fetches during bootstrap, which makes them well suited for shared, versioned, or centrally managed resources.
 
-You define them in the `extraManifests` section of the machine configuration.
-They’re best suited for shared, versioned, or centrally managed resources.
+Because the content is fetched over the network, the node needs access to the endpoint hosting it. If the node can't reach the endpoint, or the endpoint is down or returns an error, the manifest won't be applied and the machine configuration will fail.
 
-These manifests are pulled directly by the node during configuration.
-If the node doesn’t have network access to the HTTP endpoint hosting the manifest the installation will fail.
+Here's how to reference `extraManifests`:
 
-Similarly, if the endpoint is down or returns an error, the manifest will not be applied, and the machine configuration will fail as a result.
+```yaml
+apiVersion: v1alpha1
+kind: KubeExternalManifestConfig
+name: example-manifest
+url: "https://raw.githubusercontent.com/example/repo/main/manifest.yaml"
+---
+apiVersion: v1alpha1
+kind: KubeExternalManifestConfig
+name: example-gist
+url: "https://gist.githubusercontent.com/user/gist-id/raw/manifest.yaml"
+```
 
-Here’s how to reference `extraManifests`:
+Each external manifest is its own [`KubeExternalManifestConfig`](../../talos/v1.14/reference/configuration/kubernetes/kubeexternalmanifestconfig) document with a `name` and `url`. To send HTTP headers when downloading (the successor to `extraManifestHeaders`), add an optional `headers` map:
+
+```yaml
+apiVersion: v1alpha1
+kind: KubeExternalManifestConfig
+name: private-manifest
+url: "https://example.com/manifest.yaml"
+headers:
+  Authorization: "Bearer <token>"
+```
+
+On Talos versions earlier than v1.14, use the older configuration field:
 
 ```yaml
 cluster:
@@ -58,7 +93,7 @@ Talos automatically sorts all manifests, including `inlineManifests`, `extraMani
 2. CustomResourceDefinitions (CRDs)
 3. All other resources, sorted alphabetically by their `metadata.name` property
 
-## Example Use Case: Install a GitOps controller with extraManifests
+## Example use case: Install a GitOps controller with extraManifests
 
 A common use case for `inlineManifests` or `extraManifests` is to install a GitOps controller like Flux or ArgoCD.
 Once the controller is running, it connects to your Git repository and automatically applies the rest of your Kubernetes configuration.
@@ -67,21 +102,23 @@ Here's how to install the Flux GitOps controller using an `extraManifest`:
 
 1. Create a patch file named `flux-extra-manifest.yaml` that automatically downloads and applies the Flux installation manifest from GitHub:
 
-    ```shell
+    ```bash
     cat << EOF > flux-extra-manifest.yaml
-    cluster:
-      extraManifests:
-        - "https://github.com/fluxcd/flux2/releases/latest/download/install.yaml"
+    # for talos v1.14+    
+    apiVersion: v1alpha1
+    kind: KubeExternalManifestConfig
+    name: flux
+    url: "https://github.com/fluxcd/flux2/releases/latest/download/install.yaml"
     EOF
     ```
 
-1. Create a `CP_IPS` variable that contains the IP addresses of your control plane nodes:
+2. Create a `CP_IPS` variable that contains the IP addresses of your control plane nodes:
 
     ```bash
     CP_IPS="<control-plane-ip-1>,<control-plane-ip-2>,<control-plane-ip-3>"
     ```
 
-1. Run this command to export your `TALOSCONFIG` variable.
+3. Run this command to export your `TALOSCONFIG` variable.
 You can skip this step if you've already done it:
 
     ```bash
@@ -89,7 +126,7 @@ You can skip this step if you've already done it:
     cp ./talosconfig ~/.talos/config
     ```
 
-1. Apply the `flux-extra-manifest.yaml` patch to your control plane nodes:
+4. Apply the `flux-extra-manifest.yaml` patch to your control plane nodes:
 
     ```bash
     talosctl patch machineconfig \
@@ -98,7 +135,7 @@ You can skip this step if you've already done it:
     --nodes $CP_IPS
     ```
 
-1. Wait a few seconds and check for the Flux pods:
+5. Wait a few seconds and check for the Flux pods:
 
     ```bash
     kubectl get pods -n flux-system -w
@@ -116,8 +153,7 @@ Here’s a quick overview of the key differences between `inlineManifests` and `
 
 |                        | `inlineManifests`                              | `extraManifests`                                             |
 | ---------------------- | ---------------------------------------------- | ------------------------------------------------------------ |
-| Source                 | Defined directly in the machine configuration  | Pulled from external URLs (GitHub gists, web servers, gists) |
-| Configuration Location | Under the `inlineManifests` section.           | Under the `extraManifests` section                           |
+| Source                 | Defined directly in the machine configuration  | Pulled from external URLs (GitHub, web servers, or gists) |
 | Usecase                | Early bootstrapping of critical resources      | For reusable, version-controlled, or shared manifests        |
 | Benefits               | No external dependencies                       | Centrally managed                                            |
 | Disadvantages          | Difficult to maintain and format embedded YAML | Requires external HTTP server                                |

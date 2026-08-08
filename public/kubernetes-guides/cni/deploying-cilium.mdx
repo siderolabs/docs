@@ -340,20 +340,22 @@ helm template \
 
 **Step 2.** Embed the generated manifest in your machine configuration:
 
+<Note>On Talos versions 1.13 and earlier, use the deprecated `cluster.inlineManifests` field instead — see [inlineManifests and extraManifests](../advanced-guides/inlinemanifests) for the older format.</Note>
+
 ```yaml
-cluster:
-  inlineManifests:
-    - name: cilium
-      contents: |
-        ---
-        # Source: cilium/templates/cilium-agent/serviceaccount.yaml
-        apiVersion: v1
-        kind: ServiceAccount
-        metadata:
-          name: "cilium"
-          namespace: kube-system
-        ---
-        # Paste the full contents of cilium.yaml here
+apiVersion: v1alpha1
+kind: KubeInlineManifestConfig
+name: cilium
+manifest: |
+  ---
+  # Source: cilium/templates/cilium-agent/serviceaccount.yaml
+  apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: "cilium"
+    namespace: kube-system
+  ---
+  # Paste the full contents of cilium.yaml here
 ```
 
 </Tab>

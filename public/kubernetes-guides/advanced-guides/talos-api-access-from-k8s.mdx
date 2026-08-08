@@ -1,5 +1,5 @@
 ---
-title: "Talos API access from Kubernetes"
+title: "Talos API Access From Kubernetes"
 description: "How to access Talos API from within Kubernetes."
 aliases:
   - ../guides/talos-api-access-from-k8s
@@ -18,7 +18,18 @@ can be accessed and the allowed Talos API roles.
 talosctl -n 172.20.0.2 edit machineconfig
 ```
 
-Configure the `kubernetesTalosAPIAccess` like the following:
+Configure Talos API access from Kubernetes with a `KubeTalosAPIAccessConfig` document:
+
+```yaml
+apiVersion: v1alpha1
+kind: KubeTalosAPIAccessConfig
+allowedRoles:
+  - os:reader
+allowedKubernetesNamespaces:
+  - default
+```
+
+On Talos versions earlier than v1.14, use the older configuration field:
 
 ```yaml
 spec:
