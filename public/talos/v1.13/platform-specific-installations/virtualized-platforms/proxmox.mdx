@@ -113,6 +113,8 @@ This action will open 8 tabs, configure the tabs as follows:
   - Set **BIOS** to `ovmf` (UEFI)
   - Set **Machine** to `q35`
   - Add an **EFI Disk** (4MB) for persistent UEFI settings and Secure Boot key storage
+  - Uncheck the **Pre-Enroll Keys** option
+  - Check the **Qemu Agent** option if you built the ISO with the `siderolabs/qemu-guest-agent` extension
 
 - **Hard Disk tab:**
   - Set **Bus/Device** to `VirtIO SCSI` (NOT **VirtIO SCSI Single**)
@@ -266,7 +268,7 @@ talosctl bootstrap
 3. Retrieve the kubeconfig:
 
 ```bash
-talosctl kubeconfig .
+talosctl kubeconfig -e $CONTROL_PLANE_IP
 ```
 
 4. Verify that your cluster is ready:

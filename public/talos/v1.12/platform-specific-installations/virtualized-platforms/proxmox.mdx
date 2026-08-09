@@ -139,6 +139,8 @@ In the "System" tab:
 - Set **BIOS** to `ovmf` (UEFI) for modern firmware and Secure Boot support
 - Set **Machine** to `q35` for modern PCIe-based machine type
 - Add **EFI Disk** (4MB) for persistent UEFI settings and Secure Boot key storage
+- Uncheck the **Pre-Enroll Keys** option
+- Check the **Qemu Agent** option if you built the ISO with the `siderolabs/qemu-guest-agent` extension
 
 In the "Hard Disk" tab:
 - Set **Bus/Device** to `VirtIO SCSI` (NOT "VirtIO SCSI Single")
@@ -322,7 +324,7 @@ talosctl bootstrap
 At this point we can retrieve the admin `kubeconfig` by running:
 
 ```bash
-talosctl kubeconfig .
+talosctl kubeconfig -e $CONTROL_PLANE_IP
 ```
 
 ## Troubleshooting
