@@ -5,7 +5,7 @@ aliases:
   - ../../guides/deploying-cilium
 ---
 
-import { k8s_release } from '/snippets/custom-variables.mdx';
+import { k8s_release, version } from '/snippets/custom-variables.mdx';
 
 Cilium CNI can be installed on Talos Linux using several methods, ranging from a fully declarative GitOps-friendly approach to a quick one-command install for development clusters.
 
@@ -26,7 +26,7 @@ Talos Linux has specific requirements that apply regardless of which installatio
 - IPAM mode must be set to `kubernetes`
 - Talos already provides `cgroupv2` and `bpffs` mounts — do not let Cilium attempt to mount these
 - Talos does not allow Kubernetes workloads to load kernel modules, so the `SYS_MODULE` capability must be dropped from Cilium's default capability set
-- This guide assumes [KubePrism](../advanced-guides/kubeprism) is enabled and configured on port `7445`
+- This guide assumes <a href= {`../../talos/${version}/configure-your-talos-cluster/system-configuration/kubeprism`}>KubePrism</a> is enabled and configured on port `7445`
 
 ### Machine configuration prerequisites
 

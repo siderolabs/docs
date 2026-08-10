@@ -54,7 +54,6 @@ navigation:
             - "gcp-workload-identity.mdx"
             - "hpa.mdx"
             - "inlinemanifests.mdx"
-            - "kubeprism.mdx"
             - "kuberay.mdx"
             - "kueue.mdx"
             - "node-labels.mdx"

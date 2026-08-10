@@ -153,6 +153,7 @@ navigation:
                 - "system-configuration/performance-tuning"
                 - "system-configuration/time-sync"
                 - "system-configuration/discovery"
+                - "system-configuration/kubeprism"
                 - "system-configuration/reproducible-machine-configuration"
                 - "system-configuration/insecure"
             - group: "Images & Container Runtime"

@@ -42,7 +42,6 @@ jobs:
         # annotations but don't fail the build. Remove this line to enforce.
         continue-on-error: true
 
-
       - name: Generate docs.json (must be committed)
         run: |
           make docs.json
