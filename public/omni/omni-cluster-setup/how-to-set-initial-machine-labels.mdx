@@ -133,7 +133,6 @@ The response will contain a schematic ID:
 This schematic ID will be identical to the one generated when using `omnictl` with the same labels.
 </Info>
 
-
 ### Step 3: Download the installation media
 
 Use the schematic ID to download your installation media:
@@ -162,12 +161,10 @@ You can inspect the platform metadata tags Talos sees on a machine with:
 omnictl get machinestatus -oyaml <machine-id> | yq '.spec.platformmetadata.tags'
 ```
 
-
 Machine user labels based on platform metadata are populated **once**, when the machine first joins Omni. After the labels are created successfully, Omni records that the initialization has happened and does not reconcile these labels ever again for that machine. As a result:
 
 - Rebooting the machine does **not** recreate the labels.
 - Changing the platform tags after the machine has joined (for example, editing the instance tags in EC2) is **not** reflected as updated labels in Omni.
-
 
 Labels created from platform metadata behave like any other user label. You can edit or remove them after they are created, and your changes won't get overwritten. If a platform metadata tag has the same key as a label you set yourself, the pre-existing label takes precedence. 
 

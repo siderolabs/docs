@@ -111,6 +111,10 @@
     {
       "source": "/talos/v1.6/deploy-and-manage-workloads/workers-on-controlplane",
       "destination": "/talos/v1.6/deploy-and-manage-workloads/workloads-on-controlplane"
+    },
+    {
+      "source": "/kubernetes-guides/advanced-guides/kubeprism",
+      "destination": "/talos/latest/configure-your-talos-cluster/system-configuration/kubeprism"
     }
   ],
   "navigation": {
@@ -335,6 +339,7 @@
                       "talos/v1.13/configure-your-talos-cluster/system-configuration/performance-tuning",
                       "talos/v1.13/configure-your-talos-cluster/system-configuration/time-sync",
                       "talos/v1.13/configure-your-talos-cluster/system-configuration/discovery",
+                      "talos/v1.13/configure-your-talos-cluster/system-configuration/kubeprism",
                       "talos/v1.13/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
                       "talos/v1.13/configure-your-talos-cluster/system-configuration/insecure",
                       "talos/v1.13/configure-your-talos-cluster/system-configuration/oom"
@@ -756,6 +761,7 @@
                       "talos/v1.12/configure-your-talos-cluster/system-configuration/performance-tuning",
                       "talos/v1.12/configure-your-talos-cluster/system-configuration/time-sync",
                       "talos/v1.12/configure-your-talos-cluster/system-configuration/discovery",
+                      "talos/v1.12/configure-your-talos-cluster/system-configuration/kubeprism",
                       "talos/v1.12/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
                       "talos/v1.12/configure-your-talos-cluster/system-configuration/insecure",
                       "talos/v1.12/configure-your-talos-cluster/system-configuration/oom"
@@ -1109,6 +1115,7 @@
                       "talos/v1.11/configure-your-talos-cluster/system-configuration/performance-tuning",
                       "talos/v1.11/configure-your-talos-cluster/system-configuration/time-sync",
                       "talos/v1.11/configure-your-talos-cluster/system-configuration/discovery",
+                      "talos/v1.11/configure-your-talos-cluster/system-configuration/kubeprism",
                       "talos/v1.11/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
                       "talos/v1.11/configure-your-talos-cluster/system-configuration/insecure"
                     ]
@@ -1426,6 +1433,7 @@
                       "talos/v1.10/configure-your-talos-cluster/system-configuration/performance-tuning",
                       "talos/v1.10/configure-your-talos-cluster/system-configuration/time-sync",
                       "talos/v1.10/configure-your-talos-cluster/system-configuration/discovery",
+                      "talos/v1.10/configure-your-talos-cluster/system-configuration/kubeprism",
                       "talos/v1.10/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
                       "talos/v1.10/configure-your-talos-cluster/system-configuration/insecure"
                     ]
@@ -1718,6 +1726,7 @@
                       "talos/v1.9/configure-your-talos-cluster/system-configuration/performance-tuning",
                       "talos/v1.9/configure-your-talos-cluster/system-configuration/time-sync",
                       "talos/v1.9/configure-your-talos-cluster/system-configuration/discovery",
+                      "talos/v1.9/configure-your-talos-cluster/system-configuration/kubeprism",
                       "talos/v1.9/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
                       "talos/v1.9/configure-your-talos-cluster/system-configuration/insecure"
                     ]
@@ -1998,6 +2007,7 @@
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/performance-tuning",
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/time-sync",
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/discovery",
+                      "talos/v1.8/configure-your-talos-cluster/system-configuration/kubeprism",
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
                       "talos/v1.8/configure-your-talos-cluster/system-configuration/insecure"
                     ]
@@ -2274,6 +2284,7 @@
                       "talos/v1.7/configure-your-talos-cluster/system-configuration/editing-machine-configuration",
                       "talos/v1.7/configure-your-talos-cluster/system-configuration/time-sync",
                       "talos/v1.7/configure-your-talos-cluster/system-configuration/discovery",
+                      "talos/v1.7/configure-your-talos-cluster/system-configuration/kubeprism",
                       "talos/v1.7/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
                       "talos/v1.7/configure-your-talos-cluster/system-configuration/insecure"
                     ]
@@ -2600,6 +2611,7 @@
                       "talos/v1.14/configure-your-talos-cluster/system-configuration/time-sync",
                       "talos/v1.14/configure-your-talos-cluster/system-configuration/managing-etc-files",
                       "talos/v1.14/configure-your-talos-cluster/system-configuration/discovery",
+                      "talos/v1.14/configure-your-talos-cluster/system-configuration/kubeprism",
                       "talos/v1.14/configure-your-talos-cluster/system-configuration/reproducible-machine-configuration",
                       "talos/v1.14/configure-your-talos-cluster/system-configuration/insecure",
                       "talos/v1.14/configure-your-talos-cluster/system-configuration/oom"
@@ -3097,7 +3109,6 @@
               "kubernetes-guides/advanced-guides/gcp-workload-identity",
               "kubernetes-guides/advanced-guides/hpa",
               "kubernetes-guides/advanced-guides/inlinemanifests",
-              "kubernetes-guides/advanced-guides/kubeprism",
               "kubernetes-guides/advanced-guides/kuberay",
               "kubernetes-guides/advanced-guides/kueue",
               "kubernetes-guides/advanced-guides/node-labels",
