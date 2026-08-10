@@ -2,6 +2,9 @@
 title: Omni Support Matrix
 description: Supported Talos Linux versions and upgrade policy.
 ---
+
+import { version } from '/snippets/custom-variables.mdx';
+
 The Sidero Labs managed version of Omni SaaS is updated regularly by our Operations team. For a list of the most recent updates, bug fixes and changes, please subscribe to the GitHub [Release notes.](https://github.com/siderolabs/omni/releases)
 
 If you are running a self-hosted version of Omni licensed under the BSL, please regularly [update](../cluster-management/upgrading-clusters) to the latest release - we suggest at least monthly. Bug fixes will not be backported to older versions of Omni, so support that involves a bug fix will require an update.
@@ -18,7 +21,7 @@ Talos Linux 1.9
 SecureBoot with Omni is only supported for Talos Linux versions of 1.7.0 or greater.
 </Info>
 
-Note that each version of Talos Linux generally supports up to five prior versions of Kubernetes at the time it was released. See [https://www.talos.dev/latest/introduction/support-matrix/](https://www.talos.dev/latest/introduction/support-matrix/) for details.
+Note that each version of Talos Linux generally supports up to five prior versions of Kubernetes at the time it was released. See the <a href={`../../talos/${version}/getting-started/support-matrix`}>Talos Support Matrix</a> for details.
 
 ## Effect of non-supported Talos Linux versions
 
