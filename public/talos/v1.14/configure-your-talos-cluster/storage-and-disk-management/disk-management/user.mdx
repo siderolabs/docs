@@ -51,7 +51,7 @@ of `200GB` if that space is available.
 The status of the volume can be checked using the following command:
 
 ```bash
-$ talosctl get volumestatus u-local-volume # note u- prefix
+talosctl get volumestatus u-local-volume # note u- prefix
 NAMESPACE   TYPE           ID            VERSION   TYPE        PHASE   LOCATION         SIZE
 runtime     VolumeStatus   u-local-volume   2         partition   ready   /dev/nvme0n1p2   200 GB
 ```
@@ -61,7 +61,7 @@ If the volume fails to be provisioned, use the `-o yaml` flag to get additional 
 The volume is immediately mounted to `/var/mnt/local-volume`:
 
 ```bash
-$ talosctl get mountstatus
+talosctl get mountstatus
 NAMESPACE   TYPE          ID           VERSION   SOURCE           TARGET               FILESYSTEM   VOLUME
 runtime     MountStatus   u-local-volume  2         /dev/nvme0n1p2   /var/mnt/local-volume   xfs          u-local-volume
 ```
@@ -190,14 +190,15 @@ Device-mapper numbers can change across boots.
 This type is useful for lightweight storage needs where full partitioning is unnecessary or impractical, and all that is required is a simple directory on the EPHEMERAL volume.
 When set to `directory`, the system bypasses provisioning and filesystem creation. Instead, it creates a host directory at:
 
-```
+```text
 /var/mnt/<metadata.name>
 ```
 
 Characteristics and limitations of `directory` volumes:
 
 * No provisioning, filesystem operations, or encryption are performed.
-* The volume is simply a directory on the EPHEMERAL volume.
+* Talos exposes the directory through a bind mount, so it appears as a mount at `/var/mnt/<metadata.name>` while remaining on the `EPHEMERAL` filesystem.
+* A `mount` block is not supported. The bind mount inherits mount attributes, including executable policy, from `EPHEMERAL`.
 * This type provides minimal overhead but does not deliver filesystem-level isolation.
-* Storage capacity is limited by the host’s EPHEMERAL partition.
-* Not suitable for workloads that require predictable or enforceable storage quotas.
+* Storage capacity is limited by the host’s `EPHEMERAL` partition.
+* It is not suitable for workloads that require predictable or enforceable storage quotas.

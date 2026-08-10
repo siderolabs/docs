@@ -579,7 +579,7 @@ MountSpec describes how the volume is mounted.
     <tr>
       <td>`secure`</td>
       <td>bool</td>
-      <td>Enable secure mount options (nosuid, nodev).<br /><br />Defaults to true for better security.<br />Supported only for EPHEMERAL volume.</td>
+      <td>Enable secure mount options (nosuid, nodev).<br /><br />For dedicated ETCD and LOG volumes, this also enables noexec.<br /><br />Defaults to true for better security.<br />Supported for EPHEMERAL and dedicated ETCD, CRI, KUBELET and LOG volumes.</td>
       <td></td>
     </tr>
     <tr>

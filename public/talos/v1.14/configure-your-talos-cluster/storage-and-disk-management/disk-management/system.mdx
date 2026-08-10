@@ -86,9 +86,12 @@ provisioning:
 
 ### Mount options
 
-Volumes that remain directory-backed inherit the mount options of the `EPHEMERAL` volume.
+The `EPHEMERAL` volume remains executable and uses `nosuid` and `nodev` by default.
+Volumes that remain directory-backed inherit these mount options.
 
-Each dedicated partition has its own mount, so the [`mount.secure`](../../../reference/configuration/block/volumeconfig#mount) option (`nosuid`, `nodev` and `noexec`, enabled by default) can be set independently per volume:
+Each dedicated partition has its own mount, so the [`mount.secure`](../../../reference/configuration/block/volumeconfig#mount) option (`nosuid` and `nodev`, enabled by default) can be set independently per volume.
+For dedicated `ETCD` and `LOG` volumes, `mount.secure` also enables `noexec`; dedicated `CRI` and `KUBELET` volumes remain executable.
+Setting `mount.secure` to `false` clears `nosuid` and `nodev`, as well as `noexec` for `ETCD` and `LOG`:
 
 ```yaml
 apiVersion: v1alpha1

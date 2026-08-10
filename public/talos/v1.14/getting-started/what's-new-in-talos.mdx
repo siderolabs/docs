@@ -50,31 +50,6 @@ Use CSI drivers instead: a CSI node plugin performs the attach/mount itself in i
 For iSCSI, `kubernetes-csi/csi-driver-iscsi` (or `democratic-csi`) consumes a target the same way.
 All in-tree (non-CSI) volume plugins are deprecated for the kubelet, and support for them may be removed in a later release.
 
-### `noexec` on `EPHEMERAL` (`/var`)
-
-New Talos 1.14 clusters default the `EPHEMERAL` volume (`/var`) to `noexec`, in addition to the existing `nosuid` and `nodev` mount options,
-through the generated machine configuration.
-Existing machines are not affected on upgrades.
-
-> Note: workloads which execute binaries placed under `/var` can break on new machines.
-> Longhorn v1 and [vCluster](https://www.vcluster.com/docs/vcluster/troubleshoot/noexec-emptydir-volumes) are known to be affected.
-> For example, Longhorn v1's `instance-manager` executes engine binaries which the `engine-image` DaemonSet places under
-> `/var/lib/longhorn/engine-binaries/`, which now fails with `permission denied`.
-
-Affected users can opt out via a [`VolumeConfig`](../reference/configuration/block/volumeconfig) document:
-
-```yaml
-apiVersion: v1alpha1
-kind: VolumeConfig
-name: EPHEMERAL
-mount:
-  secure: false
-```
-
-> Note: setting `secure: false` also disables `nosuid` and `nodev`, which may have security implications. Use with caution.
-
-Longhorn v2 (SPDK data engine) runs the data plane inside the instance manager process, and is not affected.
-
 ### Unattended install configuration
 
 Talos introduces a new [`UnattendedInstallConfig`](../reference/configuration/runtime/unattendedinstallconfig) multi-document configuration kind,
@@ -404,8 +379,9 @@ provisioning:
 
 The backing (directory vs. dedicated partition) is fixed at cluster creation: switching an already provisioned node between the two is rejected.
 
-A dedicated partition has its own mount, so the `mount.secure` option (`nosuid`/`noexec`/`nodev`, enabled by default) can be set per volume;
-directory-backed volumes inherit the `EPHEMERAL` mount options.
+A dedicated partition has its own mount, so the `mount.secure` option (`nosuid` and `nodev`, enabled by default) can be set per volume.
+For dedicated `ETCD` and `LOG` volumes, `mount.secure` also enables `noexec`; dedicated `CRI` and `KUBELET` volumes remain executable.
+Directory-backed volumes inherit the executable `EPHEMERAL` mount policy.
 
 > Note: with `ETCD` on a dedicated partition, etcd data no longer lives under `EPHEMERAL`.
 > Resetting a control plane node with only the `EPHEMERAL` partition wiped will not clear etcd data; wipe the `ETCD` volume to reset etcd.
