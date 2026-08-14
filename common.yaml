@@ -85,3 +85,5 @@ redirects:
     destination: "/talos/v1.7/deploy-and-manage-workloads/workloads-on-controlplane"
   - source: "/talos/v1.6/deploy-and-manage-workloads/workers-on-controlplane"
     destination: "/talos/v1.6/deploy-and-manage-workloads/workloads-on-controlplane"
+  - source: "kubernetes-guides/advanced-guides/kubeprism"
+    destination: "/talos/latest/configure-your-talos-cluster/system-configuration/kubeprism"
