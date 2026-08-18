@@ -111,7 +111,7 @@ sudo update-ca-certificates
 
 ### 4.2: Create the signing configuration
 
-Create a signing configuration that tells `cfssl` how to sign certificates. The `web-server` profile is used for Omni and Dex. The `client` profile is used later for external etcd authentication in **Step 7**.
+Create a signing configuration that tells `cfssl` how to sign certificates. The `web-server` profile is used for Omni and Dex. The `client` profile is used for external etcd authentication.
 
 ```bash
 cat <<EOF > ca-config.json
@@ -209,8 +209,11 @@ If you already have an existing SAML or OIDC provider and want to connect it dir
 You will be prompted to enter a password. This becomes your Omni login password. The hash is stored in the Dex configuration and never transmitted in plain text.
 
 ```bash
-export OMNI_USER_PASSWORD=$(docker run --rm httpd:2.4-alpine \
-  htpasswd -BnC 15 admin | cut -d: -f2)
+read -rs -p "Enter password for Omni admin user: " OMNI_ADMIN_PASSWORD
+echo
+export OMNI_USER_PASSWORD=$(echo "$OMNI_ADMIN_PASSWORD" | docker run -i --rm httpd:2.4-alpine \
+  htpasswd -inBC 15 admin | cut -d: -f2)
+unset OMNI_ADMIN_PASSWORD
 ```
 
 ### 6.2: Write the Dex configuration
@@ -277,17 +280,28 @@ export OMNI_VERSION=$(curl -sI https://github.com/siderolabs/omni/releases/lates
 echo "Using Omni version: $OMNI_VERSION"
 ```
 
-### 7.2: Create the SQLite storage directory
+### 7.2: Merge the CA trust bundle
 
-Omni uses SQLite alongside etcd for certain internal state.
+Step 7.5 mounts a certificate at `/etc/ssl/certs/ca-certificates.crt` so the container trusts the certificate generated in Step 4. This path is also the container's system trust store, used to verify TLS connections to external hosts such as the Image Factory. Merge your CA into the image's existing trust bundle so both the internal certificate and the standard public certificate authorities remain trusted:
 
-This command creates the directory on the host that will be mounted into the container:
+```bash
+CID=$(docker create ghcr.io/siderolabs/omni:${OMNI_VERSION})
+docker cp $CID:/etc/ssl/certs/ca-certificates ./base-ca-certificates
+docker rm $CID
+
+cat base-ca-certificates ca.pem > combined-ca-certificates.crt
+```
+
+### 7.3: Create storage directories
+
+Omni uses SQLite alongside etcd for certain internal state. Both need to persist on the host so they survive container restarts and upgrades. These directories are mounted into the container in **Step 7.5**.
 
 ```bash
 mkdir -p $HOME/sqlite
+mkdir -p $(pwd)/etcd
 ```
 
-### 7.3: Configure EULA acceptance
+### 7.4: Configure EULA acceptance
 
 Self-hosted Omni requires the first user to accept the End User License Agreement (EULA) before the instance can be used. Until the EULA is accepted, all UI and CLI actions are blocked at the API level.
 
@@ -300,7 +314,7 @@ If your organization has a separate agreement with Sidero Labs, that agreement t
 <Tabs>
   <Tab title="CLI flags">
 
-  You can pass your EULA details as CLI flags when starting your Omni instance in **Step 7.4**:
+  You can pass your EULA details as CLI flags when starting your Omni instance in **Step 7.5**:
 
   ```bash
   --eula-accept-name="John Doe"
@@ -329,13 +343,13 @@ If your organization has a separate agreement with Sidero Labs, that agreement t
   
   </Tab>
   <Tab title="UI">
-  If you prefer to accept the EULA through the browser, skip this step and continue to **Step 7.4** without the EULA flags.
+  If you prefer to accept the EULA through the browser, skip this step and continue to **Step 7.5** without the EULA flags.
 
   When you open the Omni UI in **Step 9.4**, Omni redirects you to `/eula`, where you must complete EULA acceptance before you can log in.
   </Tab>
 </Tabs>
 
-### 7.4: Start Omni
+### 7.5: Start Omni
 
 Choose the etcd mode that matches your setup. Embedded etcd is suitable for a single Omni instance. External etcd is required for high availability or if you need to manage the datastore independently.
 
@@ -351,11 +365,12 @@ docker run -d \
   --cap-add=NET_ADMIN \
   --device /dev/net/tun:/dev/net/tun \
   --restart=unless-stopped \
-  -v $(pwd)/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro,Z \
+  -v $(pwd)/combined-ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro,Z \
   -v $(pwd)/server-key.pem:/server-key.pem:ro,Z \
   -v $(pwd)/server-chain.pem:/server-chain.pem:ro,Z \
   -v $(pwd)/omni.asc:/omni.asc:ro,Z \
   -v $HOME/sqlite:/_out/sqlite:rw,Z \
+  -v $(pwd)/etcd:/_out/etcd:rw,Z \
   ghcr.io/siderolabs/omni:${OMNI_VERSION} \
     --name=omni \
     --cert=/server-chain.pem \
@@ -406,7 +421,7 @@ docker run -d \
     --cap-add=NET_ADMIN \
     --device /dev/net/tun:/dev/net/tun \
     --restart=unless-stopped \
-    -v $(pwd)/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro,Z \
+    -v $(pwd)/combined-ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro,Z \
     -v $(pwd)/server-key.pem:/server-key.pem:ro,Z \
     -v $(pwd)/server-chain.pem:/server-chain.pem:ro,Z \
     -v $(pwd)/omni.asc:/omni.asc:ro,Z \
@@ -486,7 +501,7 @@ Copy `ca.pem` from the host to your local machine. You will install it as a trus
   Replace `<HOST_PUBLIC_IP>` with your instance's public IP and `~/path/to/your-key.pem` with your SSH key path.
 
   ```bash
-  scp -i ~/path/to/your-key.pem ubuntu@<HOST_PUBLIC_IP>:~/ca.pem ~/Downloads/omni-ca.pem
+  scp -i ~/path/to/your-key.pem ubuntu@<HOST_PUBLIC_IP>:~/ca.pem ~/Downloads/ca.pem
   ```
   </Tab>
   <Tab title="GCP">
@@ -494,7 +509,7 @@ Copy `ca.pem` from the host to your local machine. You will install it as a trus
   Replace `<instance-name>` and `<your-zone>` with your GCP instance name and zone.
 
   ```bash
-  gcloud compute scp <instance-name>:~/ca.pem ~/Downloads/omni-ca.pem --zone=<your-zone>
+  gcloud compute scp <instance-name>:~/ca.pem ~/Downloads/ca.pem --zone=<your-zone>
   ```
   </Tab>
   <Tab title="DigitalOcean / Bare metal / Local VM">
@@ -502,7 +517,7 @@ Copy `ca.pem` from the host to your local machine. You will install it as a trus
   Replace `<HOST_PUBLIC_IP>` with your host's IP.
 
   ```bash
-  scp ubuntu@<HOST_PUBLIC_IP>:~/ca.pem ~/Downloads/omni-ca.pem
+  scp ubuntu@<HOST_PUBLIC_IP>:~/ca.pem ~/Downloads/ca.pem
   ```
   </Tab>
 </Tabs>
@@ -561,6 +576,6 @@ Map the Omni and Dex hostnames to your host's public IP so your local machine ca
   </Tab>
 </Tabs>
 
-### 9.5: Log into Omni
+### 9.4: Log into Omni
 
 Open `https://omni.internal` in your browser and sign in with the email and password you set in **Step 6.2**.
