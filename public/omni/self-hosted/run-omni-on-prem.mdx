@@ -344,46 +344,55 @@ The commands below use CLI flags to start Omni. If you prefer to use a configura
 <Tabs>
   <Tab title="Embedded etcd (default)">
 
-```bash
-docker run -d \
-  --name omni \
-  --net=host \
-  --cap-add=NET_ADMIN \
-  --device /dev/net/tun:/dev/net/tun \
-  --restart=unless-stopped \
-  -v $(pwd)/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro,Z \
-  -v $(pwd)/server-key.pem:/server-key.pem:ro,Z \
-  -v $(pwd)/server-chain.pem:/server-chain.pem:ro,Z \
-  -v $(pwd)/omni.asc:/omni.asc:ro,Z \
-  -v $HOME/sqlite:/_out/sqlite:rw,Z \
-  ghcr.io/siderolabs/omni:${OMNI_VERSION} \
-    --name=omni \
-    --cert=/server-chain.pem \
-    --key=/server-key.pem \
-    --machine-api-cert=/server-chain.pem \
-    --machine-api-key=/server-key.pem \
-    --machine-api-bind-addr=0.0.0.0:8090 \
-    --private-key-source=file:///omni.asc \
-    --event-sink-port=8091 \
-    --bind-addr=0.0.0.0:443 \
-    --k8s-proxy-bind-addr=0.0.0.0:8100 \
-    --advertised-api-url=https://${OMNI_ENDPOINT}/ \
-    --siderolink-api-advertised-url=https://${OMNI_ENDPOINT}:8090/ \
-    --siderolink-wireguard-advertised-addr=${HOST_PUBLIC_IP}:50180 \
-    --advertised-kubernetes-proxy-url=https://${OMNI_ENDPOINT}:8100/ \
-    --auth-auth0-enabled=false \
-    --auth-oidc-enabled=true \
-    --auth-oidc-provider-url=https://${AUTH_ENDPOINT}:5556 \
-    --auth-oidc-client-id=omni \
-    --auth-oidc-client-secret=omni-dex-secret \
-    --auth-oidc-scopes=openid \
-    --auth-oidc-scopes=profile \
-    --auth-oidc-scopes=email \
-    --sqlite-storage-path=/_out/sqlite/omni.db \
-    --initial-users=${OMNI_USER_EMAIL} \
-    --eula-accept-name="${EULA_NAME}" \
-    --eula-accept-email="${EULA_EMAIL}"
-```
+  Omni uses embedded etcd for cluster state. This command creates the directory on the host that will be mounted into the container:
+
+  ```bash
+  mkdir -p $HOME/etcd
+  ```
+
+  With the etcd directory in place, start the Omni container:
+
+  ```bash
+  docker run -d \
+    --name omni \
+    --net=host \
+    --cap-add=NET_ADMIN \
+    --device /dev/net/tun:/dev/net/tun \
+    --restart=unless-stopped \
+    -v $(pwd)/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro,Z \
+    -v $(pwd)/server-key.pem:/server-key.pem:ro,Z \
+    -v $(pwd)/server-chain.pem:/server-chain.pem:ro,Z \
+    -v $(pwd)/omni.asc:/omni.asc:ro,Z \
+    -v $HOME/etcd:/_out/etcd:rw,Z \
+    -v $HOME/sqlite:/_out/sqlite:rw,Z \
+    ghcr.io/siderolabs/omni:${OMNI_VERSION} \
+      --name=omni \
+      --cert=/server-chain.pem \
+      --key=/server-key.pem \
+      --machine-api-cert=/server-chain.pem \
+      --machine-api-key=/server-key.pem \
+      --machine-api-bind-addr=0.0.0.0:8090 \
+      --private-key-source=file:///omni.asc \
+      --event-sink-port=8091 \
+      --bind-addr=0.0.0.0:443 \
+      --k8s-proxy-bind-addr=0.0.0.0:8100 \
+      --advertised-api-url=https://${OMNI_ENDPOINT}/ \
+      --siderolink-api-advertised-url=https://${OMNI_ENDPOINT}:8090/ \
+      --siderolink-wireguard-advertised-addr=${HOST_PUBLIC_IP}:50180 \
+      --advertised-kubernetes-proxy-url=https://${OMNI_ENDPOINT}:8100/ \
+      --auth-auth0-enabled=false \
+      --auth-oidc-enabled=true \
+      --auth-oidc-provider-url=https://${AUTH_ENDPOINT}:5556 \
+      --auth-oidc-client-id=omni \
+      --auth-oidc-client-secret=omni-dex-secret \
+      --auth-oidc-scopes=openid \
+      --auth-oidc-scopes=profile \
+      --auth-oidc-scopes=email \
+      --sqlite-storage-path=/_out/sqlite/omni.db \
+      --initial-users=${OMNI_USER_EMAIL} \
+      --eula-accept-name="${EULA_NAME}" \
+      --eula-accept-email="${EULA_EMAIL}"
+  ```
   </Tab>
   <Tab title="External etcd">
 
