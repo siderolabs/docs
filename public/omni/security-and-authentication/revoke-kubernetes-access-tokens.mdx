@@ -1,0 +1,66 @@
+---
+title: Revoke Kubernetes Access Tokens
+description: Invalidate issued Kubernetes access tokens, such as a leaked service account kubeconfig, by deleting the signing key that backs them.
+---
+
+This guide explains how to invalidate Kubernetes access tokens issued by Omni before they expire, for example during a credential rotation, or when a service account kubeconfig has leaked.
+
+## How token signing works
+
+Omni signs two kinds of Kubernetes access tokens: the long-lived tokens embedded in service account kubeconfigs (created with `omnictl kubeconfig --service-account`), and the short-lived tokens used by interactive `kubectl` sessions. Every request made with such a token goes through Omni's Kubernetes proxy, which verifies the token against a set of signing keys stored in Omni.
+
+A new signing key is generated periodically and on every restart of Omni, so each key signs the tokens issued during a limited time window. Deleting a signing key immediately invalidates all the tokens signed by it. There is no way to invalidate a single token, so revocation works at the granularity of a key and affects all the tokens from its time window.
+
+## Prerequisites
+
+- [`omnictl` installed and configured](../getting-started/install-and-configure-omnictl) with an account that has the `Admin` role
+- Omni v1.10.4 or later
+
+## Find the signing key of a token
+
+If you want to invalidate a specific kubeconfig, first find the ID of the key that signed its token. The key ID is in the token header.
+
+Set the path to the kubeconfig, then decode the header of its token:
+
+```bash
+export KUBECONFIG_FILE=<path-to-the-kubeconfig>
+grep 'token:' "$KUBECONFIG_FILE" | awk '{print $2}' | cut -d. -f1 | base64 -d
+```
+
+The output contains the key ID in the `kid` field:
+
+```json
+{"alg":"RS256","kid":"f1f9549c-8890-4a5e-9b0c-2b9059d66b74","typ":"JWT"}
+```
+
+## Delete the signing key
+
+1. List the signing keys:
+
+```bash
+omnictl get jwtpublickeys
+```
+
+2. Delete the key. Replace `<key-id>` with the `kid` value from the token header:
+
+```bash
+omnictl delete jwtpublickeys <key-id>
+```
+
+The deletion takes effect immediately, without a restart. Any request using a token signed by the deleted key is rejected from that point on.
+
+3. Re-issue the kubeconfigs which were invalidated by the deletion, and roll them out to the tooling that uses them.
+
+<Warning>
+Deleting a signing key invalidates **all** the tokens signed by it, not only the one you are targeting. This includes other service account kubeconfigs issued during the same time window, and, if the key is recent, the tokens of interactive `kubectl` sessions. Interactive users simply log in again, but service account kubeconfigs must be re-issued.
+</Warning>
+
+## Notes
+
+- Deleting the most recent key is safe: Omni generates a replacement key automatically when the next token is issued.
+- The key deletions are recorded in the audit log with the acting user.
+- Connections that were established before the deletion, such as a running `kubectl exec` or `--watch` session, keep running until Omni or the cluster's Kubernetes API server is restarted. New requests are rejected immediately.
+
+## Related links
+
+- [Create a Kubeconfig for a Kubernetes Service Account](../omni-cluster-setup/create-a-kubeconfig-for-a-service-account)

@@ -120,6 +120,7 @@ navigation:
             - "omni-kms-disk-encryption.mdx"
             - "break-glass-emergency-access.mdx"
             - "rotate-siderolink-join-token.mdx"
+            - "revoke-kubernetes-access-tokens.mdx"
             - "security-model.mdx"
             - "subscribe-to-security-advisories.mdx"
 
