@@ -35,6 +35,7 @@ navigation:
             - "configure-keycloak-for-omni.mdx"
             - "expose-omni-with-nginx-https.mdx"
             - "back-up-omni-db.mdx"
+            - "restore-omni-database.mdx"
             - "upgrading-omni.mdx"
 
         - group: "Infrastructure and Extensions"

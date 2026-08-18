@@ -2916,6 +2916,7 @@
               "omni/self-hosted/configure-keycloak-for-omni",
               "omni/self-hosted/expose-omni-with-nginx-https",
               "omni/self-hosted/back-up-omni-db",
+              "omni/self-hosted/restore-omni-database",
               "omni/self-hosted/upgrading-omni"
             ]
           },
