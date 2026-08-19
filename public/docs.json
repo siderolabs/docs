@@ -2879,6 +2879,24 @@
         ]
       },
       {
+        "tab": "Talos Enterprise Linux",
+        "icon": "/images/talos.svg",
+        "versions": [
+          {
+            "version": "v1.0",
+            "groups": [
+              {
+                "group": "How to Guides",
+                "pages": [
+                  "tel/v1.0/guides/download-images-and-artifacts",
+                  "tel/v1.0/guides/scan-tel-with-sbom-and-vex"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Omni",
         "icon": "/images/omni.svg",
         "groups": [
