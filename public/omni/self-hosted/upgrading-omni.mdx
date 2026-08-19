@@ -12,7 +12,7 @@ than on the host, in which case recreating the container to upgrade will permane
 destroy it. [Check whether you are affected](./restore-omni-database) before you continue.
 </Danger>
 
-## Upgrade Policy
+## Upgrade policy
 
 To maintain data integrity, follow these upgrade policies:
 
@@ -64,13 +64,13 @@ For example, when upgrading from **v1.3 to v1.4**, a new required flag (`--sqlit
 
 If a user upgraded without reading the release notes and adding this flag, Omni would fail to start.
 
-## Perform the Upgrade
+## Perform the upgrade
 
 After reviewing the release notes and confirming your configuration meets the requirements for the new version, you can perform the upgrade.
 
 Upgrading Omni simply involves updating the container image used by your deployment.
 
-### Update the Omni Image
+### Update the Omni image
 
 Update the Omni image tag in your deployment configuration (for example `compose.yaml` or your `docker run` script) to the desired version.
 
