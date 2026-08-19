@@ -5,11 +5,14 @@ description: "Learn how to expose the etcd metrics endpoint."
 
 To allow monitoring tools to collect metrics from your etcd database, you need to explicitly expose the etcd metrics endpoint.
 
-Here's how to do it:
+Choose the tab that matches how you manage your cluster.
 
-1. Create a patch file named `etcd-metrics-patch.yaml` that exposes the etcd metrics endpoint on `port:2381`, accessible from all network interfaces
+<Tabs>
+  <Tab title="Talos">
 
-    ```shell
+1. Create a patch file named `etcd-metrics-patch.yaml` that exposes the etcd metrics endpoint on `port 2381`, accessible from all network interfaces:
+
+    ```bash
     cat << EOF > etcd-metrics-patch.yaml
     cluster:
       etcd:
@@ -18,13 +21,13 @@ Here's how to do it:
     EOF
     ```
 
-1. Create a `CP_IPS` variable that contains the IP addresses of your control plane nodes:
+2. Create a `CP_IPS` variable that contains the IP addresses of your control plane nodes:
 
     ```bash
     CP_IPS="<control-plane-ip-1>,<control-plane-ip-2>,<control-plane-ip-3>"
     ```
 
-1. Ensure you are in your project's directory and apply the `etcd-metrics-patch.yaml` patch to your control plane nodes.
+3. Ensure you are in your project's directory and apply the `etcd-metrics-patch.yaml` patch to your control plane nodes.
 
     ```bash
     talosctl patch machineconfig \
@@ -36,22 +39,53 @@ Here's how to do it:
 
     **Note**: You can also [export your `TALOSCONFIG` variable](../../talos/v1.10/getting-started/prodnotes#step-11-manage-your-talos-configuration-file) and then remove the `--talosconfig=./talosconfig` flag in the patch command above.
 
-1. Reboot the nodes.
-   Note that if you have only one control plane node, rebooting it will cause cluster downtime.
-
-    ```bash
-    for NODE in $(echo "${CP_IPS}" | tr ',' ' '); do
-        echo "Rebooting control plane node: $NODE"
-        talosctl reboot --endpoints "$NODE" --nodes "$NODE" --wait
-    done
-    ```
-
-1. After the node reboots, run the following command to confirm that the etcd metrics endpoint is accessible:
+4. After the node reboots, run the following command to confirm that the etcd metrics endpoint is accessible:
 
     ```bash
     CP_IP=$(echo $CP_IPS | cut -d',' -f1)
     curl "${CP_IP}:2381/metrics"
     ```
 
-1. Secure your control plane IP addresses to prevent public access.
+5. Secure your control plane IP addresses to prevent public access.
 See the [Ingress Firewall guide](../../talos/v1.10/networking/ingress-firewall) for instructions on securing your control plane.
+
+  </Tab>
+  <Tab title="Omni">
+
+1. This is the config patch that exposes the etcd metrics endpoint on `port 2381`, accessible from all network interfaces:
+
+    ```yaml
+    cluster:
+      etcd:
+        extraArgs:
+          listen-metrics-urls: http://0.0.0.0:2381
+    ```
+
+2. Create a `CP_IPS` variable that contains the IP addresses of your control plane nodes. You'll need this for the verification step below:
+
+    ```bash
+    CP_IPS="<control-plane-ip-1>,<control-plane-ip-2>,<control-plane-ip-3>"
+    ```
+
+3. Apply the patch as a cluster config patch targeted at your control plane nodes:
+
+   1. Select the **Clusters** tab in the left-hand menu.
+   2. Open the cluster menu (**⋯**) and select **Config Patches**. (Alternatively, open the specific cluster and select **Config Patches** from the right-hand panel.)
+   3. Click **Create Patch**.
+   4. Select **Control Planes** from the **Patch Target** dropdown.
+   5. Enter the config patch from step 1 into the patch editor.
+   6. Click **Save**. Omni applies the configuration to the selected machines.
+
+4. Confirm the nodes come back healthy in Omni.
+
+5. After the nodes are back up, run the following command to confirm that the etcd metrics endpoint is accessible:
+
+    ```bash
+    CP_IP=$(echo $CP_IPS | cut -d',' -f1)
+    curl "${CP_IP}:2381/metrics"
+    ```
+
+6. Secure your control plane IP addresses to prevent public access.
+See the [Ingress Firewall guide](../../talos/v1.10/networking/ingress-firewall) for instructions on securing your control plane.
+  </Tab>
+</Tabs>

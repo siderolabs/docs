@@ -5,25 +5,52 @@ description: "Guide on how to configure Talos Cluster to support User Namespaces
 
 User Namespaces are a feature of the Linux kernel that allows unprivileged users to have their own range of UIDs and GIDs, without needing to be root.
 
-Refer to the [official documentation](https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/) for more information on Usernamespaces.
+Refer to the [Kubernetes User Namespaces documentation](https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/) for more information.
 
-## Enabling Usernamespaces
+## Prerequisites
 
-To enable User Namespaces in Talos, you need to add the following configuration to Talos machine configuration:
+Before enabling User Namespaces, make sure your cluster meets the following:
+
+- Kubernetes v1.36 or later. User Namespaces reached General Availability (GA) in v1.36 and is enabled by default. On v1.33–v1.35 the feature is available as beta but requires the `UserNamespacesSupport` feature gate (see below).
+- Linux kernel 6.3 or later on every node. tmpfs gained idmap mount support in 6.3, which Kubernetes needs for tmpfs-backed mounts such as the service account token and Secrets.
+- A container runtime with user namespace support: containerd v2.0+ or CRI-O v1.25+.
+
+## Enabling User Namespaces
+
+There are two independent steps to enabling User Namespaces, and whether you need the second one depends on your Kubernetes version.
+
+### Increase the user namespace limit
+
+Apply this config patch to every node that should support user namespaces:
 
 ```yaml
----
+machine:
+  sysctls:
+    user.max_user_namespaces: "11255"
+```
+
+There's no single correct value for this sysctl, and it should be sized to the number of user-namespaced pods you expect to run concurrently on the node. `11255` is a functional starting point; raise it if pods start failing again as usage grows.
+
+### Enable the feature gate (Kubernetes v1.35 and earlier only)
+
+On Kubernetes v1.33–v1.35, User Namespaces is beta and requires enabling the feature gate on both the API server and kubelet.
+
+<Note>
+On Kubernetes v1.36 and later, User Namespaces is GA and enabled by default.
+</Note>
+
+```yaml
 cluster:
   apiServer:
     extraArgs:
       feature-gates: UserNamespacesSupport=true
 machine:
-  sysctls:
-    user.max_user_namespaces: "11255"
   kubelet:
     extraConfig:
       featureGates:
         UserNamespacesSupport: true
 ```
 
-After applying the configuration, refer to the [official documentation](https://kubernetes.io/docs/tasks/configure-pod-container/user-namespaces/) to configure workloads to use User Namespaces.
+## Using User Namespaces
+
+After applying the configuration, set `hostUsers: false` on your pod spec to opt in. Refer to the [Kubernetes User Namespaces task guide](https://kubernetes.io/docs/tasks/configure-pod-container/user-namespaces/) for workload configuration details.

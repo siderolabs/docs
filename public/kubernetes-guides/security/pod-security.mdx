@@ -45,23 +45,50 @@ This cluster-wide configuration:
 
 ## Modify the default PSA configuration
 
-You can modify this PSA policy by updating the generated machine configuration before the cluster is created or on the fly by using the `talosctl` CLI utility.
+You can override the default PSA policy shown above by setting `cluster.apiServer.admissionControl` in the machine configuration. This works whether you're setting it before the cluster is created or patching an existing cluster.
 
-Verify current admission plugin configuration with:
+Create and apply a config patch with the PSA configuration you want.
+
+**For example**, to also warn on `baseline` violations instead of just `restricted`:
+
+```yaml
+cluster:
+  apiServer:
+    admissionControl:
+      - name: PodSecurity
+        configuration:
+          apiVersion: pod-security.admission.config.k8s.io/v1alpha1
+          kind: PodSecurityConfiguration
+          defaults:
+            enforce: "baseline"
+            enforce-version: "latest"
+            audit: "restricted"
+            audit-version: "latest"
+            warn: "baseline"
+            warn-version: "latest"
+          exemptions:
+            usernames: []
+            runtimeClasses: []
+            namespaces: [kube-system]
+```
+
+Verify the change took effect:
+
+<Tabs>
+  <Tab title="Command">
 
 ```bash
-$ talosctl get admissioncontrolconfigs.kubernetes.talos.dev admission-control -o yaml
+talosctl get admissioncontrolconfigs.kubernetes.talos.dev admission-control -o yaml
+```
+  </Tab>
+  <Tab title="Output">
 
-node: 172.20.0.2
+```yaml
+node: <node-ip>
 metadata:
     namespace: controlplane
     type: AdmissionControlConfigs.kubernetes.talos.dev
     id: admission-control
-    version: 1
-    owner: config.K8sControlPlaneController
-    phase: running
-    created: 2022-02-22T20:28:21Z
-    updated: 2022-02-22T20:28:21Z
 spec:
     config:
         - name: PodSecurity
@@ -72,7 +99,7 @@ spec:
                 audit-version: latest
                 enforce: baseline
                 enforce-version: latest
-                warn: restricted
+                warn: baseline
                 warn-version: latest
             exemptions:
                 namespaces:
@@ -81,6 +108,9 @@ spec:
                 usernames: []
             kind: PodSecurityConfiguration
 ```
+
+  </Tab>
+</Tabs>
 
 ## Workloads that satisfy the different security profiles
 
