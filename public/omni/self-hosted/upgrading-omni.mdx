@@ -5,19 +5,12 @@ description: Prepare, validate, and apply a new Omni release without risking dat
 
 This guide explains the supported process for upgrading an on-prem Omni installation.
 
-<Warning>
+<Danger>
 **Before upgrading a Docker-based deployment:** if you installed Omni with `docker run`
-between April and August 2026, check whether your etcd data is mounted from the host:
-
-```bash
-docker inspect omni --format '{{ range .Mounts }}{{ .Destination }}{{ "\n" }}{{ end }}'
-```
-
-If `/_out/etcd` does not appear in the output, **do not upgrade, recreate, or remove the
-container** — your Omni data exists only inside it, and recreating the container will
-permanently destroy it. See the notice on our [status page](https://status.siderolabs.com)
-for updates, and contact support for help moving your data safely onto the host.
-</Warning>
+between April and August 2026, your etcd data may be stored inside the container rather
+than on the host, in which case recreating the container to upgrade will permanently
+destroy it. [Check whether you are affected](./restore-omni-database) before you continue.
+</Danger>
 
 ## Upgrade Policy
 
