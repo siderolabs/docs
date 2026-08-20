@@ -17,3 +17,4 @@ tools/docs-validate/docs-validate
 tools/mdx-normalize/mdx-normalize
 tools/omni-config-gen/omni-config-gen
 tools/style-guide-checker/style-guide-checker
+tools/doc-accuracy/doc-accuracy

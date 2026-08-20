@@ -166,7 +166,7 @@ test-docs-gen-race: ## Run tests with race detection
 	cd tools/docs-gen && go test -v -race
 
 .PHONY: test-all
-test-all: test-docs-gen ## Run all tests
+test-all: test-docs-gen test-doc-accuracy ## Run all tests
 
 # ---- Code review / linting -------------------------------------------------
 #
@@ -512,3 +512,36 @@ style-check-changed-auto: ## Check changed .mdx files, preferring local Go and f
 .PHONY: build-style-check-container
 build-style-check-container: ## Build the style-guide-checker container locally
 	docker build -t $(STYLE_CHECK_IMAGE) ./tools/style-guide-checker
+
+# ---- Doc accuracy review (AI) ----------------------------------------------
+#
+# Where the style checker catches *mechanical* style issues, this catches
+# *harmful* ones: a snippet that runs fine but silently loses data (the etcd
+# volume-mount incident), a destructive or irreversible command, a removed
+# safeguard, a security downgrade, or an ordinary wrong flag/value/false claim.
+# It runs the `claude` CLI headless as a documentation reviewer (the tool in
+# tools/doc-accuracy, prompt in reviewer-prompt.md), cross-checking snippets
+# against the upstream Talos, Omni, extensions, and discovery-service repos.
+#
+# Unlike the other tools this one has no container — a model call can't be
+# containerized here — so it runs the Go program directly and needs the `claude`
+# CLI (https://claude.com/claude-code) on PATH and signed in. It is a local,
+# judgment-based review you run before push, not a CI gate; it still exits
+# non-zero on critical findings so you *can* gate on it.
+#
+# DOC_ACCURACY_BASE is the ref "changed" mode diffs against (default HEAD);
+# DOC_ACCURACY_MODEL optionally overrides the model.
+DOC_ACCURACY_BASE ?= HEAD
+DOC_ACCURACY_MODEL ?=
+
+.PHONY: check-doc-accuracy
+check-doc-accuracy: ## AI-review docs for accuracy/harm. Scope one file with DOC=public/path; base with DOC_ACCURACY_BASE
+	cd tools/doc-accuracy && go run . -workspace ../.. -base $(DOC_ACCURACY_BASE) $(if $(DOC_ACCURACY_MODEL),-model $(DOC_ACCURACY_MODEL),) $(DOC)
+
+.PHONY: check-doc-accuracy-all
+check-doc-accuracy-all: ## AI-review every .mdx doc under public/ for accuracy/harm (slow)
+	cd tools/doc-accuracy && go run . -workspace ../.. -all $(if $(DOC_ACCURACY_MODEL),-model $(DOC_ACCURACY_MODEL),)
+
+.PHONY: test-doc-accuracy
+test-doc-accuracy: ## Run tests for the doc-accuracy tool
+	cd tools/doc-accuracy && go test -v
