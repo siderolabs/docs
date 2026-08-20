@@ -166,7 +166,7 @@ test-docs-gen-race: ## Run tests with race detection
 	cd tools/docs-gen && go test -v -race
 
 .PHONY: test-all
-test-all: test-docs-gen ## Run all tests
+test-all: test-docs-gen test-doc-accuracy ## Run all tests
 
 # ---- Code review / linting -------------------------------------------------
 #
@@ -512,3 +512,62 @@ style-check-changed-auto: ## Check changed .mdx files, preferring local Go and f
 .PHONY: build-style-check-container
 build-style-check-container: ## Build the style-guide-checker container locally
 	docker build -t $(STYLE_CHECK_IMAGE) ./tools/style-guide-checker
+
+# ---- Doc accuracy review (AI) ----------------------------------------------
+#
+# Where the style checker catches *mechanical* style issues, this catches
+# *harmful* ones: a snippet that runs fine but silently loses data (e.g. a
+# stateful service started without its persistence mount), a destructive or
+# irreversible command, a removed safeguard, a security downgrade, or an ordinary
+# wrong flag/value/false claim. It runs the `claude` CLI headless as a
+# documentation reviewer (the tool in tools/doc-accuracy, prompt in
+# reviewer-prompt.md), cross-checking snippets against the upstream Talos, Omni,
+# extensions, and discovery-service repos.
+#
+# Unlike the other tools this one has no container — a model call can't be
+# containerized here — so it runs the Go program directly and needs the `claude`
+# CLI (https://claude.com/claude-code) on PATH and signed in. It is a local,
+# judgment-based review you run before push, not a CI gate; it still exits
+# non-zero on critical findings so you *can* gate on it.
+#
+# DOC_ACCURACY_BASE is the ref "changed" mode diffs against. The tool diffs
+# against the *fork point* (merge-base of the base and HEAD), so the review
+# covers only what your branch introduced — committed and uncommitted — and stays
+# correct even when the branch is behind the base (main moving ahead while you
+# work no longer inflates the changed set). It defaults to the freshest mainline
+# available: upstream/main, then origin/main, then a local main, then HEAD. The
+# tool `git fetch`es a remote base before diffing, so the local target is reliable
+# without you refreshing main by hand. In CI, pass the PR base explicitly, e.g.
+# DOC_ACCURACY_BASE=origin/main.
+#
+# DOC_ACCURACY_MODEL overrides the model. DOC_ACCURACY_FORMAT=github adds
+# ::error/::warning annotations to stdout for CI. DOC_ACCURACY_ARGS passes any
+# other flags straight through (e.g. -fetch=false).
+DOC_ACCURACY_BASE ?= $(shell \
+	if git rev-parse --verify --quiet upstream/main >/dev/null 2>&1; then echo upstream/main; \
+	elif git rev-parse --verify --quiet origin/main >/dev/null 2>&1; then echo origin/main; \
+	elif git rev-parse --verify --quiet main >/dev/null 2>&1; then echo main; \
+	else echo HEAD; fi)
+DOC_ACCURACY_MODEL ?=
+DOC_ACCURACY_FORMAT ?=
+# Extra flags passed straight through, e.g. DOC_ACCURACY_ARGS=-verbose to stream
+# the full reviewer report (off by default: the terminal shows only the compact
+# findings summary; the full report is always saved to _out/).
+DOC_ACCURACY_ARGS ?=
+
+DOC_ACCURACY_FLAGS = \
+	$(if $(DOC_ACCURACY_MODEL),-model $(DOC_ACCURACY_MODEL),) \
+	$(if $(DOC_ACCURACY_FORMAT),-format $(DOC_ACCURACY_FORMAT),) \
+	$(DOC_ACCURACY_ARGS)
+
+.PHONY: check-doc-accuracy
+check-doc-accuracy: ## AI-review changed docs (committed + uncommitted) for accuracy/harm. Scope one file with DOC=public/path; base with DOC_ACCURACY_BASE
+	cd tools/doc-accuracy && go run . -workspace ../.. -base $(DOC_ACCURACY_BASE) $(DOC_ACCURACY_FLAGS) $(DOC)
+
+.PHONY: check-doc-accuracy-all
+check-doc-accuracy-all: ## AI-review every .mdx doc under public/ for accuracy/harm (slow)
+	cd tools/doc-accuracy && go run . -workspace ../.. -all $(DOC_ACCURACY_FLAGS)
+
+.PHONY: test-doc-accuracy
+test-doc-accuracy: ## Run tests for the doc-accuracy tool
+	cd tools/doc-accuracy && go test -v
