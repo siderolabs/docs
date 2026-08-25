@@ -42,7 +42,7 @@ Follow these steps to boot your machines using the Talos ISO image:
 1. Download the latest ISO for your infrastructure depending on the hardware type from the [Talos Image factory](https://factory.talos.dev/).
 
    **Note**: For network booting and self-built media using published kernel there are a number of required kernel parameters.
-Please see the [kernel docs](../reference/kernel) getting-started for more information.
+Please see the [kernel](../reference/kernel) documentation for more information.
 
 1. Boot three control planes using the ISO image you just downloaded.
 1. Boot additional machines as worker nodes.
@@ -95,7 +95,7 @@ Here are two common ways to configure this:
 - **Dedicated load balancer**: Set a dedicated load balancer that routes to your control plane nodes.
 - **DNS records**: Create multiple DNS records that point to all your control plane nodes
 
-With these, you can pass in one IP address or DNS name during setup that route to all your control plane nodes.
+With these, you can pass in one IP address or DNS name during setup that routes to all your control plane nodes.
 
 Here is how you can configure each option:
 
@@ -342,54 +342,43 @@ You have two options for managing your `talosconfig`:
 
 Configure your endpoints to enable talosctl to automatically load balance requests and fail over between control plane nodes when individual nodes become unavailable.
 
-Run this command to configure your endpoints.
-Replace the placeholders `<control_plane_IP_1> <control_plane_IP_2> <control_plane_IP_3>` with the IP addresses of your control plane nodes:
+Run this command to configure your endpoints:
 
 ```bash
-talosctl config endpoint <control_plane_IP_1> <control_plane_IP_2> <control_plane_IP_3>
-```
-
-**For example**:
-
-If your control plane nodes IP addresses are `192.168.0.2`, `192.168.0.3`, `192.168.0.4`, your command would be:
-
-```bash
-talosctl config endpoint 192.168.0.2 192.168.0.3 192.168.0.4
+talosctl config endpoint "${CONTROL_PLANE_IP[@]}"
 ```
 
 ## Step 14: Bootstrap your Kubernetes cluster
 
 Wait for your control plane nodes to finish booting, then bootstrap your etcd cluster by running the command below.
 
-Replace the `<control-plane-IP>` placeholder with the IP address of ONE of your three control plane nodes:
+Bootstrap using any one of the IP addresses in your `CONTROL_PLANE_IP` array, the example below uses the first (index `0`), but any index works:
 
 ```bash
-talosctl bootstrap --nodes <control-plane-IP>
+BOOTSTRAP_NODE="${CONTROL_PLANE_IP[0]}"
+talosctl bootstrap --nodes "$BOOTSTRAP_NODE"
 ```
 
-**Note**: Run this command ONCE on a SINGLE control plane node.
-If you have multiple control plane nodes, you can choose any of them.
+<Warning>Run this command ONCE on a SINGLE control plane node.</Warning>
 
 ## Step 15: Get Kubernetes access
 
 Download your `kubeconfig` file to start using `kubectl` with your cluster.
 These commands must be run against a single control plane node.
 
-You have two options for managing your `kubeconfig`.
-Replace `<control-plane-IP>` with the IP address of any one of your control plane nodes:
+You have two options for managing your `kubeconfig`:
 
 - Merge into your default `kubeconfig`:
 
 ```bash
-talosctl kubeconfig --nodes <control-plane-IP>
+talosctl kubeconfig --nodes "$BOOTSTRAP_NODE"
 ```
 
 - Create a separate `kubeconfig` file:
 
 ```bash
-talosctl kubeconfig alternative-kubeconfig --nodes <control-plane-IP>
+talosctl kubeconfig alternative-kubeconfig --nodes "$BOOTSTRAP_NODE"
 export KUBECONFIG=./alternative-kubeconfig
-
 ```
 
 ## Step 16: Verify your nodes are running
