@@ -2386,7 +2386,7 @@
             ]
           },
           {
-            "version": "v1.14.0-beta.1",
+            "version": "v1.14.0-rc.2",
             "groups": [
               {
                 "group": "Overview",
@@ -2730,6 +2730,12 @@
                           "talos/v1.14/reference/configuration/cri/registryauthconfig",
                           "talos/v1.14/reference/configuration/cri/registrymirrorconfig",
                           "talos/v1.14/reference/configuration/cri/registrytlsconfig"
+                        ]
+                      },
+                      {
+                        "group": "Container",
+                        "pages": [
+                          "talos/v1.14/reference/configuration/container/containerconfig"
                         ]
                       },
                       {

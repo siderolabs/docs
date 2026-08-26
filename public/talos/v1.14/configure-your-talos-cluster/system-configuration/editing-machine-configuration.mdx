@@ -6,27 +6,27 @@ aliases:
 canonical: https://docs.siderolabs.com/talos/v1.13/configure-your-talos-cluster/system-configuration/editing-machine-configuration
 ---
 
-import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx";
 
 <VersionWarningBanner />
 
-import { release_v1_14, k8s_release } from '/snippets/custom-variables.mdx';
+import { release_v1_14, k8s_release } from "/snippets/custom-variables.mdx";
 
 Talos node state is fully defined by [machine configuration](../../reference/configuration/overview).
 Initial configuration is delivered to the node at bootstrap time, but configuration can be updated while the node is running.
 
 There are three `talosctl` commands which facilitate machine configuration updates:
 
-* `talosctl apply-config` to apply configuration from the file
-* `talosctl edit machineconfig` to launch an editor with existing node configuration, make changes and apply configuration back
-* `talosctl patch machineconfig` to apply automated machine configuration via JSON patch
+- `talosctl apply-config` to apply configuration from the file
+- `talosctl edit machineconfig` to launch an editor with existing node configuration, make changes and apply configuration back
+- `talosctl patch machineconfig` to apply automated machine configuration via JSON patch
 
 In Talos{release_v1_14}, machine configuration is always applied to the running node without a reboot.
 Each of these commands can operate in one of the following modes:
 
-* apply change immediately (default, `--mode=auto` or `--mode=no-reboot`): the new configuration is applied to the running node
-* apply change on next reboot (`--mode=staged`): change is staged to be applied after a reboot, but node is not rebooted
-* apply change with automatic revert (`--mode=try`): change is applied immediately (if not possible, returns an error), and reverts it automatically in 1 minute if no configuration update is applied
+- apply change immediately (default, `--mode=auto` or `--mode=no-reboot`): the new configuration is applied to the running node
+- apply change on next reboot (`--mode=staged`): change is staged to be applied after a reboot, but node is not rebooted
+- apply change with automatic revert (`--mode=try`): change is applied immediately (if not possible, returns an error), and reverts it automatically in 1 minute if no configuration update is applied
 
 > Note: applying change on next reboot (`--mode=staged`) doesn't modify current node configuration, so next call to
 > `talosctl edit machineconfig --mode=staged` will not see changes
@@ -43,7 +43,7 @@ It can be used to modify the configuration locally before being applied to the n
 Talos applies the new configuration to the running node, but a few settings are not fully picked up by a node which is already running,
 and need a reboot to take effect:
 
-* **`.cluster.etcd`**: the `etcd` service reads its settings — image, extra arguments, advertised and listen addresses — when it starts.
+- **`.cluster.etcd`**: the `etcd` service reads its settings — image, extra arguments, advertised and listen addresses — when it starts.
   Talos does not restart `etcd` on a configuration change, since restarting a control plane member is disruptive and is not something Talos does implicitly.
   Reboot the node to pick up the new settings:
 
@@ -51,16 +51,18 @@ and need a reboot to take effect:
   talosctl -n <IP> reboot
   ```
 
-* **Environment variables** ([`EnvironmentConfig`](../../reference/configuration/runtime/environmentconfig) or `.machine.env`): Talos picks up the new values on the fly,
+- **Environment variables** ([`EnvironmentConfig`](../../reference/configuration/runtime/environmentconfig) or `.machine.env`): Talos picks up the new values on the fly,
   but a service which is already running keeps the environment it was started with, so a variable consumed by a service only takes effect once that service restarts.
   Removing a variable from the configuration does not unset it on a running node either.
 
-* **Kernel modules** ([`KernelModuleConfig`](../../reference/configuration/runtime/kernelmoduleconfig) or `.machine.kernel.modules`): Talos loads modules which were added to the configuration,
+- **Kernel modules** ([`KernelModuleConfig`](../../reference/configuration/runtime/kernelmoduleconfig) or `.machine.kernel.modules`): Talos loads modules which were added to the configuration,
   but it never unloads modules, and module parameters are only applied when the module is loaded for the first time.
   Removing a module, or changing the parameters of a module which is already loaded, has no effect until a reboot.
 
-* **Volume encryption keys**: the `encryption` section of a volume document is applied when the volume is unlocked, so
+- **Volume encryption keys**: the `encryption` section of a volume document is applied when the volume is unlocked, so
   [rotating a key](../storage-and-disk-management/disk-encryption#key-rotation) takes a reboot for the volume to be re-encrypted with the new key.
+
+- **Sandboxd**: ([`SecurityProfileConfig`](../../reference/configuration/runtime/securityprofileconfig): changes to the `workloadIsolation` configuration are only applied when the service starts, so a reboot is needed to pick up new settings.
 
 This list is not exhaustive: in general, a setting consumed by a long-running service only takes effect when that service restarts.
 
@@ -128,7 +130,7 @@ it applies a set of [patches](./patching) to the configuration and writes the re
 Example, updating kubelet version by patching the [`KubeletConfig`](../../reference/configuration/kubernetes/kubeletconfig) document:
 
 <CodeBlock lang="sh">
-{`
+  {`
 $ talosctl -n <IP> patch machineconfig -p '{"apiVersion": "v1alpha1", "kind": "KubeletConfig", "image": "ghcr.io/siderolabs/kubelet:v${k8s_release}"}'
 patched mc at the node <IP>
 `}
@@ -138,7 +140,7 @@ Updating kube-apiserver version via the [`KubeAPIServerConfig`](../../reference/
 reverting the change automatically if it is not confirmed within a minute:
 
 <CodeBlock lang="sh">
-{`
+  {`
 $ talosctl -n <IP> patch machineconfig --mode=try -p '{"apiVersion": "v1alpha1", "kind": "KubeAPIServerConfig", "image": "registry.k8s.io/kube-apiserver:v${k8s_release}"}'
 patched mc at the node <IP>
 `}
@@ -153,7 +155,7 @@ talosctl -n <IP1>,<IP2>,... patch machineconfig -p '{...}'
 Patches can also be sourced from files using `file` (or `@file`) syntax, which is usually more readable for document patches:
 
 <CodeBlock lang="yaml">
-{`
+  {`
 # kubelet-patch.yaml
 apiVersion: v1alpha1
 kind: KubeletConfig

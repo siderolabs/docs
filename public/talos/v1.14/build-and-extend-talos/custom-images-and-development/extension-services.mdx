@@ -137,6 +137,12 @@ Available dependencies:
 * `configuration: true`: wait for `ExtensionServiceConfig` resource with a name matching the extension name to be available.
   The mounts specified in the `ExtensionServiceConfig` will be added as extra mounts to the extension service.
 
+<Warning>
+    `ExtensionServiceConfig` is supported only when the extension service manifest declares `configuration: true`.
+    Using it with a service that does not declare this dependency is unsupported and has undefined startup behavior.
+    The service might start before its configuration is rendered, leaving config files or environment variables unavailable until a later service restart.
+</Warning>
+
 ### `restart`
 
 Field `restart` defines the service restart policy, it allows to either configure an always running service or a one-shot service:
@@ -195,7 +201,7 @@ Talos starts the container for the extension service with container root filesys
 Extension service is registered as `ext-hello-world` in `talosctl services`:
 
 ```shell
-$ talosctl service ext-hello-world
+talosctl service ext-hello-world
 NODE     172.20.0.5
 ID       ext-hello-world
 STATE    Running

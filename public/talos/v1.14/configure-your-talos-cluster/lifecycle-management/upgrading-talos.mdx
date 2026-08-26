@@ -3,14 +3,14 @@ title: "Upgrading Talos Linux"
 description: "Guide to upgrading a Talos Linux machine."
 aliases:
   - ../guides/upgrading-talos
-canonical: https://docs.siderolabs.com/talos/v1.13/configure-your-talos-cluster/lifecycle-management/upgrading-talos
+canonical: https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/lifecycle-management/upgrading-talos
 ---
 
-import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx";
 
 <VersionWarningBanner />
 
-import { release_v1_14 } from '/snippets/custom-variables.mdx';
+import { release_v1_14 } from "/snippets/custom-variables.mdx";
 
 OS upgrades are effected by an API call, which can be sent via the `talosctl` CLI utility.
 
@@ -23,7 +23,7 @@ This scheme retains the previous Talos kernel and OS image following each upgrad
 If an upgrade fails to boot, Talos will roll back to the previous version.
 Likewise, Talos may be manually rolled back via API (or `talosctl rollback`), which will update the boot reference and reboot.
 
-*Note* An upgrade of the Talos Linux OS will not (since v1.0) apply an upgrade to the Kubernetes version by default.
+_Note_ An upgrade of the Talos Linux OS will not (since v1.0) apply an upgrade to the Kubernetes version by default.
 Kubernetes upgrades should be managed separately per [upgrading kubernetes](../../../../kubernetes-guides/advanced-guides/upgrading-kubernetes).
 
 ## Supported upgrade paths
@@ -35,50 +35,56 @@ Thus the recommended upgrade path is to always upgrade to the latest patch relea
 
 For example, if upgrading from Talos 1.0 to Talos 1.2.4, the recommended upgrade path would be:
 
-* upgrade from 1.0 to latest patch of 1.0 - to v1.0.6
-* upgrade from v1.0.6 to latest patch of 1.1 - to v1.1.2
-* upgrade from v1.1.2 to v1.2.4
+- upgrade from 1.0 to latest patch of 1.0 - to v1.0.6
+- upgrade from v1.0.6 to latest patch of 1.1 - to v1.1.2
+- upgrade from v1.1.2 to v1.2.4
 
 ## Before upgrade to {release_v1_14}
 
-Talos v1.13 onwards now supports NVIDIA GPU via the gpu-operator.
+<Warning>
+    **Migrate the multipath configuration before upgrading.**
 
-### NVIDIA GPU users
+    The `multipath-tools` system extension now reads `/etc/multipath.conf` from the Talos host instead of using `ExtensionServiceConfig`.
+    If the machine configuration still contains an `ExtensionServiceConfig` document named `multipathd`, the service waits indefinitely for `/etc/multipath.conf` after the upgrade.
+    Apply the patch below to every affected machine before upgrading Talos or the extension.
 
-Talos 1.13 now supports configuring NVIDIA GPU via the gpu-operator.
+</Warning>
 
-If using NVIDIA GPU on DGX systems, follow the [NVIDIA proprietary driver guide](../hardware-and-drivers/nvidia-gpu-proprietary).
-DGX systems are only known to work with the proprietary driver as of now.
-
-Before upgrading to Talos 1.13, uninstall the nvidia-device-plugin helm chart and delete the nvidia runtimeclass.
-
-Uninstall the nvidia-device-plugin helm chart:
-
-First list all helm installs:
-
-```bash
-helm list -A
+```yaml
+apiVersion: v1alpha1
+kind: ExtensionServiceConfig
+name: multipathd
+$patch: delete
+---
+apiVersion: v1alpha1
+kind: EtcFileConfig
+name: multipath.conf
+mode: 0o644
+contents: |
+  defaults {
+      user_friendly_names yes
+      find_multipaths no
+      path_selector "round-robin 0"
+  }
 ```
 
-Find the helm release for the nvidia-device-plugin and uninstall it:
+Note that the `multipath.conf` provided is a minimal configuration that works for most setups; if you have a custom configuration, update the `contents` field accordingly as per your requirements.
 
-```bash
-helm uninstall -n <namespace> <release-name>
-```
-
-Now delete the nvidia runtimeclass:
-
-```bash
-kubectl delete runtimeclass nvidia
-```
-
-Now follow the instructions in [NVIDIA GPU (OSS drivers)](../hardware-and-drivers/nvidia-gpu) or [NVIDIA GPU (Proprietary drivers)](../hardware-and-drivers/nvidia-gpu-proprietary) guide to switch to the new gpu-operator based configuration.
+The patch removes the old extension service configuration and creates the host file that `multipathd` waits for and bind-mounts read-only.
 
 ## Video walkthrough
 
 To see a live demo of an upgrade of Talos Linux, see the video below:
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/AAF6WhX0USo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/AAF6WhX0USo"
+  title="YouTube video player"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen
+></iframe>
 
 ## After upgrade to {release_v1_14}
 
@@ -98,7 +104,7 @@ to install the current version, you would enter a command such
 as:
 
 <CodeBlock lang="sh">
-{`
+  {`
   talosctl upgrade --nodes 10.20.30.40 \\
   --image factory.talos.dev/metal-installer/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:${release_v1_14}
 `}
@@ -107,41 +113,6 @@ as:
 The `--image` flag defaults to the installer image of the `talosctl` version in use, so it can be omitted when upgrading a machine without system extensions to the version matching `talosctl`.
 
 Note that because Talos Linux reboots via the `kexec` syscall, the extra reboot adds very little time.
-
-### Upgrade API changes in Talos v1.13
-
-Talos v1.13 introduces a new streaming upgrade API via `LifecycleService.Upgrade`.
-The `talosctl upgrade` command now uses this new API by default, providing real-time progress reporting and support for parallel upgrades across multiple nodes.
-
-New flags:
-
-* `--progress <mode>` - Controls the output mode for upgrade progress. Values: `auto` (default), `plain`. `auto` uses a dynamic progress reporter if the output is a terminal, and falls back to plain text otherwise. `plain` always uses plain text output.
-* `--namespace <name>` - Containerd namespace to use for the upgrade image. Values: `system` (default), `cri`, `inmem`.
-
-The `--reboot-mode` flag now supports three values: `default`, `powercycle`, and `force`.
-
-> **Deprecation notice**
-> The legacy upgrade flags (`--force`, `--insecure`, `--preserve`, `--stage`) are deprecated and will be removed in Talos 1.18.
-> These flags are only used when falling back to the legacy `MachineService.Upgrade` API for older Talos versions.
-
-<Warning>
-    **Known limitation: `.machine.install.extraKernelArgs` is not applied by the new upgrade API**
-
-    The new upgrade API does not pass `.machine.install.extraKernelArgs` to the installer, so a GRUB node with `.machine.install.grubUseUKICmdline` set to `false` gets a `grub.cfg` written without those arguments.
-    The upgrade succeeds and reports no error, but the node reboots with a kernel command line that no longer matches its machine configuration.
-
-    `grubUseUKICmdline` defaults to `false` for machine configurations generated before Talos v1.12, so existing GRUB clusters are affected without opting in.
-
-    If you rely on `extraKernelArgs`, pick one of:
-
-    * **Upgrade with `--legacy`.** This uses the legacy `MachineService.Upgrade` API, which still applies `extraKernelArgs`: `talosctl upgrade --nodes 10.20.30.40 --legacy --image <installer-image>`.
-      The legacy API is supported until Talos 1.18, so treat this as a stopgap rather than a permanent arrangement.
-    * **Migrate to the UKI command line.** Build the arguments into the UKI when generating [boot assets](../../platform-specific-installations/boot-assets), then set `grubUseUKICmdline: true` and remove `extraKernelArgs` from the machine configuration.
-      This is the recommended option, and the only one that keeps working past Talos 1.18.
-
-    Nodes booting with `systemd-boot`, and GRUB nodes with `grubUseUKICmdline` set to `true`, are unaffected: in both cases the kernel command line comes from the UKI rather than from `extraKernelArgs`.
-    See [Boot Loader](../../platform-specific-installations/bare-metal-platforms/bootloader) for details.
-</Warning>
 
 ## Machine configuration changes
 
@@ -154,90 +125,90 @@ Unless noted otherwise, a deprecated field and its replacement document are mutu
 Kubernetes configuration is now expressed as a set of dedicated documents; new Kubernetes features and settings will only be available in the new documents.
 `kube-proxy` is now configured with a configuration file (via [KubeProxyConfig](../../reference/configuration/kubernetes/kubeproxyconfig)) instead of command line arguments.
 
-| Deprecated `v1alpha1` field                                                                                                                                                                              | Replacement document                                                                                                                                                                                                                                                                                                                                             |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.cluster.clusterName`, `.cluster.controlPlane.endpoint`                                                                                                                                                 | [KubeClusterConfig](../../reference/configuration/kubernetes/kubeclusterconfig)                                                                                                                                                                                                                                                                                   |
-| `.cluster.apiServer`, `.cluster.controlPlane.localAPIServerPort`                                                                                                                                         | [KubeAPIServerConfig](../../reference/configuration/kubernetes/kubeapiserverconfig), [KubeAdmissionControlConfig](../../reference/configuration/kubernetes/kubeadmissioncontrolconfig), [KubeAuditPolicyConfig](../../reference/configuration/kubernetes/kubeauditpolicyconfig), [KubeAuthenticationConfig](../../reference/configuration/kubernetes/kubeauthenticationconfig), [KubeAuthorizerConfig](../../reference/configuration/kubernetes/kubeauthorizerconfig) |
-| `.cluster.ca`, `.cluster.acceptedCAs`                                                                                                                                                                    | [KubeAPIServerCAConfig](../../reference/configuration/kubernetes/kubeapiservercaconfig)                                                                                                                                                                                                                                                                           |
-| `.cluster.aggregatorCA`                                                                                                                                                                                  | [KubeAggregatorCAConfig](../../reference/configuration/kubernetes/kubeaggregatorcaconfig)                                                                                                                                                                                                                                                                         |
-| `.cluster.serviceAccount`                                                                                                                                                                                | [KubeServiceAccountConfig](../../reference/configuration/kubernetes/kubeserviceaccountconfig)                                                                                                                                                                                                                                                                     |
-| `.cluster.controllerManager`, `.machine.controlPlane.controllerManager`                                                                                                                                  | [KubeControllerManagerConfig](../../reference/configuration/kubernetes/kubecontrollermanagerconfig)                                                                                                                                                                                                                                                               |
-| `.cluster.scheduler`, `.machine.controlPlane.scheduler`                                                                                                                                                  | [KubeSchedulerConfig](../../reference/configuration/kubernetes/kubeschedulerconfig)                                                                                                                                                                                                                                                                               |
-| `.cluster.proxy`                                                                                                                                                                                         | [KubeProxyConfig](../../reference/configuration/kubernetes/kubeproxyconfig)                                                                                                                                                                                                                                                                                       |
-| `.cluster.network`                                                                                                                                                                                       | [KubeNetworkConfig](../../reference/configuration/kubernetes/kubenetworkconfig), [KubeFlannelCNIConfig](../../reference/configuration/kubernetes/kubeflannelcniconfig)                                                                                                                                                                                             |
-| `.cluster.coreDNS`                                                                                                                                                                                       | [KubeCoreDNSConfig](../../reference/configuration/kubernetes/kubecorednsconfig)                                                                                                                                                                                                                                                                                   |
-| `.cluster.aescbcEncryptionSecret`, `.cluster.secretboxEncryptionSecret`                                                                                                                                  | [KubeEtcdEncryptionConfig](../../reference/configuration/kubernetes/kubeetcdencryptionconfig)                                                                                                                                                                                                                                                                     |
-| `.cluster.inlineManifests`                                                                                                                                                                               | [KubeInlineManifestConfig](../../reference/configuration/kubernetes/kubeinlinemanifestconfig)                                                                                                                                                                                                                                                                     |
-| `.cluster.extraManifests`, `.cluster.extraManifestHeaders`                                                                                                                                               | [KubeExternalManifestConfig](../../reference/configuration/kubernetes/kubeexternalmanifestconfig)                                                                                                                                                                                                                                                                 |
-| `.cluster.allowSchedulingOnControlPlanes`, `.machine.nodeLabels`, `.machine.nodeAnnotations`, `.machine.nodeTaints`, `.machine.kubelet.nodeIP`, `.machine.kubelet.registerWithFQDN`, `.machine.kubelet.skipNodeRegistration` | [KubeNodeConfig](../../reference/configuration/kubernetes/kubenodeconfig)                                                                                                                                                                                                                                                                                         |
-| `.machine.kubelet` (remaining fields)                                                                                                                                                                    | [KubeletConfig](../../reference/configuration/kubernetes/kubeletconfig), [KubeCredentialProviderConfig](../../reference/configuration/kubernetes/kubecredentialproviderconfig) (for `.machine.kubelet.credentialProviderConfig`)                                                                                                                                   |
-| `.machine.pods`                                                                                                                                                                                          | [KubeStaticPodConfig](../../reference/configuration/kubernetes/kubestaticpodconfig)                                                                                                                                                                                                                                                                              |
-| `.machine.features.kubePrism`                                                                                                                                                                            | [KubePrismConfig](../../reference/configuration/kubernetes/kubeprismconfig) (remove the document to disable KubePrism)                                                                                                                                                                                                                                            |
-| `.machine.features.kubernetesTalosAPIAccess`                                                                                                                                                             | [KubeTalosAPIAccessConfig](../../reference/configuration/kubernetes/kubetalosapiaccessconfig)                                                                                                                                                                                                                                                                     |
-| `.cluster.discovery`                                                                                                                                                                                     | [DiscoveryServiceConfig](../../reference/configuration/cluster/discoveryserviceconfig)                                                                                                                                                                                                                                                                            |
-| `.cluster.id`, `.cluster.secret`                                                                                                                                                                         | [DiscoveryIdentityConfig](../../reference/configuration/cluster/discoveryidentityconfig)                                                                                                                                                                                                                                                                          |
+| Deprecated `v1alpha1` field                                                                                                                                                                                                  | Replacement document                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.cluster.clusterName`, `.cluster.controlPlane.endpoint`                                                                                                                                                                     | [KubeClusterConfig](../../reference/configuration/kubernetes/kubeclusterconfig)                                                                                                                                                                                                                                                                                                                                                                                       |
+| `.cluster.apiServer`, `.cluster.controlPlane.localAPIServerPort`                                                                                                                                                             | [KubeAPIServerConfig](../../reference/configuration/kubernetes/kubeapiserverconfig), [KubeAdmissionControlConfig](../../reference/configuration/kubernetes/kubeadmissioncontrolconfig), [KubeAuditPolicyConfig](../../reference/configuration/kubernetes/kubeauditpolicyconfig), [KubeAuthenticationConfig](../../reference/configuration/kubernetes/kubeauthenticationconfig), [KubeAuthorizerConfig](../../reference/configuration/kubernetes/kubeauthorizerconfig) |
+| `.cluster.ca`, `.cluster.acceptedCAs`                                                                                                                                                                                        | [KubeAPIServerCAConfig](../../reference/configuration/kubernetes/kubeapiservercaconfig)                                                                                                                                                                                                                                                                                                                                                                               |
+| `.cluster.aggregatorCA`                                                                                                                                                                                                      | [KubeAggregatorCAConfig](../../reference/configuration/kubernetes/kubeaggregatorcaconfig)                                                                                                                                                                                                                                                                                                                                                                             |
+| `.cluster.serviceAccount`                                                                                                                                                                                                    | [KubeServiceAccountConfig](../../reference/configuration/kubernetes/kubeserviceaccountconfig)                                                                                                                                                                                                                                                                                                                                                                         |
+| `.cluster.controllerManager`, `.machine.controlPlane.controllerManager`                                                                                                                                                      | [KubeControllerManagerConfig](../../reference/configuration/kubernetes/kubecontrollermanagerconfig)                                                                                                                                                                                                                                                                                                                                                                   |
+| `.cluster.scheduler`, `.machine.controlPlane.scheduler`                                                                                                                                                                      | [KubeSchedulerConfig](../../reference/configuration/kubernetes/kubeschedulerconfig)                                                                                                                                                                                                                                                                                                                                                                                   |
+| `.cluster.proxy`                                                                                                                                                                                                             | [KubeProxyConfig](../../reference/configuration/kubernetes/kubeproxyconfig)                                                                                                                                                                                                                                                                                                                                                                                           |
+| `.cluster.network`                                                                                                                                                                                                           | [KubeNetworkConfig](../../reference/configuration/kubernetes/kubenetworkconfig), [KubeFlannelCNIConfig](../../reference/configuration/kubernetes/kubeflannelcniconfig)                                                                                                                                                                                                                                                                                                |
+| `.cluster.coreDNS`                                                                                                                                                                                                           | [KubeCoreDNSConfig](../../reference/configuration/kubernetes/kubecorednsconfig)                                                                                                                                                                                                                                                                                                                                                                                       |
+| `.cluster.aescbcEncryptionSecret`, `.cluster.secretboxEncryptionSecret`                                                                                                                                                      | [KubeEtcdEncryptionConfig](../../reference/configuration/kubernetes/kubeetcdencryptionconfig)                                                                                                                                                                                                                                                                                                                                                                         |
+| `.cluster.inlineManifests`                                                                                                                                                                                                   | [KubeInlineManifestConfig](../../reference/configuration/kubernetes/kubeinlinemanifestconfig)                                                                                                                                                                                                                                                                                                                                                                         |
+| `.cluster.extraManifests`, `.cluster.extraManifestHeaders`                                                                                                                                                                   | [KubeExternalManifestConfig](../../reference/configuration/kubernetes/kubeexternalmanifestconfig)                                                                                                                                                                                                                                                                                                                                                                     |
+| `.cluster.allowSchedulingOnControlPlanes`, `.machine.nodeLabels`, `.machine.nodeAnnotations`, `.machine.nodeTaints`, `.machine.kubelet.nodeIP`, `.machine.kubelet.registerWithFQDN`, `.machine.kubelet.skipNodeRegistration` | [KubeNodeConfig](../../reference/configuration/kubernetes/kubenodeconfig)                                                                                                                                                                                                                                                                                                                                                                                             |
+| `.machine.kubelet` (remaining fields)                                                                                                                                                                                        | [KubeletConfig](../../reference/configuration/kubernetes/kubeletconfig), [KubeCredentialProviderConfig](../../reference/configuration/kubernetes/kubecredentialproviderconfig) (for `.machine.kubelet.credentialProviderConfig`)                                                                                                                                                                                                                                      |
+| `.machine.pods`                                                                                                                                                                                                              | [KubeStaticPodConfig](../../reference/configuration/kubernetes/kubestaticpodconfig)                                                                                                                                                                                                                                                                                                                                                                                   |
+| `.machine.features.kubePrism`                                                                                                                                                                                                | [KubePrismConfig](../../reference/configuration/kubernetes/kubeprismconfig) (remove the document to disable KubePrism)                                                                                                                                                                                                                                                                                                                                                |
+| `.machine.features.kubernetesTalosAPIAccess`                                                                                                                                                                                 | [KubeTalosAPIAccessConfig](../../reference/configuration/kubernetes/kubetalosapiaccessconfig)                                                                                                                                                                                                                                                                                                                                                                         |
+| `.cluster.discovery`                                                                                                                                                                                                         | [DiscoveryServiceConfig](../../reference/configuration/cluster/discoveryserviceconfig)                                                                                                                                                                                                                                                                                                                                                                                |
+| `.cluster.id`, `.cluster.secret`                                                                                                                                                                                             | [DiscoveryIdentityConfig](../../reference/configuration/cluster/discoveryidentityconfig)                                                                                                                                                                                                                                                                                                                                                                              |
 
 Other Kubernetes configuration changes:
 
-* [DiscoveryServiceConfig](../../reference/configuration/cluster/discoveryserviceconfig) is a multi-document kind, so multiple discovery service endpoints can be configured now.
-* The cluster ID encoding in the generated secrets bundle changed from `base64.URLEncoding` to `base64.StdEncoding` to align with the rest of Talos.
-* The default control plane `NoSchedule` taint and the control plane node label are now listed explicitly in [KubeNodeConfig](../../reference/configuration/kubernetes/kubenodeconfig).
-* [KubeNetworkConfig](../../reference/configuration/kubernetes/kubenetworkconfig) adds `nodeCIDRMaskSizeIPv4` (default `24`) and `nodeCIDRMaskSizeIPv6` (default `64`) to control the per-node pod CIDR mask size; pod and service subnet sizes are validated against them.
-* `.machine.kubelet.extraMounts` has no equivalent in the new documents, and `.machine.kubelet.disableManifestsDirectory` is locked to `true` there.
+- [DiscoveryServiceConfig](../../reference/configuration/cluster/discoveryserviceconfig) is a multi-document kind, so multiple discovery service endpoints can be configured now.
+- The cluster ID encoding in the generated secrets bundle changed from `base64.URLEncoding` to `base64.StdEncoding` to align with the rest of Talos.
+- The default control plane `NoSchedule` taint and the control plane node label are now listed explicitly in [KubeNodeConfig](../../reference/configuration/kubernetes/kubenodeconfig).
+- [KubeNetworkConfig](../../reference/configuration/kubernetes/kubenetworkconfig) adds `nodeCIDRMaskSizeIPv4` (default `24`) and `nodeCIDRMaskSizeIPv6` (default `64`) to control the per-node pod CIDR mask size; pod and service subnet sizes are validated against them.
+- `.machine.kubelet.extraMounts` has no equivalent in the new documents, and `.machine.kubelet.disableManifestsDirectory` is locked to `true` there.
 
 ### Kernel and udev
 
 If both the deprecated `v1alpha1` field and the new document are used, the new document takes precedence for conflicting settings.
 
-| Deprecated `v1alpha1` field | Replacement document                                                              |
-| ----------------------------- | ----------------------------------------------------------------------------------- |
-| `.machine.sysctls`          | [SysctlConfig](../../reference/configuration/runtime/sysctlconfig)                 |
-| `.machine.sysfs`            | [SysfsConfig](../../reference/configuration/runtime/sysfsconfig)                   |
-| `.machine.kernel.modules`   | [KernelModuleConfig](../../reference/configuration/runtime/kernelmoduleconfig)     |
-| `.machine.udev.rules`       | [UdevRulesConfig](../../reference/configuration/runtime/udevrulesconfig)           |
+| Deprecated `v1alpha1` field | Replacement document                                                           |
+| --------------------------- | ------------------------------------------------------------------------------ |
+| `.machine.sysctls`          | [SysctlConfig](../../reference/configuration/runtime/sysctlconfig)             |
+| `.machine.sysfs`            | [SysfsConfig](../../reference/configuration/runtime/sysfsconfig)               |
+| `.machine.kernel.modules`   | [KernelModuleConfig](../../reference/configuration/runtime/kernelmoduleconfig) |
+| `.machine.udev.rules`       | [UdevRulesConfig](../../reference/configuration/runtime/udevrulesconfig)       |
 
 ### Install, files and container runtime
 
-* `.machine.install` is deprecated in favor of the new [UnattendedInstallConfig](../../reference/configuration/runtime/unattendedinstallconfig) document, which carries the installer `image` and a `provisioning` section with a CEL `volumeSelector` to match the install disk.
+- `.machine.install` is deprecated in favor of the new [UnattendedInstallConfig](../../reference/configuration/runtime/unattendedinstallconfig) document, which carries the installer `image` and a `provisioning` section with a CEL `volumeSelector` to match the install disk.
   `talosctl gen config` and `talosctl cluster create` generate this document by default now; `.machine.install` is still used for older version contracts.
-* `.machine.files` is deprecated in favor of dedicated documents: [EtcFileConfig](../../reference/configuration/runtime/etcfileconfig) for user-owned files under `/etc` (the document `name` is the path relative to `/etc`), and [CRICustomizationConfig](../../reference/configuration/cri/cricustomizationconfig) for CRI configuration.
+- `.machine.files` is deprecated in favor of dedicated documents: [EtcFileConfig](../../reference/configuration/runtime/etcfileconfig) for user-owned files under `/etc` (the document `name` is the path relative to `/etc`), and [CRICustomizationConfig](../../reference/configuration/cri/cricustomizationconfig) for CRI configuration.
   Talos-managed paths (`resolv.conf`, `hosts`, `machine-id`, CRI and Kubernetes configuration, trust bundles and identity files) are rejected by `EtcFileConfig`.
-* New [CRICustomizationConfig](../../reference/configuration/cri/cricustomizationconfig) document carries a TOML fragment merged into the CRI containerd configuration; fragments are merged in lexicographical order by document name.
+- New [CRICustomizationConfig](../../reference/configuration/cri/cricustomizationconfig) document carries a TOML fragment merged into the CRI containerd configuration; fragments are merged in lexicographical order by document name.
   The legacy `/etc/cri/conf.d/20-customization.part` machine file is still supported and is exposed under the reserved name `customization`.
   CRI configuration changes no longer require a reboot.
-* `.machine.baseRuntimeSpecOverrides` is deprecated in favor of the new [CRIBaseRuntimeSpecConfig](../../reference/configuration/cri/cribaseruntimespecconfig) document.
-* `.machine.features.imageCache` is deprecated in favor of the new [ImageCacheConfig](../../reference/configuration/cri/imagecacheconfig) document, where `localEnabled` becomes `local.enabled`.
+- `.machine.baseRuntimeSpecOverrides` is deprecated in favor of the new [CRIBaseRuntimeSpecConfig](../../reference/configuration/cri/cribaseruntimespecconfig) document.
+- `.machine.features.imageCache` is deprecated in favor of the new [ImageCacheConfig](../../reference/configuration/cri/imagecacheconfig) document, where `localEnabled` becomes `local.enabled`.
   The deprecated field is still honored, so upgraded clusters keep their image cache enabled, but the field and the document cannot both be set.
-* New [SecurityProfileConfig](../../reference/configuration/runtime/securityprofileconfig) document with the `workloadIsolation` option (enabled by default for new clusters generated with Talos 1.14, absent — and therefore disabled — on upgraded clusters).
-* [OOMConfig](../../reference/configuration/runtime/oomconfig) has a new `strictCgroupClassOrdering` option (defaults to `true`) to enforce QoS class ordering when picking an OOM victim.
+- New [SecurityProfileConfig](../../reference/configuration/runtime/securityprofileconfig) document with the `workloadIsolation` option (enabled by default for new clusters generated with Talos 1.14, absent — and therefore disabled — on upgraded clusters).
+- [OOMConfig](../../reference/configuration/runtime/oomconfig) has a new `strictCgroupClassOrdering` option (defaults to `true`) to enforce QoS class ordering when picking an OOM victim.
 
 ### Network
 
-* `.machine.features.hostDNS` is deprecated: host DNS is now configured with the `hostDNS` section of the [ResolverConfig](../../reference/configuration/network/resolverconfig) document.
-* [ResolverConfig](../../reference/configuration/network/resolverconfig) nameservers accept a `protocol` (DNS over TLS and DNS over HTTPS are supported now) and a `tlsServerName` setting, configured per nameserver.
-* [TimeSyncConfig](../../reference/configuration/network/timesyncconfig) has a new `useNTS` field to enable Network Time Security for custom time servers (NTS is enabled by default for the default `time.cloudflare.com` server).
-* [DHCPv4Config](../../reference/configuration/network/dhcpv4config) has a new `ignoreRoutes` option to ignore the default gateway and classless static routes offered by the DHCP server (the connected route for the leased address is still configured).
+- `.machine.features.hostDNS` is deprecated: host DNS is now configured with the `hostDNS` section of the [ResolverConfig](../../reference/configuration/network/resolverconfig) document.
+- [ResolverConfig](../../reference/configuration/network/resolverconfig) nameservers accept a `protocol` (DNS over TLS and DNS over HTTPS are supported now) and a `tlsServerName` setting, configured per nameserver.
+- [TimeSyncConfig](../../reference/configuration/network/timesyncconfig) has a new `useNTS` field to enable Network Time Security for custom time servers (NTS is enabled by default for the default `time.cloudflare.com` server).
+- [DHCPv4Config](../../reference/configuration/network/dhcpv4config) has a new `ignoreRoutes` option to ignore the default gateway and classless static routes offered by the DHCP server (the connected route for the leased address is still configured).
   DHCPv4 search domains are now applied to the resolver configuration.
-* New [VethConfig](../../reference/configuration/network/vethconfig) document to configure virtual Ethernet pairs: both endpoints are created in the host network namespace and support the common link settings, addresses, routes and multicast configuration.
-* New [HTTPProbeConfig](../../reference/configuration/network/httpprobeconfig) document to configure HTTP-based connectivity checks (probes).
-* New [BGPInstanceConfig](../../reference/configuration/network/bgpinstanceconfig) document to run native BGP speakers on the host (local ASN, router-id, optional Linux VRF, advertised interfaces and neighbors), removing the need for the FRR system extension in fabric-facing setups.
+- New [VethConfig](../../reference/configuration/network/vethconfig) document to configure virtual Ethernet pairs: both endpoints are created in the host network namespace and support the common link settings, addresses, routes and multicast configuration.
+- New [HTTPProbeConfig](../../reference/configuration/network/httpprobeconfig) document to configure HTTP-based connectivity checks (probes).
+- New [BGPInstanceConfig](../../reference/configuration/network/bgpinstanceconfig) document to run native BGP speakers on the host (local ASN, router-id, optional Linux VRF, advertised interfaces and neighbors), removing the need for the FRR system extension in fabric-facing setups.
   Routes learned by one instance can be selectively imported into another with `importRoutes`, and `installRoutes: false` keeps learned routes out of the Linux routing table.
 
 ### Volumes and storage
 
-* New [FilesystemTrimConfig](../../reference/configuration/block/filesystemtrimconfig) document to enable periodic filesystem trim (the `fstrim` equivalent) with a global `interval`.
+- New [FilesystemTrimConfig](../../reference/configuration/block/filesystemtrimconfig) document to enable periodic filesystem trim (the `fstrim` equivalent) with a global `interval`.
   The default machine configuration generated by Talos 1.14 includes it with a one week interval; upgraded clusters don't have the document, so trimming stays disabled until it is added.
   The interval can be overridden or disabled per volume with the new `trim` section of [VolumeConfig](../../reference/configuration/block/volumeconfig), [UserVolumeConfig](../../reference/configuration/block/uservolumeconfig), [ExistingVolumeConfig](../../reference/configuration/block/existingvolumeconfig) and [ExternalVolumeConfig](../../reference/configuration/block/externalvolumeconfig).
-* New [FilesystemScrubConfig](../../reference/configuration/block/filesystemscrubconfig) document to enable periodic online filesystem scrub (currently XFS only, via `xfs_scrub`) with a global `interval`.
+- New [FilesystemScrubConfig](../../reference/configuration/block/filesystemscrubconfig) document to enable periodic online filesystem scrub (currently XFS only, via `xfs_scrub`) with a global `interval`.
   Scrubbing is disabled by default, and the generated machine configuration does not include this document, so it stays disabled until it is added.
   The interval can be overridden or disabled per volume with the new `scrub` section of [VolumeConfig](../../reference/configuration/block/volumeconfig), [UserVolumeConfig](../../reference/configuration/block/uservolumeconfig) and [ExistingVolumeConfig](../../reference/configuration/block/existingvolumeconfig).
-* Volume encryption has a new `allowDiscards` option (disabled by default) to pass TRIM/discard requests through to the underlying device.
-* [VolumeConfig](../../reference/configuration/block/volumeconfig) and [UserVolumeConfig](../../reference/configuration/block/uservolumeconfig) support a new `filesystem.xfs.minAllocationGroupSize` setting (defaults to 64 GiB, set to zero to restore stock `mkfs.xfs` behavior); it only applies to volumes formatted by Talos 1.14 or later.
-* The `ETCD`, `CRI`, `KUBELET` and `LOG` system volumes can be placed on dedicated partitions with a [VolumeConfig](../../reference/configuration/block/volumeconfig) document with `provisioning` set (optionally encrypted); by default they remain directories under the `EPHEMERAL` volume.
+- Volume encryption has a new `allowDiscards` option (disabled by default) to pass TRIM/discard requests through to the underlying device.
+- [VolumeConfig](../../reference/configuration/block/volumeconfig) and [UserVolumeConfig](../../reference/configuration/block/uservolumeconfig) support a new `filesystem.xfs.minAllocationGroupSize` setting (defaults to 64 GiB, set to zero to restore stock `mkfs.xfs` behavior); it only applies to volumes formatted by Talos 1.14 or later.
+- The `ETCD`, `CRI`, `KUBELET` and `LOG` system volumes can be placed on dedicated partitions with a [VolumeConfig](../../reference/configuration/block/volumeconfig) document with `provisioning` set (optionally encrypted); by default they remain directories under the `EPHEMERAL` volume.
   Secure dedicated `ETCD` and `LOG` volumes are mounted with `noexec`; `EPHEMERAL`, `CRI` and `KUBELET` remain executable.
-* `btrfs` can be used as a filesystem type for user and existing volumes (requires the `btrfs` system extension).
-* New [LVMVolumeGroupConfig](../../reference/configuration/storage/lvmvolumegroupconfig) and [LVMLogicalVolumeConfig](../../reference/configuration/storage/lvmlogicalvolumeconfig) documents to declaratively create and grow LVM volume groups and logical volumes.
-* New [RAIDArrayConfig](../../reference/configuration/storage/raidarrayconfig) document to declaratively create and grow Linux MD (software RAID) arrays; `raid1` arrays with `metadata: "1.0"` can be used as the install disk.
+- `btrfs` can be used as a filesystem type for user and existing volumes (requires the `btrfs` system extension).
+- New [LVMVolumeGroupConfig](../../reference/configuration/storage/lvmvolumegroupconfig) and [LVMLogicalVolumeConfig](../../reference/configuration/storage/lvmlogicalvolumeconfig) documents to declaratively create and grow LVM volume groups and logical volumes.
+- New [RAIDArrayConfig](../../reference/configuration/storage/raidarrayconfig) document to declaratively create and grow Linux MD (software RAID) arrays; `raid1` arrays with `metadata: "1.0"` can be used as the install disk.
 
 ## Upgrade sequence
 
@@ -253,7 +224,7 @@ internal processes.
 Once all the processes are stopped and the services are shut down, the filesystems will be unmounted.
 This allows Talos to produce a very clean upgrade, as close as possible to a pristine system.
 We verify the disk and then perform the actual image upgrade.
-We set the bootloader to boot *once* with the new kernel and OS image, then we reboot.
+We set the bootloader to boot _once_ with the new kernel and OS image, then we reboot.
 
 After the node comes back up and Talos verifies itself, it will make
 the bootloader change permanent, rejoin the cluster, and finally uncordon itself to receive new workloads.
@@ -289,7 +260,7 @@ You can also use `talosctl upgrade --wait`, and optionally `talosctl upgrade --w
 
 **A.** Short answer: no.
 
-Long answer:  Both node types follow the same set procedure.
+Long answer: Both node types follow the same set procedure.
 From the user's standpoint, however, the processes are identical.
 However, since control plane nodes run additional services, such as etcd, there are some extra steps and checks performed on them.
 For instance, Talos will refuse to upgrade a control plane node if that upgrade would cause a loss of quorum for etcd.
