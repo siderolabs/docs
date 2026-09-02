@@ -296,12 +296,6 @@ navigation:
                     - "configuration/runtime/kmsglogconfig.mdx"
                     - "configuration/runtime/oomconfig.mdx"
                     - "configuration/runtime/watchdogtimerconfig.mdx"
-                - group: "Misc"
-                  pages:
-                    - "configuration/extensions/extensionserviceconfig.mdx"
-                    - "configuration/hardware/pcidriverrebindconfig.mdx"
-                    - "configuration/security/trustedrootsconfig.mdx"
-                    - "configuration/siderolink/siderolinkconfig.mdx"
                 - group: "Security"
                   pages:
                     - "configuration/security/imageverificationconfig.mdx"
