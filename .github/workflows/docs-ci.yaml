@@ -11,6 +11,7 @@ on:
       - "**/*.yaml"
       - "Makefile"
       - "tools/docs-validate/**"
+      - "tools/frontmatter-check/**"
 jobs:
   docs-checks:
     runs-on: ubuntu-latest
@@ -25,13 +26,22 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
+          # Read the version from go.mod so the installed toolchain can't drift
+          # from what the tools require -- a lower version here makes every run
+          # download a second toolchain on the fly. docs-validate and
+          # frontmatter-check are the only tools this workflow builds with
+          # `go run` (the other checks run in containers) and both pin the same
+          # version, so either go.mod serves.
+          go-version-file: tools/frontmatter-check/go.mod
 
       - name: Check broken links
         run: make broken-links
 
       - name: Validate nav configs match content directories
         run: make validate-docs-nav
+
+      - name: Check required frontmatter fields on changed files
+        run: make check-frontmatter-changed FRONTMATTER_CHECK_BASE=origin/${{ github.base_ref }}
 
       - name: Build style checker image
         run: make build-style-check-container

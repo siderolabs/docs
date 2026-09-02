@@ -391,6 +391,24 @@ changelog-local: ## Generate the changelog using local Go build
 validate-docs-nav: ## Validate all talos yaml nav configs match their content directories
 	cd tools/docs-validate && go run . --workspace ../..
 
+.PHONY: check-frontmatter
+check-frontmatter: ## Check that every page has the frontmatter fields its section requires
+	cd tools/frontmatter-check && go run . --workspace ../..
+
+# Git ref the "changed" target diffs against. Locally, HEAD catches your
+# working-tree edits; in CI set this to the PR base, e.g. FRONTMATTER_CHECK_BASE=origin/main.
+FRONTMATTER_CHECK_BASE ?= HEAD
+
+.PHONY: check-frontmatter-changed
+check-frontmatter-changed: ## Check frontmatter on changed .mdx files. Base: FRONTMATTER_CHECK_BASE (default HEAD)
+	@files="$$( { git diff --name-only --diff-filter=AM $(FRONTMATTER_CHECK_BASE); git ls-files --others --exclude-standard; } | grep -E '\.mdx$$' | sort -u || true)"; \
+	if [ -z "$$files" ]; then \
+		echo "No changed MDX files."; \
+		exit 0; \
+	fi; \
+	echo "Checking changed files:" $$files; \
+	cd tools/frontmatter-check && go run . $$(for f in $$files; do echo "../../$$f"; done)
+
 .PHONY: sync-docs-nav
 sync-docs-nav: ## Insert newly generated reference pages into their version YAML nav (best-effort, non-blocking)
 	cd tools/docs-validate && go run . --workspace ../.. --fix
