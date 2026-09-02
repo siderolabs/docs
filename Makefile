@@ -8,7 +8,7 @@ DOCS_GEN_IMAGE := ghcr.io/siderolabs/docs-gen:latest
 DOCS_CONVERT_IMAGE := ghcr.io/siderolabs/docs-convert:latest
 CHANGELOG_GEN_IMAGE := ghcr.io/siderolabs/changelog-gen:latest
 VERSION_UPGRADE_IMAGE := ghcr.io/siderolabs/version-upgrade-gen:latest
-TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.13.0
+TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.14.0
 OMNI_CLI_GEN_IMAGE := ghcr.io/siderolabs/omni-cli-gen:latest
 OMNI_CONFIG_GEN_IMAGE := ghcr.io/siderolabs/omni-config-gen:latest
 MDX_NORMALIZE_IMAGE := ghcr.io/siderolabs/mdx-normalize:latest
@@ -79,6 +79,7 @@ docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multipl
 	docker pull $(DOCS_GEN_IMAGE)
 	docker run --rm -v $(PWD):/workspace -w /workspace $(DOCS_GEN_IMAGE) \
 		common.yaml \
+		talos-v1.14.yaml \
 		talos-v1.13.yaml \
 		talos-v1.12.yaml \
 		talos-v1.11.yaml \
@@ -86,7 +87,6 @@ docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multipl
 		talos-v1.9.yaml \
 		talos-v1.8.yaml \
 		talos-v1.7.yaml \
-		talos-v1.14.yaml \
 		omni.yaml \
 		kubernetes-guides.yaml \
 		changelog.yaml \
@@ -95,6 +95,7 @@ docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multipl
 docs.json-local: common.yaml omni.yaml tools/docs-gen/main.go ## Generate docs.json using local Go build
 	cd tools/docs-gen && go run . \
 		../../common.yaml \
+		../../talos-v1.14.yaml \
 		../../talos-v1.13.yaml \
 		../../talos-v1.12.yaml \
 		../../talos-v1.11.yaml \
@@ -102,7 +103,6 @@ docs.json-local: common.yaml omni.yaml tools/docs-gen/main.go ## Generate docs.j
 		../../talos-v1.9.yaml \
 		../../talos-v1.8.yaml \
 		../../talos-v1.7.yaml \
-		../../talos-v1.14.yaml \
 		../../omni.yaml \
 		../../kubernetes-guides.yaml \
 		../../changelog.yaml \
@@ -112,6 +112,7 @@ docs.json-local: common.yaml omni.yaml tools/docs-gen/main.go ## Generate docs.j
 check-missing: ## Check for MDX files not included in config files
 	docker run --rm -v $(PWD):/workspace -w /workspace $(DOCS_GEN_IMAGE) --detect-missing \
 		common.yaml \
+		talos-v1.14.yaml \
 		talos-v1.13.yaml \
 		talos-v1.12.yaml \
 		talos-v1.11.yaml \
@@ -119,7 +120,6 @@ check-missing: ## Check for MDX files not included in config files
 		talos-v1.9.yaml \
 		talos-v1.8.yaml \
 		talos-v1.7.yaml \
-		talos-v1.14.yaml \
 		omni.yaml \
 		kubernetes-guides.yaml \
 		changelog.yaml
@@ -128,6 +128,7 @@ check-missing: ## Check for MDX files not included in config files
 check-missing-local: ## Check for missing files using local Go build
 	cd tools/docs-gen && go run . --detect-missing \
 		../../common.yaml \
+		../../talos-v1.14.yaml \
 		../../talos-v1.13.yaml \
 		../../talos-v1.12.yaml \
 		../../talos-v1.11.yaml \
@@ -135,7 +136,6 @@ check-missing-local: ## Check for missing files using local Go build
 		../../talos-v1.9.yaml \
 		../../talos-v1.8.yaml \
 		../../talos-v1.7.yaml \
-		../../talos-v1.14.yaml \
 		../../omni.yaml \
 		../../kubernetes-guides.yaml \
 		../../changelog.yaml

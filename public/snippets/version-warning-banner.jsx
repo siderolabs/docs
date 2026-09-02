@@ -1,5 +1,5 @@
 export const VersionWarningBanner = () => {
-  const latestVersion = "v1.13";
+  const latestVersion = "v1.14";
 
   const [latestUrl, setLatestUrl] = useState(null);
   const [currentVersion, setCurrentVersion] = useState(null);
