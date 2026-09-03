@@ -3,6 +3,8 @@ title: "Deploy Multus CNI"
 description: "Learn how to install and configure Multus CNI on Talos Linux to attach multiple network interfaces to a pod."
 ---
 
+import { version } from '/snippets/custom-variables.mdx';
+
 [Multus CNI](https://github.com/k8snetworkplumbingwg/multus-cni) is a container network interface (CNI) plugin for Kubernetes that enables attaching multiple network interfaces to pods.
 Typically, in Kubernetes each pod only has one network interface (apart from a loopback). With Multus, you can create a multi-homed pod that has multiple interfaces.
 This is accomplished by Multus acting as a "meta-plugin", a CNI plugin that can call multiple other CNI plugins.
@@ -132,7 +134,7 @@ That can be done by updating Talos Linux machine configuration:
   <Tabs>
   <Tab title="Talos v1.14+">
 
-  DHCP is enabled on a bridge the same way as any other link: pair the `BridgeConfig` (with no `addresses`) with a [`DHCPv4Config`](../../talos/v1.14/reference/configuration/network/dhcpv4config) document whose `name` matches the bridge:
+  DHCP is enabled on a bridge the same way as any other link: pair the `BridgeConfig` (with no `addresses`) with a <a href={`../../talos/${version}/reference/configuration/network/dhcpv4config`}>`DHCPv4Config`</a> document whose `name` matches the bridge:
 
   ```bash
   cat <<EOF > br0-patch.yaml

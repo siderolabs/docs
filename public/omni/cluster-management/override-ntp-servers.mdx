@@ -1,7 +1,9 @@
 ---
-title: Override NTP servers
+title: Override NTP Servers
 description: Override default NTP servers in Talos Linux.
 ---
+
+import { version } from '/snippets/custom-variables.mdx';
 
 Talos Linux uses `time.cloudflare.com` as the default NTP server for time synchronization.
 
@@ -14,7 +16,7 @@ You can override this default in two ways:
 
 Use kernel parameters when you need to override NTP before the machine configuration is loaded, for example, during a bare-metal ISO, PXE boot, or when a node cannot reach the default NTP server early in the boot process.
 
-Kernel parameters can be used to configure initial network settings such as interfaces, routes, DNS, and NTP servers. For more details, see the [kernel documentation](../../talos/v1.11/reference/kernel).
+Kernel parameters can be used to configure initial network settings such as interfaces, routes, DNS, and NTP servers. For more details, see the <a href={`../../talos/${version}/reference/kernel`}>kernel documentation</a>.
 
 The kernel parameter uses the following syntax:
 
@@ -30,7 +32,7 @@ For example, to override the default NTP server (`time.cloudflare.com`) with `17
 ip=:::::::::172.235.60.8
 ```
 
-You can then supply this `ip` value as a kernel parameter during boot to override the NTP server early in the startup process. 
+You can then supply this `ip` value as a kernel parameter during boot to override the NTP server early in the startup process.
 
 To do this first download the installation media baked with the `ip` value:
 

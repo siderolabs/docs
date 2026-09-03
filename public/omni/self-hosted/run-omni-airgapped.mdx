@@ -14,7 +14,7 @@ This document will walk through each component to run the "Sidero stack" in an o
 * Container registry
 * Authentication service
 
->When running Talos with Omni you do not need to run additional services such as the [Discovery Service](../../talos/v1.12/configure-your-talos-cluster/system-configuration/discovery) because discovery functionality is built in to Omni.
+>When running Talos with Omni you do not need to run additional services such as the <a href={`../../talos/${version}/configure-your-talos-cluster/system-configuration/discovery`}>Discovery Service</a> because discovery functionality is built in to Omni.
 
 If you already have services such as a container registry, authentication service (SAML or OIDC), or a trusted certificate authority you can skip those sections of the guide. This guide will set up proof-of-concept deployment to get you started. We recommend [talking with the Sidero team](https://www.siderolabs.com/contact/) for production deployments.
 
@@ -45,7 +45,7 @@ There are some expectations your environment has the following supporting servic
 
 In addition to these services you'll need the following tools installed on the administrator machine and server.
 
-* [`talosctl`](../../talos/v1.12/getting-started/talosctl)
+* <a href={`../../talos/${version}/getting-started/talosctl`}>`talosctl`</a>
 * `docker` or `podman`
 * [`cfssl`](https://github.com/cloudflare/cfssl) and `cfssljson`
 * [`yq`](https://github.com/mikefarah/yq)
@@ -580,7 +580,7 @@ Guides on creating a cluster on Omni can be found at [creating an Omni cluster](
 
 Because we're working in an airgapped environment we will need the following values added to our cluster configs so they know where to pull images from. We also need to provide the CA certificate to the node so it will trust the certificate that signed `omni.internal` endpoint.
 
-> **NOTE:** In this example, cluster discovery is also disabled. You may also configure cluster discovery via Omni. More information on the Discovery Service can be found <a href="../../talos/v1.12/configure-your-talos-cluster/system-configuration/discovery">here</a>.
+> **NOTE:** In this example, cluster discovery is also disabled. You may also configure cluster discovery via Omni. See the <a href={`../../talos/${version}/configure-your-talos-cluster/system-configuration/discovery`}>Discovery Service</a> documentation for more information.
 
 Export the air-gap configuration patch to a file:
 

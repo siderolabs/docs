@@ -5,6 +5,8 @@ aliases:
   - ../../guides/storage
 ---
 
+import { version } from '/snippets/custom-variables.mdx';
+
 In Kubernetes, using storage in the right way is well-facilitated by the API.
 However, unless you are running in a major public cloud, that API may not be hooked up to anything.
 There are a _lot_ of options out there, and it can be fairly bewildering.
@@ -174,4 +176,4 @@ One of the most popular open source add-on object stores is [MinIO](https://min.
 The most common remaining systems involve iSCSI in one form or another.
 iSCSI in Linux is facilitated by [open-iscsi](https://github.com/open-iscsi/open-iscsi).
 
-iSCSI support in Talos is now supported via the [iscsi-tools](https://github.com/siderolabs/extensions/pkgs/container/iscsi-tools) [system extension](../../talos/v1.10/build-and-extend-talos/custom-images-and-development/system-extensions) installed.
+iSCSI support in Talos is now supported via the [iscsi-tools](https://github.com/siderolabs/extensions/pkgs/container/iscsi-tools) <a href={`../../talos/${version}/build-and-extend-talos/custom-images-and-development/system-extensions`}>system extension</a> installed.
