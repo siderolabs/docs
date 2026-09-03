@@ -13,7 +13,9 @@ colors:
 
 errors:
   404:
-    redirect: true
+    redirect: false
+    title: "Page not found"
+    description: "The page you're looking for doesn't exist. [Go home](/)."
 
 favicon: "/images/favicon.svg"
 
