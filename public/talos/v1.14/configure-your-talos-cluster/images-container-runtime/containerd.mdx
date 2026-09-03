@@ -66,7 +66,7 @@ content: |
 Now the `pause` image is set to `registry.k8s.io/pause:3.8`:
 
 ```bash
-talosctl containers --kubernetes
+talosctl containers --namespace=cri
 NODE         NAMESPACE   ID                                                              IMAGE                                                      PID    STATUS
 172.20.0.5   k8s.io      kube-system/kube-flannel-6hfck                                  registry.k8s.io/pause:3.8                                  1773   SANDBOX_READY
 172.20.0.5   k8s.io      └─ kube-system/kube-flannel-6hfck:install-cni:bc39fec3cbac      ghcr.io/siderolabs/install-cni:v1.3.0-alpha.0-2-gb155fa0   0      CONTAINER_EXITED

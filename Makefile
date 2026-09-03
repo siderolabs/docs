@@ -13,7 +13,7 @@ OMNI_CLI_GEN_IMAGE := ghcr.io/siderolabs/omni-cli-gen:latest
 OMNI_CONFIG_GEN_IMAGE := ghcr.io/siderolabs/omni-config-gen:latest
 MDX_NORMALIZE_IMAGE := ghcr.io/siderolabs/mdx-normalize:latest
 STYLE_CHECK_IMAGE := ghcr.io/siderolabs/style-guide-checker:latest
-TALOS_VERSION := v1.13
+TALOS_VERSION := v1.14
 # Linter images are pinned to exact versions so `make code-review` (and CI) is
 # reproducible: a new linter release can't turn the gate red on unchanged code.
 # Bump these deliberately. Each is overridable from the environment (?=).

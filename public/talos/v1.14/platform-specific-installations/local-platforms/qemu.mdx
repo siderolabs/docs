@@ -114,8 +114,8 @@ This enables connections to a local Omni instance, a cloud-hosted Omni instance,
 ## Using the cluster
 
 Once the cluster is available, you can make use of `talosctl` and `kubectl` to interact with the cluster.
-For example, to view current running containers, run `talosctl -n 10.5.0.2 containers` for a list of containers in the `system` namespace, or `talosctl -n 10.5.0.2 containers -k` for the `k8s.io` namespace.
-To view the logs of a container, use `talosctl -n 10.5.0.2 logs <container>` or `talosctl -n 10.5.0.2 logs -k <container>`.
+For example, to view current running containers, run `talosctl -n 10.5.0.2 containers` for a list of containers in the `system` namespace, or `talosctl -n 10.5.0.2 containers --namespace=cri` for Kubernetes workloads.
+To view the logs of a container, use `talosctl -n 10.5.0.2 logs <container>` or `talosctl -n 10.5.0.2 logs --namespace=cri <container>`.
 
 A bridge interface will be created, and assigned the default IP 10.5.0.1.
 Each node will be directly accessible on the subnet specified at cluster creation time.
@@ -124,7 +124,7 @@ A loadbalancer runs on 10.5.0.1 by default, which handles loadbalancing for the 
 You can see a summary of the cluster state by running:
 
 ```bash
-$ talosctl cluster show --provisioner qemu
+talosctl cluster show --provisioner qemu
 PROVISIONER       qemu
 NAME              talos-default
 NETWORK NAME      talos-default

@@ -17,16 +17,16 @@ import { k8s_release } from '/snippets/custom-variables.mdx';
 Kernel messages can be retrieved with `talosctl dmesg` command:
 
 ```sh
-$ talosctl -n 172.20.1.2 dmesg
+talosctl -n 172.20.1.2 dmesg
 
 172.20.1.2: kern:    info: [2021-11-10T10:09:37.662764956Z]: Command line: init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on reboot=k panic=1 talos.shutdown=halt talos.platform=metal talos.config=http://172.20.1.1:40101/config.yaml
 [...]
 ```
 
-Service logs can be retrieved with `talosctl logs` command:
+Service status can be inspected with `talosctl services`, and logs can be retrieved with `talosctl logs`:
 
 ```sh
-$ talosctl -n 172.20.1.2 services
+talosctl -n 172.20.1.2 services
 
 NODE         SERVICE      STATE     HEALTH   LAST CHANGE   LAST EVENT
 172.20.1.2   apid         Running   OK       19m27s ago    Health check successful
@@ -38,7 +38,7 @@ NODE         SERVICE      STATE     HEALTH   LAST CHANGE   LAST EVENT
 172.20.1.2   trustd       Running   OK       19m27s ago    Health check successful
 172.20.1.2   udevd        Running   OK       19m28s ago    Health check successful
 
-$ talosctl -n 172.20.1.2 logs machined
+talosctl -n 172.20.1.2 logs machined
 
 172.20.1.2: [talos] task setupLogger (1/1): done, 106.109µs
 172.20.1.2: [talos] phase logger (1/7): done, 564.476µs
@@ -47,11 +47,11 @@ $ talosctl -n 172.20.1.2 logs machined
 
 Kernel log is also mirrored as `talosctl logs kernel`.
 
-Container logs for Kubernetes pods can be retrieved with `talosctl logs -k` command:
+Container logs for Kubernetes pods can be retrieved with `talosctl logs --namespace=cri` command:
 
 <CodeBlock lang="sh">
 {`
-$ talosctl -n 172.20.1.2 containers -k
+$ talosctl -n 172.20.1.2 containers --namespace=cri
 NODE         NAMESPACE   ID                                                              IMAGE                                                         PID    STATUS
 172.20.1.2   k8s.io      kube-system/kube-flannel-dk6d5                                  registry.k8s.io/pause:3.6                                     1329   SANDBOX_READY
 172.20.1.2   k8s.io      └─ kube-system/kube-flannel-dk6d5:install-cni:f1d4cf68feb9      ghcr.io/siderolabs/install-cni:v0.7.0-alpha.0-1-g2bb2efc      0      CONTAINER_EXITED
@@ -60,7 +60,7 @@ NODE         NAMESPACE   ID                                                     
 172.20.1.2   k8s.io      kube-system/kube-proxy-gfkqj                                    registry.k8s.io/pause:3.5                                     1311   SANDBOX_READY
 172.20.1.2   k8s.io      └─ kube-system/kube-proxy-gfkqj:kube-proxy:ad5e8ddc7e7f         registry.k8s.io/kube-proxy:v${k8s_release}                            1379   CONTAINER_RUNNING
 
-$ talosctl -n 172.20.1.2 logs -k kube-system/kube-proxy-gfkqj:kube-proxy:ad5e8ddc7e7f
+$ talosctl -n 172.20.1.2 logs --namespace=cri kube-system/kube-proxy-gfkqj:kube-proxy:ad5e8ddc7e7f
 172.20.1.2: 2021-11-30T19:13:20.567825192Z stderr F I1130 19:13:20.567737       1 server_others.go:138] "Detected node IP" address="172.20.0.3"
 172.20.1.2: 2021-11-30T19:13:20.599684397Z stderr F I1130 19:13:20.599613       1 server_others.go:206] "Using iptables Proxier"
 [...]

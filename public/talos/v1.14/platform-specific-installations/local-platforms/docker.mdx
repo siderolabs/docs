@@ -84,8 +84,8 @@ KUBERNETES ENDPOINT   https://127.0.0.1:43083
 ## Using the cluster
 
 Once the cluster is available, you can make use of `talosctl` and `kubectl` to interact with the cluster.
-For example, to view current running containers, run `talosctl containers` for a list of containers in the `system` namespace, or `talosctl containers -k` for the `k8s.io` namespace.
-To view the logs of a container, use `talosctl logs <container>` or `talosctl logs -k <container>`.
+For example, to view current running containers, run `talosctl containers` for a list of containers in the `system` namespace, or `talosctl containers --namespace=cri` for Kubernetes workloads.
+To view the logs of a container, use `talosctl logs <container>` or `talosctl logs --namespace=cri <container>`.
 
 ## Cleaning up
 

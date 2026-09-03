@@ -40,7 +40,7 @@ mounts:
       userVolume:
         name: web-content # Name of the `UserVolumeConfig` document to mount.
         destination: /usr/share/nginx/html # Absolute path inside the container's mount namespace.
-        # Mount options. User volume mounts are read-only by default (`ro`).
+        # Mount options. User volume mounts are writable by default (`rw`).
         options:
             - ro
     - # Mount a tmpfs for scratch space.
@@ -264,7 +264,7 @@ UserVolumeMount mounts a user volume by name.
     <tr>
       <td>`options`</td>
       <td>[]string</td>
-      <td>Mount options. User volume mounts are read-only by default (`ro`).</td>
+      <td>Mount options. User volume mounts are writable by default (`rw`).</td>
       <td>`ro`<br />`rw`<br />`noexec`<br />`nosuid`<br />`nodev`<br />`noatime`<br />`rbind`<br />`rshared`<br /></td>
     </tr>
   </tbody>
@@ -348,7 +348,7 @@ HostPathMount bind-mounts a host path.
     <tr>
       <td>`options`</td>
       <td>[]string</td>
-      <td>Mount options. Host path mounts are read-only by default (`ro`).</td>
+      <td>Mount options. Host path mounts are writable by default (`rw`).</td>
       <td></td>
     </tr>
   </tbody>
@@ -387,6 +387,12 @@ ContainerSecurity configures the container's security posture.
       <td>`capabilities`</td>
       <td><a href="#capabilities">ContainerCapabilities</a></td>
       <td>Linux capabilities to add or drop on top of the profile.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`machinedAccess`</td>
+      <td>bool</td>
+      <td>Publishes the container's PID so machined's API can recognize it, and bind-mounts the<br />machined API socket into the container.<br /><br />This alone does not grant DAC access to the socket, which is owned by the `apid` user:<br />reaching it in practice still requires `profile: privileged` or an equivalent capability/<br />`runAs` grant. Once connected, the container may request any role, same as extension<br />services; the RPC's own role requirements are what actually gate access.</td>
       <td></td>
     </tr>
   </tbody>

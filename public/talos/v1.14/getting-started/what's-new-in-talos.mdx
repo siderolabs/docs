@@ -50,6 +50,36 @@ Use CSI drivers instead: a CSI node plugin performs the attach/mount itself in i
 For iSCSI, `kubernetes-csi/csi-driver-iscsi` (or `democratic-csi`) consumes a target the same way.
 All in-tree (non-CSI) volume plugins are deprecated for the kubelet, and support for them may be removed in a later release.
 
+### Multipath configuration
+
+The `multipath-tools` [system extension](../build-and-extend-talos/custom-images-and-development/system-extensions) now reads `/etc/multipath.conf`
+from the Talos host instead of using `ExtensionServiceConfig`.
+The `multipathd` service waits for this file, and bind-mounts it read-only into its service container.
+
+Before upgrading the extension, apply a machine config patch which deletes the existing `ExtensionServiceConfig` document and adds an
+[`EtcFileConfig`](../reference/configuration/runtime/etcfileconfig) document:
+
+```yaml
+apiVersion: v1alpha1
+kind: ExtensionServiceConfig
+name: multipathd
+$patch: delete
+---
+apiVersion: v1alpha1
+kind: EtcFileConfig
+name: multipath.conf
+mode: 0o644
+contents: |
+  defaults {
+      user_friendly_names yes
+      find_multipaths no
+      path_selector "round-robin 0"
+  }
+```
+
+The extension does not provide a default configuration, so `multipathd` remains waiting until `/etc/multipath.conf` is present.
+See the [upgrade notes](../configure-your-talos-cluster/lifecycle-management/upgrading-talos) for the full migration.
+
 ### Unattended install configuration
 
 Talos introduces a new [`UnattendedInstallConfig`](../reference/configuration/runtime/unattendedinstallconfig) multi-document configuration kind,
@@ -181,7 +211,8 @@ The old configuration is still supported for backwards compatibility, but the tw
 
 ## Container runtime
 
-The CRI containerd configuration can now be customized with dedicated configuration documents, and applied without a reboot.
+The CRI containerd configuration can now be customized with dedicated configuration documents and applied without a reboot,
+and `talosctl` selects the containerd namespace the same way across all container commands.
 
 ### CRI customization configuration
 
@@ -233,6 +264,17 @@ content: |
     [plugins."io.containerd.nri.v1.nri"]
        disable = true
 ```
+
+### Unified `--namespace` flag
+
+`talosctl containers`, `logs`, `stats` and `restart` now select the containerd namespace through the same `--namespace` flag and vocabulary already used by
+`talosctl image` and `talosctl debug`: `system` (the default), `cri` for Kubernetes workloads, and `taloscontainers` for containers declared via a
+`ContainerConfig` document.
+
+The `--kubernetes`/`-k` flag is deprecated in favor of `--namespace cri`.
+
+`talosctl image list` also supports `--namespace taloscontainers`, to inspect images pulled for `ContainerConfig` containers.
+`talosctl debug` does not support the `taloscontainers` namespace.
 
 ## Storage subsystem
 
@@ -427,7 +469,7 @@ The same `filesystem.xfs.minAllocationGroupSize` setting is available for [`User
 
 ## Network subsystem
 
-Talos gains a native BGP speaker, encrypted DNS, authenticated time synchronization and HTTP probes.
+Talos gains a native BGP speaker, declarative virtual Ethernet pairs, encrypted DNS, authenticated time synchronization and HTTP probes.
 
 ### Native BGP
 
@@ -450,6 +492,26 @@ List of changes:
   Imports are one-way, preserve path attributes, and do not recursively import locally originated or previously imported paths.
 * Peer state is observable via instance-qualified `BGPPeerStatus` resources (`talosctl get bgppeerstatus`).
 * `RouteSpec`/`RouteStatus` now carry a multipath next-hop list to support ECMP and cross-family (RFC 8950) next-hops.
+
+### Virtual Ethernet pairs
+
+Talos now supports declarative [virtual Ethernet (`veth`) pairs](../networking/advanced/veth) through the new
+[`VethConfig`](../reference/configuration/network/vethconfig) multi-document configuration kind.
+Both endpoints are created in the host network namespace, and support the common link settings, addresses, routes and multicast configuration.
+
+For example, the following configuration creates a pair named `veth-host` and `veth-router` with an address on each endpoint:
+
+```yaml
+apiVersion: v1alpha1
+kind: VethConfig
+name: veth-host
+addresses:
+  - address: 10.3.0.1/30
+peer:
+  name: veth-router
+  addresses:
+    - address: 10.3.0.2/30
+```
 
 ### DNS over TLS (DoT) and DNS over HTTPS (DoH) support
 
@@ -528,6 +590,13 @@ Talos tightens a number of defaults, and protects the contents of support bundle
 Talos now runs etcd and kube-apiserver with a minimum TLS version of 1.3, improving security by leveraging the latest TLS features and cipher suites.
 Custom settings for cipher suites have been removed, as they are ignored when TLS 1.3 is used, which simplifies configuration and ensures the use of modern, secure defaults.
 
+### Kernel lockdown mode
+
+[Secure Boot](../platform-specific-installations/bare-metal-platforms/secureboot) images no longer enable `lockdown=confidentiality` by default,
+which improves compatibility with eBPF tooling under the default schematic.
+They now run with `lockdown=integrity` enabled implicitly, which is the recommended setting for most users.
+Add `lockdown=confidentiality` to the kernel command line through the [Image Factory](../learn-more/image-factory) if it is required.
+
 ### ICMP `send_redirects` disabled by default
 
 Talos now sets `net.ipv4.conf.all.send_redirects=0` and `net.ipv4.conf.default.send_redirects=0` by default, preventing the node from emitting ICMP redirect messages.
@@ -543,6 +612,21 @@ The default set of recipients includes the `siderolabs` GitHub organization memb
 
 Other user-visible changes in this release.
 
+### Extension service configuration
+
+[`ExtensionServiceConfig`](../reference/configuration/extensions/extensionserviceconfig) is supported only for
+[extension services](../build-and-extend-talos/custom-images-and-development/extension-services) whose service manifest explicitly declares a
+configuration dependency:
+
+```yaml
+depends:
+  - configuration: true
+```
+
+Using `ExtensionServiceConfig` with a service which does not declare this dependency is unsupported, and has undefined startup behavior:
+the service might start before its configuration is rendered, leaving config files or environment variables unavailable until a later service restart.
+Extension authors must declare the dependency before documenting `ExtensionServiceConfig` support.
+
 ### Kernel module status
 
 Talos now reports the status of both dynamically loaded and built-in kernel modules.
@@ -551,15 +635,15 @@ The `LoadedKernelModule` resource has been deprecated, and superseded by the new
 
 ## Component updates
 
-* Linux: 6.18.40
+* Linux: 6.18.48
 * Kubernetes: 1.37.0
-* containerd: 2.3.3
+* containerd: 2.3.4
 * runc: 1.5.1
-* etcd: 3.7.0
-* CoreDNS: 1.14.6
-* Flannel: 0.28.8
+* etcd: 3.7.1
+* CoreDNS: 1.14.7
+* Flannel: 0.28.9
 
-Talos is built with Go 1.26.5.
+Talos is built with Go 1.26.7.
 
 ## Contributors
 
@@ -567,40 +651,59 @@ Talos is built with Go 1.26.5.
 * Noel Georgi
 * Mateusz Urbanek
 * Maja Bojarska
+* Utku Ozdemir
+* Dmitrii Sharshakov
 * Orzelius
 * Erwan Leboucher
-* Utku Ozdemir
 * Kevin Tijssen
 * Lukasz Raczylo
 * Mickaël Canévet
 * Oguz Kilcan
-* Dmitrii Sharshakov
 * Dmitriy Matrenichev
+* Edward Sammut Alessi
+* Max Makarov
 * Rokoucha
 * buckaroo
 * immanuwell
+* kastakhov
 * Aleksei Sviridkin
+* Andras Elso
 * Ansgar Dahlen
 * Artem Chernyshev
 * Benoît Knecht
 * Calin
+* Christian A. Jacobsen
 * Christian Korneck
+* Christopher Barnes
 * Dario Emerson
+* David Donchez
 * David Orman
 * Dharsan Baskar
-* Edward Sammut Alessi
+* Dima Aratin
+* Dmitry Sharshakov
+* Evan Champion
 * Filip Boye-Kofi
 * Fritz Schaal
 * Immanuel Tikhonov
+* Ivan Demchuk
 * Jaakko Sirén
 * Jonny
 * Justin Garrison
 * Konstantin Nesterov
+* Loki San
 * Mario Cole
 * Mark Glants
+* Maxime Bertin
 * Nico Berlee
+* Noel
+* Oscar Wieman
 * Pranav Patil
+* Sacha Weatherstone
+* Spencer Smith
 * YANG JOO WOONG
 * Zadkiel AHARONIAN
 * appkins
-* kastakhov
+* ctr49
+* dadbravo
+* imusmanmalik
+* scmtble
