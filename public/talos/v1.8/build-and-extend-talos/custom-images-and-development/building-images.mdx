@@ -50,7 +50,7 @@ be overridden with:
 ## Customizations
 
 Some of the build parameters can be customized by passing environment variables to `make`, e.g. `GOAMD64=v1` can be used to build
-Talos images compatible with old AMD64 CPUs:
+Talos images for CPUs that don't meet the default [x86-64-v2 requirement](../../getting-started/system-requirements#cpu-architecture):
 
 ```bash
 make <target> GOAMD64=v1

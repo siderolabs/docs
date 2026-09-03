@@ -70,7 +70,7 @@ Before creating VMs, familiarise yourself with the [system requirements](../../g
 |---|---|---|
 | **BIOS** | `ovmf` (UEFI) | Modern firmware, Secure Boot support, better hardware compatibility |
 | **Machine** | `q35` | Modern PCIe-based machine type with better device support |
-| **CPU type** | `host` | Enables advanced instruction sets (AVX-512, etc.). Use `kvm64` with feature flags for Proxmox < 8.0 |
+| **CPU type** | `host` | Enables advanced instruction sets (AVX-512, etc.) and meets Talos's x86-64-v2 requirement. Use `kvm64` with feature flags for Proxmox < 8.0 |
 | **CPU cores** | 2+ (control plane), 4+ (workers) | Minimum 2 cores required |
 | **Memory** | 4GB+ (control plane), 8GB+ (workers) | Minimum 2GB required |
 | **Disk controller** | VirtIO SCSI | Do NOT use **VirtIO SCSI Single** — causes bootstrap hangs ([#11173](https://github.com/siderolabs/talos/issues/11173)) |
@@ -125,7 +125,7 @@ This action will open 8 tabs, configure the tabs as follows:
   - Set **Cores** to 2+ for control planes, 4+ for workers
   - Set **Type** to `host` for best performance
 
-  For Proxmox < 8.0, use `kvm64` with feature flags instead. Add the following to `/etc/pve/qemu-server/<vmid>.conf`:
+  `kvm64` predates the x86-64-v2 microarchitecture level Talos [requires](../../getting-started/system-requirements#cpu-architecture-requirements), so for Proxmox < 8.0 it needs the following feature flags added to `/etc/pve/qemu-server/<vmid>.conf`:
   ```text
   args: -cpu kvm64,+cx16,+lahf_lm,+popcnt,+sse3,+ssse3,+sse4.1,+sse4.2
   ```
