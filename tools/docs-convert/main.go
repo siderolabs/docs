@@ -802,7 +802,8 @@ func main() {
 
 	// Files to preserve during conversion (don't delete these)
 	preserveFiles := map[string]bool{
-		"overview.mdx": true,
+		"overview.mdx":     true,
+		"document-map.mdx": true,
 	}
 
 	// Instead of removing entire directory, selectively remove only generated files

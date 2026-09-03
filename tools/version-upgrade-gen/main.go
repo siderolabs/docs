@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -112,9 +114,9 @@ func main() {
 	fmt.Fprintf(os.Stderr, "  Target:        %s  ->  stage: %s, folder: %s (%s)\n", *tag, stage, targetMinor, scope)
 
 	if stable {
-		runStable(token, currentTag, *tag, currentMinor, targetMinor, varsFile, bannerFile)
+		runStable(token, currentTag, *tag, targetMinor, varsFile, bannerFile)
 	} else {
-		runPrerelease(token, currentTag, *tag, currentMinor, targetMinor, varsFile)
+		runPrerelease(token, currentTag, *tag, targetMinor, varsFile)
 	}
 
 	// Write the new folder version to a temp file so the Makefile can read it after.
@@ -127,7 +129,7 @@ func main() {
 // runPrerelease handles alpha/beta (and any pre-release) targets. It advances the
 // image pin and the versioned variables block, but never touches the "latest
 // stable" pointer (banner, canonical URLs, latest-stable block).
-func runPrerelease(token, currentTag, tag, currentMinor, targetMinor, varsFile string) {
+func runPrerelease(token, currentTag, tag, targetMinor, varsFile string) {
 	fmt.Fprintln(os.Stderr, "Updating versioned block in custom-variables.mdx...")
 	if err := updatePrereleaseVariables(varsFile, targetMinor, tag, token); err != nil {
 		fmt.Fprintf(os.Stderr, "Error updating custom-variables.mdx: %v\n", err)
@@ -135,7 +137,7 @@ func runPrerelease(token, currentTag, tag, currentMinor, targetMinor, varsFile s
 	}
 
 	fmt.Fprintf(os.Stderr, "Updating Makefile pins (TALOSCTL_IMAGE -> %s, TALOS_VERSION -> %s)...\n", tag, targetMinor)
-	if err := setMakefilePin("Makefile", currentTag, tag, currentMinor, targetMinor); err != nil {
+	if err := setMakefilePin("Makefile", currentTag, tag, targetMinor); err != nil {
 		fmt.Fprintf(os.Stderr, "Error updating Makefile pins: %v\n", err)
 		os.Exit(1)
 	}
@@ -170,7 +172,7 @@ func runPrerelease(token, currentTag, tag, currentMinor, targetMinor, varsFile s
 // runStable handles stable targets. It advances the image pin, refreshes the
 // k8s/nvidia values from the release notes, and — when the latest stable minor
 // actually changes — promotes the version in the banner, canonical URLs and nav.
-func runStable(token, currentTag, tag, currentMinor, targetMinor string, varsFile, bannerFile string) {
+func runStable(token, currentTag, tag, targetMinor string, varsFile, bannerFile string) {
 	release := tag
 	releaseBranch := "release-" + strings.TrimPrefix(targetMinor, "v")
 
@@ -181,7 +183,7 @@ func runStable(token, currentTag, tag, currentMinor, targetMinor string, varsFil
 		os.Exit(1)
 	}
 
-	k8sVersion := parseField(talosRelease.Body, k8sRe)
+	k8sVersion := parseK8sVersion(talosRelease.Body)
 	if k8sVersion == "" {
 		fmt.Fprintf(os.Stderr, "Error: could not find Kubernetes version in Talos release body\n")
 		os.Exit(1)
@@ -199,20 +201,20 @@ func runStable(token, currentTag, tag, currentMinor, targetMinor string, varsFil
 	}
 	nvCTK, nvDriver := resolveNvidia(release, token, string(varsData))
 
-	fmt.Fprintln(os.Stderr, "Reading current k8s versions from custom-variables.mdx...")
-	currentK8s, err := readExportVar(varsFile, "k8s_release")
+	fmt.Fprintln(os.Stderr, "Finding the previous minor's Kubernetes version...")
+	prevRelease, prevK8sVersion, err := previousStableK8sRelease("siderolabs/talos", release, token)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading k8s_release: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error finding the previous Kubernetes version: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Fprintf(os.Stderr, "  Previous k8s: %s -> New k8s: %s\n", currentK8s, k8sVersion)
+	fmt.Fprintf(os.Stderr, "  Previous k8s: %s (%s) -> New k8s: %s\n", prevK8sVersion, prevRelease.TagName, k8sVersion)
 
 	info := VersionInfo{
 		Version:             targetMinor,
 		Release:             release,
 		ReleaseBranch:       releaseBranch,
 		K8sRelease:          k8sVersion,
-		K8sPrevRelease:      currentK8s,
+		K8sPrevRelease:      prevK8sVersion,
 		NvidiaCTKRelease:    nvCTK,
 		NvidiaDriverRelease: nvDriver,
 	}
@@ -224,7 +226,7 @@ func runStable(token, currentTag, tag, currentMinor, targetMinor string, varsFil
 	}
 
 	fmt.Fprintf(os.Stderr, "Updating Makefile pins (TALOSCTL_IMAGE -> %s, TALOS_VERSION -> %s)...\n", tag, targetMinor)
-	if err := setMakefilePin("Makefile", currentTag, tag, currentMinor, targetMinor); err != nil {
+	if err := setMakefilePin("Makefile", currentTag, tag, targetMinor); err != nil {
 		fmt.Fprintf(os.Stderr, "Error updating Makefile pins: %v\n", err)
 		os.Exit(1)
 	}
@@ -308,6 +310,189 @@ func fetchRelease(repo, tag, token string) (*Release, error) {
 	return &release, nil
 }
 
+// fetchReleases fetches the most recent releases for a repo, newest first (as
+// GitHub returns them). Used to find the stable release preceding a given
+// tag, so k8s_prev_release can be derived from Talos's own release history
+// rather than read back from a local file the tool may have already mutated
+// on an earlier run.
+func fetchReleases(repo, token string) ([]Release, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/releases?per_page=100", repo)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "version-upgrade-gen")
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("GitHub API returned %d for %s releases: %s", resp.StatusCode, repo, body)
+	}
+
+	var releases []Release
+	if err := json.Unmarshal(body, &releases); err != nil {
+		return nil, fmt.Errorf("parsing releases: %w", err)
+	}
+
+	return releases, nil
+}
+
+// releaseVersion parses the major, minor and patch numbers out of a release
+// tag like "v1.14.1" or "v1.14.0-beta.0". A missing patch component is read as
+// 0, so "v1.14" parses as 1.14.0.
+func releaseVersion(tag string) (major, minor, patch int, err error) {
+	t := strings.TrimPrefix(tag, "v")
+	if i := strings.IndexByte(t, '-'); i >= 0 {
+		t = t[:i]
+	}
+
+	parts := strings.Split(t, ".")
+	if len(parts) < 2 {
+		return 0, 0, 0, fmt.Errorf("cannot parse major.minor from %q", tag)
+	}
+
+	nums := make([]int, 3)
+	for i := range nums {
+		if i >= len(parts) {
+			break
+		}
+		n, convErr := strconv.Atoi(parts[i])
+		if convErr != nil {
+			return 0, 0, 0, fmt.Errorf("cannot parse %q as a version: %w", tag, convErr)
+		}
+		nums[i] = n
+	}
+
+	return nums[0], nums[1], nums[2], nil
+}
+
+// previousStableK8sRelease returns the stable (non-prerelease) release that
+// documents the Kubernetes version customers are upgrading FROM, together
+// with that version. Candidates are the stable releases from a minor series
+// older than tag's own, walked from the highest version down, and the first
+// one whose release notes actually carry a "Kubernetes:" line wins.
+//
+// Three things make "the release listed just before tag" the wrong answer:
+//
+//   - Releases sharing tag's major.minor must be skipped. For a patch release
+//     like v1.14.1 the release before it is v1.14.0, which ships the same
+//     Kubernetes version, and k8s_prev_release would end up equal to
+//     k8s_release - turning the illustrative upgrade output in the Kubernetes
+//     guides into nonsense like "update kube-apiserver: 1.37.0 -> 1.37.0".
+//
+//   - GitHub returns releases newest-published first, not in version order,
+//     and Talos backports to several maintained minors at once, so a v1.12.x
+//     patch can sit between two v1.13.x patches. Picking by list position can
+//     therefore select a *newer* minor than tag. Candidates are compared
+//     numerically instead.
+//
+//   - Only the ".0" release of a minor series reliably states its Kubernetes
+//     version; patch release notes usually omit it. Selecting purely on
+//     version would land on a patch release with nothing to parse, so
+//     candidates without a Kubernetes version are passed over. Walking
+//     downwards means the closest release that does state one is used.
+//
+// Tags in the list that do not parse as a version are skipped rather than
+// treated as fatal.
+//
+// Looked up from GitHub on every run rather than read back from a locally
+// mutable file, so re-running the upgrade for the same tag keeps returning
+// the same, correct answer instead of drifting once the local file has
+// already been advanced to tag itself. The 100 most recent releases are
+// assumed to comfortably cover tag and the minor before it, since this tool
+// only ever targets a current or very recent Talos release.
+func previousStableK8sRelease(repo, tag, token string) (*Release, string, error) {
+	targetMajor, targetMinor, _, err := releaseVersion(tag)
+	if err != nil {
+		return nil, "", err
+	}
+
+	releases, err := fetchReleases(repo, token)
+	if err != nil {
+		return nil, "", err
+	}
+
+	found := false
+	for i := range releases {
+		if releases[i].TagName == tag {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, "", fmt.Errorf("tag %s not found in the %d most recent releases", tag, len(releases))
+	}
+
+	type candidate struct {
+		release             *Release
+		major, minor, patch int
+	}
+
+	var candidates []candidate
+	for i := range releases {
+		r := &releases[i]
+		if r.Prerelease {
+			continue
+		}
+
+		major, minor, patch, err := releaseVersion(r.TagName)
+		if err != nil {
+			continue
+		}
+
+		// Strictly older minor series than the target.
+		if major > targetMajor || (major == targetMajor && minor >= targetMinor) {
+			continue
+		}
+
+		candidates = append(candidates, candidate{r, major, minor, patch})
+	}
+
+	// Highest version first, so the newest release that states a Kubernetes
+	// version is preferred.
+	sort.Slice(candidates, func(i, j int) bool {
+		a, b := candidates[i], candidates[j]
+		if a.major != b.major {
+			return a.major > b.major
+		}
+		if a.minor != b.minor {
+			return a.minor > b.minor
+		}
+		return a.patch > b.patch
+	})
+
+	for _, c := range candidates {
+		if k8s := parseK8sVersion(c.release.Body); k8s != "" {
+			return c.release, k8s, nil
+		}
+	}
+
+	return nil, "", fmt.Errorf("no stable release older than v%d.%d states a Kubernetes version in the %d most recent releases", targetMajor, targetMinor, len(releases))
+}
+
+// parseK8sVersion pulls the Kubernetes version out of a Talos release body.
+// Talos release notes are inconsistent about the "v" prefix ("Kubernetes:
+// 1.36.0" in some, "Kubernetes: v1.35.4" in others), while the docs variables
+// are always bare, so the prefix is trimmed to keep k8s_release and
+// k8s_prev_release in the same format. Returns "" when the body has no
+// Kubernetes line.
+func parseK8sVersion(body string) string {
+	return strings.TrimPrefix(parseField(body, k8sRe), "v")
+}
+
 // parseField extracts the first capture group from a regex match against text.
 func parseField(text string, re *regexp.Regexp) string {
 	m := re.FindStringSubmatch(text)
@@ -337,15 +522,12 @@ func readCurrentImageTag(path string) (string, error) {
 // minorOf returns the "vMAJOR.MINOR" folder label for a tag like
 // "v1.14.0-beta.0" -> "v1.14".
 func minorOf(tag string) (string, error) {
-	t := strings.TrimPrefix(tag, "v")
-	if i := strings.IndexByte(t, '-'); i >= 0 {
-		t = t[:i]
+	major, minor, _, err := releaseVersion(tag)
+	if err != nil {
+		return "", err
 	}
-	parts := strings.Split(t, ".")
-	if len(parts) < 2 || parts[0] == "" || parts[1] == "" {
-		return "", fmt.Errorf("cannot parse major.minor from %q", tag)
-	}
-	return "v" + parts[0] + "." + parts[1], nil
+
+	return fmt.Sprintf("v%d.%d", major, minor), nil
 }
 
 // prereleaseStage returns the pre-release suffix marker of a tag, e.g.
@@ -379,22 +561,6 @@ func readBannerLatest(path string) (string, error) {
 	m := re.FindSubmatch(data)
 	if m == nil {
 		return "", fmt.Errorf("latestVersion not found in %s", path)
-	}
-
-	return string(m[1]), nil
-}
-
-// readExportVar reads a single `export const <name>` value from an MDX file.
-func readExportVar(path, name string) (string, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-
-	re := regexp.MustCompile(`(?m)^export const ` + name + ` = ['"]([^'"]+)['"]`)
-	m := re.FindSubmatch(data)
-	if m == nil {
-		return "", fmt.Errorf("export const %s not found in %s", name, path)
 	}
 
 	return string(m[1]), nil
@@ -608,10 +774,16 @@ func updateCanonicalURLs(dir, oldVersion, newVersion string) error {
 	})
 }
 
+// talosVersionRe matches the TALOS_VERSION pin line regardless of its current value.
+var talosVersionRe = regexp.MustCompile(`(?m)^TALOS_VERSION := \S+$`)
+
 // setMakefilePin rewrites TALOSCTL_IMAGE to the exact new tag and TALOS_VERSION to
 // the new folder minor. It matches the full current tag (suffix included) so a
 // pre-release pin like v1.14.0-alpha.2 is replaced cleanly rather than by prefix.
-func setMakefilePin(path, currentTag, newTag, currentMinor, newMinor string) error {
+// TALOS_VERSION is always set from newMinor (derived from the target tag) rather
+// than being swapped conditionally on the old value, so a Makefile whose
+// TALOS_VERSION has drifted out of sync with TALOSCTL_IMAGE still gets corrected.
+func setMakefilePin(path, currentTag, newTag, newMinor string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -626,10 +798,10 @@ func setMakefilePin(path, currentTag, newTag, currentMinor, newMinor string) err
 	}
 	content = strings.ReplaceAll(content, oldImageLine, newImageLine)
 
-	// TALOS_VERSION only changes when the folder minor changes.
-	if currentMinor != newMinor {
-		content = strings.ReplaceAll(content, "TALOS_VERSION := "+currentMinor, "TALOS_VERSION := "+newMinor)
+	if !talosVersionRe.MatchString(content) {
+		return fmt.Errorf("could not find TALOS_VERSION pin in Makefile")
 	}
+	content = talosVersionRe.ReplaceAllLiteralString(content, "TALOS_VERSION := "+newMinor)
 
 	return os.WriteFile(path, []byte(content), 0o644)
 }

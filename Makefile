@@ -393,7 +393,7 @@ validate-docs-nav: ## Validate all talos yaml nav configs match their content di
 
 .PHONY: sync-docs-nav
 sync-docs-nav: ## Insert newly generated reference pages into their version YAML nav (best-effort, non-blocking)
-	cd docs-validate && go run . --workspace .. --fix
+	cd tools/docs-validate && go run . --workspace ../.. --fix
 
 # validate-tag distinguishes the two ways a TAG can be wrong, with a tailored
 # message for each, and fails BEFORE the generator writes anything:
