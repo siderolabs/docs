@@ -39,7 +39,7 @@ customization:
 
 You can query the SELinux state with:
 
-```shell
+```shellsession
 $ talosctl --nodes <IP> get SecurityState
 NODE         NAMESPACE   TYPE            ID              VERSION   SECUREBOOT   UKISIGNINGKEYFINGERPRINT   PCRSIGNINGKEYFINGERPRINT   SELINUXSTATE
 172.20.0.2   runtime     SecurityState   securitystate   1         false                                                              enabled, permissive
@@ -54,6 +54,30 @@ NODE         NAMESPACE   TYPE            ID              VERSION   SECUREBOOT   
 As for version 1.10, SELinux runs in permissive mode by default, which does not offer any extra protection, but allows to log denials.
 SELinux can be put in enforcing mode (to actually prevent access when it is not authorized by the policy) by adding `enforcing=1` to the kernel cmdline.
 This is most commonly done via the configuration in the Image Factory.
+
+### CSI volumes
+
+CSI drivers mount the volumes they provision, so Talos cannot apply the correct SELinux label to those volumes.
+Without the label, pods cannot access the volume contents.
+
+You can instead set the label in the StorageClass, which passes it to the driver as a mount option:
+
+```yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: my-storage
+provisioner: local.csi.openebs.io
+mountOptions:
+  - context=system_u:object_r:ephemeral_t:s0
+```
+
+`ephemeral_t` is the same label Talos uses for its own user volumes, and pods can read and write it.
+
+The label only applies if the driver passes mount options through to the filesystem it mounts.
+Drivers backed by a block device generally do, including local disks, LVM volumes, SAN and cloud disks.
+This has been tested with [OpenEBS LocalPV-LVM](https://github.com/openebs/lvm-localpv) and [OpenEBS Mayastor](https://github.com/openebs/mayastor).
+Volumes requested as `volumeMode: Block` contain no filesystem, so they need no label.
 
 ## Obtaining and processing denial logs
 
