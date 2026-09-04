@@ -13,7 +13,7 @@ OMNI_CLI_GEN_IMAGE := ghcr.io/siderolabs/omni-cli-gen:latest
 OMNI_CONFIG_GEN_IMAGE := ghcr.io/siderolabs/omni-config-gen:latest
 MDX_NORMALIZE_IMAGE := ghcr.io/siderolabs/mdx-normalize:latest
 STYLE_CHECK_IMAGE := ghcr.io/siderolabs/style-guide-checker:latest
-TALOS_VERSION := v1.14
+TALOS_VERSION := v1.13
 # Linter images are pinned to exact versions so `make code-review` (and CI) is
 # reproducible: a new linter release can't turn the gate red on unchanged code.
 # Bump these deliberately. Each is overridable from the environment (?=).
@@ -178,6 +178,11 @@ test-all: test-docs-gen ## Run all tests
 #                   (dead assignments), plus govet, staticcheck bug-checks,
 #                   nilerr and bodyclose. Style-only linters are left off (see
 #                   the .golangci.yml header for the rationale).
+#                   Each module's `go test ./...` runs too, so a guarantee a
+#                   tool relies on (mdx-normalize's idempotence, say) is gated
+#                   rather than only checked by hand. The tests run in the
+#                   golangci-lint image, which ships the Go toolchain, so this
+#                   target still needs nothing but Docker.
 #   * Dockerfiles -> hadolint (.hadolint.yaml). Best-practice/correctness checks.
 #   * Makefile    -> checkmake (.checkmake.ini). Structural best practices.
 # Go modules and Dockerfiles are auto-discovered, so new programs are reviewed
@@ -195,6 +200,8 @@ code-review: ## Review all doc-building tooling: Go code, Dockerfiles, and the M
 		echo ""; echo "==> Go module: $$m"; \
 		docker run --rm -v $(PWD):/workspace -w /workspace/$$m $(GOLANGCI_LINT_IMAGE) \
 			golangci-lint run --config /workspace/.golangci.yml ./... || failed="$$failed go:$$m"; \
+		docker run --rm -v $(PWD):/workspace -w /workspace/$$m $(GOLANGCI_LINT_IMAGE) \
+			go test ./... || failed="$$failed test:$$m"; \
 	done; \
 	for f in $(DOCKERFILES); do \
 		echo ""; echo "==> Dockerfile: $$f"; \
@@ -208,13 +215,20 @@ code-review: ## Review all doc-building tooling: Go code, Dockerfiles, and the M
 		echo "Code review FAILED. Issues in:$$failed"; \
 		exit 1; \
 	fi; \
-	echo "Code review passed: all Go modules, Dockerfiles, and the Makefile are clean."
+	echo "Code review passed: all Go modules (lint + tests), Dockerfiles, and the Makefile are clean."
 
 # talosctl is a multi-arch image and its `--arch` flag defaults to the running
 # binary's architecture (runtime.GOARCH). Pin the platform so the generated
 # reference docs are deterministic (matching CI) regardless of the contributor's
 # machine — otherwise regenerating on Apple Silicon flips defaults to arm64.
 TALOSCTL_PLATFORM := linux/amd64
+
+# The files the Talos reference generator writes, for scoped normalization:
+# docs-convert emits the configuration reference under .../reference/configuration
+# and moves the CLI doc up to .../reference/cli.mdx. Other pages in that tree
+# (api.mdx, kernel.mdx, talosconfig.mdx, overview.mdx) are not produced here and
+# are deliberately left out so a regeneration only normalizes its own output.
+TALOS_REF_OUTPUT = public/talos/$(TALOS_VERSION)/reference/cli.mdx public/talos/$(TALOS_VERSION)/reference/configuration
 
 .PHONY: generate-talos-reference
 generate-talos-reference: ## Generate Talos reference docs and convert to MDX
@@ -227,6 +241,7 @@ generate-talos-reference: ## Generate Talos reference docs and convert to MDX
 	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD):/workspace $(DOCS_CONVERT_IMAGE) \
 		/workspace/_out/docs /workspace/public/talos/$(TALOS_VERSION)/reference/configuration/
 	rm -rf _out/docs
+	@$(MAKE) --no-print-directory normalize-doc NORMALIZE_PATHS="$(TALOS_REF_OUTPUT)"
 	@echo "Reference documentation generated in public/talos/$(TALOS_VERSION)/reference/configuration"
 
 .PHONY: generate-talos-reference-local
@@ -237,6 +252,7 @@ generate-talos-reference-local: ## Generate Talos reference docs using local Go 
 	docker run --rm --platform=$(TALOSCTL_PLATFORM) -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
 	@echo "Converting generated docs to MDX..."
 	cd tools/docs-convert && go run main.go ../../_out/docs ../../public/talos/$(TALOS_VERSION)/reference/configuration/
+	@$(MAKE) --no-print-directory normalize-doc-local NORMALIZE_PATHS="$(TALOS_REF_OUTPUT)"
 	@echo "Reference documentation generated in public/talos/$(TALOS_VERSION)/reference/configuration/"
 
 OMNI_CONFIG_SCHEMA_URL ?= https://raw.githubusercontent.com/siderolabs/omni/refs/heads/main/internal/pkg/config/schema.json
@@ -272,16 +288,93 @@ build-mdx-normalize-container: ## Build the mdx-normalize container locally
 
 # ---- Normalization ---------------------------------------------------------
 
-.PHONY: normalize-doc
-normalize-doc: ## Normalize the generated Omni reference .mdx files for Mintlify (container)
-	@$(call pull_if_missing,$(MDX_NORMALIZE_IMAGE))
-	@if [ -f $(OMNI_CLI_REF_PATH) ]; then docker run --rm -i $(MDX_NORMALIZE_IMAGE) < $(OMNI_CLI_REF_PATH) > $(OMNI_CLI_REF_PATH).tmp && mv $(OMNI_CLI_REF_PATH).tmp $(OMNI_CLI_REF_PATH) || { rm -f $(OMNI_CLI_REF_PATH).tmp; exit 1; }; fi
-	@if [ -f $(IMAGE_FACTORY_REF_PATH) ]; then docker run --rm -i $(MDX_NORMALIZE_IMAGE) --strip-hr < $(IMAGE_FACTORY_REF_PATH) > $(IMAGE_FACTORY_REF_PATH).tmp && mv $(IMAGE_FACTORY_REF_PATH).tmp $(IMAGE_FACTORY_REF_PATH) || { rm -f $(IMAGE_FACTORY_REF_PATH).tmp; exit 1; }; fi
+# Shell snippet that lists the changed reference .mdx files, one per line:
+# tracked edits (staged + unstaged, vs HEAD) plus new untracked files. A
+# "reference" page is identified purely by a /reference/ path segment, which
+# covers public/omni/reference and every public/talos/v*/reference tree.
+changed_ref_mdx = { git diff --name-only HEAD -- '*.mdx'; git ls-files --others --exclude-standard -- '*.mdx'; } 2>/dev/null | grep '/reference/' | sort -u
 
+# What to normalize. NORMALIZE_PATHS is an optional space-separated list of files
+# and/or directories (directories are expanded to the .mdx files under them). It
+# defaults to the changed reference files (git dirty), so a bare
+# `make normalize-doc` cleans whatever you just touched. The generate-* targets
+# set it to their own output, which keeps each generator hermetic — generating
+# one reference tree never rewrites another.
+NORMALIZE_PATHS ?=
+normalize_roots = $(if $(strip $(NORMALIZE_PATHS)),$(NORMALIZE_PATHS),$$( $(changed_ref_mdx) ))
+
+# expand_roots turns the roots (files and/or dirs) into a newline list of .mdx
+# files. Used at the top of both recipes below. Both recipes word-split that
+# list to iterate it, so a doc path may not contain whitespace — the kebab-case
+# file-naming convention already rules that out.
+expand_roots = for p in $$roots; do if [ -d "$$p" ]; then find "$$p" -name '*.mdx'; elif [ -f "$$p" ]; then echo "$$p"; fi; done | sort -u
+
+# normalize_flags is a shell snippet that prints the normalization flags for the
+# file in "$f", so the path->flags mapping lives in exactly one place (both
+# recipes below use it). Only the two plain-markdown Omni pages get
+# --escape-inline, because escaping "<"/"{" would corrupt the real HTML (<table>
+# markup) in the Talos reference and the schema-generated Omni pages;
+# image-factory additionally needs --strip-hr. Everything else is normalized
+# structurally only (safe on files with HTML/JSX).
+# Leading "(" on each case pattern keeps the parentheses balanced inside the
+# `$( ... )` the recipes wrap this in (POSIX sh otherwise ends the command
+# substitution at the first pattern's ")").
+normalize_flags = case "$$f" in ($(OMNI_CLI_REF_PATH)) printf '%s' '--escape-inline' ;; ($(IMAGE_FACTORY_REF_PATH)) printf '%s' '--strip-hr --escape-inline' ;; esac
+
+# The published mdx-normalize:latest is rebuilt from main, so it can lag the
+# flags this Makefile passes (--escape-inline, --strip-hr) — and pull_if_missing
+# keeps whatever :latest is already cached, so a stale local image never
+# self-heals. Probe the image with the flags first: pull once if the probe
+# fails, and stop with instructions if it still fails, rather than exiting 2
+# per file and leaving the docs unnormalized.
+ensure_normalize_image = \
+	probe='docker run --rm -i $(MDX_NORMALIZE_IMAGE) --strip-hr --escape-inline'; \
+	$(call pull_if_missing,$(MDX_NORMALIZE_IMAGE)); \
+	$$probe </dev/null >/dev/null 2>&1 || { \
+		echo "  $(MDX_NORMALIZE_IMAGE) does not understand the flags; re-pulling..."; \
+		docker pull -q $(MDX_NORMALIZE_IMAGE) >/dev/null 2>&1 || true; \
+	}; \
+	$$probe </dev/null >/dev/null 2>&1 || { \
+		echo "error: $(MDX_NORMALIZE_IMAGE) does not support --escape-inline/--strip-hr."; \
+		echo "       Run 'make build-mdx-normalize-container' to build it from this checkout,"; \
+		echo "       or use the '-local' targets, until CI republishes the image."; \
+		exit 1; \
+	}
+
+.PHONY: normalize-doc
+normalize-doc: ## Normalize reference .mdx (container); defaults to changed files, override with NORMALIZE_PATHS
+	@$(ensure_normalize_image)
+	@roots="$(normalize_roots)"; files=$$( $(expand_roots) ); \
+	[ -n "$$files" ] || { echo "normalize-doc: no reference .mdx files to normalize."; exit 0; }; \
+	for f in $$files; do \
+		flags=$$( $(normalize_flags) ); \
+		echo "  normalize $$flags $$f"; \
+		docker run --rm -i $(MDX_NORMALIZE_IMAGE) $$flags < "$$f" > "$$f.tmp" && mv "$$f.tmp" "$$f" || { rm -f "$$f.tmp"; exit 1; }; \
+	done
+
+# The local path takes all its files in one invocation (the tool accepts
+# multiple paths), so a 93-file Talos regeneration runs the binary once. The
+# container path cannot batch: it pipes each file through stdin on purpose, so
+# the file is never read or written across the bind mount, which avoids Docker
+# Desktop mount-consistency races on a just-written file.
 .PHONY: normalize-doc-local
-normalize-doc-local: ## Normalize the generated Omni reference .mdx files using local Go build
-	@if [ -f $(OMNI_CLI_REF_PATH) ]; then cd tools/mdx-normalize && go run . ../../$(OMNI_CLI_REF_PATH); fi
-	@if [ -f $(IMAGE_FACTORY_REF_PATH) ]; then cd tools/mdx-normalize && go run . --strip-hr ../../$(IMAGE_FACTORY_REF_PATH); fi
+normalize-doc-local: ## Normalize reference .mdx (local Go build); defaults to changed files, override with NORMALIZE_PATHS
+	@roots="$(normalize_roots)"; files=$$( $(expand_roots) ); \
+	[ -n "$$files" ] || { echo "normalize-doc-local: no reference .mdx files to normalize."; exit 0; }; \
+	bin=$$(mktemp) || exit 1; \
+	trap 'rm -f "$$bin"' EXIT; \
+	( cd tools/mdx-normalize && go build -o "$$bin" . ) || exit 1; \
+	plain=""; \
+	for f in $$files; do \
+		flags=$$( $(normalize_flags) ); \
+		echo "  normalize $$flags $$f"; \
+		if [ -n "$$flags" ]; then \
+			"$$bin" $$flags "$$f" || exit 1; \
+		else \
+			plain="$$plain $$f"; \
+		fi; \
+	done; \
+	if [ -n "$$plain" ]; then "$$bin" $$plain || exit 1; fi
 
 # ---- omnictl CLI reference -------------------------------------------------
 
@@ -302,7 +395,7 @@ generate-omni-cli-reference: ## Generate the omnictl CLI reference (container)
 	} > "$(OMNI_CLI_REF_PATH).tmp"; \
 	mv "$(OMNI_CLI_REF_PATH).tmp" "$(OMNI_CLI_REF_PATH)"; \
 	rm -f "$$tmp"
-	@$(MAKE) --no-print-directory normalize-doc
+	@$(MAKE) --no-print-directory normalize-doc NORMALIZE_PATHS="$(OMNI_CLI_REF_PATH)"
 	@echo "Reference documentation generated at $(OMNI_CLI_REF_PATH)"
 
 .PHONY: generate-omni-cli-reference-local
@@ -320,7 +413,7 @@ generate-omni-cli-reference-local: ## Generate the omnictl CLI reference using l
 	} > "$(OMNI_CLI_REF_PATH).tmp"; \
 	mv "$(OMNI_CLI_REF_PATH).tmp" "$(OMNI_CLI_REF_PATH)"; \
 	rm -rf "$$tmp"
-	@$(MAKE) --no-print-directory normalize-doc-local
+	@$(MAKE) --no-print-directory normalize-doc-local NORMALIZE_PATHS="$(OMNI_CLI_REF_PATH)"
 	@echo "Reference documentation generated at $(OMNI_CLI_REF_PATH)"
 
 # ---- Omni configuration reference ------------------------------------------
@@ -330,12 +423,14 @@ generate-omni-config-reference: ## Generate Omni configuration reference docs fr
 	@echo "Generating Omni configuration reference..."
 	@$(call pull_if_missing,$(OMNI_CONFIG_GEN_IMAGE))
 	docker run --rm $(OMNI_CONFIG_GEN_IMAGE) $(OMNI_CONFIG_SCHEMA_URL) > $(OMNI_CONFIG_REF_PATH).tmp && mv $(OMNI_CONFIG_REF_PATH).tmp $(OMNI_CONFIG_REF_PATH) || { rm -f $(OMNI_CONFIG_REF_PATH).tmp; exit 1; }
+	@$(MAKE) --no-print-directory normalize-doc NORMALIZE_PATHS="$(OMNI_CONFIG_REF_PATH)"
 	@echo "Reference documentation generated at $(OMNI_CONFIG_REF_PATH)"
 
 .PHONY: generate-omni-config-reference-local
 generate-omni-config-reference-local: ## Generate Omni configuration reference docs using local Go build
 	@echo "Generating Omni configuration reference..."
 	cd tools/omni-config-gen && go run . $(OMNI_CONFIG_SCHEMA_URL) > ../../$(OMNI_CONFIG_REF_PATH).tmp && mv ../../$(OMNI_CONFIG_REF_PATH).tmp ../../$(OMNI_CONFIG_REF_PATH) || { rm -f ../../$(OMNI_CONFIG_REF_PATH).tmp; exit 1; }
+	@$(MAKE) --no-print-directory normalize-doc-local NORMALIZE_PATHS="$(OMNI_CONFIG_REF_PATH)"
 	@echo "Reference documentation generated at $(OMNI_CONFIG_REF_PATH)"
 
 # ---- Image Factory configuration reference ---------------------------------
@@ -351,7 +446,7 @@ generate-omni-image-factory-reference: ## Generate the Image Factory configurati
 	} > "$(IMAGE_FACTORY_REF_PATH).tmp"; \
 	mv "$(IMAGE_FACTORY_REF_PATH).tmp" "$(IMAGE_FACTORY_REF_PATH)"; \
 	rm -f "$$tmp"
-	@$(MAKE) --no-print-directory normalize-doc
+	@$(MAKE) --no-print-directory normalize-doc NORMALIZE_PATHS="$(IMAGE_FACTORY_REF_PATH)"
 	@echo "Reference documentation generated at $(IMAGE_FACTORY_REF_PATH)"
 
 .PHONY: generate-omni-image-factory-reference-local
@@ -365,7 +460,7 @@ generate-omni-image-factory-reference-local: ## Generate the Image Factory confi
 	} > "$(IMAGE_FACTORY_REF_PATH).tmp"; \
 	mv "$(IMAGE_FACTORY_REF_PATH).tmp" "$(IMAGE_FACTORY_REF_PATH)"; \
 	rm -f "$$tmp"
-	@$(MAKE) --no-print-directory normalize-doc-local
+	@$(MAKE) --no-print-directory normalize-doc-local NORMALIZE_PATHS="$(IMAGE_FACTORY_REF_PATH)"
 	@echo "Reference documentation generated at $(IMAGE_FACTORY_REF_PATH)"
 
 # ---- Aggregate -------------------------------------------------------------
