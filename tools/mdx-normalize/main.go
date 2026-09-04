@@ -1,11 +1,12 @@
 // Command mdx-normalize cleans up generated Markdown/MDX so it renders
 // correctly on Mintlify.
 //
-// Tools such as `omnictl docs` and upstream `configuration.md` files produce
-// constructs that Mintlify (which parses .mdx as MDX/JSX) does not handle:
+// Tools such as `omnictl docs`, `talosctl docs` and upstream `configuration.md`
+// files produce constructs that Mintlify (which parses .mdx as MDX/JSX) does
+// not handle:
 //
 //   - Tab-indented code blocks. Mintlify does not support indented code
-//     blocks, so a line like `source <(omnictl completion bash)` is read as
+//     blocks, so a line like `source <(talosctl completion bash)` is read as
 //     JSX and breaks the build ("Unexpected character `(` before name"). These
 //     are converted to fenced (```) code blocks.
 //
@@ -15,15 +16,35 @@
 //     in a colon ("...run:" or a "#### Linux:" heading), so a tab-indented
 //     block with a colon intro is fenced and any other is de-indented.
 //
+//   - Tab-indented *lists* nested under a list item (e.g. sub-bullets under
+//     "- For each node:"). These look like colon-intro examples but must stay a
+//     list, not become a code block, so they are re-indented instead of fenced.
+//
 //   - (with --strip-hr) "---" horizontal-rule separators sprinkled between
 //     sections, which render as noisy horizontal lines.
 //
+//   - (with --escape-inline) MDX-significant characters ("<" and "{") in prose,
+//     such as "<machine-id>" placeholders in CLI help, which Mintlify would try
+//     to parse as JSX/expressions. It escapes every "<"/"{" in prose (only
+//     inline code spans and already-escaped characters are skipped). This is
+//     OPT-IN, and applied only to plain-markdown CLI help, because it must never
+//     run on files that contain real HTML/JSX (e.g. the <table> markup in the
+//     Talos configuration reference or the schema-generated Omni pages) —
+//     escaping those would destroy the tables. Such files are normalized with
+//     escaping off, which leaves their HTML, MDX expressions ({"<"}) and
+//     comments ({/* ... */}) untouched.
+//
 // The file's leading YAML frontmatter block is always preserved verbatim.
-// The file is normalized in place.
+//
+// Every transformation is idempotent: running the tool again on its own output
+// is a no-op.
 //
 // Usage:
 //
-//	mdx-normalize [--strip-hr] <file.mdx>
+//	mdx-normalize [--strip-hr] [--escape-inline] [file.mdx ...]
+//
+// With one or more file arguments, each file is normalized in place. With no
+// argument (or "-") it reads stdin and writes stdout.
 package main
 
 import (
@@ -36,69 +57,75 @@ import (
 )
 
 var (
-	fenceRe = regexp.MustCompile("^[ ]*```")
-	hrRe    = regexp.MustCompile(`^---[ \t]*$`)
-	colonRe = regexp.MustCompile(`:[ \t]*$`)
-	blankRe = regexp.MustCompile(`^[ \t]*$`)
+	fenceRe    = regexp.MustCompile("^[ ]*```")
+	hrRe       = regexp.MustCompile(`^---[ \t]*$`)
+	colonRe    = regexp.MustCompile(`:[ \t]*$`)
+	blankRe    = regexp.MustCompile(`^[ \t]*$`)
+	listItemRe = regexp.MustCompile(`^[ \t]*([-*+]|[0-9]+[.)])[ \t]`)
 )
 
 func main() {
 	stripHR := flag.Bool("strip-hr", false, "remove standalone '---' horizontal-rule separators")
+	escapeInline := flag.Bool("escape-inline", false, "backslash-escape '<' and '{' in prose (for plain-markdown CLI help; never use on files with real HTML/JSX)")
 	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: mdx-normalize [--strip-hr] [file.mdx]")
-		fmt.Fprintln(os.Stderr, "  With a file argument, the file is normalized in place.")
+		fmt.Fprintln(os.Stderr, "usage: mdx-normalize [--strip-hr] [--escape-inline] [file.mdx ...]")
+		fmt.Fprintln(os.Stderr, "  With file arguments, each file is normalized in place.")
 		fmt.Fprintln(os.Stderr, "  With no argument (or '-'), reads stdin and writes stdout.")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
 
-	// With a file argument we edit it in place; with none (or "-") we act as a
-	// stdin->stdout filter. The filter mode is used from containers so the file
-	// is never read/written through a bind mount, which avoids Docker Desktop
-	// mount-consistency races on a just-written file.
-	path := ""
-	switch flag.NArg() {
-	case 0:
-		// stdin -> stdout
-	case 1:
-		if flag.Arg(0) != "-" {
-			path = flag.Arg(0)
+	// With no argument (or a single "-") we act as a stdin->stdout filter; this
+	// mode is used from containers so the file is never read/written through a
+	// bind mount, which avoids Docker Desktop mount-consistency races on a
+	// just-written file. With file arguments each file is normalized in place.
+	args := flag.Args()
+	if len(args) == 0 || (len(args) == 1 && args[0] == "-") {
+		data, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "mdx-normalize: %v\n", err)
+			os.Exit(1)
 		}
-	default:
-		flag.Usage()
-		os.Exit(2)
-	}
-
-	var (
-		data []byte
-		err  error
-	)
-	if path == "" {
-		data, err = io.ReadAll(os.Stdin)
-	} else {
-		data, err = os.ReadFile(path)
-	}
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "mdx-normalize: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Preserve a trailing newline: strings.Split leaves a final "" element
-	// that Join turns back into the closing newline.
-	out := normalize(strings.Split(string(data), "\n"), *stripHR)
-	result := []byte(strings.Join(out, "\n"))
-
-	if path == "" {
-		if _, err = os.Stdout.Write(result); err != nil {
+		if _, err = os.Stdout.Write(normalizeBytes(data, *stripHR, *escapeInline)); err != nil {
 			fmt.Fprintf(os.Stderr, "mdx-normalize: %v\n", err)
 			os.Exit(1)
 		}
 		return
 	}
-	if err = os.WriteFile(path, result, 0o644); err != nil {
-		fmt.Fprintf(os.Stderr, "mdx-normalize: %v\n", err)
-		os.Exit(1)
+
+	for _, path := range args {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "mdx-normalize: %v\n", err)
+			os.Exit(1)
+		}
+		if err = os.WriteFile(path, normalizeBytes(data, *stripHR, *escapeInline), 0o644); err != nil {
+			fmt.Fprintf(os.Stderr, "mdx-normalize: %v\n", err)
+			os.Exit(1)
+		}
 	}
+}
+
+// normalizeBytes normalizes a whole file's bytes, preserving a trailing newline
+// (strings.Split leaves a final "" element that Join turns back into it).
+//
+// A CRLF file is converted to LF for the line-oriented passes below — every
+// pattern they match ("---" frontmatter and horizontal rules, a blank line, a
+// colon intro) is anchored at end-of-line, and a trailing "\r" would defeat all
+// of them — and converted back afterwards, so a CRLF file is normalized
+// correctly and stays CRLF. (A file with mixed endings is normalized to CRLF
+// throughout; nothing in the corpus mixes them.)
+func normalizeBytes(data []byte, stripHR, escapeInline bool) []byte {
+	s := string(data)
+	crlf := strings.Contains(s, "\r\n")
+	if crlf {
+		s = strings.ReplaceAll(s, "\r\n", "\n")
+	}
+	out := strings.Join(normalize(strings.Split(s, "\n"), stripHR, escapeInline), "\n")
+	if crlf {
+		out = strings.ReplaceAll(out, "\n", "\r\n")
+	}
+	return []byte(out)
 }
 
 // isFrontmatterDelim reports whether a line is a YAML frontmatter fence,
@@ -107,25 +134,55 @@ func isFrontmatterDelim(line string) bool {
 	return strings.TrimRight(line, " \t") == "---"
 }
 
+// blockIsList reports whether the first non-blank line of a block is a list
+// item, i.e. the block is a (usually nested) list rather than a code example.
+func blockIsList(block []string) bool {
+	for _, l := range block {
+		if strings.TrimSpace(l) == "" {
+			continue
+		}
+		return listItemRe.MatchString(l)
+	}
+	return false
+}
+
 // escapeInlineMDX backslash-escapes MDX-significant characters ("<" and "{") in
 // prose so Mintlify does not try to parse them as JSX/expressions. CLI help text
 // often contains placeholders such as "<machine-id>" that would otherwise break
-// the build. Characters inside inline code spans (backtick-delimited) are left
-// alone, and characters already preceded by a backslash are not double-escaped.
+// the build. It escapes every "<"/"{", including expression-looking text such as
+// {"cni":"flannel"}, because it runs only on plain-markdown CLI help with no
+// intentional JSX. The only exceptions, so the pass stays idempotent, are:
+//   - characters inside inline code spans (backtick-delimited),
+//   - characters already preceded by a backslash.
+//
+// Code spans are only honoured when the line's backticks are balanced (an even
+// count). An unpaired backtick — common in CLI help, e.g. "use `omnictl and
+// then <machine-id> is required" — is not a code span at all, and treating it
+// as one would leave the rest of the line unescaped and ship exactly the
+// character this pass exists to escape.
 func escapeInlineMDX(s string) string {
 	if !strings.ContainsAny(s, "<{") {
 		return s
 	}
+	balanced := strings.Count(s, "`")%2 == 0
 	var b strings.Builder
 	b.Grow(len(s) + 8)
 	inCode := false
 	for i := 0; i < len(s); i++ {
 		c := s[i]
 		if c == '`' {
-			inCode = !inCode
+			if balanced {
+				inCode = !inCode
+			}
 			b.WriteByte(c)
 			continue
 		}
+		// Escape a "<" or "{" in prose unless it is inside an inline code span or
+		// already backslash-escaped (so the pass stays idempotent). Everything is
+		// escaped, including expression-looking prose such as {"cni":"flannel"}:
+		// this pass runs only on plain-markdown CLI help that contains no
+		// intentional JSX, so an unescaped brace or bracket can only break the
+		// build.
 		if !inCode && (c == '<' || c == '{') && !(i > 0 && s[i-1] == '\\') {
 			b.WriteByte('\\')
 		}
@@ -134,9 +191,31 @@ func escapeInlineMDX(s string) string {
 	return b.String()
 }
 
-func normalize(lines []string, stripHR bool) []string {
+// blockHasFence reports whether a pending block already contains a fence line.
+// Such a block is (or contains) a code block already, so wrapping it in another
+// fence would nest fences — and would not survive a second pass, since the
+// added fence changes how the same input is read.
+func blockHasFence(block []string) bool {
+	for _, l := range block {
+		// Not fenceRe: that only allows leading spaces, and a block line here
+		// may still be tab-indented (one tab has been stripped).
+		if strings.HasPrefix(strings.TrimLeft(l, " \t"), "```") {
+			return true
+		}
+	}
+	return false
+}
+
+func normalize(lines []string, stripHR, escapeInline bool) []string {
 	out := make([]string, 0, len(lines))
 	i := 0
+
+	maybeEscape := func(s string) string {
+		if escapeInline {
+			return escapeInlineMDX(s)
+		}
+		return s
+	}
 
 	// Copy a leading YAML frontmatter block through untouched so its title,
 	// description, and closing "---" are never altered.
@@ -164,15 +243,42 @@ func normalize(lines []string, stripHR bool) []string {
 		if len(block) == 0 {
 			return
 		}
-		fenced := colonRe.MatchString(intro)
-		if fenced {
+		switch {
+		case listItemRe.MatchString(intro) && blockIsList(block):
+			// A list nested under a list item (e.g. sub-bullets under
+			// "- For each node:"). Keep it a list rather than a code block. Each
+			// remaining leading tab (block lines already had one tab stripped)
+			// becomes two spaces so deeper nesting is preserved, and the whole
+			// block is indented one level under the intro. The item text is still
+			// escaped (when enabled) like any other prose, so the pass stays
+			// idempotent and placeholders inside list items don't break the build.
+			for _, bl := range block {
+				if bl == "" {
+					out = append(out, "")
+					continue
+				}
+				n := 0
+				for n < len(bl) && bl[n] == '\t' {
+					n++
+				}
+				out = append(out, "  "+strings.Repeat("  ", n)+maybeEscape(bl[n:]))
+			}
+		case blockHasFence(block):
+			// The block already contains a fenced code block (a tab-indented
+			// fence is not matched by fenceRe, so it lands here rather than
+			// being tracked as an open fence). Emit it de-indented instead of
+			// wrapping it in another fence, which would nest fences and would
+			// not be idempotent.
+			out = append(out, block...)
+		case colonRe.MatchString(intro):
+			// A command example introduced by "...:" — fence it.
 			out = append(out, "```")
 			out = append(out, block...)
 			out = append(out, "```")
-		} else {
-			// De-indented prose: escape MDX-significant characters.
+		default:
+			// De-indented prose.
 			for _, bl := range block {
-				out = append(out, escapeInlineMDX(bl))
+				out = append(out, maybeEscape(bl))
 			}
 		}
 		block = block[:0]
@@ -222,7 +328,7 @@ func normalize(lines []string, stripHR bool) []string {
 		default:
 			hrSkip = false
 			flush()
-			out = append(out, escapeInlineMDX(line))
+			out = append(out, maybeEscape(line))
 			lastNonBlank = line
 		}
 	}
