@@ -76,3 +76,15 @@ While Talos Linux itself requires less than 100 MB of disk space, the EPHEMERAL 
 During installation, Talos automatically manages disk partitioning, creating EFI, META, STATE, and EPHEMERAL partitions. The EPHEMERAL partition expands to fill all remaining space after the first three partitions. That space can either remain entirely with EPHEMERAL or be divided into additional user volumes, depending on your needs. See [Disk Layout](../configure-your-talos-cluster/storage-and-disk-management/disk-management#disk-layout) for details.
 
 For production environments, it is often more efficient to dedicate a smaller disk to the Talos installation and use separate disks for workload storage. Using a single large disk for both system and workloads is supported, but may not be optimal depending on your setup.
+
+## CPU architecture requirements
+
+Talos requires a CPU that supports the x86-64-v2 microarchitecture level. A CPU below that level halts at boot with:
+
+```text
+[talos] [initramfs] x86_64 microarchitecture level: 1
+[talos] [initramfs] it might be that the VM is configured with an older CPU model, please check the VM configuration
+[talos] [initramfs] x86_64 microarchitecture level 2 or higher is required, halting
+```
+
+This is most often seen on virtual machines whose CPU type defaults to an older or generic model, such as Proxmox's `kvm64` — see the [Proxmox](../platform-specific-installations/virtualized-platforms/proxmox) guide for the fix. To build Talos images for CPUs that do not meet this requirement, use the `GOAMD64=v1` build option described in [Building Custom Talos Images](../build-and-extend-talos/custom-images-and-development/building-images#customizations).
