@@ -12,8 +12,11 @@ TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.14.0
 OMNI_CLI_GEN_IMAGE := ghcr.io/siderolabs/omni-cli-gen:latest
 OMNI_CONFIG_GEN_IMAGE := ghcr.io/siderolabs/omni-config-gen:latest
 MDX_NORMALIZE_IMAGE := ghcr.io/siderolabs/mdx-normalize:latest
+CANONICAL_GEN_IMAGE := ghcr.io/siderolabs/canonical-gen:latest
 STYLE_CHECK_IMAGE := ghcr.io/siderolabs/style-guide-checker:latest
 TALOS_VERSION := v1.14
+# Base revision for the *-changed targets (canonical-changed, ...).
+CANONICAL_BASE ?= HEAD
 # Linter images are pinned to exact versions so `make code-review` (and CI) is
 # reproducible: a new linter release can't turn the gate red on unchanged code.
 # Bump these deliberately. Each is overridable from the environment (?=).
@@ -227,6 +230,8 @@ generate-talos-reference: ## Generate Talos reference docs and convert to MDX
 	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD):/workspace $(DOCS_CONVERT_IMAGE) \
 		/workspace/_out/docs /workspace/public/talos/$(TALOS_VERSION)/reference/configuration/
 	rm -rf _out/docs
+	@echo "Adding canonical links to the regenerated pages..."
+	@$(MAKE) --no-print-directory canonical-changed
 	@echo "Reference documentation generated in public/talos/$(TALOS_VERSION)/reference/configuration"
 
 .PHONY: generate-talos-reference-local
@@ -237,6 +242,8 @@ generate-talos-reference-local: ## Generate Talos reference docs using local Go 
 	docker run --rm --platform=$(TALOSCTL_PLATFORM) -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
 	@echo "Converting generated docs to MDX..."
 	cd tools/docs-convert && go run main.go ../../_out/docs ../../public/talos/$(TALOS_VERSION)/reference/configuration/
+	@echo "Adding canonical links to the regenerated pages..."
+	@$(MAKE) --no-print-directory canonical-changed-local
 	@echo "Reference documentation generated in public/talos/$(TALOS_VERSION)/reference/configuration/"
 
 OMNI_CONFIG_SCHEMA_URL ?= https://raw.githubusercontent.com/siderolabs/omni/refs/heads/main/internal/pkg/config/schema.json
@@ -282,6 +289,61 @@ normalize-doc: ## Normalize the generated Omni reference .mdx files for Mintlify
 normalize-doc-local: ## Normalize the generated Omni reference .mdx files using local Go build
 	@if [ -f $(OMNI_CLI_REF_PATH) ]; then cd tools/mdx-normalize && go run . ../../$(OMNI_CLI_REF_PATH); fi
 	@if [ -f $(IMAGE_FACTORY_REF_PATH) ]; then cd tools/mdx-normalize && go run . --strip-hr ../../$(IMAGE_FACTORY_REF_PATH); fi
+
+# ---- Canonical links --------------------------------------------------------
+#
+# Every Talos page declares a `canonical:` link naming the page that is
+# currently authoritative for its content. Auto-generated pages (from
+# `talosctl docs` or a version upgrade) arrive without one, and older versioned
+# pages must defer to the current version.
+#
+# Because every version directory is permanent, a restructure never "moves"
+# anything -- v1.11 keeps networking/vip.mdx while v1.12 onwards has
+# networking/advanced/vip.mdx -- so canonical-gen infers the correspondence:
+# same path, else same file name, else a one-page directory, else file-name word
+# overlap, else body similarity. Where no rule wins outright (a page split into
+# several, or dropped) it points at the newest version that still has the page,
+# and says which pages those were.
+#
+# The current version comes from public/snippets/custom-variables.mdx.
+
+.PHONY: build-canonical-gen-container
+build-canonical-gen-container: ## Build the canonical-gen container locally
+	docker build -t $(CANONICAL_GEN_IMAGE) ./tools/canonical-gen
+
+.PHONY: canonical-links
+canonical-links: ## Add/fix the canonical frontmatter link on every Talos page (container)
+	@$(call pull_if_missing,$(CANONICAL_GEN_IMAGE))
+	docker run --rm -v $(PWD):/workspace -w /workspace $(CANONICAL_GEN_IMAGE)
+
+.PHONY: canonical-links-local
+canonical-links-local: ## Add/fix the canonical frontmatter link on every Talos page using local Go build
+	cd tools/canonical-gen && go run . --variables ../../public/snippets/custom-variables.mdx ../../public/talos
+
+.PHONY: canonical-links-check
+canonical-links-check: ## Report Talos pages whose canonical link is missing or wrong, without writing
+	cd tools/canonical-gen && go run . --check --variables ../../public/snippets/custom-variables.mdx ../../public/talos
+
+.PHONY: canonical-changed
+canonical-changed: ## Add/fix the canonical link on changed .mdx files only (container). Base: CANONICAL_BASE (default HEAD)
+	@$(call pull_if_missing,$(CANONICAL_GEN_IMAGE))
+	@files="$$( { git diff --name-only --diff-filter=AM $(CANONICAL_BASE); git ls-files --others --exclude-standard; } | grep -E '^public/talos/.*\.mdx$$' | sort -u || true)"; \
+	if [ -z "$$files" ]; then \
+		echo "No changed Talos MDX files."; \
+		exit 0; \
+	fi; \
+	echo "Updating changed files:" $$files; \
+	docker run --rm -v $(PWD):/workspace -w /workspace $(CANONICAL_GEN_IMAGE) $$files
+
+.PHONY: canonical-changed-local
+canonical-changed-local: ## Add/fix the canonical link on changed .mdx files only, using local Go build. Base: CANONICAL_BASE (default HEAD)
+	@files="$$( { git diff --name-only --diff-filter=AM $(CANONICAL_BASE); git ls-files --others --exclude-standard; } | grep -E '^public/talos/.*\.mdx$$' | sort -u || true)"; \
+	if [ -z "$$files" ]; then \
+		echo "No changed Talos MDX files."; \
+		exit 0; \
+	fi; \
+	echo "Updating changed files:" $$files; \
+	cd tools/canonical-gen && go run . --variables ../../public/snippets/custom-variables.mdx $$(for f in $$files; do echo "../../$$f"; done)
 
 # ---- omnictl CLI reference -------------------------------------------------
 
