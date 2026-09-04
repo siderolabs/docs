@@ -1,0 +1,262 @@
+name: Doc Accuracy
+
+# AI accuracy/harm review of changed docs. Advisory: it annotates the diff and
+# posts a summary comment for findings, but does not block the PR.
+#
+# This runs on PRs from forks too, which is why it uses `pull_request_target`
+# rather than `pull_request`: only `pull_request_target` exposes repo secrets
+# (the Anthropic key) and a write token to a fork PR. That trigger is safe *only*
+# because of how this job is built — see the security notes on the checkout and
+# diff steps below. The short version: the fork's ref is never checked out and
+# its content is never executed; the PR's changes reach the reviewer only as
+# text, to reason about, exactly like pasting a doc into a chat and asking "does
+# this look right?".
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    paths:
+      # Only doc changes. Deliberately *not* tools/doc-accuracy/** — under
+      # pull_request_target the job runs the base branch's copy of the tool, so a
+      # PR to the tool itself would run the old tool against zero changed docs.
+      # Test tool changes with `make check-doc-accuracy` locally.
+      - "public/**/*.mdx"
+
+# Superseded runs on the same PR are cancelled so only the latest review stands.
+concurrency:
+  group: doc-accuracy-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  doc-accuracy:
+    runs-on: ubuntu-latest
+    # Each batch of files is a separate model run with its own 10-minute budget,
+    # so the default 6-hour job limit is no real bound. This one is: past it the
+    # run is killed and reported as INCOMPLETE by the comment step below.
+    timeout-minutes: 30
+    steps:
+      - name: Checkout the BASE branch (never the PR's fork ref)
+        uses: actions/checkout@v4
+        with:
+          # SECURITY: actions/checkout persists its token in .git/config as an
+          # extraheader by default. This job then points a Read/Grep-capable
+          # model at that very directory while it chews on attacker-controlled
+          # diff text, so don't leave a second credential lying inside it —
+          # nothing here needs git authentication after the clone.
+          persist-credentials: false
+        # SECURITY: do NOT add `ref: ${{ github.event.pull_request.head.sha }}`
+        # (or any fork ref) here. Under pull_request_target this job has repo
+        # secrets and a write token; checking out the fork would put untrusted
+        # code on a runner that holds them — the classic pull_request_target
+        # exploit. The default checkout is the base branch, which is exactly what
+        # we want: it is the trusted source-of-truth the reviewer reads to ground
+        # its checks. The PR's own changes come in as text in the next step.
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          # Must match tools/doc-accuracy/go.mod (newer than the other docs jobs).
+          go-version: "1.25.1"
+
+      - name: Install Claude Code CLI
+        # Pinned deliberately: the reviewer's read-only + egress-scoped guarantee
+        # rests on the CLI honouring `--tools` and `--allowedTools` (WebFetch is
+        # domain-scoped to GitHub there). A silent upgrade that changed that
+        # behaviour must not slip in unnoticed — bump this after re-checking.
+        run: npm install -g @anthropic-ai/claude-code@2.1.226
+
+      - name: Fetch the PR changes as a text diff (no fork checkout)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # A PR number is an integer and a head SHA is hex — safe to interpolate.
+          # PR *title/body/branch* are attacker-controlled and are never placed
+          # on a shell line; nothing here reads them.
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          # `gh pr diff` fetches the diff through the API as plain text. It does
+          # NOT check out or fetch the fork's commits into the working tree — the
+          # fork's content only ever exists here as this diff file (data), which
+          # the reviewer reads and never executes.
+          gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" > "$RUNNER_TEMP/pr.diff"
+          echo "Fetched PR diff: $(wc -l < "$RUNNER_TEMP/pr.diff") lines."
+
+      - name: Review the changed docs for accuracy (advisory)
+        id: review
+        continue-on-error: true # advisory: a FAIL annotates/comments but never blocks
+        env:
+          # GUARDRAIL: keep this to the single dedicated key. The reviewer's
+          # WebFetch is domain-scoped to GitHub (see tools/doc-accuracy), so it
+          # cannot exfiltrate this env to an arbitrary host — but don't lean on
+          # that to add other secrets here (a write-scoped token especially).
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        # -diff-file feeds the changed docs from the fetched diff (as data); the
+        # reviewer is told not to read them from disk (the working tree is the
+        # base, not the change) but may Read/Grep the base checkout and WebFetch
+        # the upstream Talos/Omni GitHub source to ground its findings (that
+        # WebFetch is domain-scoped to GitHub in the tool). -format github emits
+        # inline ::error/::warning annotations. -fetch=false: nothing to refresh.
+        # -max-files caps the fan-out: a PR touching more docs than that is
+        # reported as too large to review rather than turned into dozens of runs.
+        run: |
+          make check-doc-accuracy \
+            DOC_ACCURACY_FORMAT=github \
+            DOC_ACCURACY_ARGS="-diff-file=$RUNNER_TEMP/pr.diff -fetch=false -max-files=40"
+
+      - name: Upload the reviewer's full report
+        if: always()
+        # The comment carries only criticals and warnings; the reviewer's own
+        # prose report (and the notices) live here. Deliberately an artifact
+        # rather than `-verbose` into the step log: that report is model text
+        # written while reading attacker-controlled diff content, and the runner
+        # parses its stdout for `::workflow commands` at the start of a line. In
+        # a file it is inert.
+        uses: actions/upload-artifact@v4
+        with:
+          name: doc-accuracy-report
+          path: |
+            _out/doc-accuracy-report.md
+            _out/doc-accuracy-findings.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upsert the findings summary comment
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          # Whether the review step itself completed. Used to tell a genuine
+          # FAIL (exit 1, a real result) apart from a crash/timeout that never
+          # produced one — so a failed run never overwrites a real finding.
+          REVIEW_OUTCOME: ${{ steps.review.outcome }}
+        run: |
+          set -euo pipefail
+          MARKER='<!-- doc-accuracy-comment -->'
+          INCOMPLETE_MARKER='<!-- doc-accuracy-incomplete -->'
+          FINDINGS="_out/doc-accuracy-findings.json"
+          short="${HEAD_SHA:0:7}"
+
+          # Each comment we manage is found by its hidden marker (not its text), so
+          # it survives wording changes and is edited in place instead of piling up.
+          find_comment() {
+            gh api "repos/$REPO/issues/$PR/comments" --paginate \
+              --jq "map(select(.body | contains(\"$1\"))) | .[0].id // empty" || true
+          }
+          upsert() { # $1=comment id (may be empty) $2=body
+            if [ -n "$1" ]; then
+              gh api -X PATCH "repos/$REPO/issues/comments/$1" -f body="$2" >/dev/null
+              echo "Updated comment $1."
+            else
+              gh api -X POST "repos/$REPO/issues/$PR/comments" -f body="$2" >/dev/null
+              echo "Posted new comment."
+            fi
+          }
+          existing=$(find_comment "$MARKER")
+          incomplete=$(find_comment "$INCOMPLETE_MARKER")
+
+          # The run's authoritative verdict, written by the tool: PASS / FAIL /
+          # INCOMPLETE. A missing file means the reviewer died before writing one —
+          # that is INCOMPLETE, never a clean PASS.
+          if [ -f "$FINDINGS" ]; then
+            verdict=$(jq -r '(.verdict // "INCOMPLETE") | ascii_upcase' "$FINDINGS")
+          else
+            verdict="INCOMPLETE"
+          fi
+          # Belt-and-suspenders: a completed clean run exits 0 (outcome success); a
+          # completed FAIL exits 1 (outcome failure + verdict FAIL). A step that
+          # failed for any other reason did not finish — treat it as INCOMPLETE so a
+          # crash can never be rendered as a clean review.
+          if [ "$REVIEW_OUTCOME" != "success" ] && [ "$verdict" != "FAIL" ]; then
+            verdict="INCOMPLETE"
+          fi
+
+          # A capped-out run (too many changed docs) reviewed nothing at all. Say
+          # that plainly in the "no result this run" note, and — like an
+          # unfinished run — leave the findings comment alone.
+          if [ "$verdict" = "SKIPPED" ]; then
+            reason=$(jq -r '.reason // "the change is too large to review"' "$FINDINGS")
+            body=$(printf '%s\n### 📋 Automated documentation review\n\nℹ️ Skipped on commit `%s`: %s. This change is larger than the automated pass reviews in one go, so **nothing here was checked** — it needs a human read. Any findings from an earlier run on this PR still stand.' "$INCOMPLETE_MARKER" "$short" "$reason")
+            upsert "$incomplete" "$body"
+            exit 0
+          fi
+
+          # A review that did not finish must never touch the findings comment (it
+          # may hold a real, still-valid FAIL from an earlier push) and must never
+          # claim "nothing flagged". Post/refresh a separate, clearly-marked note.
+          if [ "$verdict" = "INCOMPLETE" ]; then
+            body=$(printf '%s\n### 📋 Automated documentation review\n\n⚠️ The reviewer did not finish on commit `%s` (it timed out or errored) — see the workflow run log. This run did **not** produce a result; any findings from an earlier run on this PR still stand.' "$INCOMPLETE_MARKER" "$short")
+            upsert "$incomplete" "$body"
+            exit 0
+          fi
+
+          # From here the review completed (PASS or FAIL). Clear any stale
+          # "did not finish" note left by an earlier push.
+          if [ -n "$incomplete" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$incomplete" \
+              -f body="$(printf '%s\n_Superseded: a later run (commit `%s`) completed._' "$INCOMPLETE_MARKER" "$short")" >/dev/null || true
+          fi
+
+          # Severity matching is case-insensitive (ascii_upcase) to match the Go
+          # side; a mixed-case severity from the model must still be counted.
+          crit=$(jq '[.findings[] | select((.severity|ascii_upcase) == "CRITICAL")] | length' "$FINDINGS")
+          warn=$(jq '[.findings[] | select((.severity|ascii_upcase) == "WARNING")]  | length' "$FINDINGS")
+          note=$(jq '[.findings[] | select((.severity|ascii_upcase) == "NOTICE")]   | length' "$FINDINGS")
+          total=$(jq '.findings | length' "$FINDINGS")
+
+          # The comment lists only criticals and warnings (most severe first), each
+          # with its own "why" and suggested fix. It carries the full note rather
+          # than pointing at the inline annotation: under pull_request_target the
+          # check run belongs to the *base* commit, not the PR head, so the
+          # ::error/::warning annotations do not attach to the Files-changed view
+          # (they are still in the run log). This comment has to stand alone.
+          # Notices are counted but not listed, to keep it tight.
+          #
+          # Details/fix are flattened to one line each: a stray newline from the
+          # model would otherwise break out of the list item it belongs to.
+          rows=$(jq -r '
+            def sev: (.severity|ascii_upcase);
+            def rank: if sev=="CRITICAL" then 0 elif sev=="WARNING" then 1 else 2 end;
+            def emoji: if sev=="CRITICAL" then "🔴" elif sev=="WARNING" then "🟡" else "⚪" end;
+            def oneline: gsub("\\s+"; " ") | sub("^ +";"") | sub(" +$";"");
+            def loc: .file + (if (.line // 0) > 0 then ":\(.line)" else "" end);
+            .findings
+            | map(select(sev=="CRITICAL" or sev=="WARNING"))
+            | sort_by(rank)
+            | .[]
+            | "- \(emoji) `\(loc)` — \(.summary | oneline)"
+              + (if ((.details // "") | oneline) != "" then "\n  - **Why:** \(.details | oneline)" else "" end)
+              + (if ((.fix // "") | oneline) != "" then "\n  - **Fix:** \(.fix | oneline)" else "" end)
+            ' "$FINDINGS")
+          if [ -z "$rows" ]; then
+            if [ "$verdict" = "FAIL" ]; then
+              # Verdict says FAIL but nothing itemized — a malformed findings block.
+              # Never render this as clean; point at the run log instead.
+              rows="_A critical issue was reported but could not be itemized — see the workflow run log._"
+            else
+              rows="_Nothing flagged at critical or warning level — see any notices inline._"
+            fi
+          fi
+
+          counts=$(printf '🔴 %s critical · 🟡 %s warning(s) · ⚪ %s notice(s)' "$crit" "$warn" "$note")
+
+          # Post when there is anything to say: a FAIL verdict, or any finding.
+          # Neutral, routine framing: this is an automated pass that runs on every
+          # docs PR, and the items are suggestions to consider — not a judgement on
+          # the author or a callout of specific mistakes.
+          if [ "$verdict" = "FAIL" ] || [ "$total" -gt 0 ]; then
+            body=$(printf '%s\n### 📋 Automated documentation review\n\nAn automated pass runs on documentation changes in every PR. The items below are suggestions to consider — advisory, not a merge gate.\n\nReviewed commit `%s` · %s\n\n%s\n\nNotices, and the reviewer'"'"'s full report, are in the run'"'"'s `doc-accuracy-report` artifact.' \
+              "$MARKER" "$short" "$counts" "$rows")
+          elif [ -n "$existing" ]; then
+            # Was flagged on an earlier push, clean now — update in place.
+            body=$(printf '%s\n### 📋 Automated documentation review\n\n✅ Nothing flagged on the latest run (commit `%s`).' "$MARKER" "$short")
+          else
+            echo "Nothing flagged and no existing comment — nothing to post."
+            exit 0
+          fi
+
+          upsert "$existing" "$body"
