@@ -56,10 +56,19 @@ table {
   padding: 0.5rem 1rem 0.5rem 1.5rem;
 }
 
-/* Prevent Field and Type columns from wrapping */
-table td:nth-child(1),
-table td:nth-child(2) {
+/* Keep field names on one line. Class-less tables are the generated reference
+   ones; Markdown tables get Mintlify classes and shouldn't be caught by this. */
+table:not([class]) td:nth-child(1) code {
   white-space: nowrap;
+}
+
+/* Mintlify's tables are display:block, which shrink-wraps them to their content
+   and leaves every page a different width. Narrow screens still need the scroll. */
+@media (min-width: 1024px) {
+  table:not([class]) {
+    display: table;
+    width: 100%;
+  }
 }
 
 /* Widen the content area so reference tables don't need horizontal scrolling */
