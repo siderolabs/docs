@@ -531,6 +531,12 @@ export const CONFIG_EVOLUTION = {
    "desc": "Rebind a PCI device to a different kernel driver (e.g. hand a NIC/GPU to vfio-pci for passthrough)."
   },
   {
+   "kind": "ContainerConfig",
+   "group": "container",
+   "since": "v1.14",
+   "desc": "Run a container directly on the node without Kubernetes: started as soon as the config is applied, in the dedicated `taloscontainers` CRI namespace, auto-restarted 5s after it exits. Not a Talos service (`talosctl services` won't list it); status comes from the `ContainerStatus` resource."
+  },
+  {
    "kind": "ExtensionServiceConfig",
    "group": "extensions",
    "since": "v1.7",

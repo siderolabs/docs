@@ -130,12 +130,18 @@ export const ConfigEvolution = ({ data }) => {
     cluster: "Cluster and discovery",
     security: "Security",
     hardware: "Hardware",
+    container: "Containers",
     extensions: "Extensions",
     siderolink: "SideroLink",
   };
+  // Preferred order first, then any group the dataset introduces that is not listed above,
+  // so a new pkg/machinery/config/types/<group>/ can never silently drop its documents.
   const GROUP_ORDER = [
-    "network", "kubernetes", "block", "storage", "cri",
-    "runtime", "cluster", "security", "hardware", "extensions", "siderolink",
+    ...new Set([
+      "network", "kubernetes", "block", "storage", "cri", "runtime",
+      "cluster", "security", "hardware", "container", "extensions", "siderolink",
+      ...data.docs.map((d) => d.group),
+    ]),
   ];
 
   const docs = data.docs;
