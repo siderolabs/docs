@@ -1,0 +1,158 @@
+---
+title: Connect Machines to Omni Through a Corporate Proxy
+description: Register and manage Talos machines with Omni when the only outbound path is a corporate HTTP proxy.
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+Talos machines can register with Omni and be managed from sites where the only outbound path is a corporate HTTP proxy. This page covers the requirements specific to Omni. For general proxy configuration in Talos, see <a href={`../../talos/${version}/networking/corporate-proxies`}>Corporate Proxies</a>.
+
+## How SideroLink works behind a proxy
+
+Omni manages machines over SideroLink, an overlay network built on WireGuard. WireGuard runs over UDP, which an HTTP proxy cannot carry. The SideroLink gRPC tunnel solves this by carrying WireGuard traffic inside a TCP connection to the SideroLink API endpoint.
+
+Proxy settings on a Talos machine are environment variables that apply to the whole node. Traffic to the SideroLink overlay and traffic the machine sends to itself would also go to the proxy, which cannot route either, so both must be excluded with `no_proxy`.
+
+A machine has no configuration at first boot. The tunnel and proxy settings therefore go into the installation media, and the proxy settings are passed as kernel arguments. Omni keeps the kernel arguments from the media when Talos is installed, so the same proxy settings apply after installation and when the machine joins a cluster.
+
+## Requirements
+
+The network and the tools listed in this section must be in place before creating installation media.
+
+### Network requirements
+
+The network must provide proxy access to Omni and to the Talos egress domains, along with DNS and time services:
+
+* **Proxy access to the SideroLink API endpoint**: Machines connect to Omni through the **SideroLink API Endpoint**, shown in the Omni UI under **Home** > **General Information**. The proxy must allow `CONNECT` to this endpoint's hostname and port, which is 443 on Omni SaaS. Allow both the hostname and the IP addresses it resolves to, because machines connect to the endpoint by both. With the gRPC tunnel enabled, the UDP **SideroLink Endpoint** is not used.
+* **Proxy access to Talos egress domains**: Machines pull installation media and container images through the proxy, so the proxy must allow the domains listed in <a href={`../../talos/${version}/networking/egress-domains`}>Egress Domains</a>, along with any registry you mirror or host. The list includes `discovery.talos.dev`, which clusters use unless they enable Omni's embedded discovery service.
+* **DNS**: The machine must resolve the SideroLink API endpoint hostname itself, even when all other traffic goes through the proxy. Without a reachable DNS resolver, the machine cannot register.
+* **An internal time server**: NTP runs over UDP, so it cannot pass through an HTTP proxy. Configure an internal time source with `TimeSyncConfig` or by [overriding the NTP servers](../cluster-management/override-ntp-servers). Without one, the machine stops at time synchronization, because `bootTimeout` waits indefinitely by default.
+
+<Warning>
+Many corporate proxies permit `CONNECT` to port 443 only. If a self-hosted Omni serves the SideroLink API on another port, such as `8090`, either allow that port on the proxy or serve the SideroLink API on port 443.
+</Warning>
+
+<Note>
+Proxy topology and bypass rules differ between networks, and Omni cannot infer them. The network operator is responsible for a correct proxy URL and a complete `no_proxy` list.
+</Note>
+
+### Tools and values
+
+Creating the installation media requires the following:
+
+* The proxy URL, including credentials if the proxy requires them.
+* `omnictl` at a version that matches your Omni instance. See [Install and Configure omnictl](../getting-started/install-and-configure-omnictl).
+
+## Register a machine through the proxy
+
+The following steps create installation media with the tunnel and proxy settings, then register one machine to confirm that the media works. The media is created from an installation media preset, a named set of media options stored in Omni that can be used to download media repeatedly. For all preset options, see the [`omnictl media preset create` reference](../reference/cli#omnictl-media-preset-create). To enable the tunnel without a preset, see [Other ways to enable the tunnel](#other-ways-to-enable-the-tunnel).
+
+1. Create an installation media preset with the tunnel and proxy settings, replacing `<preset-name>` with a name for the preset, `<arch>` with `amd64` or `arm64`, `<https-proxy>` with the proxy URL, and `<machine-subnets>` with the IPv4 and IPv6 subnets the machines get their addresses from:
+
+   ```bash
+   omnictl media preset create <preset-name> --arch <arch> --use-siderolink-grpc-tunnel \
+     --extra-kernel-args "talos.environment=https_proxy=<https-proxy>" \
+     --extra-kernel-args "talos.environment=no_proxy=fdae:41e4:649b:9303::/64,0.0.0.0,<machine-subnets>"
+   ```
+
+   <Note>
+   SideroLink connections use `https_proxy` for proxy selection, and `http_proxy` has no effect on them.
+   </Note>
+
+   The `no_proxy` list contains three kinds of entries:
+
+   - `fdae:41e4:649b:9303::/64` is the SideroLink overlay prefix, the same for every Omni deployment. Omni is reachable at `fdae:41e4:649b:9303::1` inside the overlay, and each machine's overlay address comes from the same `/64`.
+   - `0.0.0.0` covers node-internal traffic that no CIDR entry matches.
+   - The machine subnets cover traffic a machine sends to its own addresses. Without them, the proxy rejects that traffic and the control plane does not become ready.
+
+   Add any other destinations your network requires to `no_proxy`, separated by commas. Entries follow Go's standard matching rules and can be hostnames, IP addresses, or CIDR ranges.
+
+2. Confirm that the preset stored both settings:
+
+   ```bash
+   omnictl get installationmediaconfigs <preset-name> -o yaml
+   ```
+
+   The spec contains `grpctunnel: 1` and a `kernelargs` field with both `talos.environment` arguments.
+
+3. Download the installation media, setting `<format>` to `iso`, `raw`, `qcow2`, or `pxe`, where `pxe` prints a PXE boot URL instead of downloading a file:
+
+   ```bash
+   omnictl media download <preset-name> --format <format>
+   ```
+
+4. Boot one machine from the media, and confirm that it appears in Omni and reaches a connected state:
+
+   ```bash
+   omnictl get machines
+   ```
+
+   The machine appears in the list with `CONNECTED` set to `true`. Omni cannot deliver corrections to a machine that cannot reach it, so validate the media on one machine before booting the rest of the site.
+
+The machine can now be added to a cluster like any other machine. Presets persist in Omni after the media is downloaded. To delete the preset when it is no longer needed, run `omnictl media preset delete <preset-name>`.
+
+## Manage machines behind a proxy
+
+A registered machine needs no further proxy-specific steps unless the network changes or the machine loses its connection to Omni. The following sections cover both cases.
+
+### Change proxy settings
+
+When the proxy address or the required `no_proxy` entries change, the settings on registered machines must be updated. The proxy settings are stored in each machine's kernel arguments. To change them, [update the machine's kernel arguments](../infrastructure-and-extensions/modify-kernel-arguments#update-kernel-arguments-on-existing-machines).
+
+### Recover a machine that cannot reach Omni
+
+A wrong proxy setting can disconnect a machine from Omni. Omni delivers machine configuration over SideroLink, so it cannot deliver a corrected configuration to a disconnected machine.
+
+[Break glass](../security-and-authentication/break-glass-emergency-access) access can reach the machine, but its `os:operator` role cannot apply machine configuration. It is limited to inspection and operator-level recovery.
+
+To recover the machine, restore SideroLink connectivity, or work out of band. Use the machine's BMC or Redfish interface to return it to maintenance mode, or [wipe the machine](../cluster-management/wipe-a-machine) and rejoin it with corrected media.
+
+## Other ways to enable the tunnel
+
+Installation media presets are one of four ways to enable the gRPC tunnel. The tunnel can also be enabled on a join configuration, as an account-wide default, or on a single machine.
+
+### On a join configuration
+
+For machines that join with a join configuration rather than generated media, `omnictl jointoken kernel-args` and `omnictl jointoken machine-config` both accept `--use-grpc-tunnel`.
+
+To print kernel arguments with the tunnel enabled, run:
+
+```bash
+omnictl jointoken kernel-args --use-grpc-tunnel
+```
+
+<Warning>
+Do not enable the tunnel by passing a `siderolink.api` value to `--extra-kernel-args`. The tunnel setting is a query parameter inside the `siderolink.api` URL, and `--extra-kernel-args` only appends arguments. The result is two `siderolink.api` arguments, and the tunnel stays disabled. Passing `talos.environment` arguments with `--extra-kernel-args` is not affected.
+</Warning>
+
+### As the account-wide default
+
+The account-wide default applies when media is generated without an explicit tunnel flag.
+
+To read the current setting, run:
+
+```bash
+omnictl get connectionparams -o yaml
+```
+
+The `usegrpctunnel` field holds the setting. The output also includes your join token, so redact it before sharing.
+
+On self-hosted Omni, the `--siderolink-use-grpc-tunnel` server flag enables the tunnel for every machine, regardless of individual settings. On Omni SaaS, [Sidero Labs support](https://www.siderolabs.com/support-and-services/) can change the default.
+
+### On a single machine
+
+After Omni has discovered a machine, its connection mode can be set individually.
+
+Run the following command, replacing `<machine-uuid>` with the machine's UUID:
+
+```bash
+omnictl configure machine <machine-uuid> --siderolink-connection http-tunnel
+```
+
+The `--siderolink-connection` flag accepts the following values:
+
+- `udp` uses WireGuard over UDP.
+- `http-tunnel` uses the gRPC tunnel.
+- `auto` removes the override, and the machine uses the mode from its join configuration.
+
+The machine applies the change on its next connection attempt. Because the setting requires a known machine UUID, it cannot configure a machine's first boot.
