@@ -69,6 +69,7 @@ navigation:
             - "how-to-set-initial-machine-labels.mdx"
             - "setting-up-the-bare-metal-infrastructure-provider.mdx"
             - "omni-firewall-egress-requirement.mdx"
+            - "connect-machines-to-omni-through-a-proxy.mdx"
 
         - group: "Cluster Management"
           folder: "omni/cluster-management"

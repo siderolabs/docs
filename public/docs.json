@@ -2965,7 +2965,8 @@
               "omni/omni-cluster-setup/create-an-omni-service-account",
               "omni/omni-cluster-setup/how-to-set-initial-machine-labels",
               "omni/omni-cluster-setup/setting-up-the-bare-metal-infrastructure-provider",
-              "omni/omni-cluster-setup/omni-firewall-egress-requirement"
+              "omni/omni-cluster-setup/omni-firewall-egress-requirement",
+              "omni/omni-cluster-setup/connect-machines-to-omni-through-a-proxy"
             ]
           },
           {

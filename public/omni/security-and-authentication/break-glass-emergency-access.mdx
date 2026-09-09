@@ -7,6 +7,10 @@ Omni provides a break glass mechanism that allows direct access to Talos nodes a
 
 When break glass mode is enabled, Talos nodes temporarily allow direct API access on any network interface. This access grants the `os:operator` role, which provides privileges similar to those available through Omni.
 
+<Warning>
+The `os:operator` role does not permit `ApplyConfiguration`. Break glass is useful for inspection and operator-level recovery work, but it cannot push a corrected machine configuration to a machine that has already lost its connection to Omni, for example after a bad proxy or network configuration. Recovering such a machine means restoring SideroLink connectivity or going out of band, using the machine's BMC or Redfish interface to return it to maintenance mode, or [wiping it](../cluster-management/wipe-a-machine) and rejoining it.
+</Warning>
+
 Once break glass credentials are used, the cluster is considered **tainted**, client certificates or operator configs now exist outside Omni’s control. While the cluster remains functional, Omni cannot revoke or reliably track this access until certificate authority (CA) rotation (or equivalent credential rotation) is performed.
 
 ## How to enable Omni break glass
@@ -26,7 +30,7 @@ After enabling break glass (either via support or server flag), use the followin
 omnictl talosconfig --cluster <cluster-name> --break-glass
 ```
 
-## Reverting Break-Glass Access
+## Reverting Break-Glass access
 
 Once break-glass credentials have been used, the cluster is considered tainted, any operator configs or client certificates generated during break-glass access exist outside Omni's normal control, and Omni cannot reliably revoke or track that access until the [cluster's certificate authorities are rotated](../cluster-management/ca-rotation).
 
