@@ -1,0 +1,26 @@
+---
+title: Introducing Talos Enterprise Linux
+description: An overview of Talos Enterprise Linux, what it includes, and how to get started.
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+Talos Enterprise Linux is Sidero's commercial distribution of Talos Linux, delivered through Enterprise Image Factory at `factory.siderolabs.com`. It adds compliance and supply chain artifacts — FIPS-enabled builds, per-schematic SBOMs, VEX data, and vulnerability scan reports — that are not available in the open-source distribution.
+
+## Features included in Talos Enterprise Linux
+
+Every build served from Enterprise Image Factory includes the following:
+
+- **FIPS-enabled builds:** Every image is built with the Go Cryptographic Module, validated under FIPS 140-3 ([CMVP certificate #5247](https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/5247)). No opt-in or separate build is required — this is a property of every build from Talos 1.13 onwards.
+
+- **Per-schematic SBOM:** Enterprise Image Factory generates a Software Bill of Materials in SPDX 2.3 format for each schematic and Talos version. The SBOM covers the exact image a node runs — base OS plus every configured extension — which is different from the release SBOMs published on GitHub, which cover only the unmodified base.
+
+- **VEX data:** Sidero publishes Vulnerability Exploitability eXchange statements that identify which CVEs actually apply to Talos as built. Used with the SBOM, VEX data lets scanners filter out non-applicable findings rather than relying on blanket waivers.
+
+- **Vulnerability scan reports:** Enterprise Image Factory can run and return a completed vulnerability scan report on demand, combining the schematic's SBOM with VEX data and a live vulnerability database. Reports are available in `.json`, `.table`, `.sarif`, and `.cdx` formats.
+
+For a full breakdown of features and how Enterprise Image Factory differs from the public Image Factory at `factory.talos.dev`, see <a href={`../../../talos/${version}/learn-more/enterprise-image-factory`}>Enterprise Image Factory</a>.
+
+## Access
+
+Talos Enterprise Linux is available as a standalone entitlement and includes Omni. Talos Enterprise Linux customers who do not use Omni authenticate to Enterprise Image Factory directly.
