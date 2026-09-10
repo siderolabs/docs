@@ -11,9 +11,9 @@ Though the Enterprise Image Factory ( `factory.siderolabs.com` ) and the public 
 - `factory.talos.dev` is anonymous and unauthenticated. It is the distribution mechanism for open-source Talos Linux.
 - `factory.siderolabs.com` requires authentication and is the delivery channel for Talos Enterprise Linux artifacts: FIPS-enabled builds, per-schematic SBOMs, and VEX data.
 
-## Tier availability
+## Availability
 
-Talos Enterprise Linux is available to customers on the Enterprise, Enterprise On-Prem, Edge, Edge On-Prem, and Talos Enterprise Linux Support tiers. It is also bundled into the FIPS product, a separate tier for customers who need FIPS 140-3 (CMVP) certified builds, on top of everything included in Talos Enterprise Linux. Customers on the Talos Enterprise Linux Support tier authenticate to Enterprise Image Factory directly, without an Omni account.
+Talos Enterprise Linux is a single entitlement that includes Omni. Talos Enterprise Linux customers who do not use Omni authenticate to Enterprise Image Factory directly.
 
 ## Feature comparison
 
@@ -22,7 +22,7 @@ The table below summarizes what each service provides. Each row is covered in mo
 | | `factory.talos.dev` (public) | `factory.siderolabs.com` (Enterprise) |
 |---|---|---|
 | Authentication | None | Required |
-| Tier access | All Talos Linux users | Enterprise, Enterprise On-Prem, Edge, Edge On-Prem, Talos Enterprise Linux Support, FIPS |
+| Access | All Talos Linux users | Talos Enterprise Linux customers |
 | Schematics, HTTP/PXE/registry frontends | Yes | Yes |
 | FIPS-enabled builds | No | Yes, on every build (Talos 1.13+) |
 | Per-schematic SBOM (SPDX) | No | Yes |
@@ -40,11 +40,9 @@ The SBOM, VEX, and vulnerability scan reports can all be downloaded from the sam
 
 ### FIPS
 
-Every build served from Enterprise Image Factory is FIPS-enabled by default for Talos 1.13 and later. FIPS (Federal Information Processing Standards) builds use FIPS-validated cryptographic modules in non-strict mode: WireGuard and other non-FIPS-validated cryptography continue to work normally alongside them.
+Every build served from Enterprise Image Factory is FIPS-enabled by default for Talos 1.13 and later. FIPS-enabled builds use the Go Cryptographic Module, validated under FIPS 140-3 ([CMVP certificate #5247](https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/5247)), in non-strict mode: WireGuard and other non-FIPS-validated cryptography continue to work normally alongside it.
 
-FIPS-enabled builds require no separate opt-in or gating step — any build pulled from Enterprise Image Factory has this property. This is a compliance attribute rather than a stronger security posture, since FIPS (NIST/CMVP) is a US-specific certification scheme.
-
-FIPS-enabled builds are distinct from FIPS 140-3 (CMVP) certification and strict/enforcing FIPS mode, which are a separate product offering for customers with formal certification requirements (for example, US federal buyers).
+FIPS-enabled builds require no separate opt-in or gating step — any build pulled from Enterprise Image Factory has this property. The FIPS 140-3 validation attaches to the Go Cryptographic Module, not to Talos Linux as a whole. This is a compliance attribute rather than a stronger security posture, since FIPS (NIST/CMVP) is a US-specific certification scheme.
 
 Enterprise Image Factory is the delivery channel for FIPS-enabled builds, and every build it serves is FIPS-enabled. Customers who want the other Talos Enterprise Linux features (SBOM, VEX, build attestation) get FIPS-enabled builds as part of that, whether or not FIPS itself is a requirement for them.
 
@@ -95,7 +93,7 @@ Because the scan runs against a live vulnerability database rather than being ba
 
 Enterprise Image Factory can run:
 
-- **Hosted by Sidero**, at `factory.siderolabs.com` — used by SaaS customers and Omni-managed customers on a qualifying tier.
+- **Hosted by Sidero**, at `factory.siderolabs.com` — used by SaaS customers and Omni-managed customers.
 - **On-premises**, in the customer's own environment, bundled with Omni or standalone. An on-premises instance keeps its backing registry in sync with Sidero's official Talos Enterprise Linux releases and extensions, and reads customer-private content directly from the customer's own registry using credentials the customer has registered with it.
 
 Omni users — whether on the hosted or on-premises deployment — reach Enterprise Image Factory through their existing Omni session, with no separate credential to manage.
@@ -109,7 +107,7 @@ Every interaction with Enterprise Image Factory requires authentication: the web
 A few boundaries are worth stating explicitly, since they're easy to assume incorrectly:
 
 - It does not replace the public Image Factory at `factory.talos.dev`, which is unaffected by anything described on this page.
-- It does not require an Omni account on the Talos Enterprise Linux Support tier.
+- It does not require an Omni account — Talos Enterprise Linux customers without Omni authenticate to Enterprise Image Factory directly.
 
 ## See also
 
