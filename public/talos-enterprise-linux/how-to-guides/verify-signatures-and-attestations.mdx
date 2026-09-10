@@ -1,0 +1,163 @@
+---
+title: Verify Enterprise Image Factory Signatures and Attestations
+description: How to verify cosign signatures and build attestations for installer images and downloadable assets from Enterprise Image Factory.
+---
+
+Enterprise Image Factory signs installer images built with Talos 1.13.0 and later, and generates a `.sigstore.json` bundle alongside each downloadable file under `/image/`. Before you use an image or a downloaded file, you can verify that signature independently, without relying on the factory to tell you it's legitimate.
+
+This page covers two separate verification workflows. Use whichever applies to your situation, or both:
+
+- **Installer image attestations**: Covers the OCI installer image, specifically what went into the build (SLSA Provenance) and what packages are inside it (SPDX SBOM). For Talos 1.13.0 stable and later.
+- **Non-container asset signatures**: Confirms that a downloaded file (ISO, raw disk image, UKI) hasn't been tampered with since the factory signed it.
+
+## Prerequisites
+
+This guide uses [cosign (v2.2.0 or later)](https://docs.sigstore.dev/cosign/system_config/installation/) to verify signatures and attestations, and [crane](https://github.com/google/go-containerregistry/blob/main/cmd/crane/README.md) to inspect OCI image manifests. Install both before running any commands on this page.
+
+Commands that read from the registry (`crane`, `cosign verify-attestation`) require authentication. Log in with your Enterprise Image Factory credentials before running them:
+
+```bash
+docker login -u <organization-id> -p <token> factory.siderolabs.com
+```
+
+## Get the signing key
+
+The factory's public key is what cosign checks your signatures against. Without it, none of the verification commands below have anything to verify against. One key covers all three surfaces (OCI image signatures, attestations, and asset bundles), so you only need to fetch it once.
+
+```bash
+curl -LO https://factory.siderolabs.com/oci/cosign/signing-key.pub
+```
+
+The key is unique to each factory instance. If you are running an on-premises factory, fetch the key from your own instance's endpoint instead.
+
+## Verify installer image attestations
+
+The factory produces two signed statements about every OCI installer image it builds. The SLSA Provenance and the SPDX SBOM.
+
+The SLSA Provenance answers "was this built correctly?" by recording the exact inputs, factory version, and build timestamps.
+
+The SPDX SBOM answers "what's inside?" by listing every package in that specific image, matched to the exact schematic and Talos version. Together, these let you verify the build process and the image contents without trusting the factory serving it.
+
+Verifying both requires three steps: build the immutable image reference, verify the provenance on the index, then verify the SBOM on the platform manifest.
+
+### Build the immutable image reference
+
+Attestations are attached by OCI digest, not by mutable version tag. The same tag can point to a different image after a rebuild, so always resolve the digest first and use that for verification.
+
+Set the schematic ID and Talos version you want to verify:
+
+```bash
+IMAGE=factory.siderolabs.com/metal-installer/<your-schematic-id>
+VERSION=<talos-version> # e.g. v1.14.0
+```
+
+Resolve the index digest from the version tag:
+
+```bash
+crane digest "$IMAGE:$VERSION"
+```
+
+Build the immutable reference using that digest:
+
+```bash
+INDEX_DIGEST=sha256:<index-digest>
+INDEX_REF="$IMAGE@$INDEX_DIGEST"
+```
+
+### Verify SLSA provenance
+
+The SLSA Provenance attestation lives on the multi-platform index. It records the immutable index and platform manifests as subjects, the requested Talos version, schematic, and secure-boot mode, Image Factory version information, and the exact base installer, system extension, and overlay manifest digests consumed by the build.
+
+```bash
+cosign verify-attestation \
+  --key signing-key.pub \
+  --type https://slsa.dev/provenance/v1 \
+  --insecure-ignore-tlog \
+  "$INDEX_REF"
+```
+
+`--insecure-ignore-tlog` is required because static-key bundles have no Rekor transparency-log material. It does not relax TLS or HTTP validation.
+
+### Verify a platform SBOM
+
+The SPDX SBOM attestation lives on the platform manifest, not the index, so you need to find the right platform manifest digest first. The index lists all available platforms and their digests:
+
+```bash
+crane manifest "$INDEX_REF" | \
+  jq -r '.manifests[] | [.platform.os, .platform.architecture, .digest] | @tsv'
+```
+
+Example output:
+
+```text
+linux  amd64  sha256:<amd64-manifest-digest>
+linux  arm64  sha256:<arm64-manifest-digest>
+```
+
+Set the digest for the platform you want to verify:
+
+```bash
+PLATFORM_DIGEST=sha256:<platform-manifest-digest>
+PLATFORM_REF="$IMAGE@$PLATFORM_DIGEST"
+```
+
+Verify the SPDX attestation:
+
+```bash
+cosign verify-attestation \
+  --key signing-key.pub \
+  --type https://spdx.dev/Document/v2.3 \
+  --insecure-ignore-tlog \
+  "$PLATFORM_REF"
+```
+
+## Verify non-container assets
+
+For files you download directly (ISOs, raw disk images, UKI files), the factory generates a `.sigstore.json` bundle alongside each one. This bundle is a detached signature on the exact bytes of that file. Verifying it confirms the file has not been modified since the factory signed it.
+
+Note that this is a different check from verifying attestations. The `.sigstore.json` does not carry provenance or an SBOM. It only answers whether the file is intact. If you also need the SBOM for a downloaded file, that is available separately through the factory's SPDX endpoint.
+
+Download the asset and its bundle:
+
+```bash
+curl -LO -H "Authorization: Bearer <token>" https://factory.siderolabs.com/image/<schematic>/<version>/metal-amd64.raw.xz
+curl -LO -H "Authorization: Bearer <token>" https://factory.siderolabs.com/image/<schematic>/<version>/metal-amd64.raw.xz.sigstore.json
+```
+
+Verify:
+
+```bash
+cosign verify-blob \
+  --key signing-key.pub \
+  --bundle metal-amd64.raw.xz.sigstore.json \
+  --insecure-ignore-tlog \
+  metal-amd64.raw.xz
+```
+
+The same pattern applies to ISO images, UKI files, SBOM downloads, and any other file from the image route. Append `.sigstore.json` to the asset URL to get the bundle.
+
+## Signing keys
+
+Every verification command on this page checks a signature against a key. This section tells you which key signs what, so you know exactly what you are trusting and whether you need more than one key.
+
+### Factory signing key
+
+Each Enterprise Image Factory instance publishes its static public key at `/oci/cosign/signing-key.pub`. For the Sidero-hosted instance:
+
+```text
+https://factory.siderolabs.com/oci/cosign/signing-key.pub
+```
+
+This key signs:
+
+- Installer OCI images (cosign container image signatures)
+- Installer build attestations (SLSA Provenance, SPDX SBOM)
+- Detached asset bundles (`.sigstore.json` sidecars)
+
+### SecureBoot keys
+
+Enterprise Image Factory uses the same SecureBoot signing keys as the public Image Factory at `factory.talos.dev`. This is intentional: a machine that has enrolled those keys in UEFI can pull installer images from either factory, and can upgrade between them, without re-enrolling SecureBoot keys.
+
+The verification chain for SecureBoot artifacts is therefore identical for enterprise and community images.
+
+All commands above use `--insecure-ignore-tlog`, so no connection to Rekor is needed at verification time. Once you have the public key on disk, verification works from any machine, including air-gapped environments.
