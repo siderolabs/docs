@@ -1,0 +1,49 @@
+---
+title: "Enterprise Image Factory API Tokens"
+description: "How Enterprise Image Factory API tokens work, including scopes, organization ownership, and token lifetimes."
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+API tokens are JSON Web Tokens issued and verified by Enterprise Image Factory itself. There is one token type. Authorization is scope-based: which endpoints a token can reach is decided by the scopes it carries, not by how or where it was created. This page covers scopes, actor profiles, token ownership, and token lifecycle. To create and use a token, see [Manage Enterprise Image Factory Credentials](../how-to-guides/manage-credentials).
+
+## Token scopes
+
+A scope is a single capability, named for the resource it covers. Enterprise Image Factory recognizes eight scopes:
+
+| Scope              | Allows access to                                              |
+| ------------------ | ------------------------------------------------------------- |
+| `image:read`       | Generated images, PXE scripts, and installer OCI pulls        |
+| `source:pull`      | Proxied upstream and source OCI pulls under `/v2/siderolabs/` |
+| `schematic:create` | Creating schematics                                           |
+| `schematic:read`   | Reading schematic definitions                                 |
+| `report:read`      | SPDX, VEX, and vulnerability reports                          |
+| `token:issue`      | Creating tokens                                               |
+| `token:read`       | Listing tokens                                                |
+| `token:revoke`     | Revoking tokens                                               |
+
+Scopes do not imply one another. `schematic:create` does not grant `schematic:read`, and `token:issue` grants neither listing nor revocation. A token carrying several scopes reaches the endpoints covered by all of them.
+
+A token that is valid but carries no scope for the requested route does not authenticate the request.
+
+The web UI does not expose individual scopes. It offers four fixed actor profiles, each carrying a predefined set.
+
+### Token actor profiles
+
+Choose a profile when creating a token in the web UI. The profile determines the full set of scopes that the token carries, and it cannot be changed after creation.
+
+- **Talos:** This profile carries the `image:read` scope. It is intended for nodes that pull enterprise images. The scope allows access to generated image downloads, PXE scripts, and installer OCI pulls. It does not grant access to security reports or token management.
+
+- **Automation (Omni / Terraform):** This profile carries the `image:read`, `report:read`, `schematic:create`, `schematic:read`, and `token:issue` scopes. It is intended for tooling that builds and consumes schematics. It allows the tooling to create and read schematics, pull images, read security reports, and issue bounded Talos or Automation tokens.
+
+- **Operator:** This profile carries the `image:read`, `report:read`, `schematic:create`, `schematic:read`, and `source:pull` scopes. It is intended for a person or CI job working across the factory. In addition to access to images, schematics, and reports, it provides source proxy access. It cannot issue, list, or revoke tokens.
+
+- **Admin:** This profile carries all eight scopes. It includes everything available to the Operator profile, along with `token:issue`, `token:read`, and `token:revoke` for full token management. It can also issue a token for any actor profile.
+
+## Token lifecycle
+
+A token's lifetime is set when it is created and cannot be extended afterwards. Re-creating a link with an expiring token does not extend that token's lifetime.
+
+Issuing a replacement token does not revoke the token it replaces. Tokens are independent of one another rather than a renewable session, so each one remains valid until it is revoked or expires. To rotate a token, see [Rotate an API token](../how-to-guides/manage-credentials#rotate-an-api-token).
+
+Expiry is not revocation. A token that can no longer be accounted for stays valid until its expiry, so revoke it rather than waiting for it to lapse.
