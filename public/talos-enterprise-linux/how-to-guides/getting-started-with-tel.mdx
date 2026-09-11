@@ -1,0 +1,176 @@
+---
+title: Getting Started with Talos Enterprise Linux
+description: Log in to Enterprise Image Factory and get your first Talos Enterprise Linux image via the browser wizard or the CLI, or use Omni where enterprise images are delivered automatically.
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+Learn how to obtain and use Talos Enterprise Linux images with Enterprise Image Factory, either through the factory UI and CLI or automatically with Omni. This guide covers prerequisites, image creation and downloads, vulnerability scanning with SBOM and VEX data, image verification, and getting started with your enterprise image.
+
+## Prerequisites
+
+You need the following before you begin.
+
+- A Talos Enterprise Linux entitlement (either an Omni subscription or a standalone Talos Enterprise Linux support contract) with an organization provisioned on Enterprise Image Factory. If you cannot log in, contact [support](https://www.siderolabs.com/support).
+
+If you are following the **CLI** tab below, you also need `jq`, `cosign`, and `grype` installed on your machine. On macOS or Linux with Homebrew, install all three with:
+
+```bash
+brew install jq cosign grype
+```
+
+For other installation methods, refer to the documentation for each tool: [jq](https://jqlang.github.io/jq/download/), [cosign](https://docs.sigstore.dev/cosign/system_config/installation/), and [grype](https://github.com/anchore/grype?tab=readme-ov-file#installation).
+
+## Standalone Talos Linux
+
+Enterprise Image Factory offers two ways to get an enterprise image: through the browser wizard, or programmatically with `curl`. Pick the tab that matches your workflow.
+
+<Tabs>
+  <Tab title="UI">
+
+### Step 1: Log in to Enterprise Image Factory
+
+The Enterprise Image Factory login screen asks for your work email and routes you to your organization's identity provider.
+
+1. Open [factory.siderolabs.com](https://factory.siderolabs.com) in your browser.
+
+2. Enter your work email address. Enterprise Image Factory matches your email domain to your organization and redirects you to your identity provider.
+
+3. Complete sign-in. Most organizations use Google or a company SSO.
+
+### Step 2: Build a schematic and download artifacts
+
+The wizard is identical to `factory.talos.dev`. The difference is the Schematic Ready page: in the Enterprise Image Factory, it combines vulnerability scan results, SBOM, and VEX alongside the standard boot assets, all available to download from one screen.
+
+1. Click through the wizard on the factory home page. Select your Talos version, CPU architecture, and any system extensions you need.
+
+2. On the **Schematic Ready** page, download what you need:
+
+   - **Vulnerability Scan:** The scan runs automatically and combines the per-schematic SBOM with Siderolabs' VEX data, so results are pre-filtered to CVEs that actually apply to your image. Download the full report in JSON, SARIF, CycloneDX, or table format from the links provided.
+
+   - **Boot assets:** This section lists every boot asset for your schematic: ISO, disk image (raw), disk image (qcow2), UKI, and initramfs image. Click the link for the asset type your environment requires.
+
+   - **SBOM (SPDX):** This section contains a direct download link for the per-schematic Software Bill of Materials in SPDX 2.3 format.
+
+   - **VEX (Vulnerability Exploitability eXchange):** This section contains a direct download link for the per-release VEX document.
+
+### Step 3: Boot your machine and create a cluster
+
+With your boot asset downloaded, follow the standard Talos Linux setup to boot your machine and create a cluster.
+
+See the <a href={`../../../talos/${version}/getting-started/getting-started`}>Getting Started with Talos Linux</a> guide to continue from here.
+
+  </Tab>
+  <Tab title="CLI">
+
+### Step 1: Sign in to Enterprise Image Factory
+
+The Enterprise Image Factory login screen asks for your work email and routes you to your organization's identity provider. You need to sign in to create an API token in the next step.
+
+1. Open [factory.siderolabs.com](https://factory.siderolabs.com) in your browser.
+
+2. Enter your work email address. Enterprise Image Factory matches your email domain to your organization and redirects you to your identity provider.
+
+3. Complete sign-in. Most organizations use Google or a company SSO.
+
+### Step 2: Create an API token
+
+Every programmatic request to Enterprise Image Factory requires an API token. The token carries scopes that determine which endpoints it can reach.
+
+1. In the factory UI, select **Manage API Tokens**.
+2. Select **+ Create Token**.
+3. Enter a descriptive **Name** for the token.
+4. Set a **Lifetime**. Lifetimes are written in hours (`h`) or minutes (`m`).
+5. For **Token actor**, select **Automation**. This profile includes the `schematic:create`, `schematic:read`, `image:read`, `report:read`, and `token:issue` scopes needed to follow this guide. For a description of every profile and the scopes each carries, see [Token actor profiles](../learn-more/api-tokens#token-actor-profiles).
+6. Select **Create Token**. Enterprise Image Factory displays your **Organization ID** and **Token**.
+
+<Warning>
+The token is shown once. Copy it to a password manager before closing the dialog. If you lose it, generate a replacement and revoke the original.
+</Warning>
+
+7. Store both values as environment variables:
+
+```bash
+export EIF_ORG=<organization-id>
+export EIF_TOKEN=<token>
+```
+
+### Step 3: Build a schematic
+
+A schematic describes the customizations applied to a Talos Enterprise Linux image: system extensions, extra kernel arguments, and initial Talos META values. Submitting an empty body (`{}`) produces the base Talos Enterprise Linux image with none of those customizations applied. This is the "vanilla" schematic.
+
+For the complete schematic format, including kernel arguments, Talos META values, and overlays, see the [schematic reference](https://github.com/siderolabs/image-factory#schematics) in the Image Factory repository.
+
+Set your target Talos version and CPU architecture:
+
+```bash
+export TALOS_VERSION=<talos-version>
+export ARCH=<arch>
+```
+
+Create the schematic and capture its ID:
+
+```bash
+export SCHEMATIC=$(curl -s -X POST \
+  -H "Authorization: Bearer $EIF_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{}' \
+  https://factory.siderolabs.com/schematics | jq -r '.id')
+
+echo $SCHEMATIC
+```
+
+The factory returns a 64-character hex ID.
+
+### Step 4: Download an enterprise image
+
+Use your schematic ID, version, and architecture to download a boot asset from Enterprise Image Factory. The example below downloads the metal ISO:
+
+```bash
+curl -L -o metal-$ARCH.iso \
+  -H "Authorization: Bearer $EIF_TOKEN" \
+  "https://factory.siderolabs.com/image/$SCHEMATIC/$TALOS_VERSION/metal-$ARCH.iso"
+```
+
+The `-L` flag follows the redirect that Enterprise Image Factory issues for every image request. For other asset types such as disk images, UKI, initramfs, and PXE scripts, see [Download Images and Artifacts](./download-image-and-artifacts).
+
+### Step 5: Scan for vulnerabilities
+
+Enterprise Image Factory provides a per-schematic SBOM in SPDX 2.3 format and per-release VEX data. Grype uses both together to report only CVEs that apply to your exact image, filtering out findings that Siderolabs has assessed as non-applicable.
+
+Download the SBOM and VEX, then run the scan:
+
+```bash
+curl -s \
+  -H "Authorization: Bearer $EIF_TOKEN" \
+  "https://factory.siderolabs.com/spdx/$SCHEMATIC/$TALOS_VERSION/$ARCH" \
+  -o sbom.spdx.json
+
+curl -s \
+  -H "Authorization: Bearer $EIF_TOKEN" \
+  "https://factory.siderolabs.com/vex/$TALOS_VERSION/vex.json" \
+  -o vex.json
+
+grype sbom:./sbom.spdx.json --vex ./vex.json
+```
+
+For pre-built scan reports available directly from the factory and alternative report formats, see [Scan TEL Images with SBOM and VEX](./scan-tel-with-sbom-and-vex).
+
+### Step 6: Boot your machine and create a cluster
+
+With your image downloaded and verified, follow the standard Talos Linux setup to boot your machine and create a cluster.
+
+See the <a href={`../../../talos/${version}/getting-started/getting-started`}>Getting Started with Talos Linux</a> guide to continue from here.
+
+  </Tab>
+</Tabs>
+
+## Via Omni
+
+If you use Omni SaaS, enterprise images are handled automatically. No token management or factory setup is required on your part.
+
+`omnictl download` already queries your Omni instance for the correct factory URL and credentials, so every ISO, disk image, and installer image it downloads is an enterprise build.
+
+Clusters switch to enterprise images on their next upgrade. Any change that triggers a schematic rebuild will do: bumping the Talos version, adding or removing a system extension, or changing a kernel argument. On that upgrade, Omni checks whether an enterprise build exists for the target version (available for Talos 1.13 and later) and pulls it automatically. Until a cluster is upgraded, its machines continue running open-source Talos Linux.
+
+To get started with Omni, follow the [Getting Started with Omni](../../omni/getting-started/getting-started) guide. To move machines that are already running community Talos to Talos Enterprise Linux, see [Migrate Clusters to Talos Enterprise Linux](./migrate-clusters-to-tel).
