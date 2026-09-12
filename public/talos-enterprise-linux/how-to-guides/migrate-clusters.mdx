@@ -1,0 +1,61 @@
+---
+title: Migrate Clusters to Talos Enterprise Linux
+description: How to move existing Talos clusters and machines to Talos Enterprise Linux images through SaaS Omni or talosctl.
+---
+
+Migrating an existing Talos cluster to Talos Enterprise Linux is an in-place upgrade. The migration changes the image source from the public Image Factory at `factory.talos.dev` to the Enterprise Image Factory at `factory.siderolabs.com`, while preserving the existing machine configuration and cluster state.
+
+This guide explains how to migrate Talos Linux and Omni-managed clusters and verify that a node is running Talos Enterprise Linux.
+
+You must have a valid Enterprise Image Factory account. If you cannot log in, contact [support](https://www.siderolabs.com/support).
+
+## Migrate with SaaS Omni
+
+Once your account is provisioned on Enterprise Image Factory, Omni switches each cluster to enterprise images on its next upgrade. No manual action is required beyond triggering an upgrade; any schematic change will do, including bumping the Talos version, adding or removing a system extension, or changing kernel arguments. Until the cluster is upgraded, its machines continue running open-source Talos Linux.
+
+Enterprise images are available for Talos 1.13 and later. Clusters running earlier versions remain on open-source Talos Linux images until they reach that threshold.
+
+Installation media downloaded through the Omni UI or `omnictl download` always comes from your provisioned factory and is automatically enterprise.
+
+Disk images, such as AWS AMIs and pre-installed metal images, downloaded through Omni are already enterprise on first boot. Open-source Talos Linux ISOs initially appear as non-enterprise in the machine list, but when you create a cluster from one, Omni pulls the enterprise installer, installs it to disk, and reboots the node into Talos Enterprise Linux.
+
+## Migrate with talosctl
+
+If you manage Talos machines without Omni, migration is a two-step process: add your Enterprise Image Factory credentials to the machine configuration, then run an upgrade targeting an enterprise installer image.
+
+The `RegistryAuthConfig` document used in Step 1 is supported from Talos 1.12. Enterprise images require Talos 1.13 or later.
+
+### Step 1: Add credentials to the machine configuration
+
+Follow [Manage Enterprise Image Factory Credentials](./manage-credentials) to generate an API token and obtain the machine configuration patch for your organization. Once you have the patch, apply it to each node:
+
+```bash
+talosctl patch machineconfig --nodes <node-IP> --patch credentials.yaml
+```
+
+The patch sits in the machine configuration and does nothing until an upgrade is triggered.
+
+### Step 2: Run the upgrade
+
+Run `talosctl upgrade` and pass an enterprise installer image from `factory.siderolabs.com`:
+
+The schematic ID must come from Enterprise Image Factory — IDs from the public Image Factory are not valid here, as the owner is embedded in the ID. Use the wizard at `factory.siderolabs.com` or follow [Download images and artifacts](./download-image-and-artifacts) to get yours.
+
+```bash
+talosctl upgrade --nodes <node-IP> \
+  --image factory.siderolabs.com/metal-installer/<schematic-id>:<talos-version>
+```
+
+Talos uses the credentials in the machine configuration to authenticate against Enterprise Image Factory, pulls the installer image, installs it, and reboots the node into Talos Enterprise Linux.
+
+Repeat for each node in the cluster.
+
+## Verify a node is running Talos Enterprise
+
+After an upgrade, confirm a node is running Talos Enterprise Linux by checking its version name:
+
+```bash
+talosctl get version --output yaml
+```
+
+In the returned YAML, check the `name` field under `spec`. `Talos Enterprise` means the node is running Talos Enterprise Linux. `Talos` means it is still on an open-source Talos Linux image.
