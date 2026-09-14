@@ -16,7 +16,7 @@ The following system volumes are supported: `STATE`, `EPHEMERAL`, `IMAGECACHE`, 
 The `ETCD`, `CRI`, `KUBELET` and `LOG` volumes are backed by a directory under the `EPHEMERAL` volume by default, but they can be placed on a dedicated partition instead (see [Dedicated system volumes](#dedicated-system-volumes-etcd-cri-kubelet-log)).
 
 > Note: A volume's backing (directory vs. dedicated partition) is fixed when the volume is first provisioned and cannot be changed afterwards.
-> The configuration for these volumes is therefore only honored during cluster creation.
+> The configuration for these volumes is therefore only honored during node provisioning.
 
 ## `EPHEMERAL` volume
 
@@ -59,9 +59,9 @@ Moving a volume to its own partition is useful to:
 - place a volume on a separate disk for better performance or durability.
 
 > Note: The backing type is permanent — it is chosen when the volume is first provisioned and cannot be changed later.
-> Custom `VolumeConfig`s for the `ETCD`, `CRI` and `KUBELET` volumes are therefore only honored during cluster creation.
+> Custom `VolumeConfig`s for the `ETCD`, `CRI` and `KUBELET` volumes are therefore only honored during node provisioning.
 
-To provision, for example, the `KUBELET` volume on a dedicated partition, append the following [VolumeConfig](../../../reference/configuration/block/volumeconfig) document to the machine configuration used at cluster creation:
+To provision, for example, the `KUBELET` volume on a dedicated partition, append the following [VolumeConfig](../../../reference/configuration/block/volumeconfig) document to the machine configuration used at node provisioning:
 
 ```yaml
 apiVersion: v1alpha1
