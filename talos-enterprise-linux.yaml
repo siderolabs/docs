@@ -1,0 +1,25 @@
+navigation:
+  tabs:
+    - tab: "Talos Enterprise Linux"
+      icon: "/images/talos.svg"
+      groups:
+        - group: "Overview"
+          folder: "talos-enterprise-linux/overview"
+          pages:
+            - "introducing-talos-enterprise-linux.mdx"
+            - "getting-started-with-talos-enterprise-linux.mdx"
+
+        - group: "Working with Talos Enterprise Linux"
+          folder: "talos-enterprise-linux/working-with-talos-enterprise-linux"
+          pages:
+            - "manage-credentials.mdx"
+            - "download-images-and-artifacts.mdx"
+            - "scan-tel-with-sbom-and-vex.mdx"
+            - "verify-signatures-and-attestations.mdx"
+            - "use-talos-enterprise-linux-with-omni.mdx"
+            - "migrate-clusters.mdx"
+
+        - group: "Learn More"
+          folder: "talos-enterprise-linux/learn-more"
+          pages:
+            - "api-tokens.mdx"
