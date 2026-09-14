@@ -39,10 +39,17 @@ To do this first download the installation media baked with the `ip` value:
 <Tabs>
 <Tab title="CLI">
 
-Download the installation media with the `ip` kernel parameter using the Omni CLI:
+Create a preset with the `ip` kernel parameter and download the installation media using the Omni CLI:
 
 ```bash
-omnictl download iso --extra-kernel-args "ip=:::::::::172.235.60.8"
+omnictl media preset create ntp-preset --arch amd64 --extra-kernel-args "ip=:::::::::172.235.60.8"
+omnictl media download ntp-preset
+```
+
+When you no longer need the preset, delete it:
+
+```bash
+omnictl media preset delete ntp-preset
 ```
 </Tab>
 <Tab title="UI">

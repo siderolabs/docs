@@ -17,16 +17,17 @@ You can download the Talos Omni ISO image either via the CLI or the Omni UI. To 
 
 <Tabs>
    <Tab title="CLI">
-   Run the following command to understand how to download a Talos Omni ISO image:
+   Run these commands to create a preset and download a bare metal Talos Omni ISO image:
 
    ```bash
-   omnictl download iso --help
+   omnictl media preset create bare-metal-preset --arch amd64
+   omnictl media download bare-metal-preset
    ```
 
-   For example, to download a Talos Omni ISO image with an `amd64` architecture, run:
+   Presets persist in Omni after the image is downloaded. When you no longer need the preset, delete it:
 
    ```bash
-   omnictl download iso --arch amd64
+   omnictl media preset delete bare-metal-preset
    ```
    </Tab>
 

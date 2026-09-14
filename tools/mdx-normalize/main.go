@@ -5,16 +5,17 @@
 // files produce constructs that Mintlify (which parses .mdx as MDX/JSX) does
 // not handle:
 //
-//   - Tab-indented code blocks. Mintlify does not support indented code
-//     blocks, so a line like `source <(talosctl completion bash)` is read as
-//     JSX and breaks the build ("Unexpected character `(` before name"). These
-//     are converted to fenced (```) code blocks.
+//   - Tab-indented or 4-space-indented code blocks. Mintlify does not support
+//     indented code blocks, so a line like `source <(talosctl completion bash)`
+//     is read as JSX and breaks the build ("Unexpected character `(` before
+//     name"). These are converted to fenced (```) code blocks.
 //
-//   - Tab-indented prose in a command's "Synopsis". This should stay a normal
-//     paragraph, not become a code block. Command examples are distinguished
-//     from prose by their intro line: examples are introduced by a line ending
-//     in a colon ("...run:" or a "#### Linux:" heading), so a tab-indented
-//     block with a colon intro is fenced and any other is de-indented.
+//   - Tab-indented or 4-space-indented prose in a command's "Synopsis". This
+//     should stay a normal paragraph, not become a code block. Command examples
+//     are distinguished from prose by their intro line: examples are introduced
+//     by a line ending in a colon ("...run:", "Examples:", or a "#### Linux:"
+//     heading), so an indented block with a colon intro is fenced and any other
+//     is de-indented.
 //
 //   - Tab-indented *lists* nested under a list item (e.g. sub-bullets under
 //     "- For each node:"). These look like colon-intro examples but must stay a
@@ -146,6 +147,22 @@ func blockIsList(block []string) bool {
 	return false
 }
 
+// blockLooksLikeCommands reports whether a block contains a CLI command line.
+// It skips blank lines and comment lines (#) and checks whether the first
+// substantive line starts with a known CLI tool name. This is intentionally
+// narrow: the normalizer runs on omnictl/talosctl reference docs, so examples
+// always start with one of those tool names.
+func blockLooksLikeCommands(block []string) bool {
+	for _, l := range block {
+		trimmed := strings.TrimSpace(l)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		return strings.HasPrefix(trimmed, "omnictl") || strings.HasPrefix(trimmed, "talosctl")
+	}
+	return false
+}
+
 // escapeInlineMDX backslash-escapes MDX-significant characters ("<" and "{") in
 // prose so Mintlify does not try to parse them as JSX/expressions. CLI help text
 // often contains placeholders such as "<machine-id>" that would otherwise break
@@ -231,12 +248,13 @@ func normalize(lines []string, stripHR, escapeInline bool) []string {
 	}
 
 	var (
-		inFence      bool
-		block        []string // pending tab-indented block, one leading tab stripped
-		intro        string   // last non-blank line before the block started
-		lastNonBlank string
-		pendBlanks   int  // blank lines held while a block is open
-		hrSkip       bool // just dropped an HR; swallow one following blank
+		inFence             bool
+		block               []string // pending indented block, one level of indent stripped
+		blockIsSpaceIndented bool    // true when block was started by 4-space indent (not tab)
+		intro               string   // last non-blank line before the block started
+		lastNonBlank        string
+		pendBlanks          int  // blank lines held while a block is open
+		hrSkip              bool // just dropped an HR; swallow one following blank
 	)
 
 	flush := func() {
@@ -270,8 +288,10 @@ func normalize(lines []string, stripHR, escapeInline bool) []string {
 			// wrapping it in another fence, which would nest fences and would
 			// not be idempotent.
 			out = append(out, block...)
-		case colonRe.MatchString(intro):
+		case colonRe.MatchString(intro) && (!blockIsSpaceIndented || blockLooksLikeCommands(block)):
 			// A command example introduced by "...:" — fence it.
+			// For 4-space blocks, also require the content to look like commands
+			// so prose indented under a colon heading is not accidentally fenced.
 			out = append(out, "```")
 			out = append(out, block...)
 			out = append(out, "```")
@@ -282,6 +302,7 @@ func normalize(lines []string, stripHR, escapeInline bool) []string {
 			}
 		}
 		block = block[:0]
+		blockIsSpaceIndented = false
 		for ; pendBlanks > 0; pendBlanks-- {
 			out = append(out, "")
 		}
@@ -310,6 +331,20 @@ func normalize(lines []string, stripHR, escapeInline bool) []string {
 				block = append(block, "")
 			}
 			block = append(block, strings.TrimPrefix(line, "\t"))
+
+		case strings.HasPrefix(line, "    ") && strings.TrimSpace(line) != "" && (len(block) > 0 || colonRe.MatchString(lastNonBlank)):
+			// 4-space indented block after a colon-intro line (e.g. "Examples:" sections
+			// from omnictl/talosctl docs). Only collected when the intro ends with ":"
+			// so that 4-space indented HTML (table rows, etc.) is left untouched.
+			// blockLooksLikeCommands is checked at flush time to avoid fencing prose.
+			if len(block) == 0 {
+				intro = lastNonBlank
+				blockIsSpaceIndented = true
+			}
+			for ; pendBlanks > 0; pendBlanks-- {
+				block = append(block, "")
+			}
+			block = append(block, strings.TrimPrefix(line, "    "))
 
 		case stripHR && hrRe.MatchString(line):
 			flush()

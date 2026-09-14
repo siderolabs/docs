@@ -87,16 +87,19 @@ You can download the Talos Omni image using either the CLI or the Omni UI:
 <Tabs>
   <Tab title="CLI">
 
-  Run the following command to download a Talos Omni ISO image:
+  To download a Talos Omni image, you must first create a preset. A preset is a saved configuration for generating installation media. The default preset produces a bare metal amd64 ISO. To customize the architecture, platform, or extensions, see the [CLI reference](/omni/reference/cli#omnictl-media-preset-create).
+
+  <Note>`omnictl media` requires Omni v1.8.0 or later.</Note>
 
   ```bash
-  omnictl download iso
+  omnictl media preset create my-preset
+  omnictl media download my-preset
   ```
 
-  To see additional options such as targeting different machines or adding extensions and customizations, run:
+  Presets persist in Omni after the image is downloaded. When you no longer need the preset, delete it:
 
   ```bash
-  omnictl download iso --help
+  omnictl media preset delete my-preset
   ```
 
   </Tab>

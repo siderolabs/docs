@@ -39,22 +39,21 @@ To set machine labels using the Omni UI:
 
 When generating Talos installation media or a PXE boot URL with `omnictl`, you can define initial machine labels using the `--initial-labels` flag. This lets you assign key-value pairs to any machine that boots from that media.
 
-Here is the syntax for adding machine user labels using `omnictl`:
+Here is how to create a preset with machine user labels and download from it. This command creates a preset with the machine labels `environment=production` and `region=us-west` and downloads an image from that preset. For all available options, see the [CLI reference](/omni/reference/cli#omnictl-media-preset-create).
 
 ```bash
-omnictl download <image-name> \
-  --initial-labels <key1>=<value1>,<key2>=<value2> \
-  [--pxe]
-```
-
-For example, to download an amd64 ISO image with two labels (`environment=production` and `region=us-west`):
-
-```bash
-omnictl download iso --arch amd64 \
+omnictl media preset create labels-preset --arch amd64 \
   --initial-labels environment=production,region=us-west
+omnictl media download labels-preset
 ```
 
-Behind the scenes, this command generates a schematic and submits it to Image Factory. The schematic includes both the required kernel arguments for connecting to Omni and the labels you specified:
+Presets persist in Omni after the image is downloaded. When you no longer need the preset, delete it:
+
+```bash
+omnictl media preset delete labels-preset
+```
+
+Behind the scenes, these commands generate a schematic and submit it to Image Factory. The schematic includes both the required kernel arguments for connecting to Omni and the labels you specified:
 
 ```yaml
 customization:
@@ -80,10 +79,10 @@ Initial labels work across most installation methods, including ISOs and PXE boo
 **For example:**
 
 ```bash
-omnictl download iso --initial-labels environment=production,region=us-west --pxe
+omnictl media download labels-preset --format pxe
 ```
 
-This command outputs a PXE boot URL and exits.
+This prints a PXE boot URL and exits without downloading a file.
 </Info>
 
 ## Set machine user labels using Image Factory
