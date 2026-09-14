@@ -1,0 +1,33 @@
+---
+title: Use Talos Enterprise Linux with Omni
+description: How Omni delivers Talos Enterprise Linux images automatically, and how to access vulnerability reports, SBOMs, and VEX documents for your cluster.
+---
+
+For Omni accounts with a Talos Enterprise Linux entitlement, Enterprise Image Factory is already configured as the source for all installation media and upgrade images. Machines convert to Talos Enterprise Linux automatically on the next schematic change after Talos Linux 1.13 or later is running. To get started, see the [Getting Started with Omni guide](../../omni/getting-started/getting-started). To move existing clusters from open-source Talos Linux to Talos Enterprise Linux, see [Migrate Clusters to Talos Enterprise Linux](./migrate-clusters).
+
+## Access security artifacts
+
+You can access vulnerability reports, SBOMs, and VEX documents for your cluster through the Omni UI or the CLI. For information on how to interpret scan results, SBOMs, and VEX data, see [Scan Talos Enterprise Linux Images With SBOM and VEX](./scan-tel-with-sbom-and-vex).
+
+<Tabs>
+  <Tab title="Omni UI">
+
+  1. In the Omni dashboard, go to **Clusters** and select your cluster.
+  2. Select the **Security** tab to view vulnerability reports for your cluster's running Talos version, including CVE counts and the impact of upgrading.
+
+  </Tab>
+  <Tab title="CLI">
+
+  Run the following commands, replacing `<cluster-name>` with your cluster name:
+
+  <Note>
+  `omnictl security` requires Omni v1.12.0 or later.
+  </Note>
+
+  ```bash
+  omnictl security scan --cluster-id <cluster-name>
+  omnictl security sbom --cluster-id <cluster-name>
+  omnictl security vex --cluster-id <cluster-name>
+  ```
+  </Tab>
+</Tabs>
