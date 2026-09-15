@@ -75,18 +75,19 @@ You can include additional kernel arguments into your Talos Omni image using eit
 </Tab>
 <Tab title="CLI">
 
-You can bake kernel arguments into your image in the cli by adding the `--extra-kernel-args` flag when you download the Talos Omni image.
-
-Run this command to learn more about how to bake these kernel arguments:
-
-```bash
-omnictl download --help
-```
+You can bake kernel arguments into your image by adding the `--extra-kernel-args` flag when creating a preset, then downloading from it.
 
 For example, to download a Talos Omni ISO image with the kernel argument `talos.dashboard.disabled=1`, run:
 
 ```bash
-omnictl download iso --arch amd64 --extra-kernel-args talos.dashboard.disabled=1
+omnictl media preset create kernel-args-preset --arch amd64 --extra-kernel-args talos.dashboard.disabled=1
+omnictl media download kernel-args-preset
+```
+
+When you no longer need the preset, delete it:
+
+```bash
+omnictl media preset delete kernel-args-preset
 ```
 
 You can then boot your machines with this downloaded Talos Omni image.

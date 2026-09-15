@@ -43,6 +43,7 @@ var sections = []section{
 	{dir: "public/talos", fields: []string{"title", "description", "canonical"}},
 	{dir: "public/omni", fields: []string{"title", "description"}},
 	{dir: "public/kubernetes-guides", fields: []string{"title", "description"}},
+	{dir: "public/talos-enterprise-linux", fields: []string{"title", "description"}},
 }
 
 // exempt lists paths that are deliberately not page content and so carry no

@@ -185,16 +185,17 @@ You can download the Talos AWS image from the CLI or the UI:
 <Tabs>
 <Tab title="CLI">
 
-Run the following command to download the Talos AWS image:
+Create an AWS preset and download the Talos AWS image. This command sets `--arch` to `amd64`, but you can set it to any supported architecture. For all available options, see the [CLI reference](/omni/reference/cli#omnictl-media-preset-create).
 
 ```bash
-omnictl download aws
+omnictl media preset create aws-preset --arch amd64 --platform aws
+omnictl media download aws-preset
 ```
 
-To see available options for adding system extensions:
+When you no longer need the preset, delete it:
 
 ```bash
-omnictl download aws --help
+omnictl media preset delete aws-preset
 ```
 </Tab>
 <Tab title="UI">

@@ -57,7 +57,17 @@ omnictl audit-log [start] [end] [flags]
 ### Options
 
 ```
-  -h, --help   help for audit-log
+      --actor string                                                                                               filter events by actor email
+      --cluster-id string                                                                                          filter events by cluster ID
+      --event-type audit_log_access|create|destroy|k8s_access|talos_access|teardown|update|update_with_conflicts   filter events by event type
+  -f, --follow                                                                                                     stream new events as they are written, starting at the current tail unless --since is given. Cannot be combined with filters. The stream is re-established transparently whenever the server ends it cleanly, while errors terminate the command.
+  -h, --help                                                                                                       help for audit-log
+      --order-by-dir asc|desc                                                                                      sort direction
+      --order-by-field actor|cluster_id|event_ts_ms|event_type|resource_id|resource_type                           field to sort results by
+      --resource-id string                                                                                         filter events by resource ID
+      --resource-type string                                                                                       filter events by resource type
+      --search string                                                                                              filter events by a search string
+      --since duration                                                                                             start from the given duration ago, e.g. 2h. More precise than the date-only start argument, and the only way to include history in follow mode. A duration reaching past the retention period returns everything still retained.
 ```
 
 ### Options inherited from parent commands
@@ -113,7 +123,7 @@ Abort an ongoing cluster import operation
 
 ### Synopsis
 
-Abort an ongoing cluster import operation. This will clean up any resources created during the import process and 
+Abort an ongoing cluster import operation. This will clean up any resources created during the import process and
 will only work if the cluster is locked and tainted as "importing"
 
 ```
@@ -659,6 +669,7 @@ omnictl cluster template delete [flags]
 ### Options inherited from parent commands
 
 ```
+      --allowed-dir string         allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
       --context string             The context to be used. Defaults to the selected context in the omniconfig file.
       --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
       --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
@@ -691,6 +702,7 @@ omnictl cluster template diff [flags]
 ### Options inherited from parent commands
 
 ```
+      --allowed-dir string         allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
       --context string             The context to be used. Defaults to the selected context in the omniconfig file.
       --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
       --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
@@ -726,6 +738,7 @@ omnictl cluster template export cluster-name [flags]
 ### Options inherited from parent commands
 
 ```
+      --allowed-dir string         allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
       --context string             The context to be used. Defaults to the selected context in the omniconfig file.
       --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
       --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
@@ -758,6 +771,7 @@ omnictl cluster template render [flags]
 ### Options inherited from parent commands
 
 ```
+      --allowed-dir string         allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
       --context string             The context to be used. Defaults to the selected context in the omniconfig file.
       --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
       --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
@@ -792,6 +806,7 @@ omnictl cluster template status [flags]
 ### Options inherited from parent commands
 
 ```
+      --allowed-dir string         allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
       --context string             The context to be used. Defaults to the selected context in the omniconfig file.
       --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
       --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
@@ -831,6 +846,7 @@ omnictl cluster template sync [flags]
 ### Options inherited from parent commands
 
 ```
+      --allowed-dir string         allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
       --context string             The context to be used. Defaults to the selected context in the omniconfig file.
       --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
       --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
@@ -863,6 +879,7 @@ omnictl cluster template validate [flags]
 ### Options inherited from parent commands
 
 ```
+      --allowed-dir string         allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
       --context string             The context to be used. Defaults to the selected context in the omniconfig file.
       --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
       --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
@@ -884,7 +901,8 @@ Commands to render, validate, manage cluster templates.
 ### Options
 
 ```
-  -h, --help   help for template
+      --allowed-dir string   allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
+  -h, --help                 help for template
 ```
 
 ### Options inherited from parent commands
@@ -1007,6 +1025,7 @@ omnictl completion bash > $(brew --prefix)/etc/bash_completion.d/omnictl
 
 You will need to start a new shell for this setup to take effect.
 
+
 ```
 omnictl completion bash
 ```
@@ -1053,6 +1072,7 @@ omnictl completion fish > ~/.config/fish/completions/omnictl.fish
 
 You will need to start a new shell for this setup to take effect.
 
+
 ```
 omnictl completion fish [flags]
 ```
@@ -1093,6 +1113,7 @@ omnictl completion powershell | Out-String | Invoke-Expression
 
 To load completions for every new session, add the output of the above command
 to your powershell profile.
+
 
 ```
 omnictl completion powershell [flags]
@@ -1155,6 +1176,7 @@ omnictl completion zsh > $(brew --prefix)/share/zsh/site-functions/_omnictl
 
 You will need to start a new shell for this setup to take effect.
 
+
 ```
 omnictl completion zsh [flags]
 ```
@@ -1187,6 +1209,7 @@ Generate the autocompletion script for the specified shell
 
 Generate the autocompletion script for omnictl for the specified shell.
 See each sub-command's help for details on how to use the generated script.
+
 
 ### Options
 
@@ -1553,79 +1576,6 @@ omnictl delete <type> [<id>] [flags]
 
 * [omnictl](#omnictl)	 - A CLI for accessing Omni API.
 
-## omnictl download
-
-Download installer media
-
-### Synopsis
-
-This command downloads installer media from the server
-
-It accepts one argument, which is the name of the image to download. Name can be one of the following:
-
-     * iso - downloads the latest ISO image
-     * AWS AMI (amd64), Vultr (arm64), Raspberry Pi 4 Model B - full image name
-     * oracle, aws, vmware - platform name
-     * rpi_generic, rockpi_4c, rock64 - board name
-
-To get the full list of available images, look at the output of the following command:
-    omnictl get installationmedia -o yaml
-
-The download command tries to match the passed string in this order:
-
-    * name
-    * profile
-
-By default it will download amd64 image if there are multiple images available for the same name.
-
-For example, to download the latest ISO image for arm64, run:
-
-    omnictl download iso --arch amd64
-
-To download the same ISO with two extensions added, the --extensions argument gets repeated to produce a stringArray:
-
-    omnictl download iso --arch amd64 --extensions intel-ucode --extensions qemu-guest-agent
-
-To download the latest Vultr image, run:
-
-    omnictl download "vultr"
-
-To download the latest Radxa ROCK PI 4 image, run:
-
-    omnictl download "rpi_generic"
-
-```
-omnictl download <image name> [flags]
-```
-
-### Options
-
-```
-      --arch string                     Image architecture to download (amd64, arm64) (default "amd64")
-      --extensions strings              Generate installation media with extensions pre-installed
-      --extra-kernel-args stringArray   Add extra kernel args to the generated installation media
-  -h, --help                            help for download
-      --initial-labels strings          Bake initial labels into the generated installation media
-      --output string                   Output file or directory, defaults to current working directory (default ".")
-      --pxe                             Print PXE URL and exit
-      --secureboot                      Download SecureBoot enabled installation media
-      --talos-version string            Talos version to be used in the generated installation media (default "1.12.6")
-      --use-siderolink-grpc-tunnel      Configure Talos to use the SideroLink (WireGuard) gRPC tunnel over HTTP/2 for Omni management traffic, instead of UDP. Only enable this if the network blocks UDP packets, as HTTP tunneling adds significant overhead for communications.
-```
-
-### Options inherited from parent commands
-
-```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
-```
-
-### SEE ALSO
-
-* [omnictl](#omnictl)	 - A CLI for accessing Omni API.
-
 ## omnictl edit
 
 Edit Omni resources with the default editor.
@@ -1874,7 +1824,7 @@ omnictl jointoken create <name> [flags]
 Delete a join token
 
 ```
-omnictl jointoken delete <name> [flags]
+omnictl jointoken delete <id> [flags]
 ```
 
 ### Options
@@ -2201,6 +2151,175 @@ omnictl kubeconfig [local-path] [flags]
 
 * [omnictl](#omnictl)	 - A CLI for accessing Omni API.
 
+## omnictl machine install
+
+Install Talos to disk on a machine running in maintenance mode
+
+### Synopsis
+
+Install Talos to disk on a machine that is running in maintenance mode.
+
+This requires the machine to be running Talos 1.13 or newer. The target disk must be specified
+with --disk (e.g. /dev/sda); use 'omnictl get machinestatus \<machine-id> -o yaml' to inspect the
+available block devices. When --version is omitted, the version Talos is currently running in
+memory on the machine is installed. Installer progress is streamed to the terminal; on success the
+machine is rebooted so it boots from disk into the freshly installed Talos.
+
+```
+omnictl machine install machine-id [flags]
+```
+
+### Options
+
+```
+      --disk string      target install disk (e.g. /dev/sda)
+  -h, --help             help for install
+      --version string   Talos version to install; defaults to the version running in memory on the machine
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl machine](#omnictl-machine)	 - Machine related commands.
+
+## omnictl machine power-on
+
+Power on a machine
+
+### Synopsis
+
+Power on a machine managed by an infra provider. This clears the power off request
+and allows the provider to power the machine on.
+
+```
+omnictl machine power-on machine-id [flags]
+```
+
+### Options
+
+```
+  -h, --help   help for power-on
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl machine](#omnictl-machine)	 - Machine related commands.
+
+## omnictl machine shutdown
+
+Shut down a machine
+
+### Synopsis
+
+Shut down a machine. For machines managed by an infra provider, this also prevents
+the provider from automatically powering the machine back on.
+
+```
+omnictl machine shutdown machine-id [flags]
+```
+
+### Options
+
+```
+  -h, --help   help for shutdown
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl machine](#omnictl-machine)	 - Machine related commands.
+
+## omnictl machine upgrade
+
+Upgrade the on-disk Talos on a machine running in maintenance mode
+
+### Synopsis
+
+Upgrade the on-disk Talos on a machine that is running in maintenance mode and already has Talos installed.
+
+This requires the machine to be running Talos 1.13 or newer. --version is required and specifies the Talos version to write to disk. 
+Installer progress is streamed to the terminal; on success the machine is rebooted so it boots from disk into the upgraded Talos.
+
+```
+omnictl machine upgrade machine-id [flags]
+```
+
+### Options
+
+```
+  -h, --help             help for upgrade
+      --version string   Talos version to upgrade to
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl machine](#omnictl-machine)	 - Machine related commands.
+
+## omnictl machine
+
+Machine related commands.
+
+### Synopsis
+
+Commands to manage machines.
+
+### Options
+
+```
+  -h, --help   help for machine
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl](#omnictl)	 - A CLI for accessing Omni API.
+* [omnictl machine install](#omnictl-machine-install)	 - Install Talos to disk on a machine running in maintenance mode
+* [omnictl machine power-on](#omnictl-machine-power-on)	 - Power on a machine
+* [omnictl machine shutdown](#omnictl-machine-shutdown)	 - Shut down a machine
+* [omnictl machine upgrade](#omnictl-machine-upgrade)	 - Upgrade the on-disk Talos on a machine running in maintenance mode
+
 ## omnictl machine-logs
 
 Get logs for a machine
@@ -2234,6 +2353,455 @@ omnictl machine-logs machineID [flags]
 ### SEE ALSO
 
 * [omnictl](#omnictl)	 - A CLI for accessing Omni API.
+
+## omnictl media download
+
+Download installation media from a preset.
+
+### Synopsis
+
+Download installation media using a saved preset configuration.
+
+Flags here override the corresponding values from the preset, but cannot change
+the preset's platform, overlay, or bootloader: those define the preset itself.
+To use different settings, create a new preset.
+
+The format flag determines the output file type for metal presets:
+* iso   - ISO image (default)
+* raw   - Raw disk image (.raw.xz)
+* qcow2 - QEMU disk image (.qcow2)
+* pxe   - Print PXE boot URL (no file downloaded)
+
+For cloud presets, the format is automatically determined by the platform.
+For SBC presets, a raw disk image is always produced.
+
+Examples:
+```
+# Download from a preset (format is auto-detected from the preset type)
+omnictl media download my-preset
+
+# Force raw disk image for a metal preset
+omnictl media download my-preset --format raw
+
+# Get PXE boot URL for a metal preset
+omnictl media download my-preset --format pxe
+
+# Override extensions for a one-off download
+omnictl media download my-preset --extensions qemu-guest-agent
+
+# Download to a specific directory
+omnictl media download my-preset --output /tmp/images/
+```
+
+
+```
+omnictl media download <preset-name> [flags]
+```
+
+### Options
+
+```
+      --arch string                           Image architecture override (amd64, arm64; uses preset value if empty)
+      --embedded-machine-config-file string   Override the embedded machine config, reading it from a file or "-" for stdin
+      --extensions strings                    Override extensions to pre-install
+      --extra-kernel-args stringArray         Override extra kernel args
+      --format string                         Output format for metal presets: iso, raw, qcow2, pxe (auto-detected if omitted)
+  -h, --help                                  help for download
+      --initial-labels strings                Override initial machine labels (key=value)
+      --join-token string                     Join token ID override (uses preset token if empty)
+      --output string                         Output file or directory, defaults to current working directory (default ".")
+      --secureboot                            Override secure boot setting
+      --talos-version string                  Talos version override (uses preset value if empty)
+      --use-siderolink-grpc-tunnel            Configure Talos to use the SideroLink (WireGuard) gRPC tunnel over HTTP/2 for Omni management traffic, instead of UDP. Only enable this if the network blocks UDP packets, as HTTP tunneling adds significant overhead for communications.
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl media](#omnictl-media)	 - Manage installation media presets.
+
+## omnictl media preset create
+
+Create an installation media preset.
+
+### Synopsis
+
+Create a new installation media preset that can be used for downloading installation media.
+
+Examples:
+```
+# Create a basic metal preset
+omnictl media preset create my-preset --arch amd64
+
+# Create a cloud preset for AWS
+omnictl media preset create aws-preset --arch amd64 --platform aws
+
+# Create an SBC preset for Raspberry Pi
+omnictl media preset create rpi-preset --arch arm64 --overlay rpi_generic
+
+# Create a preset with extensions and labels
+omnictl media preset create full-preset --arch amd64 \
+    --extensions qemu-guest-agent --extensions intel-ucode \
+    --initial-labels env=production --initial-labels team=infra
+
+# Create a preset with an embedded machine config read from a file
+omnictl media preset create embedded-preset --arch amd64 \
+    --embedded-machine-config-file ./machine-config.yaml
+```
+
+
+```
+omnictl media preset create <name> [flags]
+```
+
+### Options
+
+```
+      --arch string                           Image architecture (amd64, arm64) (default "amd64")
+      --bootloader string                     Bootloader type (auto, uefi, bios, dual) (default "auto")
+      --embedded-machine-config-file string   Embedded machine config read from a file, or "-" for stdin
+      --extensions strings                    Extensions to pre-install in the preset
+      --extra-kernel-args stringArray         Extra kernel args to include in the preset
+  -h, --help                                  help for create
+      --initial-labels strings                Initial machine labels in key=value format
+      --join-token string                     Join token ID (uses default token if empty)
+      --overlay string                        SBC overlay name (e.g., rpi_generic, rockpi_4c)
+      --overlay-options string                SBC overlay options (YAML string)
+      --platform string                       Cloud platform (e.g., aws, gcp, azure, vultr)
+      --secureboot                            Enable SecureBoot in the preset
+      --talos-version string                  Talos version for the preset (leave empty to track the server's default at download time)
+      --use-siderolink-grpc-tunnel            Configure Talos to use the SideroLink (WireGuard) gRPC tunnel over HTTP/2 for Omni management traffic, instead of UDP. Only enable this if the network blocks UDP packets, as HTTP tunneling adds significant overhead for communications.
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl media preset](#omnictl-media-preset)	 - Manage installation media presets.
+
+## omnictl media preset delete
+
+Delete an installation media preset.
+
+```
+omnictl media preset delete <name> [flags]
+```
+
+### Options
+
+```
+  -h, --help   help for delete
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl media preset](#omnictl-media-preset)	 - Manage installation media presets.
+
+## omnictl media preset list
+
+List installation media presets.
+
+```
+omnictl media preset list [flags]
+```
+
+### Options
+
+```
+  -h, --help            help for list
+  -o, --output string   Output format. One of: wide
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl media preset](#omnictl-media-preset)	 - Manage installation media presets.
+
+## omnictl media preset
+
+Manage installation media presets.
+
+### Synopsis
+
+Commands to create, list, and delete installation media presets.
+
+### Options
+
+```
+  -h, --help   help for preset
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl media](#omnictl-media)	 - Manage installation media presets.
+* [omnictl media preset create](#omnictl-media-preset-create)	 - Create an installation media preset.
+* [omnictl media preset delete](#omnictl-media-preset-delete)	 - Delete an installation media preset.
+* [omnictl media preset list](#omnictl-media-preset-list)	 - List installation media presets.
+
+## omnictl media
+
+Manage installation media presets.
+
+### Synopsis
+
+Commands to create, list, delete, and download from installation media presets.
+
+### Options
+
+```
+  -h, --help   help for media
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl](#omnictl)	 - A CLI for accessing Omni API.
+* [omnictl media download](#omnictl-media-download)	 - Download installation media from a preset.
+* [omnictl media preset](#omnictl-media-preset)	 - Manage installation media presets.
+
+## omnictl security sbom
+
+Fetch the SPDX bundle of a schematic, or of every schematic in a cluster.
+
+### Synopsis
+
+Fetches the SPDX bundle of a schematic, or of every schematic installed across a
+cluster's machines, including upgrade targets with --upgrade-paths. Always prints a JSON array of
+\{schematicId, arch, version, sbom}, one entry per bundle fetched.
+
+Examples:
+```
+# Fetch the SBOM of a specific schematic build
+omnictl security sbom --schematic \<schematic-id> --talos-version 1.9.0 --arch amd64
+
+# Fetch the SBOM of every schematic a cluster's machines are running, including upgrade targets
+omnictl security sbom --cluster-id my-cluster --upgrade-paths
+```
+
+
+```
+omnictl security sbom [flags]
+```
+
+### Options
+
+```
+      --arch string            Architecture to fetch an artifact for (amd64, arm64).
+      --cluster-id string      Resolve targets from a cluster's installed schematics.
+  -h, --help                   help for sbom
+  -o, --output string          Output format (json, yaml). (default "json")
+      --schematic string       Schematic ID to fetch an artifact for.
+      --talos-version string   Talos version to fetch an artifact for.
+      --upgrade-paths          Also fetch the cluster's upgrade-target versions, not just the current one (requires --cluster-id).
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl security](#omnictl-security)	 - Security artifact subcommands.
+
+## omnictl security scan
+
+Fetch the vulnerability scan report of a schematic, or of every schematic in a cluster.
+
+### Synopsis
+
+Fetches the vulnerability scan report of a schematic, or of every schematic installed
+across a cluster's machines.
+
+By default, prints a table of findings by severity. With -o json or -o yaml, prints a JSON array
+of \{schematicId, arch, version, report, upgradeCandidates}, one entry per target fetched: report
+is the factory's report embedded verbatim, and upgradeCandidates lists \{version, report} for each
+upgrade-target version --upgrade-paths also fetched.
+
+--format selects the report format fetched from the factory (json, sarif, cyclonedx - all of
+which are themselves JSON, so any embeds cleanly under -o json/yaml). There is no "table" format
+value here - that's Grype's own preformatted text table, a separate thing from -o table's severity
+summary, and can't be embedded in -o json/yaml output. The default -o table only works with
+--format json: its severity counts are read from Grype's own JSON schema, which sarif/cyclonedx
+don't share - pass -o json/yaml to fetch a report in another format.
+
+Examples:
+```
+# Scan a specific schematic build
+omnictl security scan --schematic \<schematic-id> --talos-version 1.9.0 --arch amd64
+
+# Scan every schematic a cluster's machines are running, including upgrade targets
+omnictl security scan --cluster-id my-cluster --upgrade-paths
+
+# Print the full reports as JSON instead of the severity table
+omnictl security scan --cluster-id my-cluster -o json
+
+# Print SARIF reports instead of Grype's native JSON
+omnictl security scan --cluster-id my-cluster -o json --format sarif
+```
+
+
+```
+omnictl security scan [flags]
+```
+
+### Options
+
+```
+      --arch string            Architecture to fetch an artifact for (amd64, arm64).
+      --cluster-id string      Resolve targets from a cluster's installed schematics.
+      --format string          Report format to fetch (json, sarif, cyclonedx). (default "json")
+  -h, --help                   help for scan
+  -o, --output string          Output format (table, json, yaml). (default "table")
+      --schematic string       Schematic ID to fetch an artifact for.
+      --talos-version string   Talos version to fetch an artifact for.
+      --upgrade-paths          Also fetch the cluster's upgrade-target versions, not just the current one (requires --cluster-id).
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl security](#omnictl-security)	 - Security artifact subcommands.
+
+## omnictl security vex
+
+Fetch the VEX document of a Talos version, or of every version a cluster runs.
+
+### Synopsis
+
+Fetches the OpenVEX document of a Talos version, or of a cluster's current version and
+(with --upgrade-paths) its upgrade targets. A VEX document covers a Talos version as a whole, not
+a specific schematic, so no --schematic/--arch is needed. Always prints a JSON array of \{version,
+vex}, one entry per version fetched.
+
+Examples:
+```
+# Fetch the VEX document for a specific Talos version
+omnictl security vex --talos-version 1.9.0
+
+# Fetch the VEX documents for a cluster's current and upgrade-target versions
+omnictl security vex --cluster-id my-cluster --upgrade-paths
+```
+
+
+```
+omnictl security vex [flags]
+```
+
+### Options
+
+```
+      --cluster-id string      Resolve versions from a cluster's current and upgrade-target Talos versions.
+  -h, --help                   help for vex
+  -o, --output string          Output format (json, yaml). (default "json")
+      --talos-version string   Talos version to fetch an artifact for.
+      --upgrade-paths          Also fetch the cluster's upgrade-target versions, not just the current one (requires --cluster-id).
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl security](#omnictl-security)	 - Security artifact subcommands.
+
+## omnictl security
+
+Security artifact subcommands.
+
+### Synopsis
+
+Commands to fetch vulnerability scans, SBOMs and VEX documents for a schematic, either
+named explicitly or resolved from a cluster's installed schematics.
+
+### Options
+
+```
+  -h, --help   help for security
+```
+
+### Options inherited from parent commands
+
+```
+      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+```
+
+### SEE ALSO
+
+* [omnictl](#omnictl)	 - A CLI for accessing Omni API.
+* [omnictl security sbom](#omnictl-security-sbom)	 - Fetch the SPDX bundle of a schematic, or of every schematic in a cluster.
+* [omnictl security scan](#omnictl-security-scan)	 - Fetch the vulnerability scan report of a schematic, or of every schematic in a cluster.
+* [omnictl security vex](#omnictl-security-vex)	 - Fetch the VEX document of a Talos version, or of every version a cluster runs.
 
 ## omnictl serviceaccount create
 
@@ -2382,6 +2950,12 @@ Download the support bundle for a cluster
 
 The command collects all non-sensitive information for the cluster from the Omni state.
 
+By default, the generated bundle is encrypted using age encryption to the list of recipients
+set by the members of the 'siderolabs' GitHub organization. The encrypted bundle by default will
+only be decryptable by the Sidero Labs team, but you can also specify additional recipients using the
+--encryption-recipients flag, or disable encryption completely using the --no-encryption flag.
+Default encryption recipients can be removed by setting --encryption-no-default-recipients flag.
+
 ```
 omnictl support [local-path] [flags]
 ```
@@ -2389,10 +2963,13 @@ omnictl support [local-path] [flags]
 ### Options
 
 ```
-  -c, --cluster string   cluster to use
-  -h, --help             help for support
-  -O, --output string    support bundle output (default "support.zip")
-  -v, --verbose          verbose output
+  -c, --cluster string                      cluster to use
+      --encryption-no-default-recipients    do not encrypt to the default recipients, only to the ones provided via --encryption-recipients
+      --encryption-recipients stringArray   additional age recipients (SSH or age public keys) to encrypt the support bundle to (can be specified multiple times)
+  -h, --help                                help for support
+      --no-encryption                       do not encrypt the support bundle (output is written as-is)
+  -O, --output string                       support bundle output (default "support.zip.age", or "support.zip" with --no-encryption)
+  -v, --verbose                             verbose output
 ```
 
 ### Options inherited from parent commands
@@ -2626,13 +3203,15 @@ A CLI for accessing Omni API.
 * [omnictl config](#omnictl-config)	 - Manage the client configuration file (omniconfig)
 * [omnictl configure](#omnictl-configure)	 - Configuration subcommands.
 * [omnictl delete](#omnictl-delete)	 - Delete a specific resource by ID or all resources of the type.
-* [omnictl download](#omnictl-download)	 - Download installer media
 * [omnictl edit](#omnictl-edit)	 - Edit Omni resources with the default editor.
 * [omnictl get](#omnictl-get)	 - Get a specific resource or list of resources.
 * [omnictl infraprovider](#omnictl-infraprovider)	 - Manage infra providers
 * [omnictl jointoken](#omnictl-jointoken)	 - Manage join tokens
 * [omnictl kubeconfig](#omnictl-kubeconfig)	 - Download the admin kubeconfig of a cluster
+* [omnictl machine](#omnictl-machine)	 - Machine related commands.
 * [omnictl machine-logs](#omnictl-machine-logs)	 - Get logs for a machine
+* [omnictl media](#omnictl-media)	 - Manage installation media presets.
+* [omnictl security](#omnictl-security)	 - Security artifact subcommands.
 * [omnictl serviceaccount](#omnictl-serviceaccount)	 - Manage service accounts
 * [omnictl support](#omnictl-support)	 - Download the support bundle for a cluster
 * [omnictl talosconfig](#omnictl-talosconfig)	 - Download an admin talosconfig.

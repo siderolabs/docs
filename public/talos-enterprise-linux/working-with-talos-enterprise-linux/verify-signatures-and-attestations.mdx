@@ -1,0 +1,133 @@
+---
+title: Verify Enterprise Image Factory Signatures and Attestations
+description: How to verify cosign signatures and build attestations for installer images and downloadable assets from Enterprise Image Factory.
+---
+
+Enterprise Image Factory signs installer images built with Talos 1.13.0 and later, and generates a `.sigstore.json` bundle alongside each downloadable file under `/image/`. Before you use an image or a downloaded file, you can verify that signature independently, without relying on the factory to tell you it's legitimate.
+
+This page covers two separate verification workflows. Use whichever applies to your situation, or both:
+
+- **Installer image attestations**: Covers the OCI installer image, specifically what went into the build (SLSA Provenance) and what packages are inside it (SPDX SBOM). For Talos 1.13.0 stable and later.
+- **Non-container asset signatures**: Confirms that a downloaded file (ISO, raw disk image, UKI) hasn't been tampered with since the factory signed it.
+
+## Prerequisites
+
+This guide uses [cosign (v3.0 or later)](https://docs.sigstore.dev/cosign/system_config/installation/) to verify signatures and attestations, and [crane](https://github.com/google/go-containerregistry/blob/main/cmd/crane/README.md) to inspect OCI image manifests. Install both before running any commands on this page.
+
+Commands that read from the registry (`crane`, `cosign verify-attestation`) require authentication. Log in with your Enterprise Image Factory credentials before running them:
+
+```bash
+echo "<token>" | docker login -u <organization-id> --password-stdin factory.siderolabs.com
+```
+
+## Verify installer image attestations
+
+The factory produces two signed statements about every OCI installer image it builds. The SLSA Provenance and the SPDX SBOM.
+
+The SLSA Provenance answers "was this built correctly?" by recording the exact inputs, factory version, and build timestamps.
+
+The SPDX SBOM answers "what's inside?" by listing every package in that specific image, matched to the exact schematic and Talos version. Together, these let you verify the build process and the image contents without trusting the factory serving it.
+
+Verifying both requires three steps: build the immutable image reference, verify the provenance on the index, then verify the SBOM on the platform manifest.
+
+### Build the immutable image reference
+
+Attestations are attached by OCI digest, not by mutable version tag. The same tag can point to a different image after a rebuild, so always resolve the digest first and use that for verification.
+
+Set the schematic ID and Talos version you want to verify:
+
+```bash
+IMAGE=factory.siderolabs.com/metal-installer/<your-schematic-id>
+VERSION=<talos-version> # e.g. v1.14.0
+```
+
+Resolve the index digest from the version tag:
+
+```bash
+crane digest "$IMAGE:$VERSION"
+```
+
+Build the immutable reference using that digest:
+
+```bash
+INDEX_DIGEST=sha256:<index-digest>
+INDEX_REF="$IMAGE@$INDEX_DIGEST"
+```
+
+### Verify SLSA provenance
+
+The SLSA Provenance attestation lives on the multi-platform index. It records the immutable index and platform manifests as subjects, the requested Talos version, schematic, and secure-boot mode, Image Factory version information, and the exact base installer, system extension, and overlay manifest digests consumed by the build.
+
+```bash
+cosign verify-attestation \
+  --certificate-identity image-factory-signing@talos-production.iam.gserviceaccount.com \
+  --certificate-oidc-issuer https://accounts.google.com \
+  --type https://slsa.dev/provenance/v1 \
+  "$INDEX_REF"
+```
+
+### Verify a platform SBOM
+
+The SPDX SBOM attestation lives on the platform manifest, not the index, so you need to find the right platform manifest digest first. The index lists all available platforms and their digests:
+
+```bash
+crane manifest "$INDEX_REF" | \
+  jq -r '.manifests[] | [.platform.os, .platform.architecture, .digest] | @tsv'
+```
+
+Example output:
+
+```text
+linux  amd64  sha256:<amd64-manifest-digest>
+linux  arm64  sha256:<arm64-manifest-digest>
+```
+
+Set the digest for the platform you want to verify:
+
+```bash
+PLATFORM_DIGEST=sha256:<platform-manifest-digest>
+PLATFORM_REF="$IMAGE@$PLATFORM_DIGEST"
+```
+
+Verify the SPDX attestation:
+
+```bash
+cosign verify-attestation \
+  --certificate-identity image-factory-signing@talos-production.iam.gserviceaccount.com \
+  --certificate-oidc-issuer https://accounts.google.com \
+  --type https://spdx.dev/Document/v2.3 \
+  "$PLATFORM_REF" 
+```
+
+## Verify non-container assets
+
+For files you download directly (ISOs, raw disk images, UKI files), the factory generates a `.sigstore.json` bundle alongside each one. This bundle is a detached signature on the exact bytes of that file. Verifying it confirms the file has not been modified since the factory signed it.
+
+Note that this is a different check from verifying attestations. The `.sigstore.json` does not carry provenance or an SBOM. It only answers whether the file is intact. If you also need the SBOM for a downloaded file, that is available separately through the factory's SPDX endpoint.
+
+The example below uses `metal-amd64.raw.xz`, but the same pattern applies to any file from the `/image/` route: ISO images, UKI files, and SBOM downloads. Append `.sigstore.json` to the asset URL to get the bundle.
+
+Download the asset and its bundle:
+
+```bash
+curl -LO -H "Authorization: Bearer <token>" https://factory.siderolabs.com/image/<schematic>/<version>/metal-amd64.raw.xz
+curl -LO -H "Authorization: Bearer <token>" https://factory.siderolabs.com/image/<schematic>/<version>/metal-amd64.raw.xz.sigstore.json
+```
+
+Verify:
+
+```bash
+cosign verify-blob \
+  --certificate-identity image-factory-signing@talos-production.iam.gserviceaccount.com \
+  --certificate-oidc-issuer https://accounts.google.com \
+  --bundle metal-amd64.raw.xz.sigstore.json \
+  metal-amd64.raw.xz
+```
+
+## SecureBoot keys
+
+Enterprise Image Factory uses the same SecureBoot signing keys as the public Image Factory at `factory.talos.dev`. This is intentional: a machine that has enrolled those keys in UEFI can pull installer images from either factory, and can upgrade between them, without re-enrolling SecureBoot keys.
+
+The verification chain for SecureBoot artifacts is therefore identical for enterprise and open-source Talos Linux images.
+
+All commands above verify against the Rekor transparency log and require outbound internet access to complete.

@@ -84,19 +84,24 @@ Omni is a Bring Your Own Machine platform. You only need to boot a machine from 
 
 You can download the Talos Omni image using either the CLI or the Omni UI:
 
+<Note>For Omni accounts that include a Talos Enterprise Linux entitlement (Talos 1.13 and later), your images and artifacts are served from Enterprise Image Factory.</Note>
+
 <Tabs>
   <Tab title="CLI">
 
-  Run the following command to download a Talos Omni ISO image:
+  To download a Talos Omni image, you must first create a preset. A preset is a saved configuration for generating installation media. The default preset produces a bare metal amd64 ISO. To customize the architecture, platform, or extensions, see the [CLI reference](/omni/reference/cli#omnictl-media-preset-create).
+
+  <Note>`omnictl media` requires Omni v1.8.0 or later.</Note>
 
   ```bash
-  omnictl download iso
+  omnictl media preset create my-preset
+  omnictl media download my-preset
   ```
 
-  To see additional options such as targeting different machines or adding extensions and customizations, run:
+  Presets persist in Omni after the image is downloaded. When you no longer need the preset, delete it:
 
   ```bash
-  omnictl download iso --help
+  omnictl media preset delete my-preset
   ```
 
   </Tab>
@@ -115,6 +120,8 @@ You can download the Talos Omni image using either the CLI or the Omni UI:
      The **Create New Media** wizard is identical to the [Image Factory](https://factory.talos.dev/) and it is split across multiple pages. Each page presents a different set of configuration options, such as architecture, hardware type, and Talos Linux version, that you can use to customize your Talos Omni image.
 
   4. Select the appropriate boot option for your machine on the Schematic Ready page to download the Talos Omni image.
+
+  <Note>For Omni accounts with a Talos Enterprise Linux entitlement, the Schematic Ready page also shows a **Vulnerability Scan** section with the CVE count after VEX suppression, and a link to download the full report.</Note>
 
   </Tab>
 </Tabs>
@@ -256,11 +263,11 @@ Once your cluster is created, you can confirm that your nodes are registered in 
 kubectl get nodes
 ```
 
-<Note>
 The first time you run `kubectl`, a browser window will open prompting you to sign in with your identity provider (Google or GitHub).
 
-If you see the error `error: unknown command "oidc-login"`, ensure you’ve installed the kubectl-oidc-login plugin as described in the [prerequisites section](#install-cli-tools).
-</Note>
+If you see the error `error: unknown command "oidc-login"`, ensure you’ve installed the kubectl-oidc-login plugin as described in the [prerequisites section](#prerequisites).
+
+<Note>If your Omni account includes a Talos Enterprise Linux entitlement, you can access vulnerability reports for your cluster. See [Use Talos Enterprise Linux with Omni](../../talos-enterprise-linux/working-with-talos-enterprise-linux/use-talos-enterprise-linux-with-omni).</Note>
 
 ## Step 7: Deploy your first workload
 

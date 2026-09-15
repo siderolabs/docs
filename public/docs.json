@@ -2890,6 +2890,36 @@
         ]
       },
       {
+        "tab": "Talos Enterprise Linux",
+        "icon": "/images/talos.svg",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "talos-enterprise-linux/overview/introducing-talos-enterprise-linux",
+              "talos-enterprise-linux/overview/getting-started-with-talos-enterprise-linux"
+            ]
+          },
+          {
+            "group": "Working with Talos Enterprise Linux",
+            "pages": [
+              "talos-enterprise-linux/working-with-talos-enterprise-linux/manage-credentials",
+              "talos-enterprise-linux/working-with-talos-enterprise-linux/download-images-and-artifacts",
+              "talos-enterprise-linux/working-with-talos-enterprise-linux/scan-tel-with-sbom-and-vex",
+              "talos-enterprise-linux/working-with-talos-enterprise-linux/verify-signatures-and-attestations",
+              "talos-enterprise-linux/working-with-talos-enterprise-linux/use-talos-enterprise-linux-with-omni",
+              "talos-enterprise-linux/working-with-talos-enterprise-linux/migrate-clusters"
+            ]
+          },
+          {
+            "group": "Learn More",
+            "pages": [
+              "talos-enterprise-linux/learn-more/api-tokens"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Omni",
         "icon": "/images/omni.svg",
         "groups": [
