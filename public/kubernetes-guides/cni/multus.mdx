@@ -201,10 +201,15 @@ That can be done by updating Talos Linux machine configuration:
            "subnet": "192.168.100.0/24",
            "rangeStart": "192.168.100.10",
            "rangeEnd": "192.168.100.50",
-           "gateway": "192.168.100.1"
+           "gateway": "192.168.100.1",
+           "dataDir": "/run/cni"
          }
        }'
    ```
+
+   `dataDir` keeps the IPAM store on tmpfs. Without it, `host-local` writes one file per allocated address under `/var/lib/cni/networks/<network-name>`, which is on `/var` and survives a reboot. Because a reboot may not deliver a CNI `DEL` for the pods that were running, addresses can stay allocated after those pods are gone, and the usable range shrinks over time. `/run` is a tmpfs on Talos, so the store starts empty on every boot, and Multus chroots delegate plugins into the host root, so `/run/cni` resolves on the node and not inside the Multus pod. See the [`host-local` plugin documentation](https://www.cni.dev/plugins/current/ipam/host-local/) for `dataDir`.
+
+   `host-local` keeps its store on the node it runs on, so it can only guarantee uniqueness within one node. Several nodes sharing this one `NetworkAttachmentDefinition` allocate from the same range independently and can hand the same address to two pods on the same bridge. Give each node a non-overlapping `rangeStart`/`rangeEnd`, or use a cluster-wide IPAM plugin such as [whereabouts](https://github.com/k8snetworkplumbingwg/whereabouts).
 
 3. Attach the `NetworkAttachmentDefinition` to a pod or deployment. Reference it by name in the pod's annotations:
 
