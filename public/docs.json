@@ -68,11 +68,11 @@
   "redirects": [
     {
       "source": "/talos/latest",
-      "destination": "/talos/v1.13"
+      "destination": "/talos/v1.14"
     },
     {
       "source": "/talos/latest/:slug*",
-      "destination": "/talos/v1.13/:slug*"
+      "destination": "/talos/v1.14/:slug*"
     },
     {
       "source": "/omni/cluster-management/expose-an-http-service-from-a-cluster",
