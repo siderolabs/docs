@@ -4,6 +4,17 @@ description: "Product updates and announcements"
 rss: true
 ---
 
+<Update label="v1.14.1" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.14.1)
+
+  ### Component Updates
+
+  Linux: 6.18.51
+  containerd: 2.3.5
+
+  Talos is built with Go 1.26.8.
+</Update>
+
 <Update label="v1.12.0" tags={["Omni"]}>
   [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.12.0)
 
@@ -87,13 +98,27 @@ rss: true
 <Update label="v1.11.0" tags={["Omni"]}>
   [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.11.0)
 
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  The backend API version is bumped, so `omnictl` and Omni must be upgraded together. `omnictl` 1.10 fails against Omni 1.11 (and vice versa) with:
+
+  ```
+  client API version mismatch: backend API version 3, client API version 2
+  ```
+
+  In CI and other automation, download `omnictl` from Omni itself to always get a matching version, e.g., `https://<omni-url>/api/omnictl/omnictl-linux-amd64`.
+
   ### Frontend Quality-of-Life Improvements
 
   Align the UI features on the Cluster scale and Cluster create pages. Support searching by labels on Cluster scaling/create pages.
 
-  ### Install Disk Configs
+  ### Install Disk Selection
 
-  Config Patches can no longer be used for setting Talos install disk. Starting from Talos 1.14 installation flow was changed a lot so setting the install disk in the configs will no longer work. Install disk is now defined in a separate resource and works differently for the older Talos versions.
+  The install disk is no more set by a config patch. It is now managed by the `MachineInstallDiskConfig` resource, for all Talos versions.
+
+  - Existing install disk patches from the UI and cluster templates are migrated automatically.
+  - Config patches setting `machine.install.disk` are rejected.
+  - Cluster templates support the new `install.diskSelector` field, e.g., `disk.serial == "S3EVNX0K123456"`.
 
   ### Kubernetes Token Signing Keys
 

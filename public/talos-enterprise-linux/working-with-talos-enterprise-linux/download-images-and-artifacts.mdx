@@ -60,7 +60,7 @@ Common asset paths include:
 | Asset | Path pattern | Example |
 |---|---|---|
 | ISO | `<platform>-<arch>[-secureboot].iso` | `metal-amd64.iso` |
-| Disk image (raw) | `metal-<arch>[-secureboot].raw.zst` | `metal-amd64.raw.zst` |
+| Disk image (raw) | `metal-<arch>[-secureboot].raw.xz` | `metal-amd64.raw.xz` |
 | Disk image (qcow2) | `metal-<arch>.qcow2` | `metal-amd64.qcow2` |
 | UKI (UEFI, SecureBoot-compatible) | `<platform>-<arch>[-secureboot]-uki.efi` | `metal-amd64-uki.efi` |
 | Kernel | `kernel-<arch>` | `kernel-amd64` |
@@ -70,7 +70,7 @@ Common asset paths include:
 For example, to download the Talos v1.14.0 disk image with the schematic `551f50cf6a99fd16651f975cf5464d2e7c4cc4a9719c0c4c12b47a13fa61898d`, run the following command, replacing the `<token>` placeholder with your token:
 
 ```bash
-curl -L -H "Authorization: Bearer <token>" -o metal-amd64.raw.zst https://factory.siderolabs.com/image/551f50cf6a99fd16651f975cf5464d2e7c4cc4a9719c0c4c12b47a13fa61898d/v1.14.0/metal-amd64.raw.zst
+curl -L -H "Authorization: Bearer <token>" -o metal-amd64.raw.xz https://factory.siderolabs.com/image/551f50cf6a99fd16651f975cf5464d2e7c4cc4a9719c0c4c12b47a13fa61898d/v1.14.0/metal-amd64.raw.xz
 ```
 
 ### Download the SBOM, VEX data, and scan reports
@@ -101,10 +101,10 @@ Scan reports are available in several formats, replace the report suffix as need
 
 Appending `.sha256` or `.sha512` to any boot asset path returns a checksum file instead of the asset:
 
-For example to download the checksum file of the asset path `metal-amd64.raw.zst`:
+For example to download the checksum file of the asset path `metal-amd64.raw.xz`:
 
 ```bash
-curl -L -H "Authorization: Bearer <token>" https://factory.siderolabs.com/image/<schematic>/<version>/metal-amd64.raw.zst.sha256
+curl -L -H "Authorization: Bearer <token>" https://factory.siderolabs.com/image/<schematic>/<version>/metal-amd64.raw.xz.sha256
 ```
 
 ## See also
