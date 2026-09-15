@@ -1,0 +1,76 @@
+---
+title: Quickstart
+description: "A short guide on setting up a simple Talos Linux cluster locally with Docker."
+canonical: https://docs.siderolabs.com/talos/v1.14/getting-started/quickstart
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+import { release_v1_14, k8s_release } from '/snippets/custom-variables.mdx';
+
+This guide walks you through spinning up a local Talos Linux cluster using Docker and `talosctl` in a few minutes.
+
+<iframe width="560"
+    height="315"
+    src="https://www.youtube.com/embed/IO2Yo3N46nk?si=Ry7mru1X7-oSzEx0"
+    title="YouTube video player" frameborder="0" allow="accelerometer;
+    autoplay; clipboard-write;
+    encrypted-media; gyroscope;
+    picture-in-picture;
+    web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen
+    > </iframe>
+
+## Prerequisites
+
+Before you begin, make sure you have the following tools installed:
+
+- `talosctl`: On macOS or Linux, install `talosctl` by running the command below. For other systems, see the [talosctl documentation](./talosctl):
+
+    ```bash    
+    brew tap siderolabs/tap
+    brew trust siderolabs/tap
+    brew install siderolabs/tap/talosctl
+    ```
+
+- `kubectl`: Refer to the [Install kubectl documentation](https://kubernetes.io/docs/tasks/tools/install-kubectl/) for installation instructions.
+
+## Create the cluster
+
+With your prerequisites in place, run the following command to create a cluster on Docker:
+
+```bash
+talosctl cluster create docker
+```
+
+<Note>
+If you are using Docker Desktop on macOS and encounter the error: *Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?*, you may need to manually create the Docker socket symlink:`sudo ln -s "$HOME/.docker/run/docker.sock" /var/run/docker.sock`
+
+</Note>
+
+Once the cluster is up, verify that you can reach Kubernetes by running:
+
+```bash
+kubectl get nodes -o wide
+```
+
+You should see output similar to the following:
+
+<CodeBlock lang="sh">
+{` NAME            STATUS   ROLES           AGE     VERSION             INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                    KERNEL-VERSION   CONTAINER-RUNTIME\ntalos-cfx-nh0   Ready    <none>          2m53s   v${k8s_release}     10.5.13.47    <none>        Talos ${release_v1_14}      <host kernel>    containerd://2.1.6\ntalos-vb5-xfr   Ready    control-plane   2m51s   v${k8s_release}     10.5.13.46    <none>        Talos ${release_v1_14}      <host kernel>    containerd://2.1.6 `}
+</CodeBlock>
+
+From here, you can explore the Talos API using `talosctl`:
+
+```bash
+talosctl --help
+```
+
+## Destroy the cluster
+
+When you are done, run the following command to tear down the cluster and clean up all associated resources:
+
+```bash
+talosctl cluster destroy
+```

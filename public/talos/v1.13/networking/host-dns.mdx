@@ -1,6 +1,7 @@
 ---
 title: "Host DNS"
 description: "How to configure Talos host DNS caching server."
+canonical: https://docs.siderolabs.com/talos/v1.14/networking/host-dns
 ---
 
 import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
@@ -24,6 +25,9 @@ machine:
 ```
 
 Host DNS can be disabled by setting `enabled: false` as well.
+
+> Note: When disabling host DNS, `forwardKubeDNSToHost` must also be set to `false`.
+> Setting `forwardKubeDNSToHost: true` while `hostDNS.enabled` is `false` will result in a configuration validation error.
 
 ## Operations
 

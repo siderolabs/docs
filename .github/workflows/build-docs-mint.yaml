@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "mintlify/**"
+      - "tools/mintlify/**"
       - ".github/workflows/build-docs-mint.yaml"
 
 env:
@@ -46,7 +46,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./mintlify
+          context: ./tools/mintlify
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

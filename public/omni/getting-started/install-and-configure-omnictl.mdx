@@ -22,7 +22,9 @@ On macOS and Linux, the easiest way to install `omnictl` is using [Homebrew](htt
 
 This command installs `omnictl` and keeps it up to date. It also installs `talosctl` and the `kubectl oidc-login` plugin.
 
-```
+```bash
+brew tap siderolabs/tap
+brew trust siderolabs/tap
 brew install siderolabs/tap/sidero-tools
 ```
 

@@ -1,4 +1,0 @@
-extends: spelling
-message: "Possible spelling mistake: '%s'"
-level: warning
-vocab: SideroLabs

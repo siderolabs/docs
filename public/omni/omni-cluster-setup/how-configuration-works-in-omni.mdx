@@ -1,0 +1,251 @@
+---
+title: How configuration works in Omni
+description: A conceptual overview of how Omni builds the configuration that runs on each Talos machine, what sources contribute, what you can change and how, and what happens when things silently fail.
+---
+
+When Omni manages a Talos machine, the configuration running on that machine is not written from one place.
+It is assembled from multiple sources, some you control, some Omni controls, and some exist entirely outside of Omni.
+
+Understanding where each piece of configuration comes from is the foundation for reasoning about cluster behavior, debugging unexpected outcomes, and knowing where to go when you need to make a change.
+
+## Six sources of configuration
+
+Every running Talos machine has configuration that was shaped by up to six distinct sources:
+
+1. **Patches**: Scoped YAML overrides authored through the Omni UI or cluster templates.
+2. **ExtensionsConfigurations**: Controls which system extensions, kernel modules, and firmware are baked into the boot image.
+3. **KernelArgs**: Controls the user-editable portion of the kernel command line.
+4. **KubernetesManifestGroups**: The list of Kubernetes manifests applied to the cluster, defined in a cluster template.
+5. **Platform or cloud-init injection**: Configuration written onto the machine by the platform before Talos starts.
+6. **Talos defaults**: Built-in behaviors that take effect when nothing else has been configured.
+
+The first four are inside Omni's authoring surface. The last two exist outside it, but they still affect what runs on the machine.
+
+### Patches
+
+[Patches](../reference/cluster-templates#patches) are the primary mechanism for customizing what runs on a machine. They are scoped YAML overrides that Omni merges into the final Talos machine configuration.
+
+Patches cover the bulk of what you would want to configure: networking, kubelet settings, registry mirrors, sysctls, time sync, KubeSpan, API server extra args, and more.
+
+You can author patches in two ways:
+
+- **Configuration Patches**: Created individually through the Omni UI or `omnictl`. This is the imperative path, suited for one-off changes.
+- **Cluster Templates**: A declarative multi-document YAML file that describes the entire desired state of a cluster, including patches at any scope, synced via `omnictl cluster template sync`. This is the path for GitOps workflows. See [Cluster Templates](../reference/cluster-templates) for more information.
+
+Both produce the same underlying `ConfigPatch` resource, go through the same controller, and are merged the same way. The choice between them is a workflow decision, not a mechanism decision.
+
+### ExtensionsConfigurations
+
+`ExtensionsConfigurations` is the resource you use to control which system extensions, kernel modules, and firmware are baked into a machine's boot image. It can be set at cluster, machine set, or machine level, through the Omni UI or via a cluster template. Omni resolves whichever `ExtensionsConfigurations` applies to a given machine into a per-machine `MachineExtensions` resource, which reflects the final result rather than something you edit directly.
+
+Changing extensions produces a new image. The machine performs a standard upgrade cycle to switch to the new image.
+
+### KernelArgs
+
+`KernelArgs` is a dedicated Omni resource for the user-editable portion of the kernel command line, for example, static IP configuration at boot time. Like extensions, kernel args have their own resource and are not set through patches.
+
+Omni manages the kernel arugments for SideroLink connectivity. That portion is set automatically for any installation media created by Omni and is not user-editable.
+
+### KubernetesManifestGroups
+
+`KubernetesManifestGroups` is the list of Kubernetes manifests being applied to the cluster. Unlike machine configuration, which is defined per machine, `KubernetesManifestGroups` is defined for the whole cluster only.
+
+Manifests are defined under `kubernetes.manifests` in a cluster template. Each manifest entry has a sync mode, `one-time` applies it once after bootstrap, `full` continuously reconciles it.
+
+### Platform or cloud-init injection
+
+On cloud and virtualized platforms, the provider writes configuration onto the machine before Talos has fully started, hostnames, network settings, metadata, through the `talos.config` kernel argument or cloud-init user-data. Talos does not merge configuration from multiple sources at once: a machine runs on either the full configuration injected via `apply-config`, or the configuration loaded from `talos.config`/cloud-init, not a combination of both. Omni does not currently act on this layer, so changes made here exist outside Omni's authoring surface.
+
+### Talos defaults
+
+Talos has built-in default behaviors that take effect when you have not explicitly configured something. DHCP assigning a hostname, default DNS resolution, default routing. Some of these can be overridden with a patch. Some cannot be turned off at all. None of them appear in any patch you have written, they are simply the baseline Talos starts from.
+
+<Note>
+When managing Talos Linux without Omni, `talosctl apply-config` and `talosctl edit machineconfig` are the primary authoring tools, they write directly to the node. In Omni-managed clusters, direct writes via `talosctl` are **blocked at the API layer**. Omni does not allow them to reach the machine. All configuration changes must go through Omni, using patches, `ExtensionsConfigurations`, or `KernelArgs` as appropriate.
+</Note>
+
+## Scope and precedence of how these configuration sources effect changes
+
+Patches and `ExtensionsConfigurations` can each be set at more than one level for the same machine. When that happens, scope determines which setting wins. The other configuration sources don't use scope or weight in this way: `KernelArgs` and `KubernetesManifestGroups` are each authored at a single level, and platform injection and Talos defaults sit outside Omni's authoring surface entirely.
+
+### Scope and precedence of patches
+
+Every patch targets exactly one scope. The scope determines which machines the patch applies to, and how long the patch persists.
+
+- **Machine**: Applies to one specific machine, independent of cluster membership. Created from the **Machines** UI page by selecting **Target: Machine**, or manually via a `ConfigPatch` resource labeled only with `omni.sidero.dev/machine: <uuid>`. A Machine patch persists until the machine is removed from Omni entirely, and is not applied while the machine is in maintenance mode.
+- **Cluster**: Applies to every machine in the cluster. Created from the cluster's **Config Patches** UI page by selecting **Cluster** as the Patch Target. Use for settings that should be uniform everywhere: registry mirrors, cluster DNS, KubeSpan.
+- **MachineSet**: Applies to every machine in a specific machine set, such as Control Planes or a named Workers group. Created from the cluster's Config Patches page by selecting the relevant machine set as the Patch Target. Use for role-specific configuration.
+- **ClusterMachine**: Applies to one specific machine within a cluster. Created from the cluster's Config Patches page by selecting an individual Node, or by defining a `patches` field in the `kind: Machine` block in a cluster template. A Cluster Machine patch is deleted when the cluster is deleted.
+
+A given machine can be affected by multiple scopes at once. When patches at different scopes set the same field, precedence determines which one wins.
+
+The most common scoping mistake is writing a cluster scoped patch for something that is logically per-machine. Hostname is the canonical example: the schema accepts it at cluster scope, but setting it there applies the same hostname to every machine in the cluster.
+
+#### Precedence: scope first
+
+When multiple patches set the same field, the more specific scope always wins. The priority order, from lowest to highest, is: Machine -> Cluster -> MachineSet -> ClusterMachine.
+
+Merging proceeds from lowest priority to highest:
+
+1. Machine scoped patches are applied first.
+2. Cluster scoped patches are applied next.
+3. MachineSet scoped patches are applied next.
+4. ClusterMachine scoped patches are applied last, and win on any conflicts.
+
+**Example.** A MachineSet patch sets `kubelet.maxPods = 200` across all workers. A ClusterMachine scoped patch on one specific worker sets `kubelet.maxPods = 100`. That worker ends up with `maxPods = 100`. The ClusterMachine scoped patch wins because it is highest in the priority order, regardless of what was set at MachineSet scope.
+
+#### Precedence: weight within a scope
+
+When two patches at the **same scope** set the same field, weight determines which one wins. Weight is a numeric value visible as a prefix in the patch ID — the `500-` in `500-2bf57a3a-cde5-45b7-8586-57ebd8235950`. The default weight is `500`.
+
+A higher weight means that patch is applied later and wins on conflicts within its scope.
+
+**Example, continued.** Suppose a second MachineSet patch also sets `kubelet.maxPods = 300`, with weight `700`. Both patches are at MachineSet scope. Weight `700` is higher, so `maxPods = 300` wins at the MachineSet level. But the ClusterMachine scoped patch still wins overall, because scope precedence is always resolved before weight. The final value for that specific worker is still `100`.
+
+The rule: **scope first, then weight within scope**. Weight never crosses scopes.
+
+Weight is controlled differently depending on how you author patches. In the UI, there is a dedicated **Weight field** in the patch editor. The default is `500` and valid values range from `100` to `900`. The patch ID is then generated automatically as `<weight>-<uuid>`.
+
+In cluster templates, weight is determined by the order of patches in the YAML array, starting at `400` and incrementing by one for each subsequent patch.
+
+### Scope and precedence of ExtensionsConfigurations
+
+An `ExtensionsConfigurations` resource is scoped by the labels attached to it. A cluster label alone applies it to the whole cluster. Adding a machine set label narrows it to that machine set. Adding a cluster machine label narrows it to that one machine.
+
+When more than one `ExtensionsConfigurations` resource applies to the same machine, the most specific one wins. This does not merge field by field — the extension list at the most specific level fully replaces the list from any less specific level, rather than combining with it.
+
+### How precedence works across the six configuration sources
+
+The six configuration sources, patches, `ExtensionsConfigurations`, `KernelArgs`, `KubernetesManifestGroups`, platform injection, and Talos Linux defaults, do not all have the same precedence.
+
+Patches have the highest priority and override values from any other source. Platform or cloud-init injection comes next. Its values can be overridden by patches, but they take precedence over Talos defaults. Talos defaults provide the baseline configuration and are applied only when a value has not been defined elsewhere.
+
+`ExtensionsConfigurations`, `KernelArgs`, and `KubernetesManifestGroups` operate outside this precedence hierarchy. They control different aspects of the system and do not overlap with patches, platform injection, Talos defaults, or with each other.
+
+## How configuration changes across Talos Linux versions
+
+The Talos machine configuration schema evolves over time. Fields may move to new configuration documents between releases.
+
+Talos maintains backward compatibility for patches across `1.x` releases, so patches that worked before an upgrade will continue to apply afterward. Talos default behavior for a cluster stays pinned to the Talos version it was created with, and Omni generates base machine configuration against that version going forward. This default behavior doesn't shift on its own — newer behavior introduced in later Talos versions isn't adopted until the cluster is upgraded.
+
+The hostname field provides a useful example of how field migrations are handled:
+
+- In older Talos releases, the hostname was configured using `machine.network.hostname`.
+
+- Starting in Talos 1.12, hostname configuration moved to a dedicated `HostnameConfig` document.
+
+When upgrading an existing cluster, the original field path continues to work because Talos preserves backward compatibility. However, when creating a new cluster on Talos 1.12 or later, a default `HostnameConfig` document is already present. In that case, patches that reference the old field path must be updated to use the new configuration format.
+
+Reviewing the [changelog](../../changelog) before an upgrade will surface any fields that have moved and any default behavior changes you'd be adopting.
+
+## What Omni controls vs. what you control
+
+Not every field in the Talos machine configuration is available to you. Omni partitions the configuration into three categories based on who authors what.
+
+### Reserved by Omni
+
+These fields are managed by Omni and cannot be set by a user patch. Patch attempts against them are either rejected with a `MergeDenied` error or silently stripped during reconciliation.
+
+Reserved fields include:
+
+- Cluster identity: `cluster.id`, `cluster.clusterName`
+- Cluster secrets and tokens: `cluster.secret`, `cluster.token`, bootstrap tokens
+- Cluster-level CAs and signing certs: `cluster.ca`, `cluster.aggregatorCA`, `cluster.serviceAccount`
+- Per-machine identity: `machine.ca`, `machine.token`
+- Specific derived fields like `cluster.controllerManager.extraArgs.service-account-key-file`
+
+For the authoritative list, see [Talos Config Overrides](../cluster-management/talos-config-overrides).
+
+### Managed through dedicated Omni resources
+
+Some fields are part of the Talos machine config schema, but Omni expects you to manage them through their Omni resources rather than through patches. A patch targeting these fields will not be rejected outright, but the behavior will not be what you expect.
+
+| Field | Use instead |
+|---|---|
+| `machine.install.extensions` | `ExtensionsConfigurations` resource or Cluster Templates (recommended) |
+| `machine.install.extraKernelArgs` (user-editable portion) | `KernelArgs` resource |
+
+### Configured through patches
+
+Everything else, the bulk of `machine.*` and `cluster.*` outside the reserved and dedicated-resource fields, is configured through patches. This includes:
+
+<Note>Note that some fields, particularly under `machine.network.*`, have moved to separate multi-doc configuration documents in newer Talos versions.</Note>
+
+| Field area | Notes |
+|---|---|
+| `machine.network.*` | Schema is mid-migration across Talos versions. See [How configuration changes across Talos versions](#how-configuration-changes-across-talos-versions). |
+| `machine.kubelet.*` | Kubelet flags and config. |
+| `machine.sysctls`, `machine.kernelModules` | Kernel tuning. |
+| `machine.time.*` | NTP servers. See [Override NTP Servers](../cluster-management/override-ntp-servers). |
+| `machine.registries.*` | Registry mirrors and pull credentials. |
+| `cluster.discovery.*`, `cluster.kubespan.*` | Cluster networking and discovery. |
+| `cluster.apiServer.extraArgs.*` | Some keys (e.g., `audit-log-*`) are accepted by the patch validator but silently dropped by Talos. |
+| `cluster.controllerManager.extraArgs.*` | Except `service-account-key-file`, which is reserved. |
+| `cluster.scheduler.extraArgs.*`, `cluster.proxy.*` | Standard cluster-level config. |
+| `cluster.inlineManifests.*` | Manifest sync. |
+
+## Reference: where to make changes
+
+Use this table to find where to make a specific change without having to work through the full model.
+
+### Cluster-wide settings
+
+Applies to every machine in the cluster.
+
+| If you want to... | Where | Notes |
+|---|---|---|
+| Set NTP servers | Configuration Patches or Cluster Templates | — |
+| Set cluster DNS | Configuration Patches or Cluster Templates | — |
+| Add a registry mirror | Configuration Patches or Cluster Templates | — |
+| Configure KubeSpan | Configuration Patches or Cluster Templates | — |
+| Sync a Kubernetes manifest | Cluster Templates | Backed by the `KubernetesManifestGroup` resource. Not available as a configuration patch; manifests can currently only be viewed in the UI, not set there. See [Sync Kubernetes Manifests](../cluster-management/sync-kubernetes-manifests). |
+| Add a custom CA certificate | Configuration Patches or Cluster Templates | Use a `TrustedRootsConfig` document in the patch. This appends to the system trusted certificate store and is distinct from the cluster CA which is reserved by Omni. |
+
+### Role-specific settings
+
+Applies to a machine set, for example, all control-plane nodes or all GPU workers.
+
+| If you want to... | Where | Notes |
+|---|---|---|
+| Set sysctls or kernel modules per role | Configuration Patches or Cluster Templates | Use cluster scope if uniform across all roles; machine set scope if role-specific. |
+| Add a system extension to a specific role | `ExtensionsConfigurations` resource | Not a patch. Changing extensions re-images the machine. |
+
+### Per-machine settings
+
+Applies to one specific machine.
+
+| If you want to... | Where | Notes |
+|---|---|---|
+| Set a static IP | `KernelArgs` resource, embedded machine config, or platform user-data | A machine needs network connectivity to reach Omni before it can receive a patch, so static IP configuration is set ahead of that connection rather than through one. |
+| Set the hostname | Configuration Patches or Cluster Templates | Use `HostnameConfig` syntax on Talos 1.12+. |
+| Set a kernel argument | `KernelArgs` resource | Not a patch. |
+
+### Managed automatically by Omni, not user-editable
+
+These fields are owned entirely by Omni. Attempting to change them through a patch will either return an error or have no effect.
+
+| If you want to... | Where | Notes |
+|---|---|---|
+| Change a hidden SideroLink kernel argument | — | Set automatically by Omni. Not user-editable. |
+| Change the cluster name or cluster ID | — | Reserved by Omni. Cannot be changed after cluster creation. |
+
+### Patches that silently won't do what you expect
+
+These patches are accepted without error but do not produce the expected result. If your patch appears to apply but nothing changes on the machine, check whether the field falls into one of these cases.
+
+| If you want to... | What happens | Notes |
+|---|---|---|
+| Set `audit-log-*` keys under `apiServer.extraArgs` | Accepted by the patch validator; silently dropped by Talos | The patch goes through cleanly but does nothing. |
+| Set `controllerManager.extraArgs.service-account-key-file` | Patch returns `MergeDenied` | Reserved by Omni. |
+| Apply config directly via `talosctl` | Blocked at the Omni API layer | In Omni-managed clusters, use Configuration Patches or Cluster Templates instead. |
+
+## Troubleshooting
+
+Each failure mode in Omni configuration has a distinct shape. Use the symptoms to identify which layer is in play.
+
+| Symptom | Likely cause | Where to look |
+|---|---|---|
+| Patch applied, value missing from merged config | Field is reserved by Omni, or patch is not scoped to this machine | [Talos Config Overrides](../cluster-management/talos-config-overrides); check patch scope |
+| Patch applied, value in merged config, machine ignores it | Field is silently dropped by Talos (e.g. `audit-log-*` under `apiServer.extraArgs`), or a Talos default is overriding it | Check Talos docs for whether the specific key is supported |
+| Machine has a value you never set | Platform or cloud-init injection (only before the machine is allocated to a cluster), or a Talos default (e.g. DHCP-assigned hostname) | Not visible in any patch list, exists outside Omni's authoring surface |
+| Patch exists but not affecting the expected machine | Wrong scope, or outweighed by a higher-weight patch at the same scope | Check scope at the cluster level, not the machine level; check weight prefix in the patch ID |

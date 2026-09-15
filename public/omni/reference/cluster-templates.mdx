@@ -130,10 +130,13 @@ kernelArgs:
 | `labels`                                | map[string]string        | Labels to be applied to the cluster.                                                                                                                                                                                        |
 | `annotations`                           | map[string]string        | Annotations to be applied to the cluster.                                                                                                                                                                                   |
 | `kubernetes.version`                    | string                   | Kubernetes version to use, `vA.B.C`.                                                                                                                                                                                        |
+| `kubernetes.manifests`                  | array[Manifest]          | List of Kubernetes manifests to deploy and sync to the cluster. Each entry is applied independently. See [Sync Kubernetes Manifests](../cluster-management/sync-kubernetes-manifests).                                                                                         |
+| `kubernetes.healthchecks`               | array[Healthcheck]       | List of advanced healthchecks that gate Talos Linux upgrades. See [Gate Talos Upgrades with Healthchecks](../cluster-management/gate-talos-upgrades-with-healthchecks).                                                                                                      |
 | `talos.version`                         | string                   | Talos version to use, `vA.B.C`.                                                                                                                                                                                             |
 | `features.enableWorkloadProxy`          | boolean                  | Whether to enable the workload proxy feature.<br/>Defaults to `false`.                                                                                                                                                      |
 | `features.useEmbeddedDiscoveryService`  | boolean                  | Whether to use the embedded discovery service that runs inside the Omni instance instead of the public one (`discovery.talos.dev`).<br/>Defaults to `false`. It is only valid if the Omni instance has the feature enabled. |
 | `features.diskEncryption`               | boolean                  | Whether to enable disk encryption.<br/>Defaults to `false`.                                                                                                                                                                 |
+| `features.enableNodeAuditSkip`          | boolean                  | Whether to honor the `omni.sidero.dev/node-audit-skip` annotation on Kubernetes nodes, exempting them from the node audit.<br/>Defaults to `false`.                                                                          |
 | `features.backupConfiguration.interval` | string                   | Cluster etcd backup interval. Must be a valid [Go duration](https://pkg.go.dev/time#ParseDuration). Zero `0` disables automatic backups.                                                                                    |
 | `patches`                               | array[[Patch](#patches)] | List of patches to apply to the cluster.                                                                                                                                                                                    |
 | `systemExtensions`                      | array[string]            | The list of system extensions to be installed on every machine in the cluster.                                                                                                                                              |
@@ -190,6 +193,9 @@ machines:
 updateStrategy:
   rolling:
     maxParallelism: 3
+upgradeStrategy:
+  rolling:
+    maxParallelism: 3
 deleteStrategy:
   type: Rolling
   rolling:
@@ -209,8 +215,9 @@ systemExtensions:
 | `machines`         | array[string]                     | List of machine IDs to use as worker nodes in the machine set (mutually exclusive with `machineClass`).                                                        |
 | `patches`          | array[[Patch](#patches)]          | List of patches to apply to the machine set.                                                                                                                   |
 | `machineClass`     | [MachineClass](#machineclass)     | Machine Class configuration (mutually exclusive with `machines`).                                                                                              |
-| `updateStrategy`   | [UpdateStrategy](#updatestrategy) | Update strategy for the machine set. Defaults to `type: Rolling` with `maxParallelism: 1`.                                                                     |
-| `deleteStrategy`   | [UpdateStrategy](#updatestrategy) | Delete strategy for the machine set. Defaults to `type: Unset`.                                                                                                |
+| `updateStrategy`   | [UpdateStrategy](#updatestrategy) | Controls how configuration changes are rolled out across machines in the set (e.g. patches and labels). Defaults to `type: Rolling` with `maxParallelism: 1`.                                                                     |
+| `upgradeStrategy`  | [UpdateStrategy](#updatestrategy) | Controls how version upgrades, extensions and kernel args changes are rolled out across machines in the set. Defaults to `type: Rolling` with `maxParallelism: 1`.                                                                        |
+| `deleteStrategy`   | [UpdateStrategy](#updatestrategy) | Controls how machines are removed when the machine set is scaled down. Defaults to `type: Unset`.                                                                                                |
 | `systemExtensions` | array[string]                     | The list of system extensions to be installed on every machine in the machine set.                                                                             |
 | `kernelArgs`       | array[string]                     | The list of [kernel args](#kernelArgs) to be set on each machine in this machine set.                                                                          |
 
@@ -237,12 +244,15 @@ The `size` field supports keyword `unlimited|infinity`, which makes the machine 
 
 ### `UpdateStrategy`
 
-The `UpdateStrategy` section of `Workers` defines the update or delete strategy for the machine set.
+The `UpdateStrategy` section of `Workers` defines the update, delete, or upgrade strategy for the machine set.
 
 ```yaml
 kind: Workers
 name: workers
 updateStrategy:
+  rolling:
+    maxParallelism: 3
+upgradeStrategy:
   rolling:
     maxParallelism: 3
 deleteStrategy:
@@ -253,7 +263,7 @@ deleteStrategy:
 
 | Field                    | Type   | Description                                                                                                                                                                                    |
 |:-------------------------|:-------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `type`                   | string | Strategy type. Can be `Rolling` or `Unset`. Defaults to `Rolling` for `updateStrategy` and `Unset` for the `deleteStrategy`.<br/>When `Unset`, all updates and/or deletes are applied at once. |
+| `type`                   | string | Strategy type. Can be `Rolling` or `Unset`. Defaults to `Rolling` for `updateStrategy` and `upgradeStrategy`, and `Unset` for the `deleteStrategy`.<br/>When `Unset`, all updates and/or deletes are applied at once. |
 | `rolling.maxParallelism` | number | Maximum number of machines to update and/or delete in parallel. Only used when the `type` is `Rolling`. Defaults to `1`.                                                                       |
 
 ### `Machine`
@@ -331,6 +341,57 @@ patches:
 | `inline`      | object            | Inline patch containing Talos machine configuration strategic patch.                                                                                                     |
 
 A configuration patch may be either `inline` or `file` based. Inline patches are useful for small changes, while file-based patches are useful for more complex changes or changes shared across multiple clusters.
+
+### `kubernetes.manifests`
+
+The `manifests` field under `kubernetes` in the `Cluster` document lets you define Kubernetes workloads to deploy directly from the cluster template. Omni stores the manifest data and synchronizes it to the cluster once the Kubernetes API is available and the cluster is healthy.
+
+| Field | Type | Description |
+|:------|:-----|:------------|
+| `name` | string | Unique name for this manifest entry. |
+| `mode` | string | Sync mode. `one-time` applies the manifest once after bootstrapping. `full` continuously reconciles the manifest state. |
+| `inline` | array[object] | List of inline Kubernetes resource definitions.|
+| `file` | string | Path to an external YAML file, relative to the working directory when running `omnictl`.|
+
+For full usage details and examples, see [Sync Kubernetes Manifests](../cluster-management/sync-kubernetes-manifests).
+
+### `kubernetes.healthchecks`
+
+The `healthchecks` field under `kubernetes` in the `Cluster` document defines advanced healthchecks that gate Talos Linux upgrades. Each entry is a Kubernetes Job that Omni runs in the workload cluster before upgrading the next node. While any healthcheck is failing or still running, Omni holds the upgrade.
+
+```yaml
+kind: Cluster
+name: example
+kubernetes:
+  version: v1.35.0
+  healthchecks:
+    - name: nodes-ready
+      interval: 30s
+      job: |
+        apiVersion: batch/v1
+        kind: Job
+        spec:
+          backoffLimit: 0
+          template:
+            spec:
+              restartPolicy: Never
+              containers:
+                - name: check
+                  image: bitnami/kubectl
+                  command: ["kubectl", "wait", "--for=condition=Ready", "nodes", "--all", "--timeout=10s"]
+```
+
+| Field | Type | Description |
+|:------|:-----|:------------|
+| `name` | string | Unique name for the healthcheck, used to derive the Job name. Required unless `idOverride` is set. |
+| `idOverride` | string | Overrides the generated resource ID. When set, `name` is not required. You normally won't need this; it's for when you want a stable resource ID independent of name |
+| `job` | string | Inline Kubernetes Job manifest. Mutually exclusive with `file`. |
+| `file` | string | Path to a file containing the Job manifest, relative to the working directory when running `omnictl`. Mutually exclusive with `job`. |
+| `interval` | string | How often Omni re-checks while it is holding an upgrade. Must be a valid [Go duration](https://pkg.go.dev/time#ParseDuration). Defaults to `30s`, minimum `5s`. |
+| `labels` | map[string]string | Labels to apply to the healthcheck resource. |
+| `annotations` | map[string]string | Annotations to apply to the healthcheck resource. |
+
+For full usage details and examples, see [Gate Talos Upgrades with Healthchecks](../cluster-management/gate-talos-upgrades-with-healthchecks).
 
 ### `kernelArgs`
 

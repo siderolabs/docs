@@ -1,5 +1,6 @@
 ---
 title: Use SAML groups information in Kubernetes
+description: "Reuse SAML group membership from Omni to create Kubernetes RBAC impersonation rules with ACLs."
 ---
 
 The procedure below describes how you can reuse SAML group information in Kubernetes for authorization.
@@ -23,9 +24,7 @@ For example:
 --auth-saml-label-rules='{"membership": "groups"}'
 ```
 
-```
---auth-saml-label-rules='{"membership" : "groups" }'
-```
+Alternatively, you can configure these options using a configuration file instead of CLI flags. See [SAML](../../reference/omni-configuration#saml) in the Omni Configuration Examples.
 
 This will extract value from the SAML attribute `memberhip` into the Omni user's identity resource label with the 
 prefix `saml.omni.sidero.dev/groups`
@@ -60,7 +59,7 @@ spec:
         - match: prod-*
   rules:
     - users:
-        - groups/group1
+        - group/group1
       clusters:
         - group/staging
         - group/production

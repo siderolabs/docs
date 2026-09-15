@@ -1,0 +1,64 @@
+---
+title: Terraform and Omni
+description: Understand how the Omni Terraform provider fits into Omni’s reconciliation model.
+---
+
+The [official Omni Terraform provider](https://registry.terraform.io/providers/siderolabs/omni/latest) lets Terraform and OpenTofu manage supported Omni resources through the same API used by omnictl and the Omni UI. This allows a growing set of Omni resources to integrate with existing infrastructure-as-code workflows, rather than managing Omni itself through Terraform.
+
+The provider is in early, alpha-stage development, and understanding Omni's reconciliation model matters for deciding which resources belong in Terraform and which do not.
+
+## Understanding how Omni works
+
+Omni is not a stateless API or a one-time provisioning tool. It is a long-running control plane that continuously reconciles the state of the resources you create — clusters, machines, users, infra providers, machine classes, and more — over time.
+
+Internally, Omni stores its authoritative state in etcd. This state represents both the current and desired configuration of clusters, machines, users, and other managed resources. Omni controllers continuously observe that state and work to bring the system toward the desired configuration. Changes are applied incrementally and reconciled over time rather than executed as isolated operations.
+
+If this sounds familiar, it is because Omni follows many of the same architectural patterns as Kubernetes. Like Kubernetes, Omni exposes a declarative API, stores state internally, and relies on controllers to reconcile that state continuously.
+
+This reconciliation model is fundamental to how Omni operates, regardless of which client or tool is used to communicate with its API.
+
+## Understanding Terraform's model
+
+[Terraform](https://developer.hashicorp.com/terraform) follows a different operational model. It stores its own view of infrastructure in a Terraform state file and uses a plan-and-apply workflow to reconcile infrastructure with the desired configuration defined in code.
+
+This model works well when Terraform is responsible for the lifecycle of the resources it manages. Terraform compares the desired configuration against its state, generates an execution plan, and applies any required changes.
+
+Unlike Omni, Terraform does not continuously reconcile resources after an apply operation completes. Reconciliation occurs only when Terraform is run again. This is the key difference: Terraform sets the user-editable desired state at the moment you run it, while Omni continuously adjusts the actual state in the background to match what you've declared.
+
+## Using the Omni Terraform provider
+
+The provider is in early, alpha-stage development, with its set of supported resources expanding over time. It is best understood as a way to manage a growing set of Omni resources, rather than as a way to manage Omni as a whole.
+
+Within that scope, the provider lets Terraform and OpenTofu communicate directly with the Omni API, the same API used by other Omni clients, instead of relying on external scripts or CLI wrappers. Where a resource is supported, you can manage it as part of an existing Terraform workflow, which is useful when that resource and the infrastructure around it need to be provisioned together.
+
+For the current list of supported resources, refer to the [provider documentation](https://registry.terraform.io/providers/siderolabs/omni/latest/docs) before designing Terraform-based workflows.
+
+## Choose a single source of truth
+
+The Omni Terraform provider gives Terraform and OpenTofu full control over supported user-managed Omni resources. For resources managed by Terraform, Terraform should be treated as the source of truth.
+
+Avoid managing the same resource through multiple interfaces. For example, if a cluster is managed with Terraform, avoid making changes to that cluster through the Omni UI or by applying cluster templates. Likewise, resources managed through the Omni UI or templates should not also be managed by Terraform.
+
+Managing the same resource from multiple places can cause configuration drift. Changes made outside Terraform may be overwritten during the next `terraform apply`, while subsequent Terraform plans may attempt to reconcile differences introduced elsewhere.
+
+Choose a single management workflow for each supported resource and use it consistently. This keeps Terraform state aligned with the actual resource configuration and avoids unexpected changes.
+
+## GitOps and CI/CD workflows
+
+For ongoing cluster and machine lifecycle management, GitOps and CI/CD workflows remain the recommended approach.
+
+In these workflows, desired configuration is stored in version control, reviewed through pull requests, and applied to Omni using automation such as `omnictl cluster template sync`. Omni then assumes responsibility for continuously reconciling the submitted configuration.
+
+This approach keeps Omni as the single source of truth for managed resources while providing the benefits of version control, code review, and automated deployment pipelines.
+
+Traditional GitOps controllers that continuously synchronize resources in both directions may require additional consideration. Depending on the resources being managed, automatically deleting resources or reconciling UI changes back into Git may not always be desirable. Many teams instead adopt an apply-only CI/CD workflow, which provides a simpler operational model while still integrating naturally with existing development practices.
+
+## Terraform for infrastructure provisioning
+
+Terraform continues to be an excellent choice for provisioning the infrastructure that Omni depends on, including cloud networking, virtual machines, load balancers, DNS, storage, and other platform resources.
+
+In many environments, Terraform provisions the infrastructure, after which Omni assumes responsibility for cluster lifecycle and ongoing reconciliation. This separation allows each tool to operate within the area it is designed for.
+
+There are also situations where Terraform-managed infrastructure and Omni-managed resources need to work together. For example, a cluster template submitted to Omni may depend on external infrastructure such as cloud load balancers, networking components, or secret management systems that are provisioned separately.
+
+For the Omni resources it supports, the provider gives these workflows another option: it lets those resources participate directly in Terraform configurations while preserving Omni's reconciliation model, rather than requiring external scripts or CLI wrappers. Today that scope is narrow but as the provider matures and its resource coverage grows, it becomes a more complete path for integrating Omni into infrastructure-as-code practices, without replacing Omni's role as the system responsible for continuous cluster management.

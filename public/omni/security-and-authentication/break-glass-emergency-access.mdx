@@ -13,18 +13,12 @@ Once break glass credentials are used, the cluster is considered **tainted**, cl
 
 Break glass can be enabled in two ways, depending on your Omni deployment type.
 
-### SaaS environments
-
-If you’re using the Omni SaaS platform, **contact [SideroLabs Support](https://www.siderolabs.com/support-and-services/)** to request break glass access.
+- **SaaS environments**: If you’re using the Omni SaaS platform, **contact [SideroLabs Support](https://www.siderolabs.com/support-and-services/)** to request break glass access.
 Support will enable it for your account and guide you through downloading the operator `talosconfig`.
 
-### On-Prem environments
+- **On-Prem environments**: For self-hosted (on-premises) Omni installations, break glass mode must be explicitly enabled by setting a **server flag** when you start Omni. To enable this configuration on Omni you need to pass the `--enable-break-glass-configs` to Omni at run time.
 
-For self-hosted (on-premises) Omni installations, break glass mode must be explicitly enabled by setting a **server flag** when you start Omni.
-
-To enable this configuration on Omni you need to pass the `--enable-break-glass-configs` to Omni at run time.
-
-## Generate an operator talosconfig
+### Generate an operator talosconfig
 
 After enabling break glass (either via support or server flag), use the following command to generate an operator Talos configuration:
 
@@ -32,4 +26,32 @@ After enabling break glass (either via support or server flag), use the followin
 omnictl talosconfig --cluster <cluster-name> --break-glass
 ```
 
-This command produces an operator-level talosconfig that bypasses Omni’s normal authentication flow, granting temporary, direct access to Talos API endpoints on managed nodes.
+## Reverting Break-Glass Access
+
+Once break-glass credentials have been used, the cluster is considered tainted, any operator configs or client certificates generated during break-glass access exist outside Omni's normal control, and Omni cannot reliably revoke or track that access until the [cluster's certificate authorities are rotated](../cluster-management/ca-rotation).
+
+To restore full Omni-managed control, rotate both CAs:
+
+1. Rotate the Talos API CA
+
+```bash
+omnictl cluster -n <cluster-name> secret rotate talos-ca
+```
+
+This invalidates any Talos-level credentials issued during break-glass access. Rotation doesn't interrupt connections within the cluster and doesn't require a node reboot. If you're using the Talos API access from Kubernetes feature, pods may need to be restarted manually to pick up the new `talosconfig`.
+
+2. Rotate the Kubernetes API CA
+
+```bash
+omnictl cluster -n <cluster-name> secret rotate kubernetes-ca
+```
+
+This invalidates any Kubernetes-level credentials issued during break-glass access. At the end of the process, control plane components are restarted automatically to pick up the change, and each node's kubelet rejoins the cluster with a new client certificate. You may need to manually restart some workloads to pick up the new CA.
+
+Both commands wait for the rotation to complete by default (configurable via `--wait-timeout`, or pass `--wait=false` to return immediately). Only one rotation can run at a time.
+
+Check progress with:
+
+```bash
+omnictl cluster -n <cluster-name> secret rotate status
+```

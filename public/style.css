@@ -56,9 +56,27 @@ table {
   padding: 0.5rem 1rem 0.5rem 1.5rem;
 }
 
-/* Large Screen Max Width */
-@media (min-width: 1600px) {
-  .\32xl\:max-w-2xl {
-    max-width: 70%;
+/* Keep field names on one line. Class-less tables are the generated reference
+   ones; Markdown tables get Mintlify classes and shouldn't be caught by this. */
+table:not([class]) td:nth-child(1) code {
+  white-space: nowrap;
+}
+
+/* Mintlify's tables are display:block, which shrink-wraps them to their content
+   and leaves every page a different width. Narrow screens still need the scroll. */
+@media (min-width: 1024px) {
+  table:not([class]) {
+    display: table;
+    width: 100%;
   }
+}
+
+/* Widen the content area so reference tables don't need horizontal scrolling */
+#body-content,
+#content-container {
+  max-width: none;
+}
+
+.prose {
+  max-width: none;
 }

@@ -1,0 +1,4066 @@
+---
+title: "Product Updates"
+description: "Product updates and announcements"
+rss: true
+---
+
+<Update label="v1.12.0" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.12.0)
+
+  ### Image Factory API Token Authentication
+
+  Omni can now authenticate to the image factory with an API token. The token is read from a file, so it can be rotated without a restart. Basic auth is still supported for self-hosted factories using htpasswd.
+
+  For such a factory, Omni creates a machine token and puts it into the registry auth config of every machine, so that the machines can pull images from the factory.
+
+  The token file is configured under `registries.factories.<primary|secondary>` in the config file:
+  ```yaml
+  registries:
+    factories:
+      primary:
+        url: https://factory.example.com
+        tokenFile: /run/secrets/factory-token
+  ```
+
+  The equivalent flags are `--primary-factory-token-file` and `--secondary-factory-token-file`.
+
+  ### Security Scans in omnictl
+
+  The new `omnictl security` command fetches the security artifacts of a Talos schematic from the enterprise image factory:
+
+  - `scan`: the vulnerability scan report.
+  - `sbom`: the SPDX SBOM.
+  - `vex`: the VEX document.
+
+  It takes either a cluster ID, covering every schematic and architecture the cluster runs, or an explicit combination of Talos version, architecture and schematic. The scan output also shows the available Talos upgrade paths and the vulnerability diff for each of them.
+
+  These artifacts are only available on the enterprise image factory, so the command requires Omni to be configured with one.
+</Update>
+
+<Update label="v1.7.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.7.0)
+
+  ### API Tokens
+
+  Download tokens and node tokens are now one self-issued API token with atomic, resource-first capabilities.
+  The catalog is `image:read`, `source:pull`, `schematic:create`, `schematic:read`, `report:read`, `token:issue`, `token:read` and `token:revoke`. One code-defined route map validates every scope and authorizes every request; there are no deployment-defined meanings or compatibility aliases for the unreleased intermediate names.
+
+  Generated image downloads, PXE assets and generated installer OCI pulls share `image:read`. Proxied upstream OCI images use the distinct `source:pull` capability. Schematic creation, schematic reading, report reading, token issuance, token listing and token revocation are independent permissions.
+
+  Executable capabilities and delegation are separate. The JWT `scope` claim controls what the credential may do, while `issuable_scopes` is an explicit ceiling on what it may grant. Child capabilities and child delegation ceilings must both be subsets of the parent's ceiling. Unknown values fail closed, and no wildcard silently acquires future capabilities.
+
+  Each token also carries a `stored` claim. A stored token is recorded per identity, listed, checked on every use and revocable. An ephemeral token is a signed string and nothing else. Either kind may be used from `?token=` on scoped `GET` and `HEAD` operations; token-management credentials are refused in query strings because those are copied into access logs.
+
+  Lifetime follows storage rather than capability. Stored tokens default to one year and remain revocable. Ephemeral tokens default to five minutes and may live up to eight hours. The CLI bootstrap credential has its own `authentication.tokens.ttl.bootstrap` policy.
+
+  `POST /tokens`, `GET /tokens` and `POST /tokens/:id/revoke` are the only token endpoints. The `/node-tokens` and `/download-token` routes are gone; use `{"scopes":["image:read"]}` and add `"stored":false` for a short-lived URL credential.
+
+  Breaking changes:
+
+  * Node and download tokens issued by earlier versions are rejected and must be reissued.
+  * The intermediate `download`, `pull`, `schematic`, `token` and `admin` scope values are rejected.
+  * `POST /tokens` accepts `stored` and `issuable_scopes`; token records report both executable and issuable scopes.
+  * Token TTL configuration is grouped under `authentication.tokens.ttl.stored`, `.ephemeral` and `.bootstrap`.
+  * `pkg/client`'s `TokenCreate` takes a `stored` argument; `DownloadToken` passes `false` and otherwise keeps its behavior.
+  * `authentication.downloadTokenKeyPath`, `authentication.downloadTokenTTL` and `enterprise.nodeTokens` move to `authentication.tokens`; stale keys fail startup.
+  * `authentication.tokens.keyPaths` is ordered: the first private key signs new tokens, while every later key or certificate is verification-only. This supports two-phase key rotation without immediately invalidating existing tokens.
+
+  See the [authentication docs](https://github.com/siderolabs/image-factory/blob/main/docs/authentication.md#api-tokens) for the complete model and upgrade steps.
+
+  ### Bootstrap Credentials
+
+  Cross-subject provisioning uses a CLI-only bootstrap credential rather than an `admin` scope. It carries `token:issue`, `token:read` and `token:revoke` for its own operations, an explicit snapshot of the current public catalog in `issuable_scopes`, and the independent `any_subject` claim.
+
+  No HTTP request can create this credential. The Enterprise-only command is:
+
+  ```
+  image-factory admin-token --config /etc/image-factory/config.yaml --subject org_abc123
+  ```
+
+  The command writes the token to stdout and diagnostics to stderr. `--ttl` uses `authentication.tokens.ttl.bootstrap`, and `authentication.tokens.keyPaths` must contain an active private key so the credential is signed by the key running replicas trust.
+
+  The bootstrap credential is never recorded, so expiry or removal of its signing key from `keyPaths` retires it. It cannot propagate `any_subject`, cannot create a successor bootstrap credential, and cannot be used through `?token=`. Keep it offline and give it the shortest practical lifetime.
+
+  `POST /tokens` normally issues to the caller identity. A bootstrap credential may supply `subject` to provision another identity; listing and revocation remain per-identity.
+</Update>
+
+<Update label="v1.11.0" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.11.0)
+
+  ### Frontend Quality-of-Life Improvements
+
+  Align the UI features on the Cluster scale and Cluster create pages. Support searching by labels on Cluster scaling/create pages.
+
+  ### Install Disk Configs
+
+  Config Patches can no longer be used for setting Talos install disk. Starting from Talos 1.14 installation flow was changed a lot so setting the install disk in the configs will no longer work. Install disk is now defined in a separate resource and works differently for the older Talos versions.
+
+  ### Kubernetes Token Signing Keys
+
+  Admins can now list the keys that sign Kubernetes access tokens and delete them. Deleting one immediately invalidates every kubeconfig and OIDC token it signed, which is what it takes to pull a long-lived service account kubeconfig out of circulation before it expires.
+  See [documentation](https://docs.siderolabs.com/omni/security-and-authentication/revoke-kubernetes-access-tokens) for more details.
+
+  ### Recovery Admin for SAML Lockouts
+
+  `auth.recoveryAdmin` config, or the `--recovery-admin` flag can be used to elevate a user to Admin on every Omni start.
+  It also blocks user demotion through SAML label rules. This is the way back in when a SAML rule strips Admin from everyone. Only existing users can be promoted.
+</Update>
+
+<Update label="v1.12.12" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.12)
+
+  ### Component Updates
+
+  Linux: 6.18.49
+  Containerd: 2.2.7
+  Flannel: 0.28.9
+  Etcd: v3.6.14
+  Kubernetes: v1.35.8
+
+  Talos is built with Go 1.25.14.
+</Update>
+
+<Update label="v1.13.10" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.13.10)
+
+  ### Component Updates
+
+  Linux: 6.18.48
+  CoreDNS: 1.14.7
+
+  Talos is built with Go 1.26.7
+</Update>
+
+<Update label="v1.6.1" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.6.1)
+
+
+</Update>
+
+<Update label="v1.14.0" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.14.0)
+
+  ### DNS over TLS (DoT) and DNS over HTTPS (DoH) Support
+
+  Talos now supports DNS over TLS (DoT) and DNS over HTTPS (DoH) for secure DNS resolution.
+  These features allow Talos to encrypt DNS queries and responses, enhancing privacy and security for DNS traffic.
+  The DNS protocol can be configured on a per-name server basis in the `ResolverConfig` document, allowing for flexible configuration of DNS resolution.
+
+  ### Apply Configuration Modes
+
+  The '--mode=reboot' option has been removed from the `talosctl apply-config` command; by default, configuration is applied without a reboot.
+  Most configuration changes don't require a reboot; the documentation lists the changes that do.
+
+  ### Native BGP
+
+  Talos now supports running native BGP routing instances on the host via embedded GoBGP servers, configured with `BGPInstanceConfig` documents.
+  This removes the need to ship FRR as a system extension for the common fabric-facing use case.
+
+  List of changes:
+
+  - Added repeatable, named `BGPInstanceConfig` documents to configure local ASN, router-id, optional Linux VRF, advertised interfaces, neighbors, and per-route preferred source (`routeSource`).
+  - Peer hold-time and BFD behavior are configured inline on each concrete neighbor, which selects either an address or a link.
+  - Numbered and unnumbered (IPv6 link-local, RFC 8950 extended next-hop) peering are supported, including IPv4 prefixes learned over an IPv6 link-local next-hop.
+  - Neighbor-local ASN overrides and passive sessions are supported. ECMP (multipath) and BFD (fast failure detection) are supported for fabric peering.
+  - BFD is currently supported only by the instance in the default routing domain; GoBGP's embedded BFD listener is not VRF-aware.
+  - Each instance owns an isolated BGP RIB and, by default, installs learned routes into its default or VRF routing table through the existing route controllers. Set `installRoutes: false` to retain learned routes in the BGP RIB without installing them into the Linux routing table.
+  - Instances can selectively import best neighbor-learned routes from other named instances with `importRoutes` prefix selectors. Imports are one-way, preserve path attributes, and do not recursively import locally originated or previously imported paths.
+  - Peer state is observable via instance-qualified `BGPPeerStatus` resources (`talosctl get bgppeerstatus`).
+  - `RouteSpec`/`RouteStatus` now carry a multipath next-hop list to support ECMP and cross-family (RFC 8950) next-hops.
+
+  ### Btrfs Support
+
+  Talos now supports mounting and provisioning `btrfs` filesystem for user volumes and existing volumes.
+
+  Support for `btrfs` is enabled by installing `btrfs` system extension.
+
+  ### Unified --namespace Flag
+
+  `talosctl containers`, `logs`, `stats` and `restart` now select the containerd namespace through the same `--namespace` flag and vocabulary already used by `talosctl image` and `talosctl debug`: `system` (the default), `cri` for Kubernetes workloads, and `taloscontainers` for containers declared via a `ContainerConfig` document.
+
+  The `--kubernetes`/`-k` flag is deprecated in favor of `--namespace cri`.
+
+  `talosctl image list` also supports `--namespace taloscontainers`, to inspect images pulled for `ContainerConfig` containers. `talosctl debug` does not support the `taloscontainers` namespace.
+
+  ### CRI Base Runtime Specification Configuration
+
+  Talos now supports overriding the default OCI runtime specification for CRI containers with a
+  `CRIBaseRuntimeSpecConfig` document:
+
+  ```yaml
+  apiVersion: v1alpha1
+  kind: CRIBaseRuntimeSpecConfig
+  overrides:
+    process:
+      rlimits:
+        - type: RLIMIT_NOFILE
+          hard: 1024
+          soft: 1024
+  ```
+
+  The `.machine.baseRuntimeSpecOverrides` field is deprecated and remains supported during the deprecation
+  period. It is mutually exclusive with `CRIBaseRuntimeSpecConfig`; configurations containing both are rejected.
+
+  Applying, updating, or removing either source regenerates the base runtime specification and restarts CRI
+  automatically. A machine reboot is no longer required.
+
+  ### CRI Customization Configuration
+
+  Talos now supports customizing the CRI containerd configuration with named `CRICustomizationConfig`
+  documents. Each document contains a TOML fragment; fragments are merged in lexicographical order by name.
+  Applying, updating, or removing these documents updates the generated CRI configuration and restarts CRI
+  automatically.
+
+  The legacy `/etc/cri/conf.d/20-customization.part` machine-file configuration remains supported during the
+  deprecation period and is exposed under the reserved name `customization`. A `CRICustomizationConfig` document
+  cannot use that name.
+
+  NOTE: a machine reboot is no longer required to apply changes to CRI configuration.
+
+  ### Containerd NRI
+
+  Talos no longer disables NRI (Node Resource Interface) for the CRI containerd instance by default, so NRI is available
+  to use without any machine config patches.
+
+  To bring back the old behavior of NRI disabled by default, add the following machine configuration document:
+
+  ```yaml
+  apiVersion: v1alpha1
+  kind: CRICustomizationConfig
+  name: disable-nri
+  content: |
+    [plugins]
+      [plugins."io.containerd.nri.v1.nri"]
+         disable = true
+  ```
+
+  ### Default Installer Image
+
+  The default installer image has been updated to use the Image Factory.
+  The `ghcr.io/siderolabs/installer` image is no longer published with releases; use the Image Factory installer image instead.
+
+  ### DHCP
+
+  DHCPv4 search domains are now applied to the resolver configuration.
+
+  DHCPv4 configuration now supports `ignoreRoutes` option to ignore routes provided by DHCPv4 servers.
+
+  ### Cluster Discovery
+
+  Talos introduces support for configuring multiple discovery service endpoints.
+  Talos introduces new document for configuring the cluster discovery identity.
+
+  List of changes:
+
+  - Deprecated `.cluster.discovery` in the v1alpha1 config; use the `DiscoveryServiceConfig` document for discovery service configuration. The v1alpha1 config and `DiscoveryServiceConfig` are mutually exclusive.
+  - Deprecated `.cluster.secret` and `cluster.id` in the v1alpha1 config; use the `DiscoveryIdentityConfig` document for discovery identity configuration. The v1alpha1 config and `DiscoveryIdentityConfig` are mutually exclusive.
+  - Changed cluster ID encoding in the generated secret bundle, from `base64.URLEncoding` to `base64.StdEncoding`. This aligns the encoding with the rest of Talos.
+
+  ### Encryption Discards
+
+  Volume encryption now supports an `allowDiscards` option (disabled by default) which passes TRIM/discard requests
+  through to the underlying device when the encrypted volume is opened.
+
+  This only enables passing discards through to the underlying device; Talos does not perform any fstrim/discard operation by itself.
+
+  ### etcd
+
+  Talos is now compatible with etcd v3.6.x only (the default etcd version was 3.6.x since Talos v1.11).
+  The default version is 3.7.0+ now.
+
+  etcd now serves its HTTP-only endpoints (`/metrics`, `/health`, the gRPC-gateway JSON API) on a dedicated
+  listener on port `2383`, while the client port `2379` serves gRPC only. This keeps gRPC off Go's `net/http`
+  HTTP/2 server, avoiding watch-stream starvation under TLS (see etcd-io/etcd#15402, golang/go#58804,
+  etcd-io/etcd#21605).
+
+  Upgrade note: etcd metrics and the HTTP health endpoint are no longer reachable on `2379`; scrape them on
+  port `2383` instead (same client mTLS as before). etcd gRPC clients and the Talos health check are unaffected.
+
+  Firewall might need to be adjusted to block the port `2383` if previously `2379` was blocked.
+
+  If `--listen-metrics-urls` was customized, the metrics should not move.
+
+  ### EtcFileConfig
+
+  Talos now supports managing user-owned files under `/etc` with the new `EtcFileConfig` multi-document
+  configuration kind. The document `name` is the path relative to `/etc`, and each document owns the complete
+  file contents and mode.
+
+  This can be used to configure files such as `/etc/nfsmount.conf` or `/etc/multipath.conf`. Talos-managed
+  paths, including `resolv.conf`, `hosts`, `machine-id`, CRI and Kubernetes configuration, trust bundles, and
+  identity files, are rejected to prevent overriding files owned by Talos.
+
+  ### Extension Service Configuration
+
+  `ExtensionServiceConfig` is supported only for extension services whose service manifest explicitly declares a configuration dependency:
+
+  ```yaml
+  depends:
+    - configuration: true
+  ```
+
+  Using `ExtensionServiceConfig` with a service that does not declare this dependency is unsupported and has undefined startup behavior.
+  The service might start before its configuration is rendered, leaving config files or environment variables unavailable until a later service restart.
+  Extension authors must declare the dependency before documenting `ExtensionServiceConfig` support.
+
+  ### Filesystem Trim
+
+  Talos can now periodically trim (the equivalent of the `fstrim` command) mounted filesystems which support trimming,
+  discarding unused blocks. This is useful for SSDs and thin-provisioned storage.
+
+  Trimming is opt-in via a new `FilesystemTrimConfig` document which sets the global trim interval:
+
+  ```yaml
+  apiVersion: v1alpha1
+  kind: FilesystemTrimConfig
+  interval: 168h0m0s # one week
+  ```
+
+  The default machine configuration for Talos 1.14+ includes a `FilesystemTrimConfig` document with a default trim interval of one week,
+  so trimming is enabled by default for eligible filesystems. For cluster which were upgraded from older versions, the `FilesystemTrimConfig` document will be missing,
+  so trimming will be disabled by default until the document is added.
+
+  When the document is present, Talos builds a stable schedule (hashed by node ID and volume ID, so trims are spread out
+  across volumes and across nodes in a cluster) and trims eligible volumes (ready disk/partition volumes with a
+  trim-capable filesystem; for encrypted volumes only when `allowDiscards` is set).
+
+  The trim interval can be overridden or disabled per-volume via a `trim` block on the volume documents
+  (`VolumeConfig`, `UserVolumeConfig`, `ExistingVolumeConfig`, `ExternalVolumeConfig`):
+
+  ```yaml
+  trim:
+    enabled: true
+    interval: 24h0m0s
+  ```
+
+  ### Flannel CNI
+
+  Talos now configures Flannel with the `EnableNFTables` option enabled, which uses nftables native backend instead of `iptables-nft` compatibility layer.
+
+  ### FlexVolume Host Path Removed
+
+  Talos no longer provisions the deprecated FlexVolume executable host path at
+  `/usr/libexec/kubernetes`. FlexVolume has been deprecated since Kubernetes 1.23.
+  Modern CSI plugin paths under `/var/lib/kubelet` are unaffected.
+
+  ### Host DNS Configuration
+
+  HostDNS configuration was moved from the v1alpha1 config `.machine.features.hostDNS` field to the new `hostDNS` in the `ResolverConfig` document.
+
+  ### HTTP Probe Support
+
+  Talos now supports HTTP network probes, allowing for monitoring of HTTP endpoints.
+  HTTP responses with status 200-399 are considered successful, while connection and transport errors are treated as failures.
+
+  ### Image Cache Configuration
+
+  Talos now supports a new `ImageCacheConfig` document for configuring the Image Cache feature, replacing the old `machine.features.imageCache` field in the v1alpha1 config.
+  Old configuration is still supported for backwards compatibility.
+
+  ### Kernel Multi-document Configuration
+
+  Talos introduces new multi-document configuration for kernel parameters (sysctl and sysfs settings), replacing the old v1alpha1 config fields.
+  The old configuration is still supported for backwards compatibility, but new deployments should use the new documents.
+
+  If both old and new configuration sources are used, the new multi-document configuration takes precedence over the old v1alpha1 config on conflicting fields.
+
+  List of changes:
+
+  - Deprecated `.machine.sysctls` in the v1alpha1 config; use the `SysctlConfig` document for kernel sysctl configuration.
+  - Deprecated `.machine.sysfs` in the v1alpha1 config; use the `SysfsConfig` document for sysfs configuration.
+  - Deprecated `.machine.kernel` in the v1alpha1 config; use the `KernelModuleConfig` document for kernel module configuration.
+
+  ### Kernel Module Status
+
+  Talos now reports the status of both dynamically loaded, and built-in kernel modules.
+
+  The `LoadedKernelModule` resource has been deprecated and superseded by the new `KernelModuleStatus` resource.
+
+  ### In-tree Volume Plugins Deprecated
+
+  Because the kubelet now runs inside the sandbox namespace (see the workload isolation note), the in-tree
+  Kubernetes volume plugins that require the kubelet to reach host-level daemons no longer work. In particular
+  the in-tree `iscsi` volume plugin, which drives the kubelet's `iscsiadm` wrapper to talk to the host `iscsid`,
+  can no longer locate it across the sandbox PID namespace boundary.
+
+  Use CSI drivers instead — a CSI node plugin performs the attach/mount itself in its own privileged pod and is
+  unaffected by the sandbox. For iSCSI, `kubernetes-csi/csi-driver-iscsi` (or `democratic-csi`) consumes a
+  target the same way. All in-tree (non-CSI) volume plugins are deprecated for the kubelet and support for them
+  may be removed in a later release.
+
+  ### Kubernetes Multi-document Configuration
+
+  Talos introduces new multi-document Kubernetes configuration, which allows for more flexible and modular configuration of Kubernetes components.
+  Talos still supports the old v1alpha1 config for backwards compatibility, but new features and fields will only be available in the new multi-document format.
+  The `kube-proxy` is now using configuration to manage its settings instead of command line arguments (with new `KubeProxyConfig` document).
+
+  List of changes:
+
+  - Deprecated `.cluster.secretboxEncryptionSecret` in the v1alpha1 config; use the `KubeEtcdEncryptionConfig` document for full etcd encryption configuration.
+  - Deprecated `.cluster.apiServer` in the v1alpha1 config; use the `KubeAPIServerConfig`, `KubeAdmissionControlConfig`, `KubeAuditPolicyConfig`, `KubeAuthenticationConfig` and `KubeAuthorizerConfig` documents for kube-apiserver configuration.
+  - Deprecated `.cluster.ca`, `.cluster.acceptedCAs` and `.cluster.aggregatorCA` in the v1alpha1 config; use the `KubeAPIServerCAConfig`, `KubeAggregatorCAConfig` documents.
+  - Deprecated `.cluster.controllerManager` in the v1alpha1 config; use the `KubeControllerManagerConfig` document for kube-controller-manager configuration.
+  - Deprecated `.cluster.scheduler` in the v1alpha1 config; use the `KubeSchedulerConfig` document for kube-scheduler configuration.
+  - Deprecated `.cluster.proxy` in the v1alpha1 config; use the `KubeProxyConfig` document for kube-proxy configuration.
+  - Deprecated `.cluster.network` in the v1alpha1 config; use the `KubeNetworkConfig` document for Kubernetes network configuration; Flannel can be configured using the `KubeFlannelCNIConfig` document.
+  - Deprecated `.cluster.coreDNS` in the v1alpha1 config; use the `KubeCoreDNSConfig` document for CoreDNS configuration.
+  - Deprecated `.cluster.name` and `.cluster.controlPlane.endpoint in the v1alpha1 config; use the `KubeClusterConfig` document for cluster name and control plane endpoint configuration.
+  - Deprecated the following list of fields, all of them moved into `KubeNodeConfig:
+     - `.cluster.allowSchedulingOnControlPlanes`
+     - `.machine.kubelet.skipNodeRegistration`
+     - `.machine.kubelet.registerWithFQDN`
+     - `.machine.kubelet.nodeIP`
+     - `.machine.nodeLabels`
+     - `.machine.nodeAnnotations`
+     - `.machine.nodeTaints`
+  - The default `NoSchedule` taint for controlplane and label are now explicitly listed in `KubeNodeConfig`.
+  - Deprecated the rest of `.machine.kubelet` fields in the v1alpha1 config; use the `KubeNodeConfig` and `KubeCredentialProviderConfig` documents for kubelet configuration.
+  - Deprecated `.machine.pods` in the v1alpha1 config; use the `KubeStaticPodConfig` document for static pod configuration.
+  - Deprecated `.machine.files` in the v1alpha1 config; use dedicated configuration documents such as `EtcFileConfig` and `CRICustomizationConfig` instead.
+  - Deprecated `.machine.baseRuntimeSpecOverrides` in the v1alpha1 config; use the `CRIBaseRuntimeSpecConfig` document for base runtimespec overrides.
+  - Deprecated `.cluster.inlineManifests` in the v1alpha1 config; use the `KubeInlineManifestConfig` document for inline manifests.
+  - Deprecated `.cluster.extraManifests` and `.cluster.extraManifestHeaders` in the v1alpha1 config; use the `KubeExternalManifestConfig` document for external manifests.
+  - Deprecated `.machine.features.kubePrism`; use the `KubePrismConfig` document for KubePrism configuration (or remove it to disable KubePrism).
+  - Deprecated `.machine.features.kubernetesTalosAPIAccess`; use the `KubeTalosAPIAccessConfig` document instead.
+  - Added `nodeCIDRMaskSizeIPv4` (default `24`) and `nodeCIDRMaskSizeIPv6` (default `64`) settings to the `KubeNetworkConfig` document to control the per-node pod CIDR mask size and validate the pod and service subnet sizes.
+
+  ### Secure Boot images no longer have lockdown=confidentiality enabled by default
+
+  Secure Boot images no longer have `lockdown=confidentiality` enabled by default.
+  This change was made to improve compatibility with eBPF tooling under default schematic.
+  This means that Secure Boot images will now have `lockdown=integrity` enabled by default (implicitly), which is the recommended setting for most users.
+  Users can override it by adding `lockdown=confidentiality` to the kernel command line through Image Factory if they require it.
+
+  ### LVM Logical Volume Creation
+
+  Logical volumes can now be declared with a new `LVMLogicalVolumeConfig` multi-doc config kind. Each document
+  names a logical volume, its parent `volumeGroup`, a `type` (`linear`, `raid0`, `raid1` or `raid10`) and a
+  `maxSize` (absolute, e.g. `50GiB`, or a percentage of the volume group, e.g. `80%`). RAID layouts accept
+  optional `mirrors` (raid1/raid10, default 1) and `stripes` (raid0/raid10, default: all available physical
+  volumes) fields. Once the volume group is assembled the logical volume is created via `lvcreate`.
+
+  Raising `maxSize` grows an existing logical volume via `lvextend`; percentage-sized volumes also grow when
+  their volume group is extended. Shrinking is never performed (it risks data loss) - a request to reduce the
+  size surfaces an `LVMValidationError` instead. Removal stays an explicit operation via the LVMService LV
+  remove RPC (`talosctl wipe lv`).
+
+  ### LVM Status
+
+  Talos now provides detailed LVM status information, allowing for better monitoring and management of LVM volumes.
+  New resources `LVMPhysicalVolumeStatus`, `LVMVolumeGroupStatus`, and `LVMLogicalVolumeStatus` expose PV, VG, and LV details.
+  `DiscoveredVolume` resources for logical volumes are listed by their kernel name (e.g. `dm-0`). To resolve the `<vg>/<lv>` for a given device, use the `Disks` or `BlockSymlinks` resources, which carry the udev-managed symlinks (e.g. `/dev/disk/by-id/dm-name-<vg>-<lv>`).
+
+  ### LVM Volume Group Creation
+
+  Talos can now create and grow LVM Volume Groups declaratively through a new `LVMVolumeGroupConfig` multi-doc
+  config kind. Each document names a Volume Group and a CEL `volumeSelector` over the disk inventory; matched
+  disks are initialised as Physical Volumes (`pvcreate`) and aggregated into the requested VG (`vgcreate`).
+  Newly matched disks added to an existing VG are attached via `vgextend`.
+
+  Reconciliation is strictly additive and safe-by-default.
+
+  ### LVM Wipe
+
+  Talos now provides the ability to securely wipe LVM metadata from logical volumes, volume groups, and physical volumes.
+  This feature allows for selective wiping of logical volumes, volume groups, and physical volumes.
+
+  With `talosctl wipe lv/vg/pv <name>`, users can wipe LVM metadata from a specific logical volume, volume group, or physical volume.
+
+  ### Multipath Configuration
+
+  The `multipath-tools` system extension now reads `/etc/multipath.conf` from the Talos host instead of using `ExtensionServiceConfig`.
+  The `multipathd` service waits for this file and bind-mounts it read-only into its service container.
+
+  Before updating the extension, apply a machine config patch that deletes the existing `ExtensionServiceConfig` document and adds an `EtcFileConfig` document:
+
+  ```yaml
+  apiVersion: v1alpha1
+  kind: ExtensionServiceConfig
+  name: multipathd
+  $patch: delete
+  ---
+  apiVersion: v1alpha1
+  kind: EtcFileConfig
+  name: multipath.conf
+  mode: 0o644
+  contents: |
+    defaults {
+        user_friendly_names yes
+        find_multipaths no
+        path_selector "round-robin 0"
+    }
+  ```
+
+  The extension does not provide a default configuration, so `multipathd` remains waiting until `/etc/multipath.conf` is present.
+
+  ### NTS for Time Synchronization
+
+  Talos now supports Network Time Security (NTS) for secure time synchronization.
+  This feature enhances the security of NTP by providing cryptographic authentication of time sources.
+
+  NTS is enabled by default (without any configuration sources) for the default `time.cloudflare.com` time server
+  NTS can be enabled for custom time servers via the new `useNTS` field in the `TimeServerConfig` document.
+
+  ### RAID Array Creation
+
+  Talos can now create and grow Linux MD (software RAID) arrays declaratively through a new `RAIDArrayConfig`
+  multi-doc config kind. Each document names an array, its `level` (`raid1`) and a CEL `volumeSelector` over
+  the disk inventory; matched disks are assembled into the requested array with `mdadm` and exposed at the stable
+  `/dev/disk/by-id/md-name-<name>` path. New matching disks added to an existing array are attached automatically.
+
+  Reconciliation is strictly additive and safe-by-default. Arrays are never destroyed by removing the config;
+  removal stays an explicit operation via `talosctl wipe md <device>`. The new `MDArrayStatus` resource reports the
+  assembled array, level, device path, and members.
+
+  ### Booting from a RAID Array
+
+  Talos can now be installed onto and boot from a Linux MD (software RAID) array. Define a `RAIDArrayConfig` for the
+  array and point the install disk selector (`UnattendedInstallConfig`) at the resulting `/dev/disk/by-id/md-name-<name>`
+  device.
+
+  Only `raid1` arrays with `metadata: "1.0"` can be used for booting: the 1.0 format keeps its superblock at the end of
+  each member, so the partition table written to the array stays visible at the start of every disk, allowing the
+  firmware to boot from any member. `metadata` defaults to `1.0`; other levels and metadata formats are not bootable.
+
+  ### Workload Isolation (sandboxd)
+
+  The container runtime plane — CRI containerd, the kubelet, and all pods — now runs inside a dedicated PID and
+  mount namespace anchored by a new `sandboxd` service, instead of sharing `machined`'s namespaces.
+
+  `sandboxd` runs in its own least-privilege SELinux domain (`sandboxd_t`). if it dies the kernel tears down the
+  namespace and Talos recreates it — relaunching CRI, the kubelet, and pods — without rebooting the node.
+  Its logs are available via `talosctl logs sandboxd`.
+
+  Workload isolation is controlled by the `workloadIsolation` field of the new `SecurityProfileConfig` document.
+  `talosctl gen config` emits it with `workloadIsolation: true` for Talos 1.14+, so **new clusters are isolated by
+  default**. Clusters **upgraded** from older versions do not have this document and therefore keep the previous
+  (non-isolated) behavior until it is added — upgrades change nothing on their own. To enable on an existing
+  cluster, add the document:
+
+  ```yaml
+  apiVersion: v1alpha1
+  kind: SecurityProfileConfig
+  workloadIsolation: true
+  ```
+
+  > NOTE: With workload isolation enabled, the deprecated in-tree Kubernetes iSCSI volume plugin does not work
+  > (the kubelet cannot reach the host `iscsid` across the sandbox); use a CSI driver instead. See the in-tree
+  > volume plugin deprecation note.
+
+  ### ICMP send_redirects Disabled by Default
+
+  Talos now sets `net.ipv4.conf.all.send_redirects=0` and `net.ipv4.conf.default.send_redirects=0` by default,
+  preventing the node from emitting ICMP redirect messages. This aligns with CIS Benchmark recommendations and
+  does not affect normal Kubernetes pod or service traffic. Nodes that deliberately act as L3 gateways relying
+  on ICMP redirects can override this via `machine.sysctls`.
+
+  ### Support Bundle Encryption
+
+  The `talosctl support` command now encrypts support bundles using the age encryption tool, enhancing the security of support data.
+  The default set of recipients includes the 'siderolabs' GitHub organization members, but it can be overridden with custom recipients.
+
+  ### Dedicated System Volumes
+
+  The `ETCD`, `CRI`, `KUBELET` and `LOG` system volumes (`/var/lib/etcd`, `/var/lib/containerd`, `/var/lib/kubelet` and `/var/log`)
+  can now be placed on dedicated partitions via a `VolumeConfig` document with `provisioning` set (optionally encrypted).
+  By default they remain directories under the `EPHEMERAL` volume.
+
+  `ETCD` and `LOG` volumes are mounted with `noexec` in addition to `nosuid` and `nodev` when `secure: true` is set.
+
+  ```yaml
+  apiVersion: v1alpha1
+  kind: VolumeConfig
+  name: ETCD
+  provisioning:
+    minSize: 1GB
+    maxSize: 2GB
+  ```
+
+  The backing (directory vs. dedicated partition) is fixed at cluster creation: switching an already-provisioned node between the two is rejected.
+
+  A dedicated partition has its own mount, so the `mount.secure` option (`nosuid`/`nodev`, enabled by default) can be set per volume; directory-backed volumes inherit the `EPHEMERAL` mount options. Talos additionally applies `noexec` to dedicated ETCD and LOG volumes, while CRI and KUBELET remain executable.
+
+  Note that with `ETCD` on a dedicated partition, etcd data no longer lives under `EPHEMERAL`. Resetting a control plane node with only the `EPHEMERAL` partition wiped will not clear etcd data; wipe the `ETCD` volume to reset etcd.
+
+  ### TLS 1.3 Minimum Version
+
+  Talos now runs etcd and kube-apiserver with a minimum TLS version of 1.3, improving security by leveraging the latest TLS features and cipher suites.
+  Custom settings for cipher suites have been removed, as they are ignored when TLS 1.3 is used, which simplifies configuration and ensures the use of modern, secure defaults.
+
+  ### Udev Rules Multi-document Configuration
+
+  Talos introduces new multi-document configuration `UdevRulesConfig` document for configuring custom udev rules.
+  The old v1alpha1 `.machine.udev.rules` field is still supported for backwards compatibility, but new deployments should use the new document.
+
+  If both old and new configuration sources are used, `UdevRulesConfig` takes precedence.
+
+  List of changes:
+
+  - Deprecated `.machine.udev.rules` in the v1alpha1 config; use the `UdevRulesConfig` document for custom udev rules.
+
+  ### Unattended Install Configuration
+
+  Talos introduces a new `UnattendedInstall` multi-document config kind which replaces the deprecated `.machine.install`
+  section of the v1alpha1 config. The document carries the installer `image` and a `provisioning` section with a CEL
+  `volumeSelector` to match the install disk, plus a `wipe` option.
+
+  When the `UnattendedInstall` document is present, the install is driven by the new `UnattendedInstallController`
+  (exposing an `UnattendedInstallStatus` resource) instead of the legacy install sequence.
+
+  `talosctl gen config` and `talosctl cluster create` now generate the `UnattendedInstall` document by default.
+  The `.machine.install` field remains supported for backwards compatibility and is still used for older version contracts.
+
+  ### Component Updates
+
+  Linux: 6.18.48
+  Kubernetes: 1.37.0
+  containerd: 2.3.4
+  etcd: 3.7.1
+  Flannel: 0.28.9
+  runc: 1.5.1
+  CoreDNS: 1.14.7
+
+  Talos is built with Go 1.26.7.
+
+  ### Virtual Ethernet Pairs
+
+  Talos now supports declarative virtual Ethernet (`veth`) pairs through the new `VethConfig` multi-document
+  configuration kind. Both endpoints are created in the host network namespace and support the common link settings,
+  addresses, routes, and multicast configuration.
+
+  For example, the following configuration creates a pair named `veth-host` and `veth-router` with an address on each
+  endpoint:
+
+  ```yaml
+  apiVersion: v1alpha1
+  kind: VethConfig
+  name: veth-host
+  addresses:
+    - address: 10.3.0.1/30
+  peer:
+    name: veth-router
+    addresses:
+      - address: 10.3.0.2/30
+  ```
+
+  ### XFS Allocation Group Geometry
+
+  On non-rotational devices `mkfs.xfs` sizes the allocation group count to the number of CPUs, bounding the
+  allocation group size from below at 4 GiB only. On machines with many cores and a modest disk this produces
+  hundreds of tiny allocation groups, which squeezes the AG-local reflink/rmap metadata (leading to spurious
+  `ENOSPC` on reflink-heavy workloads while the filesystem still has plenty of free space) and inflates the
+  journal at the same time.
+
+  Talos now keeps XFS allocation groups at 64 GiB or above when it formats a volume. The bound can be changed
+  per volume, and setting it to zero restores the stock `mkfs.xfs` behavior:
+
+  ```yaml
+  apiVersion: v1alpha1
+  kind: VolumeConfig
+  name: EPHEMERAL
+  filesystem:
+    xfs:
+      minAllocationGroupSize: 128GiB
+  ```
+
+  The same `filesystem.xfs.minAllocationGroupSize` setting is available for `UserVolumeConfig`.
+
+  Note: allocation group geometry is fixed when the filesystem is created, so this only affects volumes
+  formatted by Talos 1.14 or later. Existing volumes keep their current geometry until they are wiped and
+  re-created (e.g. `talosctl reset --system-labels-to-wipe=EPHEMERAL`).
+
+  ### XFS scrub
+
+  Talos now supports automatically running background online filesystem maintenance tasks. Currently,
+  only XFS using xfs_scrub tool is supported.
+
+  This behavior can be enabled globally using a FilesystemScrubConfig document, or on per-volume
+  basis using a field in corresponding VolumeConfig documents.
+</Update>
+
+<Update label="v1.1.1" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.1.1)
+
+
+</Update>
+
+<Update label="v1.6.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.6.0)
+
+  ### Unified Installer Signing
+
+  Installer images for Talos 1.14.0 and newer are now always signed when SecureBoot assets are configured.
+
+  Unified installers embed a UKI regardless of the SecureBoot flag, so `installer` and `installer-secureboot` now resolve to the same profile
+  and share cached assets instead of being built and stored twice.
+
+  Talos versions before 1.14.0 are unaffected: signing an installer there also turns on `lockdown=confidentiality`, so the two variants stay distinct.
+</Update>
+
+<Update label="v1.5.1" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.5.1)
+
+
+</Update>
+
+<Update label="v1.13.9" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.13.9)
+
+  ### Component Updates
+
+  Linux: 6.18.44
+  containerd: 2.2.7
+  Kubernetes: 1.36.3
+
+  Talos is built with Go 1.26.6.
+</Update>
+
+<Update label="v1.5.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.5.0)
+
+  ### Artifact Signatures
+
+  Image Factory now serves detached Sigstore v0.3 bundles (.sigstore.json) alongside downloaded assets.
+
+  Each bundle cryptographically signs the exact bytes returned by the asset endpoint using either a pinned local key or GSA keyless signing.
+  Bundles are persisted in a shared asset cache partitioned by asset, signer, and evidence format, with single-flight deduplication and graceful handling of transient cache failures.
+
+  ### Auth0 Authentication (Enterprise only)
+
+  Image Factory now supports Auth0 organization-scoped access tokens as an alternative to htpasswd authentication.
+
+  Bearer tokens are validated against the tenant's JWKS and can also be supplied through Basic authentication for OCI and Talos clients.
+  An optional OAuth2 authorization code flow with PKCE provides interactive browser login with encrypted, replica-safe session cookies.
+
+  ### Download Tokens (Enterprise only)
+
+  Image Factory can now issue short-lived, identity-scoped JWTs for image downloads through `POST /download-token`.
+
+  Tokens authenticate `GET` and `HEAD` requests under `/image/` through the `token` query parameter, and their public signing key is exposed through `/.well-known/jwks.json`.
+  Callers can request a token lifetime within configurable minimum, maximum, and default bounds.
+
+  ### Source Image Proxy
+
+  Allow pulling source images through the Image Factory.
+
+  E.g. `siderolabs/imager` image can be pulled as `factory.talos.dev/siderolabs/imager`.
+
+  ### Installer Build Evidence (Enterprise only)
+
+  Installer images built from stable Talos 1.13.0 and newer now carry signed build evidence.
+
+  Each platform manifest has an SPDX 2.3 SBOM attestation, while the multi-platform index has a SLSA Provenance v1 attestation.
+  Evidence is published as Sigstore bundles through OCI referrers, with automatic fallback to the OCI referrers-tag schema for registries without native OCI 1.1 referrers support.
+</Update>
+
+<Update label="v1.10.0" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.10.0)
+
+  ### Following the Audit Log
+
+  The audit log read API gains a follow mode. After serving the backlog the stream stays open and delivers new events as they are written, in insertion order. Followed events carry their ids, and a stream can start from an id received earlier, so a consumer resumes exactly where it left off. The start position can also be given as a timestamp. A follow stream ends cleanly after a bounded time rather than staying open indefinitely, and the client continues from the last id it received. `omnictl` performs that reconnect automatically. `omnictl audit-log` gains a `--follow` flag to tail the log live and a `--since` flag to start from a relative time in either mode. Reading the audit log now produces an audit log event of its own, recording who read it, the time range requested and the filters used, and the new event type can itself be filtered on.
+
+  ### Auditor Role
+
+  Reading the audit log required the Admin role, so anything that consumes audit events also had to hold user management and full administrative access to every managed Kubernetes cluster. The new Auditor role grants read access plus the audit log and nothing else. It is matched by exact role rather than by rank, so an Operator, which outranks an Auditor, still cannot read the audit log. It can be assigned to users and service accounts, but not through access policies or SAML label rules, which now reject roles that are not meant to be assigned that way.
+
+  ### Cluster Security Page
+
+  A new cluster security page lists the vulnerabilities of the images a running cluster uses, together with the upgrade paths that clear them, and the scan details can be filtered by severity. Vulnerability scanning requires the Image Factory Enterprise. Against the public factory the page reports that scanning is unavailable instead of showing results.
+
+  ### Kubernetes CA and Service Account Key Rejected in Config Patches
+
+  Config patches can no longer set the Kubernetes certificate authority or the service account signing key, which Omni generates and owns. This holds for every cluster, not only for clusters on the new Talos 1.14 document layout, and it covers the v1alpha1 fields as well as the Talos 1.14 documents that carry the same material. An already stored patch keeps working while it stays unchanged. Changing one that sets either of them is rejected, so such a patch has to be corrected before it can be edited again.
+
+  ### Disabling Config Patches
+
+  A config patch can now be disabled. It is retained as a resource but is never applied.
+
+  ### Discovery Service Configuration Reworked
+
+  Talos 1.14 replaces the single discovery endpoint with a configuration that can register a machine with more than one discovery service at once, and Omni now removes a departing machine's affiliate from every endpoint it used. A cluster used to pick either the public discovery service or the embedded one. For clusters created with Talos 1.14 or newer it can now also use both at the same time.
+
+  ### Talos Enterprise and FIPS Machine Labels
+
+  Machines running Talos Enterprise now get an `omni.sidero.dev/enterprise` label, and machines running Talos in FIPS mode get an `omni.sidero.dev/fips` label carrying either `enabled` or `strict`. Like the other labels Omni manages, they cannot be removed by the user, and they are cleared when a machine reverts to a regular build. Both values are read over the Talos API and watched for changes, since they follow the installed image. Older Talos versions do not report them, so machines running those get no labels.
+
+  ### Frontend Quality-of-Life Improvements
+
+  Machine names are shown the same way everywhere, using the hostname with the machine UUID as a fallback, and the machine stage is dimmed while a machine is unhealthy, with the last known status still shown. The home page replaces the radial bars with segmented ones and splits the machine stats into connection and allocation, which used to be mixed together, and it now also shows the ongoing operations that were previously only in the top-right dropdown. The CPU usage chart stacks its system and user areas and labels them as percentages, and the Kubernetes manifests status is drawn as a graph. In the disk view, unallocated space is striped so it reads apart from allocated space, and volumes Omni does not recognize cycle through distinct colors. Errors from machine service queries appear inline on the page instead of as a toast, with retries and backoff, and an unreachable Talos API is reported as not ready yet rather than as a generic failure. The config editor can toggle word wrap from its context menu, and `$patch: delete` is accepted everywhere the patch validation allows it. On an Auth0 instance the very first user lands on the signup page instead of the login page, and PXE boot is hidden when Omni runs against the Image Factory Enterprise. A node's last configuration error is now shown on every one of its tabs, not just the overview, and Talos and Kubernetes version dropdowns list versions newest first. The machine delete confirmation lists hostnames instead of raw UUIDs. Removing machines is named consistently: deleting a machine or a pending machine is "Delete", removing one from a cluster is "Remove", and the destructive machine option reads "Force Delete" instead of "Force Destroy".
+
+  ### Infrastructure Provider Names Validated as DNS Labels
+
+  An infrastructure provider id must now be a valid DNS label, so lowercase letters, digits and dashes only. Ids with uppercase letters, underscores or spaces used to be accepted and caused failures further along. They are rejected at creation now.
+
+  ### Infra Provider Versions in the UI and CLI
+
+  The UI and the CLI now show the version of an infrastructure provider.
+
+  ### Install Disk Selection Respected on Maintenance Installs
+
+  Machines on Talos 1.13 or newer are installed through the Talos lifecycle API, which takes the install disk as an explicit argument. Omni passed the automatically picked default there, so a disk chosen through the UI or a cluster template was ignored and Talos could be installed to a different disk than the one selected. Omni now reads the install disk from the machine's effective configuration, where the selection is already applied on top of the default.
+
+  ### Permanent Install Failures Stop Retrying
+
+  Talos installers from 1.14 report a distinct exit code per failure instead of one generic code, and Omni now reads them. A failure caused by invalid input or an unsupported operation cannot succeed until the machine configuration or the install options change, so Omni records the reason on the machine and stops retrying. Everything else stays retryable, including the single exit code that pre-1.14 installers report for every failure.
+
+  ### No kube-proxy Pre-Pull on Kubernetes Upgrades
+
+  Kubernetes upgrades no longer pre-pull the kube-proxy image, on any cluster. Clusters that use a kube-proxy replacement such as Cilium turn kube-proxy off, and pre-pulling an image they never run consumed bandwidth needlessly.
+
+  ### KubeSpan Quick Start
+
+  Rather than disabling the KubeSpan tab for a cluster that does not have KubeSpan enabled, Omni now shows a quick start page there with a short explanation, a link to the docs, the config patch it would apply, and a button that applies it. The suggested patch matches what the cluster supports, so a cluster on multi-document configs is offered the newer form. The page warns about the network overhead, which matters most on larger clusters. The KubeSpan status view also tells offline peers apart by shape and line style on top of color, which helps with red and green color blindness.
+
+  ### Installs and Upgrades Through Talos's LifecycleService
+
+  On machines running Talos 1.13 or newer, Omni installs and upgrades through Talos's LifecycleService and runs the sequence itself: pull the installer, install or upgrade to disk, forfeit etcd leadership on control planes, cordon and drain the node, then reboot. Same-minor installs on maintenance machines take this explicit path now, instead of letting a config apply trigger the install, and cluster creation and scale-up bring a maintenance-mode machine to the cluster's Talos version when the two differ by a minor version. Machines on older Talos keep using the classic path, and each machine's running version and schematic decide which one it takes.
+
+  ### Logout URL
+
+  Every Omni instance now answers at `/logout`, whatever its authentication type. SAML and OIDC instances were already served by the backend, and Auth0 instances now have a page that performs the logout, so the same URL ends a session everywhere.
+
+  ### New and Newly Exposed Metrics
+
+  `omni_machine_logs_ingested_bytes_total` counts the bytes of machine log messages written to storage. Two gauges that were being kept up to date but never registered are now exposed on the Prometheus endpoint as well, one for the number of CPU cores across all machines and one for the number of active virtual state watches.
+
+  ### Multiple Image Factories
+
+  Omni can now run against two image factories, a primary and a secondary, which makes it possible to migrate from one to the other. They are configured under `registries.factories.primary` and `registries.factories.secondary`, each taking a URL, a PXE URL, and Image Factory Enterprise credentials. The flat `imageFactoryBaseURL`, `imageFactoryPXEBaseURL`, `imageFactoryUsername` and `imageFactoryPassword` options are deprecated in favor of the primary block. They still work on their own, but once the primary block carries a URL they are ignored completely, so credentials meant for one factory are never sent to another.
+
+  ### Node Audit Skip Configurable in the UI and Cluster Templates
+
+  The node audit skip cluster feature, which exempts a Kubernetes node carrying the `omni.sidero.dev/node-audit-skip` annotation from the node audit, can now be turned on from the cluster create page and the cluster overview, and set in cluster templates.
+
+  ### Machine Reset Wipes More Volumes on Talos 1.14
+
+  On Talos 1.14 and newer, resetting a machine also wipes the container runtime, kubelet, etcd and log volumes, on top of the state and ephemeral partitions it wiped before. Machines on earlier Talos versions still have only those two wiped.
+
+  ### More Reliable SAML Single Logout
+
+  Single logout on a SAML instance could silently fail to reach the identity provider. The cookie tracking the logout was cleared as soon as the logout request was built rather than once the identity provider confirmed it, so any repeated request to `/logout`, including the browser's own retries, found nothing left to send and the identity provider session survived. A logout response delivered over the HTTP-Redirect binding, rather than as a POST, also failed to parse and left the user on the forbidden page even though the identity provider had already completed the logout; that binding is now handled on its own endpoint.
+
+  ### Search, Filter and Sort Kept in the URL
+
+  Search terms, filters and sort order are now part of the URL, so a narrowed-down view survives a reload and can be shared as a link.
+
+  ### Richer Support Bundles
+
+  Support bundles now also carry in-flight machine update state and the inputs Omni uses to generate machine configurations.
+
+  ### Talos 1.14 Configuration Support
+
+  Talos 1.14 moves cluster identity, certificate authorities, encryption secrets and Talos API access rules out of the single v1alpha1 document into documents of their own, and Omni understands the new layout. Kubernetes component images for upgrades are patched in the shape the cluster's version contract calls for, Kubernetes CA rotation writes the accepted CA wherever the generated configuration keeps it, and the Talos API access restriction follows its own document. The frontend validates patches against the 1.14 schema and generates 1.14 variants of the patches it writes.
+</Update>
+
+<Update label="v1.12.11" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.11)
+
+  ### Component Updates
+
+  Linux: 6.18.42
+
+  Talos is built with Go 1.25.12.
+</Update>
+
+<Update label="v1.13.8" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.13.8)
+
+  ### Component Updates
+
+  Linux: 6.18.42
+  CoreDNS: 1.14.6
+  Flannel: 0.28.8
+
+  Talos is built with Go 1.26.5.
+</Update>
+
+<Update label="v1.1.0" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.1.0)
+
+
+</Update>
+
+<Update label="v1.13.7" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.13.7)
+
+  ### Component Updates
+
+  Linux: 6.18.39
+  containerd: 2.2.6
+  Flannel: 0.28.7
+  CoreDNS: 1.14.4
+
+  Talos is built with Go 1.26.5.
+</Update>
+
+<Update label="v1.4.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.4.0)
+
+  ### Audit Logging
+
+  Image Factory now supports audit logging via a configurable sink. Two sinks are
+  available: file and log. By default, no sink is configured. File sink writes
+  audit log as JSON lines to a file configured via `audit.file.path` and rotates
+  the log file based on the size. Log sink writes audit log to the standard log
+  output.
+
+  ### Core Artifacts Namespace
+
+  Image Factory now supports setting namespace for core artifacts - an optional
+  repository path prefix prepended to every image pulled from the core registry:
+  the component images as well as the extension and overlay images discovered
+  via the manifests. Previously only the registry host could be overridden, so
+  pull-through caches which prefix the upstream repository path (e.g. a Harbor
+  proxy-cache project) could not be used.
+
+  The prefix only affects pull references; extension identities (matched against
+  schematics, the UI, and the meta API) are unchanged.
+
+  ### Disk Images
+
+  Image Factory now supports generating disk images with 4096 byte sector size (custom size), set via schematic customization.
+
+  ### Extra Extensions (enterprise only)
+
+  Image factory can now be configured with an extra extensions manifest image allowing to easily add custom extensions in addition to the official Sidero extensions.
+
+  ### Embedded Machine Configuration
+
+  Image Factory now supports embedding machine configuration into generated images starting with Talos version 1.2.0 onwards.
+
+  ### Secure Boot Disk Images
+
+  Image Factory now generates disk images with Secure Boot supporting automatically enrolling keys (with if-safe setting, enabled for VMs in setup mode).
+</Update>
+
+<Update label="v1.12.10" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.10)
+
+  ### Component Updates
+
+  Linux: 6.18.38
+
+  Talos is built with Go 1.25.12.
+</Update>
+
+<Update label="v1.13.6" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.13.6)
+
+  ### Component Updates
+
+  Linux: 6.18.38
+
+  Talos is built with Go 1.26.5.
+</Update>
+
+<Update label="v1.9.0" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.9.0)
+
+  ### Cluster Health Check Jobs
+
+  Cluster templates now support health check jobs that gate Talos upgrades. Omni creates the jobs when a Talos upgrade is running and re-runs them on an interval until they succeed, re-creating a job whenever it fails. The checks run before each node upgrade in the upgrade status controller, and if any defined health check fails Omni drops the available upgrade quota to zero, blocking further upgrades until the checks pass. You can read more about this feature on the [docs](https://docs.siderolabs.com/omni/cluster-management/gate-talos-upgrades-with-healthchecks).
+
+  ### Embedded Machine Config for Installation Media
+
+  Installation media can now carry an embedded machine configuration, so a machine applies it on first boot before it ever reaches Omni. You can set it from the frontend or with `omnictl` when creating installation media, and Omni stores it on the schematic request alongside the rest of the media config. The option is exposed only where the underlying stack reports support for it, through a new `supports_embedded_config` quirk.
+
+  ### Per-Class etcd Write Rate Limiting
+
+  You can now throttle etcd writes by payload size, with separate budgets for end users, infra providers, and internal callers. It is off by default and turns on via `storage.rateLimits.etcd.*`. Four new Prometheus series report throttle wait time, admitted writes, rejected writes, and rejected bytes, labeled by class. The failure counters also carry a reason of timeout or oversize.
+
+  ### Talos Extension Names Validated Against the Catalog
+
+  Extension names on installation media configs, machine request sets, and extensions configurations are now validated against the Talos extensions catalog for the relevant Talos version. Unknown names, duplicates, and oversized lists are rejected, and when no Talos version is set the default version's catalog is used so the names still get checked. Names without a namespace are looked up under `siderolabs/`, so older clients that send the documented short form keep working. The `omnictl installation media create` command now resolves short or partial extension names to canonical form before sending, replacing the client-side catalog check it used to do.
+
+  ### KubeSpan Status View
+
+  A new graphical view shows KubeSpan peer status for a cluster machine.
+
+  ### Frontend Quality-of-Life Improvements
+
+  A round of UI improvements across Omni. The home screen has a reworked "Welcome to Omni" card. An unhealthy infrastructure provider shows its error on hover, the machine details panel shows the SMBIOS serial number, and kernel args editing moved into a modal. Config diffs have a sort-order toggle, version pickers sort newest first and scroll to the current selection, and Talos and Kubernetes update calls now report their errors. The disks view got several cleanups, pods sort by status, power-state icons have tooltips, Omni shows a loading indicator when it is slow to start, and the rewritten log viewer scrolls to the bottom reliably. Machine patches no longer offer the cluster-machine patch option and surface an error when a machine is not part of a cluster.
+
+  ### Static loadBalancerIP for the WireGuard Service in Helm
+
+  The Helm chart has a new `service.wireguard.loadBalancerIP` value for setting a static load balancer IP on the WireGuard Kubernetes Service. It is rendered only when the WireGuard service type is `LoadBalancer`.
+
+  ### Support for Image Factory Enterprise
+
+  Two new config options, `registries.imageFactoryUsername` and `registries.imageFactoryPassword`, let Omni authenticate to the Image Factory Enterprise with HTTP basic auth.
+
+  ### Kubernetes Manifests Status in the UI
+
+  The frontend now shows the status of a cluster's synced Kubernetes manifests.
+
+  ### Per-Machine Log Ingestion Rate Limit
+
+  Log ingestion now uses a per-machine token bucket, so one noisy machine can no longer overwhelm the log store. It is off by default to keep backwards compatibility.
+
+  ### Machine Config Patches in Maintenance Mode
+
+  Omni can now apply machine-level config patches while a machine is still in maintenance mode, not just after it joins a cluster. The patches go on top of the configuration the machine already runs, next to the SideroLink documents Omni manages, and Omni will not apply a document that installs Talos and pulls the machine out of maintenance. Omni also keeps whatever configuration a machine connects with as a low-priority, user-owned patch. So a machine that arrives with its own config (say a TrustedRootsConfig document) keeps it, and your own patches still win.
+
+  ### Install and Upgrade Talos in Maintenance Mode
+
+  A new streaming management API installs or upgrades Talos on machines booted in maintenance mode. It comes with `omnictl` install and upgrade subcommands and frontend modals that stream installer progress live. This feature uses Talos's LifecycleService API, which became available in v1.13.0. So it works with any Talos version starting from v1.13.0.
+
+  ### SBOM, VEX, and Vulnerability Scan on the Installation Media Wizard
+
+  The installation media wizard's confirmation page now shows SBOM and VEX links plus the vulnerability scan and modal, the same as the Image Factory. This shows up only when you use the Image Factory Enterprise.
+
+  ### Opt-In Skip of Kubernetes Node Audit
+
+  The Kubernetes node audit deletes nodes that no ClusterMachine backs. You can now skip it for individual nodes, which helps with virtual nodes such as VirtualKubelet. A node is skipped only when it has the `omni.sidero.dev/node-audit-skip` annotation and the cluster owner has turned on the matching cluster feature, so a workload cannot annotate its own way out of the audit.
+
+  ### Node Names and Locked Status in `omnictl cluster status`
+
+  The `omnictl cluster status` tree now prints each machine's Kubernetes node name in parentheses after its UUID, so you can match a machine to the upgrade status lines that reference node names. A "Locked" indicator shows up whenever a machine is locked.
+
+  ### Platform Tags Exposed as Machine Labels
+
+  Talos PlatformMetadata tags (for example EC2 instance tags) now appear as editable, removable machine labels in Omni. Omni fills them in once, when the machine first joins, and your own custom labels win on any key conflict.
+
+  ### Schematic Contents Preserved on Update
+
+  When Omni changes a machine's schematic, it now touches only the fields it manages (extensions and kernel args) and leaves the rest alone, instead of rebuilding the schematic from scratch. It reads the full schematic from the machine or the Image Factory and stores it as is.
+
+  ### Signed Images and SBOM Release Artifacts
+
+  Omni releases now ship an SBOM built from the Go modules as a release artifact, and Sidero Labs signs the published container images during release.
+
+  ### Talos Upgrade Targets Capped at the Latest Supported Release
+
+  Each Omni release now declares the latest Talos minor version it can support end to end. Cluster create and update, the maintenance upgrade API, the upgrade status computation, and every version picker in the UI all read this same cap, so you can no longer pick a Talos version newer than the running Omni supports.
+</Update>
+
+<Update label="v1.13.5" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.13.5)
+
+  ### Component Updates
+
+  Linux: 6.18.36
+  containerd: 2.2.5
+  runc: 1.4.3
+
+  Talos is built with Go 1.26.4.
+</Update>
+
+<Update label="v1.12.9" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.9)
+
+  ### Component Updates
+
+  Linux: 6.18.35
+  runc: 1.3.6
+  CoreDNS: 1.14.2
+  containerd: 2.2.5
+
+  Talos is built with Go 1.25.11.
+</Update>
+
+<Update label="v1.13.4" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.13.4)
+
+  ### Component Updates
+
+  Linux: 6.18.34
+  etcd: v2.6.12
+  Flannel: v0.28.5
+
+  Talos is built with Go 1.26.4.
+</Update>
+
+<Update label="v1.3.3" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.3.3)
+
+  ### Disk Images
+
+  Image Factory now supports generating disk images with 4096 byte sector size (custom size), set via schematic customization.
+
+  ### Embedded Machine Configuration
+
+  Image Factory now supports embedding machine configuration into generated images starting with Talos version 1.2.0 onwards.
+
+  ### Secure Boot Disk Images
+
+  Image Factory now generates disk images with Secure Boot supporting automatically enrolling keys (with if-safe setting, enabled for VMs in setup mode).
+</Update>
+
+<Update label="v1.13.3" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.13.3)
+
+  ### Component Updates
+
+  Linux: 6.18.33
+  Kubernetes: 1.36.1
+  containerd: 2.2.4
+
+  Talos is built with Go 1.26.3.
+</Update>
+
+<Update label="v1.3.2" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.3.2)
+
+
+</Update>
+
+<Update label="v1.12.8" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.8)
+
+  ### Containerd Update
+
+  This release includes an update to containerd v2.2.4 due to v2.1.x releases being EOL and affected by CVE-2026-46680.
+
+  ### Component Updates
+
+  Linux: 6.18.32
+  etcd: 3.6.11
+  CoreDNS: 1.14.3
+  containerd: 2.2.4
+
+  Talos is built with Go 1.25.10.
+</Update>
+
+<Update label="v1.8.0" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.8.0)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  As Omni is now using `--join-tokens-mode=legacyAllowed` by default it won't start if there are any nodes running Talos below 1.6 connected to the instance.
+  If you want to keep using Omni with the outdated Talos you will need to set the flag to `legacy`. But of course we strongly recommend you to update Talos ASAP.
+
+  `omnictl cluster template` has breaking changes: it now restricts including files outside of the current directory.
+  If using files in the parent dirs, old behavior can be enabled by using `--allowed-dir`.
+
+  ### Additional Audit Log Filters
+
+  Audit logs gain a generic search box and sortable columns in the UI, plus CLI filters for `event_type`, `resource_type`, `resource_id`, `cluster_id`, and `actor`.
+
+  ### Per-Actor etcd Write Metrics
+
+  New `omni_etcd_operations_total` and `omni_etcd_resource_bytes_total` Prometheus counters track etcd writes, split by operation (create/update/teardown/destroy), actor (internal/user/service account/infra provider), actor ID, and resource type. Byte sizes are captured from the actual on-disk payload via a new `WithObserver` hook in `state-etcd`.
+
+  ### Disks and Devices on Machine Pages
+
+  The frontend now shows disks and devices on the machines and individual machine pages.
+
+  ### Talos Version Text on Installation Media Wizard
+
+  The installation media wizard's Talos version text has been updated for clarity.
+
+  ### Switching Logs Inside the Logs Tab
+
+  The logs tab now allows switching between log sources directly inside the tab.
+
+  ### Quick Switching Between Cluster Machines
+
+  The frontend allows quickly switching between machines within a cluster from the machine detail view.
+
+  ### In-UI Notifications
+
+  Omni notifications are now shown in the UI as dismissible banners.
+
+  ### Frontend Quality-of-Life Improvements for Machines
+
+  The cluster machine page gains a copy-UUID button, the machines list page can toggle between hostnames and UUIDs (with the preference saved), and machine and cluster machine pages gain kernel args tabs for editing kernel arguments inline instead of through a modal.
+
+  ### Re-Saving the Omni Support Bundle
+
+  The frontend now allows re-saving a previously generated Omni support bundle without regenerating it.
+
+  ### Support Modal
+
+  A new support modal in the frontend exposes links to GitHub issues, support channels, documentation, community resources, and office hours.
+
+  ### Helm Chart Values Generated From Config Schema
+
+  A new `helmvaluesgen` tool, run on `make generate`, updates the `config:` section of the Helm chart's `values.yaml` from Omni's config schema, applying chart-specific overrides for defaults, omissions, and descriptions.
+
+  ### Legacy Installation Media Proxying Removed
+
+  Omni no longer proxies legacy installation media download requests to the Talos Image Factory. Such requests are now rejected with a message asking users to upgrade `omnictl`, which downloads installation media directly from the factory.
+
+  ### Image Factory Proxy for Infra Providers
+
+  Infra provider Image Factory requests can now be proxied through Omni via a new schematic creation API that accepts raw YAML. This is useful when Omni holds authentication for the Image Factory or when multiple Image Factory endpoints need to be supported.
+
+  ### Imported Cluster Secrets Cleanup
+
+  A new controller tears down `ImportedClusterSecrets` once their content has been copied into `ClusterSecrets` and marked `Imported=true`, so imported bootstrap material does not linger in the state after a successful import.
+
+  ### Infra Provider Factory Endpoint
+
+  Infra providers now use the Image Factory endpoint configured in Omni's features state (sourced from args/config) instead of a hardcoded default. The configured factory URL is exposed on the provider.
+
+  ### Installation Media Placeholders
+
+  InstallationMediaConfig now accepts empty strings for `talosVersion` and `joinToken`, which resolve to the current stable version and default token at download time. The create wizard exposes "Automatic" options for these fields, and the download modal shows version/token/arch pickers for all presets.
+
+  ### Reader Access to Join Tokens
+
+  Users with the reader role can now read join tokens.
+  Reader had access to it before through Talos logs, so making the access more consistent.
+  More fine grained access will come with RBAC v2 later on.
+
+  ### Multi-Port Workload Proxy
+
+  The `omni-kube-service-exposer.sidero.dev/port` annotation now accepts a comma-separated list of `host-port` or `host-port:service-port` entries, each producing its own ExposedService URL. Label, icon, and prefix annotations gain per-host-port suffixed variants (e.g. `label-30080`). Existing single-port exposed services keep their URLs across the upgrade.
+
+  ### Configurable Log Level and Format
+
+  Omni's log level and log format are now configurable via flags and config.
+
+  ### Provision Step Errors on Machine Requests
+
+  A new `Error` field on `ClusterMachineRequestStatus` surfaces provision step failures so users can see why a request is stuck without scraping logs. Errors are now persisted on both failure and requeue paths.
+
+  ### `omnictl media` Command Group
+
+  A new `omnictl media preset {create,list,delete}` command group manages InstallationMediaConfig presets from the CLI, and `omnictl media download <preset>` downloads from them. Preset validation runs against the server's CloudPlatformConfig, SBCConfig, and TalosExtensions resources at create time. The legacy `omnictl download` is preserved but deprecated.
+
+  ### Plain Download Links for Images
+
+  The frontend now uses plain browser download links for factory image downloads instead of intercepting them.
+
+  ### Powered Off Machine State
+
+  Machines that are shut down now appear as "Powered Off" in the UI instead of being stuck in "Shutting Down" with a greyed-out unreachable state. Static infra providers honor the shutdown until the machine goes through a deallocation cycle, instead of automatically powering it back on. The CLI gains `omnictl machine shutdown` and `omnictl machine power-on` commands.
+
+  ### Per-Key Creation and Last-Active Tracking for Service Accounts
+
+  Service account key listings now include per-key creation timestamps and last-active times. `omnictl serviceaccount list` shows `KEY CREATED` and `KEY LAST ACTIVE` columns alongside the existing SA-level `LAST ACTIVE`. A new `PublicKeyLastActive` resource backs this tracking, and the activity interceptor records last-used timestamps per signing key fingerprint.
+
+  ### Commented `omnictl serviceaccount create` Output
+
+  The output of `omnictl serviceaccount create` is now commented out by default, making it friendlier for piping into `.env` files and shell automation.
+
+  ### Talos Version End-of-Support Notifications
+
+  Omni now tracks machines running Talos versions approaching or past end of support relative to `MinTalosVersion`, emits two new notifications (approaching end of support, end of support reached), and exposes Prometheus metrics for both.
+
+  ### Download `talosctl` From Factory
+
+  `talosctl` binaries are now downloaded directly from the Talos Image Factory instead of GitHub.
+
+  ### Cluster Template Include Directory Restrictions
+
+  By default, cluster templates can only include files from the same directory as the template file. This prevents malicious templates from including arbitrary files like `/etc/passwd`. The previous behavior can be restored with `--allowed-dir`.
+
+  ### Raw Bytes Support in Template Inline Fields
+
+  Inline fields for manifests and config patches now accept three forms: a single inline map (for backward compatibility), a list of inline maps, or raw bytes (which may contain multiple YAML documents). `omnictl cluster template export` now exports patches and manifests as raw bytes so multi-document values round-trip correctly.
+
+  ### Template Includes Resolved Relative to Template File
+
+  `omnictl cluster template` commands now resolve patch and Kubernetes manifest includes relative to the template YAML file, rather than the current working directory of `omnictl`.
+</Update>
+
+<Update label="v1.3.1" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.3.1)
+
+
+</Update>
+
+<Update label="v1.13.2" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.13.2)
+
+  ### Component Updates
+
+  Etcd: 3.6.11
+  Linux: 6.18.29
+
+  Talos is built with Go 1.26.3.
+</Update>
+
+<Update label="v1.3.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.3.0)
+
+  ### Vulnerability Scanner
+
+  Image Factory now includes a built-in vulnerability scanner that automatically scans the images for known vulnerabilities after the build process.
+  This feature helps users identify and address security issues in their images before deployment.
+
+  **Note:** This feature is enterprise-only and is subject to the BUSL-1.1 license.
+
+  ### VEX Support
+
+  Image Factory now supports VEX (Vulnerability Exploitability eXchange) documents, allowing users to associate vulnerability information with their schematics.
+  This feature enables better tracking and management of vulnerabilities in the images created with Image Factory.
+
+  **Note:** This feature is enterprise-only and is subject to the BUSL-1.1 license.
+</Update>
+
+<Update label="v1.2.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.2.0)
+
+  ### Authentication Support (Enterprise)
+
+  Image Factory Enterprise now supports API key-based authentication.
+  When enabled, all schematic access requires the caller to be authenticated.
+  Each schematic records its owner at creation time, making schematics private to the user who created them.
+  Authentication is configured via a set of usernames and associated API keys.
+
+  **Note:** This feature is enterprise-only and is subject to the BUSL-1.1 license.
+
+  ### French Locale
+
+  The Image Factory frontend now includes a French (fr) locale, adding translations for the web interface.
+
+  ### Stable Resolution for 'latest' Tag
+
+  The `latest` tag in the registry frontend now resolves to the latest non-prerelease (stable) version instead of being passed through to the upstream registry.
+
+  ### New /talosctl/:version Endpoint
+
+  A new `/talosctl/:version` endpoint has been added that lists all downloadable talosctl binaries for a given Talos version.
+</Update>
+
+<Update label="v1.13.0" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.13.0)
+
+  ### Clang built kernel and ThinLTO
+
+  Talos now uses a kernel built using Clang compiler, and optimized using ThinLTO. This should bring a small performance improvement,
+  alongside some hardening features, such as BTI on supported ARM systems.
+
+  ### Container Device Interface
+
+  Talos now enables [CDI](https://github.com/cncf-tags/container-device-interface) by default and extension/extension services can bring in dynamic
+  CDI spec files under `/run/cdi`.
+
+  ### talosctl debug
+
+  Talos Linux now provides a way to run and attach to the privileged debug container with a user-provided container image.
+  The debug container might be used for troubleshooting and debugging purposes.
+
+  ### Environment Configuration Document
+
+  A new `EnvironmentConfig` document has been introduced to allow users to specify environment variables for Talos components.
+  It replaces and deprecates the previous method of setting environment variables via the `.machine.env` field.
+
+  Multiple values for the same environment variable will replace previous values, with the last one taking precedence.
+
+  To remove an environment variable, remove it from the `EnvironmentConfig` document and restart the node.
+
+  ### External Volumes
+
+  Talos now supports virtiofs-based external volumes via the new
+  [ExternalVolumeConfig](https://www.talos.dev/v1.13/reference/configuration/block/externalvolumeconfig/)
+  document.
+
+  These virtiofs external volumes are not supported when SELinux is running
+  in enforcing mode.
+
+  ### Extra Arguments accept slices in addition to strings
+
+  Several Talos configuration fields that previously accepted single string values for extra arguments have been updated to accept slices of strings as well.
+  This includes fields such as `.cluster.apiServer.extraArgs`.
+
+  BREAKING: If you were relying on the resources EtcdConfigs, KubeletConfigs, ControllerManagerConfigs, SchedulerConfigs or APIServerConfigs, the protobuf format has changed from `map<string,string>` to `map<string,message>`.
+
+  ### Container Image Signature Verification
+
+  Talos now supports machine-wide container image signature verification via the new `ImageVerificationConfig` machine config document.
+
+  Any image which gets pulled on the node will be verified against the configured rules, and if no rule matches, it will be pulled without verification.
+
+  ### Talos Imager Enhancements
+
+  Talos imager now supports running rootless. `--privileged` and `-v /dev:/dev` are no longer required.
+
+  ### Image APIs Updated
+
+  Talos Linux provides new APIs to manage container images on the node: listing, pulling, importing and removing images.
+  The new pull API provides pull progress notifications.
+
+  The CLI commands `talosctl image pull`, `talosctl image list` and `talosctl image remove` have been updated to interact with the new APIs.
+
+  ### Talosctl images k8s-bundle subcommand accepts version parameter
+
+  The `talosctl images k8s-bundle` command now accepts an optional argument to override Talos version.
+
+  ### Install and Upgrade API
+
+  Talos now exposes install and upgrade operations via the `LifecycleService` API, enabling programmatic installs and upgrades through a single, consistent interface.
+  The legacy upgrade API is deprecated; new integrations should migrate to `LifecycleService` for future compatibility.
+
+  ### Kubernetes server-side apply
+
+  Talos now uses inventory backed server-side apply when applying bootstrap manifests (including `extraManifests` and `inlineManifests`).
+  Purging of unneeded manifests is automatically performed.
+  The switch and inventory backfill is automatic and no action is needed from the user.
+
+  ### Dynamic Linux Kernel Preemption Model
+
+  Talos Linux now defaults to dynamic Linux kernel preemption model, the default value `none` matches
+  previous version, but now with kernel argument `preempt=` the preemption model can be changed.
+
+  See [Linux kernel documentation](https://docs.kernel.org/admin-guide/kernel-parameters.html) for more
+  information on supported values.
+
+  This change only applies to amd64 (x86_64) architecture.
+
+  ### KubeSpan Configuration
+
+  A new `KubeSpanConfig` document has been introduced to configure KubeSpan settings.
+  It replaces and deprecates the previous method of configuring KubeSpan via the `.machine.network.kubespan` field.
+
+  The old configuration field will continue to work for backward compatibility.
+
+  ### KubeSpan Advertised Network Filters
+
+  KubeSpan now supports filtering of advertised networks using the `excludeAdvertisedNetworks` field in the `KubeSpanConfig` document.
+  This allows users to specify a list of CIDRs to exclude from the advertised networks. Please note that routing must be symmetric for any
+  pair of peers, so if one peer excludes a certain network, the other peer must also exclude it. In other words, for any given pair of peers,
+  and any pair of their addresses, the traffic should either go through KubeSpan or not, but not one way or the other.
+
+  ### LinkAliasConfig Pattern-Based Multi-Alias
+
+  `LinkAliasConfig` now supports pattern-based alias names using `%d` format verb (e.g. `net%d`).
+
+  When the alias name contains a `%d` format verb, the selector is allowed to match multiple links.
+  Each matched link receives a sequential alias (e.g. `net0`, `net1`, ...) based on hardware address order
+  of the links. Links already aliased by a previous config are automatically skipped.
+
+  This enables creating stable aliases from any N links using a single config document,
+  useful for `BondConfig` and `BridgeConfig` member interfaces on varying hardware.
+
+  ### Negative Max Volume Size
+
+  Negative max size represents the amount of space to be left free on the device, rather than the size the volume should consume.
+  For example:
+      * a max size of "-10GiB" means the volume can grow to the available space minus 10GiB.
+      * a max size of "-25%" means the volume can grow to the available space minus 25%.
+
+  ### Flannel CNI with Network Policy Support
+
+  Talos Linux now supports optionally deploying Flannel CNI with [network policy support](https://kubernetes.io/docs/concepts/services-networking/network-policies/) enabled.
+  The network policy implementation is [kube-network-policies](https://github.com/kubernetes-sigs/kube-network-policies/).
+
+  To enable Flannel CNI with network policy support, use the following machine configuration patch:
+
+  ```yaml
+  cluster:
+    network:
+      cni:
+        name: flannel
+        flannel:
+          kubeNetworkPoliciesEnabled: true
+  ```
+
+  (If the cluster is already running, sync the bootstrap manifests after applying the patch to deploy the new CNI configuration.)
+
+  ### NVIDIA GPU Support
+
+  Talos switched to using CDI and now supports configuring NVIDIA GPU via the gpu-operator helm chart.
+  See the documentation on [upgrade notes](https://docs.siderolabs.com/talos/v1.13/configure-your-talos-cluster/lifecycle-management/upgrading-talos#after-upgrade-to)
+  for more details on how to configure NVIDIA GPU support in Talos.
+
+  ### Container Image Decompression
+
+  Talos now ships with `igzip` (amd64) and `pigz` (arm64) to speed up container image decompression.
+
+  ### ProbeConfig
+
+  The TCPProbeConfig configuration document allows to configure TCP probes for network reachability checks.
+  This allows to define a custom connectivity condition.
+
+  ### /proc/PID/mem Access Hardening
+
+  A new kernel parameter `proc_mem.force_override=never` has been introduced by default to enhance system security
+  by preventing unwanted writes to protected process memory via `/proc/PID/mem`.
+  If the kernel parameter is removed, default behavior is restored, allowing access only if the process is traced.
+
+  ### Reproducible Disk Images
+
+  Talos disk images are now reproducible. Building the same version of Talos multiple times will yield
+  identical disk images.
+
+  Note: VHD and VMDK (Azure and VMware) images are not currently reproducible due to limitations in the underlying image creation tools.
+  Users verifying reproducible images should use raw images, verify checksums, and convert them to VHD/VMDK as needed.
+
+  ### ResolverConfig
+
+  The nameservers configuration in machine configuration now overwrites any previous layers (defaults, platform, etc.) when specified.
+  Previously a smart merge was performed to keep IPv4/IPv6 nameservers from lower layers if the machine configuration specified only one type.
+
+  ### Routing Rules Support
+
+  Talos now supports routing rules via the new `RoutingRuleConfig` machine config document.
+
+  ### `talosctl images talos-bundle` can ignore reaching to the registry
+
+  The `talosctl images talos-bundle` command now accepts optional `--overlays` and `--extensions` flags.
+  If those are set to `false`, the command will not attempt to reach out to the container registry to fetch the latest versions and digests of the overlays and extensions.
+
+  ### Lifecycle Upgrade in talosctl
+
+  `talosctl` upgrades now route through `LifecycleService`, aligning CLI behavior with the new install/upgrade API and unifying the upgrade path.
+  This change is transparent to users but standardizes the backend used for upgrades.
+
+  ### Component Updates
+
+  Linux: 6.18.24
+  containerd: 2.2.3
+  etcd: 3.6.9
+  CoreDNS: 1.14.2
+  Kubernetes: 1.36.0
+  CNI: 1.9.1
+  Flannel CNI plugin: v1.9.1-flannel1
+  Flannel: 0.28.4
+  LVM2: 2_03_38
+  runc: 1.4.2
+  systemd: 259.5
+  cryptsetup: 2.8.3
+  Tenstorrent: 2.7.0
+  iptables: 1.8.12
+  musl: 1.2.6
+
+  Talos is built with Go 1.26.2.
+
+  ### VM Hot-Add Support
+
+  Talos now includes udev rules to support hot-adding of CPUs in virtualized environments.
+
+  ### VRF Support
+
+  Talos now supports VRF (Virtual Routing and Forwarding) via the new `VRFConfig` machine config document.
+</Update>
+
+<Update label="v1.12.7" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.7)
+
+  ### Component Updates
+
+  Linux: 6.18.24
+  containerd: 2.1.7
+  etcd: 3.6.9
+  Kubernetes: v1.35.4
+
+  Talos is built with Go 1.25.9.
+</Update>
+
+<Update label="v1.7.0" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.7.0)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  A [EULA](https://siderolabs.com/eula/) agreement has been added to Omni which must be accepted in order to continue using it.
+
+  This agreement can be accepted through UI or programmatically either by adding the below flags:
+  ```sh
+  --eula-accept-name=Your Name
+  --eula-accept-email=your@email.com
+  ```
+
+  Or if using `--config-path` with the below configuration:
+  ```yaml
+  eulaAccept:
+    name: Your Name
+    email: your@email.com
+  ```
+
+  ### Allow Machine Request Destroy
+
+  Machine requests are now created without a controller owner, allowing operators and admins to teardown stuck or unwanted requests directly. The controller replaces destroyed requests automatically to maintain the desired machine count.
+
+  ### Browsable Audit Logs in the UI
+
+  Audit logs are now browsable directly in the Omni UI, making it easier to review audit events without CLI access.
+
+  ### Human-Readable Config Validation Errors
+
+  Configuration validation errors are now presented in a human-readable format, making it easier to diagnose and fix configuration issues.
+
+  ### Move Omni Defaults to JSONSchema
+
+  Omni default config values are now defined in the JSONSchema.
+
+  ### Direct Talos Node Access via SideroLink
+
+  All Talos nodes can now be accessed directly via their SideroLink endpoint, removing the need to route through the load balancer for Talos API calls. Allowing direct access to worker nodes when control plane nodes are unavailable.
+
+  ### Kubernetes Manifests Sync
+
+  Omni now supports syncing Kubernetes manifests directly to managed clusters. Manifests can be defined in cluster templates, allowing declarative management of Kubernetes resources alongside cluster configuration.
+
+  ### `omnictl edit` Command
+
+  A new `omnictl edit` command has been added, allowing users to edit Omni resources interactively from the CLI.
+
+  ### Allow Using `talosctl debug`
+
+  Update Omni Talos API proxy code to elevate permissions for `talosctl debug` command.
+
+  ### Workload Proxy Subdomain Options
+
+  The workload proxy now supports an empty subdomain configuration and a new `useOmniSubdomain` option, providing more flexibility in how workload proxy URLs are structured.
+</Update>
+
+<Update label="v1.1.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.1.0)
+
+  ### SPDX SBOM viewer
+
+  Added a new SPDX SBOM section to the Image Factory Enterprise.
+  Users can now request SBOMs for a specific Talos schematic directly from the Image Factory Enterprise interface.
+
+  **Note:** This feature is enterprise-only and is subject to the BUSL-1.1 license.
+</Update>
+
+<Update label="v1.0.17" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.17)
+
+
+</Update>
+
+<Update label="v1.0.16" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.16)
+
+
+</Update>
+
+<Update label="v1.12.6" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.6)
+
+  ### Component Updates
+
+  Linux: 6.18.18
+  runc: 1.3.5
+
+  Talos is built with Go 1.25.8.
+</Update>
+
+<Update label="v1.6.0" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.6.0)
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  The deprecated flags and config fields that were kept for the SQLite migration period (introduced in v1.4.0) have been removed.
+
+  If you still have any of the following flags or config keys set, **you must remove them before upgrading**, as they will cause startup errors:
+  * `--audit-log-dir` (`.logs.audit.path`)
+  * `--secondary-storage-path` (`.storage.secondary.path`)
+  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
+  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
+  * `--log-storage-path` (`.logs.machine.storage.path`)
+  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
+  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
+  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
+  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
+  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
+
+  The automatic migration code for BoltDB secondary storage, file-based audit logs, file-based discovery service snapshots, and circular buffer machine logs has also been removed. If you are upgrading from a version older than v1.4.0, you must first upgrade to v1.4.x to complete the migrations, then upgrade to this version.
+
+  ### Talos and Kubernetes CA Rotation
+
+  Omni now supports rotating the Talos and Kubernetes Certificate Authorities for managed clusters.
+
+  ### Talos and Kubernetes Versions in ClusterStatus
+
+  The `ClusterStatus` resource now includes `talos_version` and `kubernetes_version` fields, making cluster version information available programmatically. They are now also shown in the cluster list in the UI.
+
+  ### Pending and Historical Config Diffs in UI
+
+  The UI now shows pending and historical configuration diffs, making it easy to review what changed and when.
+
+  ### Force Machine Destroy
+
+  A `--force` flag has been added to the machine destroy command (and a corresponding UI option) to forcibly remove machines that are stuck or unresponsive.
+
+  ### Helm Chart v2
+
+  A new Helm chart v2 has been implemented with improved structure and more configurable options.
+  More configuration values are now exposed in the Helm chart, giving operators greater flexibility when deploying Omni.
+
+  ### Installation Media Wizard
+
+  The installation media flow now uses a wizard-based UI by default, replacing the previous modal dialog. Presets may now also be saved, allowing for future reuse.
+
+  ### Machine Log Storage Cleanup
+
+  Global size-based cleanup has been added for machine log storage, preventing unbounded disk usage.
+  Configurable options for audit log cleanup have also been added.
+
+  ### Minimum Talos Version Bump
+
+  The minimum supported Talos version for new clusters has been bumped to **1.8**.
+
+  ### Minor UI Improvements
+
+  Other minor UI improvements part of this release:
+
+  * Talos and Kubernetes versions are now shown in the cluster list.
+  * Node name and UUID are shown in the support bundle modal.
+  * Machine set pools now have a collapse/expand toggle.
+  * Cluster scaling has been moved to a modal dialog.
+  * Getting started guidance and empty-state pages have been added for clusters, machines, and machine classes.
+  * Instructions for adding machines and exporting cluster templates are now shown in the UI.
+  * Clarification text has been added to backup settings.
+  * YouTube video embedding is now supported in documentation/onboarding flows.
+  * The frontend authentication flow no longer requires an explicit login click.
+  * Resource labels use new colors for improved visual clarity.
+
+  ### Detailed Node Disk Information
+
+  The node details page now shows detailed disk information, including disk model, size, and type.
+
+  ### PCI Devices on Node Details
+
+  The node details page now includes a dedicated section listing all PCI devices present on the node.
+
+  ### Reset Node Unique Tokens
+
+  It is now possible to reset the unique token for a node, which can be useful for re-enrolling machines.
+
+  ### OIDC Token Cache Isolation for Kubeconfigs
+
+  Generated kubeconfigs now use isolated OIDC token caches, preventing token collisions between different kubeconfig users.
+
+  ### Pending Machines
+
+  Machines that were previously rejected can now be unrejected from the UI, allowing them to be accepted into Omni.
+
+  Rejected machines can also now be deleted directly from the UI.
+
+  ### SAML Logout Flow
+
+  Omni now implements the SAML logout flow, properly terminating sessions with the SAML identity provider on sign-out.
+
+  ### SQLite Metrics and Cleanup Counters
+
+  Metrics for the SQLite state backend have been exposed, along with cleanup counters for better observability.
+
+  ### Upgrade Parallelism
+
+  The upgrade parallelism for machine sets can now be configured via cluster templates and the UI, allowing operators to control how many machines are upgraded concurrently.
+
+  ### User and Service Account Activity Tracking
+
+  Omni now tracks the last activity time for users and service accounts, providing better visibility into account usage.
+
+  ### User Management gRPC Endpoints
+
+  New `ManagementService` gRPC endpoints have been added for user operations, enabling programmatic user management.
+
+  ### Configurable User and Service Account Limits
+
+  Operators can now enforce configurable limits on the number of users and service accounts that can be created in Omni.
+
+  ### Custom Vault Kubernetes Auth Mount Path
+
+  The Vault Kubernetes authentication mount path is now configurable, supporting non-default Vault configurations.
+</Update>
+
+<Update label="v1.12.5" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.5)
+
+  ### Component Updates
+
+  Linux: 6.18.15
+  Kubernetes: 1.35.2
+  etcd: 3.6.8
+
+  Talos is built with Go 1.25.8.
+</Update>
+
+<Update label="v1.0.15" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.15)
+
+
+</Update>
+
+<Update label="v1.0.14" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.14)
+
+
+</Update>
+
+<Update label="v1.12.4" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.4)
+
+  ### KubeSpan Advertised Network Filters
+
+  KubeSpan now supports filtering of advertised networks using the `excludeAdvertisedNetworks` field in the `KubeSpanConfig` document.
+  This allows users to specify a list of CIDRs to exclude from the advertised networks. Please note that routing must be symmetric for any
+  pair of peers, so if one peer excludes a certain network, the other peer must also exclude it. In other words, for any given pair of peers,
+  and any pair of their addresses, the traffic should either go through KubeSpan or not, but not one way or the other.
+
+  ### Component Updates
+
+  Linux: 6.18.9
+
+  Talos is built with Go 1.25.7.
+</Update>
+
+<Update label="v1.0.3" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.0.3)
+
+
+</Update>
+
+<Update label="v1.12.3" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.3)
+
+  ### Component Updates
+
+  Linux: 6.18.8
+
+  Talos is built with Go 1.25.7.
+</Update>
+
+<Update label="v1.5.0" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.5.0)
+
+  ### Better Audit Logging
+
+  Omni now collects audit logs for operations performed on *all* user-managed resources, improving security and traceability.
+
+  ### Config Generation
+
+  Omni can now generate its own configuration directly from the defined schema.
+  The config merge algorithms were also improved: now the config preserves the default values properly when some sections are
+  overwritten by the user provided config.
+
+  ### Etcd Maintenance
+
+  The following etcd commands are now usable with Omni managed clusters:
+  `talosctl etcd downgrade validate`
+  `talosctl etcd downgrade enable`
+  `talosctl etcd downgrade cancel`
+  `talosctl etcd forfeit leadership`
+
+  ### gRPC Tunnel Management
+
+  Added the ability to switch gRPC tunnel modes for connected machines.
+
+  ### Join Token Management
+
+  Added a dedicated `omnictl jointoken omni-endpoint` to streamline node registration.
+
+  ### Kernel Args CLI Tools
+
+  Added support for managing kernel arguments directly within cluster templates.
+
+  ### Schema-Aware Code Editor
+
+  The built-in code editor for the machine configs now supports different configuration schemas for each Talos version.
+  So the config will be always validated against the currently running Talos version schema.
+
+  ### `omnictl` Directory Support
+
+  The `omnictl sync/apply` can now process directories, simplifying bulk resource applications.
+
+  ### WireGuard Bind Address
+
+  The WireGuard endpoint (`services.siderolink.wireGuard.endpoint` / `--siderolink-wireguard-bind-addr`) is now respected. Previously, Omni always bound to all interfaces regardless of this setting. Default remains `0.0.0.0:50180`.
+</Update>
+
+<Update label="v1.0.2" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.0.2)
+
+
+</Update>
+
+<Update label="v1.0.1" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.0.1)
+
+
+</Update>
+
+<Update label="v1.0.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v1.0.0)
+
+  ### Configuration moved to env and config files only
+
+  All configuration is now provided exclusively via environment variables and/or configuration files.
+  Command-line flags for configuration have been removed.
+
+  Users must migrate any existing CLI-based configuration to env variables or supported config file formats.
+  This change simplifies the runtime interface but is a breaking change and requires updates to existing workflows relying on CLI flags.
+
+  ### Disk Image
+
+  The disk image build process no longer requires privileged deployment and mounting '/dev'.
+  The build process now operates in userspace, and it doesn't depend on host Linux kernel anymore.
+  This change enhances security and portability, allowing disk images to be built in a wider range of environments without elevated permissions.
+  This also enables most of the image builds to be fully reproducible.
+</Update>
+
+<Update label="v1.12.2" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.2)
+
+  ### `talosctl images talos-bundle` can ignore reaching to the registry
+
+  The `talosctl images talos-bundle` command now accepts optional `--ovelays` and `--extensions` flags.
+  If those are set to `false`, the command will not attempt to reach out to the container registry to fetch the latest versions and digests of the overlays and extensions.
+
+  ### Component Updates
+
+  Linux: 6.18.5
+
+  Talos is built with Go 1.25.6.
+</Update>
+
+<Update label="v1.12.1" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.1)
+
+  ### Component Updates
+
+  Linux: 6.18.2
+
+  Talos is built with Go 1.25.5.
+</Update>
+
+<Update label="v1.10.9" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.9)
+
+  ### etcd Zombine Members
+
+  See [this blog post](https://etcd.io/blog/2025/zombie_members_upgrade/) for more details.
+
+  This release includes an update to etcd v3.5.26 to ensure that upgrades to Talos v1.11 and later (which default to etcd v3.6) will not be blocked by the presence of zombine members in the etcd cluster.
+
+  Please note that etcd version can also be configured via the machine configuration with any version of Talos Linux.
+
+  ### Component Updates
+
+  Linux: 6.12.63
+  runc: 1.2.9
+  etcd: 3.5.26
+
+  Talos is built with Go 1.24.11.
+</Update>
+
+<Update label="v1.12.0" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.12.0)
+
+  ### What's New
+
+  See also [What's new in Talos v1.12.0](https://docs.siderolabs.com/talos/v1.12/getting-started/what's-new-in-talos) in the documentation for a summary of the most notable changes in this release.
+
+  ### API Server Cipher Suites
+
+  The Kubernetes API server in Talos has been updated to use a more secure set of TLS cipher suites by default.
+  This is in line with a set of best practices documented in CIS 1.12 benchmark.
+
+  You can still expand the list of supported cipher suites via the `cluster.apiServer.extraArgs."tls-cipher-suites"` machine configuration field if needed.
+
+  ### New User Volume type - bind
+
+  New field in UserVolumeConfig - `volumeType` that defaults to `partition`, but can be set to `directory`.
+  When set to `directory`, provisioning and filesystem operations are skipped and a directory is created under `/var/mnt/<name>`.
+
+  The `directory` type enables lightweight storage volumes backed by a host directory, instead of requiring a full block device partition.
+
+  When `volumeType = "directory"`:
+  - A directory is created at `/var/mnt/<metadata.name>`;
+  - `provisioning`, `filesystem` and `encryption` are prohibited.
+
+  Note: this mode does not provide filesystem-level isolation and inherits the EPHEMERAL partition capacity limits.
+  It should not be used for workloads requiring predictable storage quotas.
+
+  ### Disk Encryption
+
+  Talos versions prior to v1.12 used the state of PCR 7 and signed policies locked to PCR 11 for TPM based disk encryption.
+
+  Talos now supports configuring which PCRs states are to be used for TPM based disk encryption via the `options.pcrs`
+  field in the `tpm` section of the disk encryption configuration.
+
+  If user doesn't specify any options Talos defaults to using PCR 7 for backwards compatibility with existing installations.
+
+  This change was made to improve compatibility with systems that may have varying states in PCR 7 due to UEFI Secure Boot configurations
+  and users may wish to disable locking to PCR 7 state entirely.
+
+  Signed PCR policies will still be bound to PCR 11.
+
+  The currently used PCR's can be seen with `talosctl get volumestatus <volume> -o yaml` command.
+
+  ### New User Volume type - disk
+
+  `volumeType` in UserVolumeConfig can be set to `disk`.
+  When set to `disk`, a full block device is used for the volume.
+
+  When `volumeType = "disk"`:
+  - Size specific settings are not allowed in the provisioning block (`minSize`, `maxSize`, `grow`).
+
+  ### Embedded Config
+
+  Talos Linux now supports [embedding the machine configuration](https://www.talos.dev/v1.12/talos-guides/configuration/acquire/) directly into the boot image.
+
+  ### etcd
+
+  etcd container image is now pulled from `registry.k8s.io/etcd` instead of `gcr.io/etcd-development/etcd`.
+
+  ### Ethernet Configuration
+
+  The Ethernet configuration now includes a `wakeOnLAN` field to enable Wake-on-LAN (WOL) support.
+  This field can be set to enable WOL and specify the desired WOL modes.
+
+  ### Extra Binaries
+
+  Talos Linux now ships with `nft` binary in the rootfs to support CNIs which shell out to `nft` command.
+
+  ### Feature Lock
+
+  Talos now ignores the following machine configuration fields:
+
+  - `machine.features.rbac` (locked to true)
+  - `machine.features.apidCheckExtKeyUsage` (locked to true)
+  - `cluster.apiServer.disablePodSecurityPolicy` (locked to true)
+
+  These fields were removed from the default machine configuration schema in v1.12 and are now always set to the locked values above.
+
+  ### Talos force reboot
+
+  Talos now supports a "force" reboot mode, which allows skipping the graceful userland termination.
+  It can be used in situations where a userland service (e.g. the kubelet) gets stuck during graceful shutdown, causing the regular reboot flow to fail.
+
+  In addition, `talosctl` was updated to support this feature via `talosctl reboot --mode force`.
+
+  ### GRUB
+
+  Talos Linux introduces new machine configuration option `.machine.install.grubUseUKICmdline` to control whether GRUB should use the kernel command line
+  provided by the boot assets (UKI) or to use the command line constructed by Talos itself (legacy behavior).
+
+  This option defaults to `true` for new installations, which means that GRUB will use the command line from the UKI, making it easier to customize kernel parameters via boot asset generation.
+  For existing installations upgrading to v1.12, this option will default to `false` to preserve the legacy behavior.
+
+  ### Kernel Log
+
+  The kernel log (dmesg) is now also available as the service log named `kernel` (`talosctl logs kernel`).
+
+  ### Kernel Module
+
+  Talos now supports optionally disabling kernel module signature verification by setting `module.sig_enforce=0` kernel parameter.
+  By default module signature verification is enabled (`module.sig_enforce=1`).
+  When using Factory or Imager supply as `-module.sig_enfore module.sig_enforce=0` kernel parameters to disable module signature enforcement.
+
+  ### Kernel Security Posture Profile (KSPP)
+
+  Talos now enables a stricter set of KSPP sysctl settings by default.
+  The list of overridden settings is available with `talosctl get kernelparamstatus` command.
+
+  ### Encrypted Volumes
+
+  Talos Linux now consistently provides mapped names for encrypted volumes in the format `/dev/mapper/luks2-<volume-id>`.
+  This change should not affect system or user volumes, but might allow easier identification of encrypted volumes,
+  and specifically for raw encrypted volumes.
+
+  ### Network Configuration
+
+  The network configuration under `.machine.network` (with the exception of KubeSpan) has been deprecated, but it is still supported for backwards compatibility.
+  See [documentation](https://docs.siderolabs.com/talos/v1.12/networking/configuration/overview) for more information.
+
+  ### Persistent logs
+
+  Talos now stores system component logs in /var/log, featuring automatic log rotation and keeping two most
+  recent log files. This change allows collecting logs from Talos like on any other Linux system.
+
+  ### CRI Registry Configuration
+
+  The CRI registry configuration in v1apha1 legacy machine configuration under `.machine.registries` is now deprecated, but still supported for backwards compatibility.
+  New configuration documents `RegistryMirrorConfig`, `RegistryAuthConfig` and `RegistryTLSConfig` should be used instead.
+
+  ### talosctl image cache-serve
+
+  `talosctl` includes new subcommand `image cache-serve`.
+  It allows serving the created OCI image registry over HTTP/HTTPS.
+  It is a read-only registry, meaning images cannot be pushed to it, but the backing storage can be updated by re-running the `cache-create` command;
+
+  Additionally `talosctl image cache-create` has some changes:
+    * new flag `--layout`: `oci` (_default_), `flat`:
+      * `oci` preserves current behavior;
+      * `flat` does not repack artifact layer, but moves it to a destination directory, allowing it to be served by `talosctl image cache-serve`;
+    * changed flag `--platform`: now can accept multiple os/arch combinations:
+      * comma separated (`--platform=linux/amd64,linux/arm64`);
+      * multiple instances (`--platform=linux/amd64 --platform=linux/arm64`);
+
+  ### UEFI Boot
+
+  When using UEFI boot with systemd-boot as bootloader (on new installs of Talos from 1.10+ onwards), Talos will now not touch the UEFI boot order.
+  Talos 1.11 made a fix to create UEFI boot entry and set the boot order as first entry, but this behavior caused issues on some systems.
+  To avoid further issues, Talos will now only create the UEFI boot entry if it does not exist, but will not modify the boot order.
+
+  ### Component Updates
+
+  Linux: 6.18.1
+  Kubernetes: 1.35.0
+  CNI Plugins: 1.9.0
+  cryptsetup: 2.8.1
+  LVM2: 2_03_37
+  systemd-udevd: 257.8
+  etcd: 3.6.7
+  CoreDNS: 1.13.2
+  Flannel: 0.27.4
+  Flannel CNI plugin: v1.8.0-flannel2
+  runc: 1.3.4
+  containerd: 2.1.6
+  zfs: 2.4.0
+
+  Talos is built with Go 1.25.5.
+</Update>
+
+<Update label="v1.4.0" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.4.0)
+
+  <Warning>
+  This version has a known issue with cluster state updates, please don't use it.
+  </Warning>
+
+  ### Urgent Upgrade Notes **(No, really, you MUST read this before you upgrade)**
+
+  This release consolidates **Discovery service state**, **Audit logs**, **Machine logs**, and **Secondary resources** into a single SQLite storage backend.
+
+  **1. New Required Flag**
+  You **must** set the new `--sqlite-storage-path` (or `.storage.sqlite.path`) flag. There is no default value, and Omni will not start without it. It **must** be a path to the SQLite file (will be created by Omni), **not** a directory, e.g., `--sqlite-storage-path=/path/to/omni-sqlite.db`.
+
+  **2. Audit Logging Changes**
+  A new flag `--audit-log-enabled` (or `.logs.audit.enabled`) has been introduced to explicitly enable or disable audit logging.
+  * **Default:** `true`.
+  * **Change:** Previously, audit logging was implicitly enabled only when the path was set. Now, it is enabled by default.
+
+  **3. Automatic Migration**
+  Omni will automatically migrate your existing data (BoltDB, file-based logs) to the new SQLite database on the first startup. To ensure this happens correctly, simply add the new SQLite flag and **leave your existing storage flags in place** for the first run.
+
+  Once the migration is complete, you are free to remove the deprecated flags listed below. If they remain, they will be ignored and eventually dropped in future versions.
+
+  **4. Deprecated Flags (Kept for Migration)**
+  The following flags (and config keys) are deprecated and kept solely to facilitate the automatic migration:
+  * `--audit-log-dir` (`.logs.audit.path`)
+  * `--secondary-storage-path` (`.storage.secondary.path`)
+  * `--machine-log-storage-path` (`.logs.machine.storage.path`)
+  * `--machine-log-storage-enabled` (`.logs.machine.storage.enabled`)
+  * `--embedded-discovery-service-snapshot-path` (`.services.embeddedDiscoveryService.snapshotsPath`)
+  * `--machine-log-buffer-capacity` (`.logs.machine.bufferInitialCapacity`)
+  * `--machine-log-buffer-max-capacity` (`.logs.machine.bufferMaxCapacity`)
+  * `--machine-log-buffer-safe-gap` (`.logs.machine.bufferSafetyGap`)
+  * `--machine-log-num-compressed-chunks` (`.logs.machine.storage.numCompressedChunks`)
+
+  **5. Removed Flags**
+  The following flags have been removed and are no longer supported:
+  * `--machine-log-storage-flush-period` (`.logs.machine.storage.flushPeriod`)
+  * `--machine-log-storage-flush-jitter` (`.logs.machine.storage.flushJitter`)
+
+  ### Support for OIDC Providers without Email Verified Claim
+
+  Enabled support for OIDC providers, such as Azure, that do not provide the `email_verified` claim during authentication.
+
+  ### Dynamic SAML Label Role Updates
+
+  Added support for dynamically updating SAML label roles on every login via the new `update_on_each_login` field.
+
+  ### Machine Class Logic Updates
+
+  Added support for locks, node deletion, and restore operations when using machine classes.
+
+  ### Virtual Resources for Platform Information
+
+  Platform and SBC information is now pulled from Talos machinery and presented as virtual resources:
+  `MetalPlatformConfig`, `CloudPlatformConfig`, and `SBCConfig`. They support `Get` and `List` operations.
+
+  ### Automated CLI Install Options
+
+  Automated installation options have been added to the CLI section of the homepage, supplementing the existing manual options.
+
+  ### OIDC Warning for Kubeconfig Download
+
+  A warning toast is now displayed when downloading kubeconfig to inform users that the OIDC plugin is required before using the file with kubectl.
+
+  ### UI/UX Improvements
+
+  Various UI improvements including pre-selecting the correct binary for the user's platform, truncating long items in the ongoing tasks list,
+  hiding JSON schema descriptions behind tooltips, and standardizing link styling.
+
+  ### Force Deletion of Infra Provider Resources
+
+  Added the ability to force-delete `MachineRequests` and `InfraMachines` managed by Infra providers.
+  This allows for the cleanup of resources and finalizers even if the underlying provider is unresponsive or deleted.
+
+  ### Prevent Talos Minor Version Downgrades
+
+  Omni now prevents downgrading the Talos minor version below the initial version used to create the cluster.
+  This safeguard prevents machine configurations from entering a broken state due to unsupported features in older versions.
+</Update>
+
+<Update label="v1.11.6" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.6)
+
+  ### UEFI Boot
+
+  When using UEFI boot with systemd-boot as bootloader (on new installs of Talos from 1.10+ onwards), Talos will now not touch the UEFI boot order.
+  Talos 1.11 made a fix to create UEFI boot entry and set the boot order as first entry, but this behavior caused issues on some systems.
+  To avoid further issues, Talos will now only create the UEFI boot entry if it does not exist, but will not modify the boot order.
+
+  ### Component Updates
+
+  Linux: 6.12.62
+  runc: 1.3.4
+
+  Talos is built with Go 1.24.11.
+</Update>
+
+<Update label="v1.0.13" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.13)
+
+
+</Update>
+
+<Update label="v1.0.12" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.12)
+
+
+</Update>
+
+<Update label="v0.9.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.9.0)
+
+
+</Update>
+
+<Update label="v1.10.8" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.8)
+
+  ### Component Updates
+
+  Linux: 6.12.58
+  Kubernetes: 1.33.6
+  Runc: v1.2.8
+  Containerd: v2.0.7
+
+  Talos is built with Go 1.24.10.
+</Update>
+
+<Update label="v1.3.0" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.3.0)
+
+  ### Shortened Auth0 Token Lifetime
+
+  Auth0 authentication tokens now expire after 2 minutes. Users without valid PGP keys will need to reauthenticate once tokens expire.
+
+  ### Cluster Import (Experimental)
+
+  Omni introduces an experimental feature that allows users to import existing Talos clusters to be managed by Omni.
+
+  Documentation on how to use this feature can be found here: https://docs.siderolabs.com/omni/cluster-management/importing-talos-clusters
+
+  ### Multi-Select for Pending Machines
+
+  You can now accept or reject multiple pending machines at once, simplifying large-scale approvals.
+
+  ### Stripe Link in Settings Sidebar
+
+  A Stripe link is now shown in the Omni settings sidebar when Stripe integration is enabled.
+
+  ### Display Unsupported Kubernetes Versions
+
+  Unsupported Kubernetes versions are now shown in the update modal as disabled entries with explanatory messages.
+
+  ### Improved Kubernetes Update Modal
+
+  The Kubernetes update modal now displays only upgradeable minor versions and explains why certain versions are not upgradeable.
+
+  ### Enhanced CPU Information in Machine Status
+
+  Machines now report processor details when either core count or frequency is available, improving visibility into hardware specs.
+
+  ### Support for Modifying Kernel Arguments
+
+  Omni now supports modifying kernel arguments for the existing machines.
+
+  Documentation on how to use this feature can be found here: https://docs.siderolabs.com/omni/infrastructure-and-extensions/modify-kernel-arguments
+</Update>
+
+<Update label="v1.11.5" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.5)
+
+  ### Component Updates
+
+  containerd: 2.1.5
+
+  Talos is built with Go 1.24.9.
+</Update>
+
+<Update label="v1.11.4" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.4)
+
+  ### Component Updates
+
+  runc: 1.3.3
+  Linux: 6.12.57
+  linux-firmware: 20251021
+
+  Talos is built with Go 1.24.9.
+</Update>
+
+<Update label="v1.11.3" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.3)
+
+  ### Component Updates
+
+  runc: 1.3.2
+  Kubernetes: 1.34.1
+  Linux: 6.12.52
+  linux-firmware: 20251011
+  CoreDNS: 1.12.4
+  etcd: 3.6.5
+  Flannel: 0.27.4
+
+  Talos is built with Go 1.24.9.
+</Update>
+
+<Update label="v1.2.0" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.2.0)
+
+  ### Cluster Locking
+
+  Cluster locking is a feature that pauses/disables all cluster related operations on a cluster.
+
+  ### Visual Feedback on Copy
+
+  Added visual feedback when copying text to the clipboard.
+
+  ### Generate Join Config for a Specific Join Token
+
+  Added the ability to generate a join configuration for a specific join token.
+
+  ### `kubeconfig` with `grant-type=authcode-keyboard`
+
+  New configs generated with the latest Omni version and `authcode-keyboard`
+  enabled now work for `oidc-login` `v1.33+`.
+  See https://github.com/int128/kubelogin/pull/1263
+
+  Newly generated configs won't work for `oidc-login` below `v1.33`. You can:
+  - keep using the old configs.
+  - generate the new configs and drop `oidc-redirect-url` param.
+  - update the `oidc-login` module.
+
+  ### Redesigned Machine List Page
+
+  The Machines list page has been redesigned to provide a better user experience.
+
+  ### Minimum Talos version for new clusters
+
+  The minimum Talos version required to create new clusters has been raised to v1.6.0.
+
+  ### New exported metrics for cluster features and machine details
+
+  New prometheus metrics are added for:
+  - Enabled cluster features: disk encryption, embedded discovery service, workload proxying.
+  - Machines' platforms, their secure boot status and whether they were booted with UKI.
+
+  ### OIDC Authentication Support
+
+  Added support for OIDC authentication in Omni.
+
+  ### Toast Messages
+
+  Replaced the notification banner feature with toast messages.
+
+  ### User Consent Form for Userpilot
+
+  Added a user consent form for Userpilot to allow opting in/out for data collection.
+
+  ### Userpilot Reporting Integration
+
+  Integrated Userpilot reporting to help track user interactions.
+</Update>
+
+<Update label="v1.11.2" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.2)
+
+  ### Component Updates
+
+  runc: 1.3.1
+  Kubernetes: 1.34.1
+  Linux: 6.12.48
+  linux-firmware: 20250917
+
+  Talos is built with Go 1.24.6.
+</Update>
+
+<Update label="v0.8.4" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.8.4)
+
+
+</Update>
+
+<Update label="v1.11.1" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.1)
+
+  ### Component Updates
+
+  Linux: 6.12.45
+  CoreDNS: 1.12.3
+
+  Talos is built with Go 1.24.6.
+</Update>
+
+<Update label="v1.11.0" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.11.0)
+
+  ### Azure
+
+  Talos on Azure now defaults to MTU of 1400 bytes for the `eth0` interface to avoid packet fragmentation issues.
+  The default MTU can be overriden via machine configuration.
+
+  ### Boot
+
+  Talos boot partition size increased to 2 GiB to accommodate large images (with many system extensions included).
+
+  ### Kernel Command Line
+
+  Talos now exposes the kernel command line as a KernelCmdline resource (`talosctl get cmdline`).
+
+  ### Disk Encryption
+
+  Disk encryption for system volumes is now managed by the `VolumeConfig` machine configuration document.
+  Legacy configuration in `valpha1` machine configuration is still supported.
+
+  New per-key option `lockToSTATE` is added to the `VolumeConfig` document, which allows to lock the volume encryption key to the secret salt in the `STATE` volume.
+  So, if the `STATE` volume is wiped or replaced, the volume encryption key will not be usable anymore.
+
+  ### Disk Wipe
+
+  Talos now supports `talosctl disk wipe` command in maintenance mode (`talosctl disk wipe <disk> --insecure`).
+
+  ### Early Inline Configuration
+
+  Talos now supports passing early inline configuration via the `talos.config.early` kernel parameter.
+  This allows to pass the configuration before the platform config source is probed, which is useful for early boot configuration.
+  The value of this parameter has the same format as the `talos.config.inline` parameter, i.e. it should be base64 encoded and zstd-compressed.
+
+  ### ETCD downgrade API
+
+  Added ETCD downgrade API mimicking the ETCD API and etcdctl interfaces.
+  This API allows to downgrade ETCD cluster (storage format) to a previous version.
+
+  ### IMA support removed
+
+  Talos now drops the IMA (Integrity Measurement Architecture) support. This feature was not used in Talos for any meaningful security purpose
+  and has historically caused performance issues. See #11133 for more details.
+
+  ### Kubernetes Version Validation
+
+  Talos now validates the Kubernetes version in the image specified in the machine configuration.
+  Previously this check was performed only on upgrade, but now it is consistently applied to upgrade, initial provisioning, and machine configuration updates.
+
+  This implies that all image references should contain the tag, even if the image is pinned by digest.
+
+  ### Qemu provisioner on MacOS
+
+  On MacOS `talosctl cluster create` command now supports the Qemu provisioner in addition to the Docker provisioner.
+
+  ### Kernel Modules
+
+  Talosctl now returns the loaded modules, not the modules configured to be loaded (`talosctl get modules`).
+
+  ### SBOM
+
+  Talos now publishes [Software Bill of Materials (SBOM)](https://www.talos.dev/v1.11/advanced/sbom/) in the SPDX format.
+
+  ### Swap Suport
+
+  Talos now supports swap on block devices.
+  This feature can be enable by using [SwapVolumeConfig](https://www.talos.dev/v1.11/reference/configuration/block/swapvolumeconfig/) document in the machine configuration.  
+
+  ### Component Updates
+
+  Linux: 6.12.43
+  Kubernetes: 1.34.0
+  runc: 1.3.0
+  etcd: 3.6.4
+  containerd: 2.1.4
+  Flannel CNI plugin: 1.7.1-flannel1
+  Flannel: 0.27.2
+  CoreDNS: 1.12.2
+  xfsprogs: 6.15.0
+  systemd-udevd and systemd-boot: 257.7
+  lvm2: 2.03.33
+  cryptsetup: 2.8.0
+
+  Talos is built with Go 1.24.6.
+
+  ### VMware
+
+  Talos VMWare platform now supports `arm64` architecture in addition to `amd64`.
+
+  ### Volumes
+
+  Talos now supports [raw user volumes](https://www.talos.dev/v1.11/talos-guides/configuration/disk-management/raw/), allowing to allocate unformatted disk space as partition.
+  In addition to that, support for [existing volumes](https://www.talos.dev/v1.11/talos-guides/configuration/disk-management/existing/) has been added, allowing to mount existing partitions without formatting them.
+
+  ### Zswap Support
+
+  Talos now supports zswap, a compressed cache for swap pages.
+  This feature can be enabled by using [ZswapConfig](https://www.talos.dev/v1.11/reference/configuration/block/zswapconfig/) document in the machine configuration.
+</Update>
+
+<Update label="v1.1.0" tags={["Omni"]}>
+  [Release notes →](https://github.com/siderolabs/omni/releases/tag/v1.1.0)
+
+  ### Improved Clusters Page Breadcrumbs
+
+  Breadcrumbs on the clusters page have been redesigned for better navigation.
+
+  ### CLI Support for Kernel Args and Join Configs
+
+  `omnictl` now supports commands to retrieve SideroLink kernel arguments and join configurations.
+
+  ### Default Config Location Change
+
+  The default location for storing Omni configuration files and user PGP keys has been changed.
+
+  ### Custom Volumes in Helm Chart
+
+  Added support for specifying custom volumes and volume mounts in the Omni Helm chart.
+
+  ### Home Page Design Update
+
+  Omni home page design was changed to have more useful information about the whole account status.
+
+  ### Join Token Usage Warning
+
+  Omni now warns users when a join token is currently in use during revoke or delete operations.
+
+  ### Collapsible Sidebar on Mobile
+
+  The sidebar can now be collapsed when viewed on mobile devices, improving usability on smaller screens.
+
+  ### Join Tokens CLI
+
+  A new CLI feature has been added to manage SideroLink join tokens directly using `omnictl`.
+
+  ### Unique Token Status per Node
+
+  Omni now computes and displays a unique join token status for each node.
+</Update>
+
+<Update label="v1.10.7" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.7)
+
+  ### Component Updates
+
+  Linux: 6.12.43
+  Kubernetes: 1.33.4
+
+  Talos is built with Go 1.24.6.
+</Update>
+
+<Update label="v0.8.3" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.8.3)
+
+
+</Update>
+
+<Update label="v0.8.2" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.8.2)
+
+
+</Update>
+
+<Update label="v0.8.1" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.8.1)
+
+
+</Update>
+
+<Update label="v0.8.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.8.0)
+
+
+</Update>
+
+<Update label="v1.10.6" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.6)
+
+  ### Component Updates
+
+  Linux: 6.12.40
+  Kubernetes: 1.33.3
+
+  Talos is built with Go 1.24.5.
+</Update>
+
+<Update label="v0.7.6" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.7.6)
+
+
+</Update>
+
+<Update label="v0.7.5" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.7.5)
+
+
+</Update>
+
+<Update label="v1.0.11" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.11)
+
+
+</Update>
+
+<Update label="v1.10.5" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.5)
+
+  ### Azure
+
+  Talos on Azure now defaults to MTU of 1400 bytes for the `eth0` interface to avoid packet fragmentation issues.
+  The default MTU can be overriden with machine configuration.
+
+  ### Component Updates
+
+  Linux: 6.12.35
+  Kubernetes: 1.33.2
+
+  Talos is built with Go 1.24.4.
+</Update>
+
+<Update label="v0.7.4" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.7.4)
+
+
+</Update>
+
+<Update label="v1.10.4" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.4)
+
+  ### Component Updates
+
+  Linux: 6.12.31
+
+  Talos is built with Go 1.24.4.
+</Update>
+
+<Update label="v0.7.3" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.7.3)
+
+
+</Update>
+
+<Update label="v0.7.2" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.7.2)
+
+
+</Update>
+
+<Update label="v1.10.3" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.3)
+
+  ### Component Updates
+
+  Linux: 6.12.28
+  Kubernetes: 1.33.1
+
+  Talos is built with Go 1.24.3.
+</Update>
+
+<Update label="v0.7.1" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.7.1)
+
+
+</Update>
+
+<Update label="v1.10.2" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.2)
+
+  ### Component Updates
+
+  Linux: 6.12.27
+
+  Talos is built with Go 1.24.3.
+</Update>
+
+<Update label="v1.10.1" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.1)
+
+
+</Update>
+
+<Update label="v1.9.6" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.6)
+
+  ### Component Updates
+
+  * Linux: 6.12.25
+  * containerd: 2.0.5
+  * runc: 1.2.6
+  * Kubernetes: 1.32.4
+  * etcd: 3.5.21
+
+  Talos is built with Go 1.23.8.
+</Update>
+
+<Update label="v0.7.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.7.0)
+
+
+</Update>
+
+<Update label="v1.10.0" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.10.0)
+
+  ### auditd
+
+  Kernel parameter `talos.auditd.disabled=1` can be used to disable Talos built-in `auditd` service.
+
+  ### cgroups v1
+
+  Talos Linux no longer supports `cgroupsv1` when running in non-container mode.
+  The kernel argument `talos.unified_cgroup_hierarchy` is now ignored.
+
+  ### Disk Image
+
+  Talos starting with 1.10 will have disk images that will use GRUB only for legacy BIOS and systemd-boot for modern UEFI systems.
+  On first boot Talos determines the boot method and will wipe the unused bootloader.
+
+  Secureboot disk-images will be sd-boot only.
+
+  For ARM64 imager will still generate GRUB bootloader for Talos < 1.10 and for Talos >= 1.10 all ARM64 boot assets will use systemd-boot.
+
+  Imager supports overwriting bootloader when generating a disk image via the Imager profile `output` option.
+
+  Eg:
+
+  ```yaml
+  output:
+    kind: image
+    imageOptions:
+      bootloader: sd-boot # supported options are sd-boot, grub, dual-boot
+  ```
+
+  ### Driver Rebind
+
+  Talos 1.10 now supports a new machine config document named `PCIDriverRebindConfig` that allows rebinding the driver of a PCI device to a different target driver.
+  See the [documentation](https://www.talos.dev/v1.10/reference/configuration/hardware/pcidriverrebindconfig/) for more information.
+
+  ### Ethernet
+
+  Talos now provides `ethtool`-style Ethernet low-level configuration via `network/EthernetConfig` documents.
+  Current status of the interface can be read by `talosctl get ethernetstatus`.
+
+  ### Machine Install Extensions
+
+  `.machine.install.extensions` will have no effect starting from Talos 1.10, the machine config document field is still kept so upgrades from older versions are possible.
+  Use [Boot Assets](https://www.talos.dev/v1.10/talos-guides/install/boot-assets/) instead.
+
+  ### Extra Kernel Args
+
+  Talos 1.10 on fresh install on UEFI systems will now use systemd-boot and UKIs (Unified Kernel Images)[https://uapi-group.org/specifications/specs/unified_kernel_image/].
+  This means the kernel command line arguments are part of the UKI and cannot be modified without an upgrade to a new UKI.
+
+  Upgrades to Talos 1.10 will preseve the existing bootloader (GRUB for non-secureboot) and sd-boot for Secureboot and this change will have no effect.
+
+  To build a [boot asset](https://www.talos.dev/v1.10/talos-guides/install/boot-assets/) with extra kernel arguments whether an `installer` or a boot image use either [Image Factory](https://www.talos.dev/v1.10/talos-guides/install/boot-assets/#image-factory) or
+  [Imager](https://www.talos.dev/v1.10/talos-guides/install/boot-assets/#imager).
+
+  This means kernel arguments not part of the UKI will not be preserved across updates and a proper installer image generated via Imager Factory or Imager is required.
+
+  ### Ingress Firewall
+
+  Talos Ingress Firewall now filters access to Kubernetes NodePort services correctly.
+
+  ### iSCSI Initiator
+
+  Talos now generates `/etc/iscsi/initiatorname.iscsi` file based on the node identity which is tied to the lifecycle of the node.
+  If using `iscsi-tools` extension, starting with Talos 1.10 would have a more deterministic IQN for the initiator node.
+  Make sure to update any iSCSI targets to use the new initiator IQN.
+
+  The iqn can be read by `talosctl read /etc/iscsi/initiatorname.iscsi`
+
+  ### ISO
+
+  Talos starting with 1.10 will have ISO's that will use GRUB only for legacy BIOS and systemd-boot for modern UEFI systems.
+
+  ### kube-apiserver Authorization Config
+
+  When using `.cluster.apiServer.authorizationConfig` the user provided order for the authorizers is honoured and `Node` and `RBAC` authorizers are always added to the end if not explicitly specified.
+
+  Eg: If user provides only `Webhook` authorizer, the final order will be `Webhook`, `Node`, `RBAC`.
+
+  To provide a specific order for `Node` or `RBAC` explicitly, user can provide the authorizer in the order they want.
+
+  Eg:
+
+  ```yaml
+  cluster:
+    apiServer:
+      authorizationConfig:
+        - type: Node
+          name: Node
+        - type: Webhook
+          name: Webhook
+          webhook:
+            connectionInfo:
+              type: InClusterConfig
+          ...
+        - type: RBAC
+          name: rbac
+  ```
+
+  Usage of `authorization-mode` CLI argument will not support this form of customization.
+
+  ### NVMe NQN
+
+  Talos now generates `/etc/nvme/hostnqn` and `/etc/nvme/hostid` files based on the node identity which is tied to the lifecycle of the node.
+
+  The NQN can be read by `talosctl read /etc/nvme/hostnqn`
+
+  ### SELinux
+
+  Talos now supports enabling SELinux enforcing mode, see [SELinux](https://www.talos.dev/v1.10/advanced/selinux/) for more details.
+
+  ### Fully bootstrapped builds
+
+  Talos 1.10 is built with a toolchain based on [[Stageˣ]](https://stagex.tools/), which is a project building fully bootstrapped software.
+  This change increases reproducibility, auditability and security of Talos builds.
+
+  This also changes Talos root filesystem structure for unified /usr, with other directories symlinking to /usr/bin and /usr/lib.
+  System extensions must move their directories accordingly for 1.10.
+
+  ### Component Updates
+
+  * Linux: 6.12.25
+  * CNI plugins: 1.6.2
+  * runc: 1.2.6
+  * containerd: 2.0.5
+  * etcd: 3.5.20
+  * Flannel: 0.26.7
+  * Kubernetes: 1.33.0
+  * CoreDNS: 1.12.1
+
+  Talos is built with Go 1.24.2.
+
+  ### User Volumes
+
+  Talos now supports [user disk volumes](https://www.talos.dev/v1.10/talos-guides/configuration/disk-management/#user-volumes) via the `UserVolumeConfig` machine config document.
+
+  The old `.machine.disks` field is deprecated, but still supported for backwards compatibility.
+</Update>
+
+<Update label="v0.6.9" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.6.9)
+
+
+</Update>
+
+<Update label="v0.6.8" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.6.8)
+
+
+</Update>
+
+<Update label="v1.0.10" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.10)
+
+
+</Update>
+
+<Update label="v1.9.5" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.5)
+
+  ### Component Updates
+
+  * Linux: 6.12.18
+  * containerd: 2.0.3
+  * runc: 1.2.5
+  * Kubernetes: 1.32.3
+  * etcd: 3.5.19
+
+  Talos is built with Go 1.23.7.
+</Update>
+
+<Update label="v1.9.4" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.4)
+
+  ### Ingress Firewall
+
+  Talos Ingress Firewall now filters access to Kubernetes NodePort services correctly.
+
+  ### Component Updates
+
+  * Linux: 6.12.13
+  * Flannel: 0.26.4
+  * Kubernetes: 1.32.2
+
+  Talos is built with Go 1.23.6.
+</Update>
+
+<Update label="v0.6.7" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.6.7)
+
+
+</Update>
+
+<Update label="v1.9.3" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.3)
+
+  ### Component Updates
+
+  * Linux: 6.12.11
+  * Kubernetes: 1.32.1
+  * etcd: 3.5.18
+
+  Talos is built with Go 1.23.5.
+</Update>
+
+<Update label="v0.6.6" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.6.6)
+
+
+</Update>
+
+<Update label="v1.9.2" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.2)
+
+  ### auditd
+
+  Kernel parameter `talos.auditd.disabled=1` can be used to disable Talos built-in `auditd` service.
+
+  ### kube-apiserver Authorization Config
+
+  When using `.cluster.apiServer.authorizationConfig` the user provided order for the authorizers is honoured and `Node` and `RBAC` authorizers are always added to the end if not explicitly specified.
+
+  Eg: If user provides only `Webhook` authorizer, the final order will be `Webhook`, `Node`, `RBAC`.
+
+  To provide a specific order for `Node` or `RBAC` explicitly, user can provide the authorizer in the order they want.
+
+  Eg:
+
+  ```yaml
+  cluster:
+    apiServer:
+      authorizationConfig:
+        - type: Node
+          name: Node
+        - type: Webhook
+          name: Webhook
+          webhook:
+            connectionInfo:
+              type: InClusterConfig
+          ...
+        - type: RBAC
+          name: rbac
+  ```
+
+  Usage of `authorization-mode` CLI argument will not support this form of customization.
+
+  ### Component Updates
+
+  * Linux: 6.12.9
+  * runc: 1.2.4
+  * containerd: 2.0.2
+
+  Talos is built with Go 1.23.4.
+</Update>
+
+<Update label="v1.9.1" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.1)
+
+  ### Component Updates
+
+  * Linux: 6.12.6
+  * CNI plugins: 1.6.1
+
+  Talos is built with Go 1.23.4.
+</Update>
+
+<Update label="v0.6.5" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.6.5)
+
+  ## What's Changed
+  * chore: support gcr.io keychain for registry auth by @frezbo in https://github.com/siderolabs/image-factory/pull/180
+  * chore: reduce memory usage by @DmitriyMV in https://github.com/siderolabs/image-factory/pull/181
+
+  ## New Contributors
+  * @DmitriyMV made their first contribution in https://github.com/siderolabs/image-factory/pull/181
+
+  **Full Changelog**: https://github.com/siderolabs/image-factory/compare/v0.6.4...v0.6.5
+</Update>
+
+<Update label="v1.0.9" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.9)
+
+
+</Update>
+
+<Update label="v0.6.4" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.6.4)
+
+
+</Update>
+
+<Update label="v1.9.0" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.9.0)
+
+  ### Auditd
+
+  Talos Linux now starts an auditd service by default.
+  Logs can be read with `talosctl logs auditd`.
+
+  ### `talosctl cgroups`
+
+  The `talosctl cgroups` command has been added to the `talosctl` tool.
+  This command allows you to view the cgroup resource consumption and limits for a machine, e.g.
+  `talosctl cgroups --preset memory`.
+
+  ### cgroups version 1
+
+  Support for cgroupsv1 is deprecated, and will be removed in Talos 1.10 (for non-container mode).
+
+  ### Custom search domains for Talos nodes
+
+  Talos now allows to supports specifying custom search domains for Talos nodes using
+  new config field `machine.network.searchDomains`
+
+  For the host it will look something like this:
+
+  ```
+  nameserver 127.0.0.53
+
+  search my-custom-search-name.com my-custom-search-name2.com
+  ```
+
+  For the pods it will look something like this:
+
+  ```
+  search default.svc.cluster.local svc.cluster.local cluster.local my-custom-search-name.com my-custom-search-name2.com
+  nameserver 10.96.0.10
+  options ndots:5
+  ```
+
+  ### Device Selectors
+
+  Talos now supports matching on permanent hardware (MAC) address of the network interfaces.
+  This is specifically useful to match bond members, as they change their hardware addresses when they become part of the bond.
+
+  ### Direct Rendering Manager (DRM)
+
+  Starting with Talos 1.9, the `i915` and `amdgpu` DRM drivers will be dropped from the Talos squashfs.
+  There will be new system extensions named `i915` and `amdgpu` that would contain both the drivers and firmware packaged together.
+  Upgrades via Image Factory will automatically include the new extensions if previously `i915-ucode` or `amdgpu-firmware` were used.
+
+  ### Image Cache
+
+  Talos now supports providing a local [Image Cache](https://www.talos.dev/v1.9/talos-guides/configuration/image-cache/) for container images.
+
+  ### Kube APIServer Authorization Config
+
+  Starting with Talos 1.9, `.cluster.apiServer.authorizationConfig` field supports setting [Kubernetes API server authorization modes](https://kubernetes.io/docs/reference/access-authn-authz/authorization/#using-configuration-file-for-authorization)
+  using the `--authorization-config` flag.
+
+  The machine config field supports a list of `authorizers`. For instance:
+
+  ```yaml
+  cluster:
+    apiServer:
+      authorizationConfig:
+        - type: Node
+          name: Node
+        - type: RBAC
+          name: rbac
+  ```
+
+  For new cluster if the Kubernetes API server supports the `--authorization-config` flag, it'll be used by default instead of the `--authorization-mode` flag.
+  By default Talos will always add the `Node` and `RBAC` authorizers to the list.
+
+  When upgrading if either a user-provided `authorization-mode` or `authorization-webhook-*` flag is set via `.cluster.apiServer.extraArgs`, it'll be used instead of the new `AuthorizationConfig`.
+
+  Current authorization config can be viewed by running: `talosctl get authorizationconfigs.kubernetes.talos.dev -o yaml`
+
+  ### Node Address Sort
+
+  Talos supports new experimental address sort algorithm for `NodeAddress` which are used to pick up default addresses for kubelet, etcd, etc.
+
+  It can be enabled with the following config patch:
+
+  ```yaml
+  machine:
+    features:
+      nodeAddressSortAlgorithm: v2
+  ```
+
+  ### OCI Base Runtime Spec
+
+  Talos now allows to [modify the OCI base runtime spec for the container runtime](https://www.talos.dev/v1.9/advanced/oci-base-spec/).
+
+  ### Registry Mirrors
+
+  In versions before Talos 1.9, there was a discrepancy between the way Talos itself and CRI plugin resolves registry mirrors:
+  Talos will never fall back to the default registry if endpoints are configured, while CRI plugin will.
+
+  > Note: Talos Linux pulls images for the `installer`, `kubelet`, `etcd`, while all workload images are pulled by the CRI plugin.
+
+  In Talos 1.9 this was fixed, so that by default an upstream registry is used as a fallback in all cases, while new registry mirror
+  configuration option `.skipFallback` can be used to disable this behavior both for Talos and CRI plugin.
+
+  ### talosctl disks
+
+  The command `talosctl disks` was removed, please use `talosctl get disks`, `talosctl get systemdisk`, and `talosctl get blockdevices` instead.
+
+  ### talosctl wipe
+
+  The new command `talosctl wipe disk` allows to wipe a disk or a partition which is not used as a volume.
+
+  ### udevd
+
+  Talos previously used `eudev` to provide `udevd`, now it uses `systemd-udevd` instead.
+
+  ### Component Updates
+
+  * Linux: 6.12.5
+  * containerd: 2.0.1
+  * Flannel: 0.26.1
+  * Kubernetes: 1.32.0
+  * runc: 1.2.3
+  * CoreDNS: 1.12.0
+
+  Talos is built with Go 1.23.4.
+
+  ### User Namespaces
+
+  Talos Linux now supports running Kubernetes pods with user namespaces enabled.
+  Refer to the [documentation](https://www.talos.dev/v1.9/kubernetes-guides/configuration/usernamespace/) for more information.
+</Update>
+
+<Update label="v1.8.4" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.8.4)
+
+  Starting with Talos v1.8.0, only standard assets would be published as github release assets. These include:
+
+  * `cloud-images.json`
+  * `talosctl` binaries
+  * `kernel`
+  * `initramfs`
+  * `metal` iso and disk images
+  * `talosctl-cni-bundle`
+
+  All other release assets can be downloaded from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
+
+  ### Component Updates
+
+  Linux: 6.6.64
+  runc: 1.2.3
+  Kubernetes: 1.31.4
+  etcd: 3.5.17
+
+  Talos is built with Go 1.22.10.
+</Update>
+
+<Update label="v0.6.3" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.6.3)
+
+
+</Update>
+
+<Update label="v0.6.2" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.6.2)
+
+
+</Update>
+
+<Update label="v1.0.8" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.8)
+
+
+</Update>
+
+<Update label="v0.6.1" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.6.1)
+
+
+</Update>
+
+<Update label="v0.6.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.6.0)
+
+
+</Update>
+
+<Update label="v1.8.3" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.8.3)
+
+  Starting with Talos v1.8.0, only standard assets would be published as github release assets. These include:
+
+  * `cloud-images.json`
+  * `talosctl` binaries
+  * `kernel`
+  * `initramfs`
+  * `metal` iso and disk images
+  * `talosctl-cni-bundle`
+
+  All other release assets can be downloaded from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
+
+  ### Component Updates
+
+  Linux: 6.6.60
+  containerd: 2.0.0
+  runc: 1.2.1
+
+  Talos is built with Go 1.22.9.
+</Update>
+
+<Update label="v1.8.2" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.8.2)
+
+  Starting with Talos v1.8.0, only standard assets would be published as github release assets. These include:
+
+  * `cloud-images.json`
+  * `talosctl` binaries
+  * `kernel`
+  * `initramfs`
+  * `metal` iso and disk images
+  * `talosctl-cni-bundle`
+
+  All other release assets can be downloaded from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
+
+  ### Component Updates
+
+  Linux: 6.6.58
+  containerd: 2.0.0-rc.6
+  runc: 1.2.0
+  Kubernetes: 1.31.2
+
+  Talos is built with Go 1.22.8.
+</Update>
+
+<Update label="v1.0.7" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.7)
+
+
+</Update>
+
+<Update label="v1.0.6" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.6)
+
+
+</Update>
+
+<Update label="v1.8.1" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.8.1)
+
+  Starting with Talos v1.8.0, only standard assets would be published as github release assets. These include:
+
+  * `cloud-images.json`
+  * `talosctl` binaries
+  * `kernel`
+  * `initramfs`
+  * `metal` iso and disk images
+  * `talosctl-cni-bundle`
+
+  All other release assets can be downloaded from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
+
+  ### Component Updates
+
+  Linux: 6.6.54
+  containerd: 2.0.0-rc.5
+  Flannel: 0.25.7
+
+  Talos is built with Go 1.22.8.
+</Update>
+
+<Update label="v1.7.7" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.7)
+
+  ### Component Updates
+
+  Linux: 6.6.52
+  Kubernetes: 1.30.5
+  containerd: 1.7.22
+  runc: 1.1.14
+
+  Talos is built with Go 1.22.7.
+</Update>
+
+<Update label="v1.0.5" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.5)
+
+
+</Update>
+
+<Update label="v1.0.4" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.4)
+
+
+</Update>
+
+<Update label="v1.0.3" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.3)
+
+
+</Update>
+
+<Update label="v1.8.0" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.8.0)
+
+  Starting with Talos v1.8.0, only standard assets would be published as github release assets. These include:
+
+  * `cloud-images.json`
+  * `talosctl` binaries
+  * `kernel`
+  * `initramfs`
+  * `metal` iso and disk images
+  * `talosctl-cni-bundle`
+
+  All other release assets can be downloaded from [Image Factory](https://www.talos.dev/latest/talos-guides/install/boot-assets/#image-factory).
+
+  ### Node Annotations
+
+  Talos Linux now supports configuring Kubernetes node annotations via machine configuration (`.machine.nodeAnnotations`) in a way similar to node labels.
+
+  ### Workload Apparmor Profile
+
+  Talos Linux can now apply the default AppArmor profiles to all workloads started via containerd, if the machine is installed with the AppArmor LSM enforced via the extraKernelArgs.
+
+  Eg:
+
+  ```yaml
+  machine:
+      install:
+          extraKernelArgs:
+              - security=apparmor
+  ```
+
+  ### Bridge Interface
+
+  Talos Linux now support configuring 'vlan_filtering' for bridge interfaces.
+
+  ### Machine Configuration via Kernel Command Line
+
+  Talos Linux supports supplying zstd-compressed, base64-encoded machine configuration small documents via the kernel command line parameter `talos.config.inline`.
+
+  ### CNI Plugins
+
+  Talos Linux now bundles by default the following standard CNI plugins:
+
+  * `bridge`
+  * `firewall`
+  * `flannel`
+  * `host-local`
+  * `loopback`
+  * `portmap`
+
+  The Talos bundled Flannel manifest was simplified to remove the `install-cni` step.
+
+  ### Accessing `/dev/net/tun` in Kubernetes Pods
+
+  Talos Linux ships with `runc` 1.2, which [drops](https://github.com/opencontainers/runc/pull/3468) legacy rule to expose `/dev/net/tun` devices by default in the container.
+
+  If you need to access `/dev/net/tun` in your Kubernetes pods (e.g. running Tailscale as a Kubernetes pod), you can add use [device plugins](https:/www.talos.dev/v1.8/kubernetes-guides/configuration/device-plugins/) to expose `/dev/net/tun` to the pod.
+
+  ### Diagnostics
+
+  Talos Linux now shows diagnostics information for common problems related to misconfiguration via `talosctl health` and Talos dashboard.
+
+  ### Disk Management
+
+  Talos Linux now supports [configuration](https://www.talos.dev/v1.8/talos-guides/configuration/disk-management/#machine-configuration) for the `EPHEMERAL` volume.
+
+  ### Extensions in Kubernetes Nodes
+
+  Talos Linux now publishes list of installed extensions as Kubernetes node labels/annotations.
+
+  The key format is `extensions.talos.dev/<name>` and the value is the extension version.
+  If the extension name is not valid as a label key, it will be skipped.
+  If the extension version is a valid label value, it will be put to the label; otherwise it will be put to the annotation.
+
+  For Talos machines booted of the Image Factory artifacts, this means that the schematic ID will be published as the annotation
+  `extensions.talos.dev/schematic` (as it is longer than 63 characters).
+
+  ### DNS Forwarding for CoreDNS pods
+
+  Usage of the host DNS resolver as upstream for Kubernetes CoreDNS pods is now enabled by default. You can disable it
+  with:
+
+  ```yaml
+  machine:
+    features:
+      hostDNS:
+        enabled: true
+        forwardKubeDNSToHost: false
+  ```
+
+  Please note that on running cluster you will have to kill CoreDNS pods for this change to apply.
+
+  The IP address used to forward DNS queries has changed to the fixed `169.254.116.108` address.
+  For those upgrading from Talos 1.7 with `forwardKubeDNSToHost` enabled, the old Kubernetes service
+  can be cleaned up with `kubectl delete -n kube-system service host-dns`.
+
+  ### Installer
+
+  Talos Linux installer now never wipes the system disk on upgrades, which means that the flag
+  `--preserve` is always set for `talosctl upgrade`.
+
+  ### `talos.halt_if_installed` kernel argument
+
+  Starting with Talos 1.8, ISO's generated from Boot Assets would have a new kernel argument `talos.halt_if_installed` which would pause the boot sequence until boot timeout if Talos is already installed on the disk.
+  ISO generated for pre 1.8 versions would not have this kernel argument.
+
+  This can be also explicitly enabled by setting `talos.halt_if_installed=1` in kernel argument.
+
+  ### Slim Kubelet Image
+
+  Kubelet container image includes various utilities that kubelet might use to perform various tasks.
+
+  Starting with Kubernetes 1.31.0, `kubelet` image now includes less utilities, as the in-tree CSI plugins were
+  removed in Kubernetes 1.31.0. This reduces `kubelet` image size and potential attack surface.
+
+   For Kubernetes < 1.31.0, there will be two images built:
+
+  * `v1.x.y` (default, fat)
+  * `v1.x.y-slim` (slim)
+
+  For Kubernetes >= 1.31.0, there will be same two images built, but the
+  default tag would point to slim image:
+
+  * `v1.x.y` (default, slim)
+  * `v1.x.y-fat` (fat)
+
+  ### KubeSpan
+
+  Extra announced endpoints can be added using the [`KubespanEndpointsConfig` document](https://www.talos.dev/v1.8/talos-guides/network/kubespan/#configuration).
+
+  ### Default Node Labels
+
+  Talos Linux on config generation now adds a label `node.kubernetes.io/exclude-from-external-load-balancers` by default for the control plane nodes.
+
+  ### PCI Devices
+
+  A list of PCI devices can now be obtained via `PCIDevices` resource, e.g. `talosctl get pcidevices`.
+
+  ### Metal images
+
+  Starting with Talos 1.8, `console=ttyS0` kernel argument is removed from the metal images and installer. If running virtualized in QEMU (For eg: Proxmox), this can be added as an extra kernel argument if needed via Image Factory or using Imager.
+
+  This should fix slow boot or no console output issues on most bare metal hardware.
+
+  ### NVIDIA GPU Support
+
+  Starting with Talos 1.8.0, SideroLabs would ships extensions for both LTS and Production versions of NVIDIA extensions.
+  For more details see the CHANGELOG of [extensions](https://github.com/siderolabs/extensions/releases).
+
+  Upgrades with an exisiting schematic id from Image Factory would keep the existing LTS version of the NVIDIA extension.
+
+  ### Removing parts of the configuration using `$patch: delete` syntax
+
+  Talos Linux now supports removing parts of the configuration using the `$patch: delete` syntax similar to the kubernetes.
+  More information can be found [here](https://www.talos.dev/v1.8/talos-guides/configuration/patching/#strategic-merge-patches).
+
+  ### Platform Support
+
+  Talos Linux now supports Apache CloudStack platform.
+
+  ### kube-proxy
+
+  Talos Linux configures kube-proxy >= v1.31.0 to use 'nftables' backend by default.
+
+  ### Secure Boot
+
+  Talos Linux now can optionally include well-known UEFI (Microsoft) SecureBoot keys into the auto-enrollment UEFI database.
+
+  ### Custom Trusted Roots
+
+  Talos Linux now supports adding [custom trusted roots](https://www.talos.dev/v1.8/talos-guides/configuration/certificate-authorities/) (CA certificates) via `TrustedRootsConfig` configuration documents.
+
+  ### Device Extra Settle Timeout
+
+  Talos Linux now supports a kernel command line argument `talos.device.settle_time=3m` to set the device extra settle timeout to workaround issues with broken drivers.
+
+  ### Component Updates
+
+  Kubernetes: 1.31.1
+  Linux: 6.6.52
+  containerd: 2.0.0-rc.4
+  runc: 1.2.0-rc.3
+  etcd: 3.5.16
+  Flannel: 0.25.6
+  Flannel CNI plugin: 1.5.1
+  CoreDNS: 1.1.13
+
+  Talos is built with Go 1.22.7.
+
+  ### ZSTD Compression
+
+  Talos Linux now compresses kernel and initramfs using ZSTD.
+  Linux arm64 kernel is now compressed (previously it was uncompressed).
+</Update>
+
+<Update label="v0.5.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.5.0)
+
+
+</Update>
+
+<Update label="v1.7.6" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.6)
+
+  ### Component Updates
+
+  Linux: 6.6.43
+  Kubernetes: 1.30.3
+
+  Talos is built with Go 1.22.5.
+</Update>
+
+<Update label="v1.6.8" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.8)
+
+  ### Component Updates
+
+  * Linux: 6.1.100
+  * Kubernetes: 1.29.7
+  * runc: 1.1.13
+  * containerd: 1.7.20
+
+  Talos is built with Go 1.21.12.
+</Update>
+
+<Update label="v0.4.2" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.4.2)
+
+
+</Update>
+
+<Update label="v1.7.5" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.5)
+
+  ### Component Updates
+
+  Linux: 6.6.33
+  Flannel: 0.25.3
+  Containerd: 1.7.18
+
+  Talos is built with Go 1.22.4.
+</Update>
+
+<Update label="v1.7.4" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.4)
+
+  ### Component Updates
+
+  Talos is built with Go 1.22.3.
+</Update>
+
+<Update label="v1.7.3" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.3)
+
+  ### Component Updates
+
+  Linux: 6.6.32
+
+  Talos is built with Go 1.22.3.
+</Update>
+
+<Update label="v1.0.2" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.2)
+
+
+</Update>
+
+<Update label="v1.0.1" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.1)
+
+
+</Update>
+
+<Update label="v1.0.0" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.0.0)
+
+
+</Update>
+
+<Update label="v1.7.2" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.2)
+
+  ### Component Updates
+
+  Kubernetes: 1.30.1
+  Linux: 6.6.30
+
+  Talos is built with Go 1.22.3.
+</Update>
+
+<Update label="v0.4.1" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.4.1)
+
+
+</Update>
+
+<Update label="v0.4.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.4.0)
+
+
+</Update>
+
+<Update label="v0.3.3" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.3.3)
+
+
+</Update>
+
+<Update label="v1.7.1" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.1)
+
+  ### Component Updates
+
+  Linux: 6.6.29
+  containerd: 1.7.16
+
+  Talos is built with Go 1.22.2.
+</Update>
+
+<Update label="v1.7.0" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.7.0)
+
+  [Documentation on What's New in Talos 1.7.0](https://www.talos.dev/v1.7/introduction/what-is-new/)
+
+  ### CA Rotation
+
+  Talos Linux now supports rotating the root CA certificate and key for Talos API and Kubernetes API.
+
+  ### Device Selectors
+
+  Talos Linux now supports `physical: true` qualifier for device selectors, it selects non-virtual network interfaces (i.e. `en0` is selected, while `bond0` is not).
+
+  ### DNS Caching
+
+  Talos Linux now  provides a caching DNS resolver for host workloads (including host networking pods). It can be disabled with:
+
+  ```yaml
+  machine:
+    features:
+      hostDNS:
+        enabled: false
+  ```
+
+  You can also enable dns caching for k8s pods with:
+
+  ```yaml
+  machine:
+    features:
+      hostDNS:
+        enabled: true
+        forwardKubeDNSToHost: true
+  ```
+
+  Please note that on running cluster you will have to kill CoreDNS pods for this change to apply.
+
+  If you want to can also enable the resolving of member addresses through their host and node names:
+
+  ```yaml
+  machine:
+    features:
+      hostDNS:
+        enabled: true
+        resolveMemberNames: true
+  ```
+
+  ### Extension Services Config
+
+  Talos now supports supplying configuration files and environment variables for extension services.
+  The extension service configuration is a separate config document. An example is shown below:
+
+  ```yaml
+  ---
+  apiVersion: v1alpha1
+  kind: ExtensionServiceConfig
+  name: nut-client
+  configFiles:
+    - content: MONITOR ${upsmonHost} 1 remote pass password
+      mountPath: /usr/local/etc/nut/upsmon.conf
+  environment:
+    - UPS_NAME=ups
+  ```
+
+  For documentation, see [Extension Services Config Files](https://www.talos.dev/v1.7/reference/configuration/extensions/extensionserviceconfig/).
+
+  **Note**: The use of `environmentFile` in extension service spec is now deprecated and will be removed in a future release of Talos.
+  Use `ExtensionServiceConfig` instead.
+
+  ### IPTables
+
+  Talos Linux now forces `kubelet` and `kube-proxy` to use `iptables-nft` instead of `iptables-legacy` (`xtables`) which was the default
+  before Talos 1.7.0.
+
+  Container images based on `iptables-wrapper` should work without changes, but if there was a direct call to `legacy` mode of `iptables`, make sure
+  to update to use `iptables-nft`.
+
+  ### Kubernetes Upgrade
+
+  The command `talosctl upgrade-k8s` now supports specifying custom image references for Kubernetes components via `--*-image` flags.
+  The default behavior is unchanged, and the flags are optional.
+
+  ### KubeSpan
+
+  Talos Linux disables by default a KubeSpan feature to harvest additional endpoints from KubeSpan members.
+  This feature turned out to be less helpful than expected and caused unnecessary performance issues.
+
+  Previous behavior can be restored with:
+
+  ```yaml
+  machine:
+    network:
+      kubespan:
+          harvestExtraEndpoints: true
+  ```
+
+  ### Logging
+
+  Talos Linux now supports setting extra tags when sending logs in JSON format:
+
+  ```yaml
+  machine:
+    logging:
+      destinations:
+        - endpoint: "udp://127.0.0.1:12345/"
+          format: "json_lines"
+          extraTags:
+            server: s03-rack07
+  ```
+
+  ### Time Sync
+
+  Default NTP server was updated to be `time.cloudflare.com` instead of `pool.ntp.org`.
+  Default server is only used if the user does not specify any NTP servers in the configuration.
+
+  Talos Linux can now sync to PTP devices (e.g. provided by the hypervisor) skipping the network time servers.
+  In order to activate PTP sync, set `machine.time.servers` to the PTP device name (e.g. `/dev/ptp0`):
+
+  ```yaml
+  machine:
+    time:
+      servers:
+        - /dev/ptp0
+  ```
+
+  ### OpenNebula
+
+  Talos Linux now supports OpenNebula platform.
+
+  ### Platforms
+
+  Talos Linux now supports [Akamai Connected Cloud](https://www.linode.com/) provider (platform `akamai`).
+
+  ### Kubernetes API Server Service Account Key
+
+  Talos Linux starting from this release uses RSA key for Kubernetes API Server Service Account instead of ECDSA key to provide better compatibility with external OpenID Connect implementations.
+
+  ### SBC
+
+  Talos has split the SBC's (Single Board Computers) into separate repositories.
+  There will not be any more SBC specific release assets as part of Talos release.
+
+  The default Talos Installer image will stop working for SBC's and will fail the upgrade, if used, starting from Talos v1.7.0.
+
+  The SBC's images and installers can be generated on the fly using [Image Factory](https://factory.talos.dev) or using [Imager](https://www.talos.dev/latest/talos-guides/install/boot-assets/) for custom images.
+  The list of official SBC's images supported by Image Factory can be found in the [Overlays](https://github.com/siderolabs/overlays/) repository.
+
+  ### Secure Boot Image
+
+  Talos Linux now provides a way to configure systemd-boot ISO 'secure-boot-enroll' option while generating a SecureBoot ISO image:
+
+  ```yaml
+  output:
+      kind: iso
+      isoOptions:
+          sdBootEnrollKeys: force # default is still if-safe
+      outFormat: raw
+  ```
+
+  ### Syslog
+
+  Talos Linux now starts a basic syslog receiver listening on `/dev/log`.
+  The receiver can mostly parse both RFC3164 and RFC5424 messages and writes them as JSON formatted message.
+  The logs can be viewed via `talosctl logs syslogd`.
+
+  This is mostly implemented for extension services that log to syslog.
+
+  ### Component Updates
+
+  Linux: 6.6.28
+  etcd: 3.5.11
+  Kubernetes: 1.30.0
+  containerd: 1.7.15
+  runc: 1.1.12
+  Flannel: 0.25.1
+
+  Talos is built with Go 1.22.2.
+
+  ### Hardware Watchdog Timers
+
+  Talos Linux now supports hardware watchdog timers configuration.
+  If enabled, and the machine becomes unresponsive, the hardware watchdog will reset the machine.
+
+  The watchdog can be enabled with the following configuration document:
+
+  ```yaml
+  apiVersion: v1alpha1
+  kind: WatchdogTimerConfig
+  device: /dev/watchdog0
+  timeout: 3m0s
+  ```
+</Update>
+
+<Update label="v0.3.2" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.3.2)
+
+
+</Update>
+
+<Update label="v0.3.1" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.3.1)
+
+
+</Update>
+
+<Update label="v0.3.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.3.0)
+
+
+</Update>
+
+<Update label="v1.6.7" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.7)
+
+  ### Component Updates
+
+  * Linux: 6.1.82
+  * Kubernetes: 1.29.3
+
+  Talos is built with Go 1.21.8.
+</Update>
+
+<Update label="v0.2.3" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.2.3)
+
+
+</Update>
+
+<Update label="v1.6.6" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.6)
+
+  ### Component Updates
+
+  * Linux: 6.1.80
+
+  Talos is built with Go 1.21.8.
+</Update>
+
+<Update label="v1.6.5" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.5)
+
+  ### Kubernetes Upgrade
+
+  The command `talosctl upgrade-k8s` now supports specifying custom image references for Kubernetes components via `--*-image` flags.
+  The default behavior is unchanged, and the flags are optional.
+
+  ### Component Updates
+
+  Kubernetes: 1.29.2
+  Linux: 6.1.78
+
+  Talos is built with Go 1.21.6.
+</Update>
+
+<Update label="v1.6.4" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.4)
+
+  ### Component Updates
+
+  containerd: 1.7.13
+  runc: 1.1.12
+
+  See [CVE-2024-21626](https://github.com/opencontainers/runc/security/advisories/GHSA-xr7r-f8xq-vfvv) for the runc update.
+
+  Talos is built with Go 1.21.6.
+</Update>
+
+<Update label="v1.6.3" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.3)
+
+  ### Component Updates
+
+  Linux: 6.1.74
+  Kubernetes: 1.29.1
+
+  Talos is built with Go 1.21.6.
+</Update>
+
+<Update label="v0.2.2" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.2.2)
+
+
+</Update>
+
+<Update label="v1.6.2" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.2)
+
+  ### Component Updates
+
+  Linux: 6.1.73
+
+  Talos is built with Go 1.21.6.
+</Update>
+
+<Update label="v0.1.3" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v0.1.3)
+
+
+</Update>
+
+<Update label="v0.2.1" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.2.1)
+
+
+</Update>
+
+<Update label="v1.6.1" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.1)
+
+  ### Component Updates
+
+  Linux: 6.1.69
+  containerd: 1.7.11
+
+  Talos is built with Go 1.21.5.
+</Update>
+
+<Update label="v0.2.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.2.0)
+
+
+</Update>
+
+<Update label="v1.6.0" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.6.0)
+
+  ### OAuth2 Machine Config Flow
+
+  Talos Linux when running on the `metal` platform can be configured to authenticate the machine configuration download using [OAuth2 device flow](https://www.talos.dev/v1.6/advanced/machine-config-oauth/).
+
+  ### Network Device Selectors
+
+  Previously, [network device selectors](https://www.talos.dev/v1.6/talos-guides/network/device-selector/) only matched the first link, now the configuration is applied to all matching links.
+
+  ### Extension Services
+
+  Talos now starts Extension Services early in the boot process, this allows guest agents to be started in maintenance mode.
+
+  ### Linux Firmware
+
+  Starting with Talos 1.6, there is no Linux firmware included in the initramfs.
+  Customers who need Linux firmware can pull them as extension during install time using the image factory service.
+  If the initial boot requires firmware, a custom iso can be built with the firmware included using the image factory service.
+  This also ensures that the linux-firmware is not tied to a specific Talos version.
+
+  ### Flannel Configuration
+
+  Talos Linux now supports customizing default Flannel manifest with extra arguments for flanneld.
+
+  ```yaml
+  cluster:
+    network:
+      cni:
+        flannel:
+          extraArgs:
+            - --iface-can-reach=192.168.1.1
+  ```
+
+  ### Ingress Firewall
+
+  Talos Linux now supports configuring the [ingress firewall rules](https://talos.dev/v1.6/talos-guides/network/ingress-firewall/).
+
+  ### Kernel Arguments
+
+  Talos and Imager now supports dropping kernel arguments specified in `.machine.install.extraKernelArgs` or as `--extra-kernel-arg` to imager.
+  Any kernel argument that starts with a `-` is dropped. Kernel arguments to be dropped can be specified either as `-<key>` which would remove all arguments that start with `<key>` or as `-<key>=<value>` which would remove the exact argument.
+
+  ### Kube-Scheduler Configuration
+
+  Talos now supports specifying the kube-scheduler configuration in the Talos configuration file.
+  It can be set under `cluster.scheduler.config` and kube-scheduler will be automatically configured to with the correct flags.
+
+  ### Kubelet Credential Provider Configuration
+
+  Talos now supports specifying the kubelet credential provider configuration in the Talos configuration file.
+  It can be set under `machine.kubelet.credentialProviderConfig` and kubelet will be automatically configured to with the correct flags.
+  The credential binaries are expected to be present under `/usr/local/lib/kubelet/credentialproviders`.
+  Talos System Extensions can be used to install the credential binaries.
+
+  ### KubePrism
+
+  [KubePrism](https://www.talos.dev/v1.6/kubernetes-guides/configuration/kubeprism/) is enabled by default on port 7445.
+
+  ### Sysctl
+
+  Talos now handles sysctl/sysfs key names in line with sysctl.conf(5):
+
+  * if the first separator is '/', no conversion is done
+  * if the first separator is '.', dots and slashes are remapped
+
+  Example (both sysctls are equivalent):
+
+  ```yaml
+  machine:
+    sysctls:
+      net/ipv6/conf/eth0.100/disable_ipv6: "1"
+      net.ipv6.conf.eth0/100.disable_ipv6: "1"
+  ```
+
+  ### talosctl CLI
+
+  The command `images` deprecated in Talos 1.5 was removed, please use `talosctl images default` instead.
+
+  ### Component Updates
+
+  Linux: 6.1.67
+  containerd: 1.7.10
+  CoreDNS: 1.11.1
+  Kubernetes: 1.29.0
+  Flannel: 0.23.0
+  etcd: 3.5.11
+  runc: 1.1.10
+
+  Talos is built with Go 1.21.5.
+
+  ### User Disks
+
+  Talos Linux now supports specifying user disks in `.machine.disks` machine configuration links via `udev` symlinks, e.g. `/dev/disk/by-id/XXXX`.
+</Update>
+
+<Update label="v0.1.2" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.1.2)
+
+
+</Update>
+
+<Update label="v0.1.1" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.1.1)
+
+
+</Update>
+
+<Update label="v0.1.0" tags={["Image Factory"]}>
+  [Release notes →](https://github.com/siderolabs/image-factory/releases/tag/v0.1.0)
+
+
+</Update>
+
+<Update label="v0.1.2" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v0.1.2)
+
+
+</Update>
+
+<Update label="v0.1.1" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v0.1.1)
+
+  https://github.com/talos-systems/discovery-service/issues.
+</Update>
+
+<Update label="v0.1.0" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v0.1.0)
+
+  https://github.com/talos-systems/discovery-service/issues.
+</Update>

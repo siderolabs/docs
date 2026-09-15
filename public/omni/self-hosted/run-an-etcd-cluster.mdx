@@ -1,0 +1,420 @@
+---
+title: Run An etcd Cluster On-Prem
+description: Deploy a 3-node etcd cluster secured with mTLS, for use as Omni's external datastore
+---
+
+This guide walks through deploying a 3-node etcd cluster secured with mutual TLS (mTLS). This cluster can be used as an external datastore for Omni on-prem, replacing Omni's embedded etcd for highly available deployments.
+
+Once complete, you will have:
+
+- A 3-node etcd cluster with mTLS enabled for both client and peer communication
+- An etcd endpoint ready to connect to Omni
+
+<Note>A 3-node cluster requires a majority quorum to function. It can tolerate the loss of one node. For a production environment, run each node on a separate physical or virtual machine.</Note>
+
+## When to use external etcd
+
+Omni ships with embedded etcd and works well for most single-instance deployments. Use external etcd when you need:
+
+- **High availability** — survive the loss of an Omni host without losing datastore state
+- **Operational separation** — back up, snapshot, and manage the datastore independently of Omni
+- **Shared datastore** — run multiple Omni instances against the same etcd cluster
+
+See [Run Omni Options](./options-for-running-omni) for more context on when each mode is appropriate.
+
+## Prerequisites
+
+You will need **3 Linux hosts**, each with:
+
+- At least **2 vCPUs and 2 GB RAM**
+- [Docker installed](https://docs.docker.com/engine/install/)
+- The following ports open **between all 3 nodes**:
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| 2379 | TCP | etcd client API (restrict to etcd node IPs and Omni host IP only) |
+| 2380 | TCP | etcd peer communication (restrict to etcd node IPs only) |
+
+## Step 1: Install cfssl (Node 1 only)
+
+`cfssl` generates the CA and all node certificates. All certificates are created on Node 1 and then distributed to the other nodes in Step 4, so you only need cfssl on Node 1.
+
+```bash
+CFSSL_VERSION=$(curl -sI https://github.com/cloudflare/cfssl/releases/latest \
+  | grep -i location | awk -F '/' '{print $NF}' | tr -d '\r')
+
+curl -L -o cfssl \
+  https://github.com/cloudflare/cfssl/releases/download/${CFSSL_VERSION}/cfssl_${CFSSL_VERSION#v}_linux_amd64
+curl -L -o cfssljson \
+  https://github.com/cloudflare/cfssl/releases/download/${CFSSL_VERSION}/cfssljson_${CFSSL_VERSION#v}_linux_amd64
+
+chmod +x cfssl cfssljson
+sudo mv cfssl cfssljson /usr/local/bin/
+```
+
+## Step 2: Set environment variables (Node 1 only)
+
+These variables define the IP addresses of all three etcd nodes and the Omni host. They are used when generating certificates and when starting the etcd cluster. Replace the values below with your actual IPs.
+
+```bash
+export ETCD1_IP=<etcd-node-1-ip>
+export ETCD2_IP=<etcd-node-2-ip>
+export ETCD3_IP=<etcd-node-3-ip>
+export OMNI_IP=<omni-ip>
+```
+
+## Step 3: Generate certificates (Node 1 only)
+
+Each etcd node needs its own server certificate with its IP embedded as a Subject Alternative Name (SAN). This allows etcd to verify the identity of peer nodes and clients over mTLS. All certificates are signed by a shared root CA so every node in the cluster trusts the others.
+
+Omni also gets a dedicated client certificate, which it uses to authenticate to the cluster.
+
+### 3.1: Create the root CA
+
+This generates the root CA that all etcd nodes and Omni will use as their trust anchor. It produces `ca-key.pem` (private key), `ca.pem` (public cert), and `ca.csr` (signing request).
+
+```bash
+cat <<EOF > ca-csr.json
+{
+  "CN": "etcd Root CA",
+  "key": { "algo": "rsa", "size": 4096 },
+  "names": [{ "C": "US", "O": "Internal Infrastructure", "OU": "Security" }]
+}
+EOF
+
+cfssl gencert -initca ca-csr.json | cfssljson -bare ca
+```
+
+### 3.2: Create the signing configuration
+
+The `server` profile is used for etcd node certificates and includes both `server auth` and `client auth` usages, since etcd nodes authenticate to each other as both clients and servers during peer communication. The `client` profile is used for the Omni client certificate.
+
+```bash
+cat <<EOF > ca-config.json
+{
+  "signing": {
+    "default": { "expiry": "8760h" },
+    "profiles": {
+      "server": {
+        "usages": ["signing", "key encipherment", "server auth", "client auth"],
+        "expiry": "8760h"
+      },
+      "client": {
+        "usages": ["signing", "key encipherment", "client auth"],
+        "expiry": "8760h"
+      }
+    }
+  }
+}
+EOF
+```
+
+### 3.3: Generate a server certificate for each node
+
+Each node gets its own certificate with its IP address embedded as a SAN. etcd uses these IPs to verify the identity of incoming peer and client connections.
+
+Run all three of the following commands on **Node 1**.
+
+<Note>The labels below indicate which node each certificate is for, **not** where the command runs.</Note>
+
+**Certificate for etcd-node-1:**
+
+```bash
+cat <<EOF > etcd1-csr.json
+{
+  "CN": "etcd-node-1",
+  "hosts": ["${ETCD1_IP}", "127.0.0.1"],
+  "key": { "algo": "rsa", "size": 4096 }
+}
+EOF
+
+cfssl gencert \
+  -ca=ca.pem \
+  -ca-key=ca-key.pem \
+  -config=ca-config.json \
+  -profile=server etcd1-csr.json | cfssljson -bare etcd1
+```
+
+**Certificate for etcd-node-2:**
+
+```bash
+cat <<EOF > etcd2-csr.json
+{
+  "CN": "etcd-node-2",
+  "hosts": ["${ETCD2_IP}", "127.0.0.1"],
+  "key": { "algo": "rsa", "size": 4096 }
+}
+EOF
+
+cfssl gencert \
+  -ca=ca.pem \
+  -ca-key=ca-key.pem \
+  -config=ca-config.json \
+  -profile=server etcd2-csr.json | cfssljson -bare etcd2
+```
+
+**Certificate for etcd-node-3:**
+
+```bash
+cat <<EOF > etcd3-csr.json
+{
+  "CN": "etcd-node-3",
+  "hosts": ["${ETCD3_IP}", "127.0.0.1"],
+  "key": { "algo": "rsa", "size": 4096 }
+}
+EOF
+
+cfssl gencert \
+  -ca=ca.pem \
+  -ca-key=ca-key.pem \
+  -config=ca-config.json \
+  -profile=server etcd3-csr.json | cfssljson -bare etcd3
+```
+
+### 3.4: Generate the Omni client certificate
+
+This certificate is mounted into the Omni container and used to authenticate to etcd over mTLS. The `OMNI_IP` is embedded as a SAN so etcd can verify that connections from Omni are coming from the expected host.
+
+```bash
+cat <<EOF > client-csr.json
+{
+  "CN": "omni-client",
+  "hosts": ["${OMNI_IP}"],
+  "key": { "algo": "rsa", "size": 4096 },
+  "names": [{ "C": "US", "O": "Omni" }]
+}
+EOF
+
+cfssl gencert \
+  -ca=ca.pem \
+  -ca-key=ca-key.pem \
+  -config=ca-config.json \
+  -profile=client client-csr.json | cfssljson -bare client
+
+chmod 644 client*.pem ca.pem
+```
+
+## Step 4: Distribute certificates
+
+In **Step 3**, all certificates were generated on Node 1. In this section, you’ll distribute those certificates to the other etcd and Omni nodes.
+
+Each node needs three items: its own certificate and private key (to prove its identity), and the shared CA certificate (to verify other nodes). The Omni host needs the client certificate and the CA certificate to authenticate with the cluster.
+
+The commands below use SSH agent forwarding, so your private key is never copied to any server.
+
+**On your local machine**, add your SSH key to the agent, then reconnect to Node 1 with forwarding enabled:
+
+```bash
+ssh-add ~/path/to/your-ssh-key
+ssh -A <user>@<node-1-address>
+```
+
+Once connected to **Node 1**, run the following commands to distribute the certificates. If you started a new session, re-export the variables first:
+
+```bash
+export ETCD2_IP=<etcd-node-2-ip>
+export ETCD3_IP=<etcd-node-3-ip>
+export OMNI_IP=<omni-ip>
+```
+
+Create the destination directory on the Omni host:
+
+```bash
+ssh <user>@${OMNI_IP} "mkdir -p ~/etcd-certs"
+```
+
+Distribute the certificates to the other nodes:
+
+```bash
+scp ca.pem etcd2.pem etcd2-key.pem <user>@${ETCD2_IP}:~/
+scp ca.pem etcd3.pem etcd3-key.pem <user>@${ETCD3_IP}:~/
+scp ca.pem client.pem client-key.pem <user>@${OMNI_IP}:~/etcd-certs/
+```
+
+Replace `<user>` with your SSH username. Common values are `ubuntu` on Ubuntu, `ec2-user` on Amazon Linux and RHEL, and `root` on some bare metal setups.
+
+<Note>Keep `ca-key.pem` on Node 1 only. It is not needed on any other host and should not be distributed.</Note>
+
+## Step 5: Start etcd (all nodes)
+
+Each node starts etcd with its own certificate and the shared `--initial-cluster` flag that tells etcd the addresses of all three members. All three nodes must be started before the cluster can form quorum and become healthy.
+
+On each node, set the shared cluster variables:
+
+```bash
+export ETCD1_IP=<etcd-node-1-ip>
+export ETCD2_IP=<etcd-node-2-ip>
+export ETCD3_IP=<etcd-node-3-ip>
+```
+
+Create the data directory where etcd will persist its state:
+
+```bash
+mkdir -p $HOME/etcd-data
+sudo chmod 700 $HOME/etcd-data
+```
+
+Then run the appropriate command for each node:
+
+<Tabs>
+  <Tab title="Node 1">
+
+```bash
+docker run -d \
+  --name etcd \
+  --restart=unless-stopped \
+  -p 2379:2379 \
+  -p 2380:2380 \
+  -v $HOME/etcd-data:/etcd-data:Z \
+  -v $HOME/etcd1.pem:/etcd/server.crt:ro \
+  -v $HOME/etcd1-key.pem:/etcd/server.key:ro \
+  -v $HOME/ca.pem:/etcd/ca.crt:ro \
+  gcr.io/etcd-development/etcd:v3.5.17 \
+  etcd \
+    --name=etcd-node-1 \
+    --data-dir=/etcd-data \
+    --listen-client-urls=https://0.0.0.0:2379 \
+    --advertise-client-urls=https://${ETCD1_IP}:2379 \
+    --listen-peer-urls=https://0.0.0.0:2380 \
+    --initial-advertise-peer-urls=https://${ETCD1_IP}:2380 \
+    --initial-cluster="etcd-node-1=https://${ETCD1_IP}:2380,etcd-node-2=https://${ETCD2_IP}:2380,etcd-node-3=https://${ETCD3_IP}:2380" \
+    --initial-cluster-state=new \
+    --cert-file=/etcd/server.crt \
+    --key-file=/etcd/server.key \
+    --trusted-ca-file=/etcd/ca.crt \
+    --client-cert-auth=true \
+    --peer-cert-file=/etcd/server.crt \
+    --peer-key-file=/etcd/server.key \
+    --peer-trusted-ca-file=/etcd/ca.crt \
+    --peer-client-cert-auth=true
+```
+
+  </Tab>
+  <Tab title="Node 2">
+
+```bash
+docker run -d \
+  --name etcd \
+  --restart=unless-stopped \
+  -p 2379:2379 \
+  -p 2380:2380 \
+  -v $HOME/etcd-data:/etcd-data:Z \
+  -v $HOME/etcd2.pem:/etcd/server.crt:ro \
+  -v $HOME/etcd2-key.pem:/etcd/server.key:ro \
+  -v $HOME/ca.pem:/etcd/ca.crt:ro \
+  gcr.io/etcd-development/etcd:v3.5.17 \
+  etcd \
+    --name=etcd-node-2 \
+    --data-dir=/etcd-data \
+    --listen-client-urls=https://0.0.0.0:2379 \
+    --advertise-client-urls=https://${ETCD2_IP}:2379 \
+    --listen-peer-urls=https://0.0.0.0:2380 \
+    --initial-advertise-peer-urls=https://${ETCD2_IP}:2380 \
+    --initial-cluster="etcd-node-1=https://${ETCD1_IP}:2380,etcd-node-2=https://${ETCD2_IP}:2380,etcd-node-3=https://${ETCD3_IP}:2380" \
+    --initial-cluster-state=new \
+    --cert-file=/etcd/server.crt \
+    --key-file=/etcd/server.key \
+    --trusted-ca-file=/etcd/ca.crt \
+    --client-cert-auth=true \
+    --peer-cert-file=/etcd/server.crt \
+    --peer-key-file=/etcd/server.key \
+    --peer-trusted-ca-file=/etcd/ca.crt \
+    --peer-client-cert-auth=true
+```
+
+  </Tab>
+  <Tab title="Node 3">
+
+```bash
+docker run -d \
+  --name etcd \
+  --restart=unless-stopped \
+  -p 2379:2379 \
+  -p 2380:2380 \
+  -v $HOME/etcd-data:/etcd-data:Z \
+  -v $HOME/etcd3.pem:/etcd/server.crt:ro \
+  -v $HOME/etcd3-key.pem:/etcd/server.key:ro \
+  -v $HOME/ca.pem:/etcd/ca.crt:ro \
+  gcr.io/etcd-development/etcd:v3.5.17 \
+  etcd \
+    --name=etcd-node-3 \
+    --data-dir=/etcd-data \
+    --listen-client-urls=https://0.0.0.0:2379 \
+    --advertise-client-urls=https://${ETCD3_IP}:2379 \
+    --listen-peer-urls=https://0.0.0.0:2380 \
+    --initial-advertise-peer-urls=https://${ETCD3_IP}:2380 \
+    --initial-cluster="etcd-node-1=https://${ETCD1_IP}:2380,etcd-node-2=https://${ETCD2_IP}:2380,etcd-node-3=https://${ETCD3_IP}:2380" \
+    --initial-cluster-state=new \
+    --cert-file=/etcd/server.crt \
+    --key-file=/etcd/server.key \
+    --trusted-ca-file=/etcd/ca.crt \
+    --client-cert-auth=true \
+    --peer-cert-file=/etcd/server.crt \
+    --peer-key-file=/etcd/server.key \
+    --peer-trusted-ca-file=/etcd/ca.crt \
+    --peer-client-cert-auth=true
+```
+
+  </Tab>
+</Tabs>
+
+<Note>The `:Z` volume flag on all mounts ensures compatibility with SELinux. It is safe to use on non-SELinux hosts — Docker silently ignores it.</Note>
+
+## Step 6: Verify the cluster
+
+Once all three nodes are running, confirm they have formed a cluster. Run the following from Node 1. A healthy cluster will list all three members with `started` status and report each endpoint as healthy.
+
+Check that all three members have joined:
+
+```bash
+docker exec etcd etcdctl \
+  --endpoints=https://${ETCD1_IP}:2379,https://${ETCD2_IP}:2379,https://${ETCD3_IP}:2379 \
+  --cacert=/etcd/ca.crt \
+  --cert=/etcd/server.crt \
+  --key=/etcd/server.key \
+  member list
+```
+
+**Expected output:**
+
+```
+<id>, started, etcd-node-1, https://10.0.0.1:2380, https://10.0.0.1:2379, false
+<id>, started, etcd-node-2, https://10.0.0.2:2380, https://10.0.0.2:2379, false
+<id>, started, etcd-node-3, https://10.0.0.3:2380, https://10.0.0.3:2379, false
+```
+
+Check that all endpoints are healthy and accepting writes:
+
+```bash
+docker exec etcd etcdctl \
+  --endpoints=https://${ETCD1_IP}:2379,https://${ETCD2_IP}:2379,https://${ETCD3_IP}:2379 \
+  --cacert=/etcd/ca.crt \
+  --cert=/etcd/server.crt \
+  --key=/etcd/server.key \
+  endpoint health
+```
+
+**Expected output:**
+
+```
+https://10.0.0.1:2379 is healthy: successfully committed proposal: took = ...
+https://10.0.0.2:2379 is healthy: successfully committed proposal: took = ...
+https://10.0.0.3:2379 is healthy: successfully committed proposal: took = ...
+```
+
+## Step 7: Connect Omni to the etcd cluster
+
+Once the cluster is healthy, connect Omni to it by passing the following flags when starting Omni. Refer to [Run Omni On-Prem](./run-omni-on-prem) and use the **External etcd** tab in Step 7.
+
+The `--etcd-embedded=false` flag disables Omni's internal etcd instance. The `--etcd-endpoints` flag points Omni at all three cluster members so it can fail over automatically if one node goes down.
+
+```bash
+--etcd-embedded=false \
+--etcd-endpoints=https://${ETCD1_IP}:2379,https://${ETCD2_IP}:2379,https://${ETCD3_IP}:2379
+```
+
+Omni will use the client certificate you copied to `~/etcd-certs/` on the Omni host to authenticate to the cluster.
+
+## Backups
+
+Because etcd is external and not managed by Omni, you are responsible for backing it up independently. See [Back Up Omni Database](./back-up-omni-db) for instructions on taking etcd snapshots.

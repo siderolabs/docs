@@ -2,6 +2,7 @@
 title: Production Clusters
 weight: 30
 description: "Recommendations for setting up a Talos Linux cluster in production."
+canonical: https://docs.siderolabs.com/talos/v1.14/getting-started/prodnotes
 ---
 
 import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
@@ -129,7 +130,7 @@ Then your endpoint would be:
 https://kube.cluster1.mydomain.com:6443
 ```
 
-> **Note**: This endpoint serves as a fallback if [KubePrism](../../../kubernetes-guides/advanced-guides/kubeprism) becomes unavailable, for example, after a reboot. It also ensures that Talos nodes can still locate and communicate with the control plane if other discovery services are not available.
+> **Note**: This endpoint serves as a fallback if [KubePrism](../configure-your-talos-cluster/system-configuration/kubeprism) becomes unavailable, for example, after a reboot. It also ensures that Talos nodes can still locate and communicate with the control plane if other discovery services are not available.
 
 ## Step 4: Save Your Endpoint in a Variable
 

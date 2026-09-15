@@ -1,0 +1,54 @@
+---
+title: Build with the Omni API
+description: Build integrations and automation workflows with the Omni API and Go client library.
+---
+
+Omni exposes a gRPC API for programmatic access to cluster management, machine state, and authentication. If you're working interactively, omnictl wraps this same API and handles authentication automatically, but for custom tooling, automation pipelines, and external integrations, you'll want to work with the API directly.
+
+## Connect using the Go client library
+
+The recommended entry point for API integration is the official [Go client package](https://pkg.go.dev/github.com/siderolabs/omni/client/pkg/client). While the raw gRPC API is available through the [proto schemas in the Omni repository](https://github.com/cosi-project/specification/tree/main/proto/v1alpha1), the Go client provides a higher-level interface that simplifies common operations.
+
+In addition to generated API bindings, the client library handles authentication, resource unmarshaling, and the COSI resource lifecycle, making it easier to work with Omni resources directly from Go applications.
+
+The Go client package is documented at:
+
+- [pkg.go.dev — omni/client/pkg/client](https://pkg.go.dev/github.com/siderolabs/omni/client/pkg/client)
+
+For a complete example that demonstrates connecting to Omni and interacting with resources, see: [client/pkg/client/example_test.go](https://github.com/siderolabs/omni/blob/main/client/pkg/client/example_test.go).
+
+## Authenticate with service accounts
+
+Before making any API calls, you'll need a service account. The Omni API authenticates programmatic access through service accounts, where each account issues a key that the client presents with every request.
+
+See [Create an Omni Service Account](../omni-cluster-setup/create-an-omni-service-account) for setup instructions.
+
+## Manage cluster lifecycle
+
+Once authenticated, cluster lifecycle operations are best handled through the cluster templates package rather than the raw API. Cluster templates provide a stable, versioned interface for creating and updating clusters, and Omni guarantees backward compatibility for the template schema across versions.
+
+The template resource definitions are documented at:
+
+- [pkg.go.dev — omni/client/pkg/omni/resources/omni](https://pkg.go.dev/github.com/siderolabs/omni/client/pkg/omni/resources/omni)
+
+For the complete template schema and examples, see [Cluster Templates](./cluster-templates)
+
+## Watching resources for status
+
+Beyond managing clusters, Omni resources support watch operations, which allow clients to receive real-time updates when resource state changes.
+
+This is commonly used for observability integrations, automation pipelines, and systems that need to react to provisioning or cluster health events.
+
+The following resources are commonly used for status monitoring:
+
+| Resource | Description |
+|---|---|
+| `ClusterStatus` | Overall cluster health and lifecycle phase |
+| `MachineStatus` | Per-machine connectivity and provisioning status |
+| `ClusterMachineStatus` | Per-machine status within a specific cluster |
+| `MachineStatusMetrics` | Aggregated machine metrics grouped by state, such as connected, available, allocated, and pending machines |
+| `ClusterStatusMetrics` | Aggregated cluster metrics grouped by lifecycle phase, such as healthy, unhealthy, scaling, or destroying clusters |
+
+## Register external machines with a custom provider
+
+If your setup involves machines that need to be dynamically provisioned and registered with Omni, bare metal, VMs, or cloud instances, you can extend the API further by implementing a custom infrastructure provider. See [Write an Infrastructure Provider](../infrastructure-and-extensions/writing-infrastructure-providers) for implementation details.

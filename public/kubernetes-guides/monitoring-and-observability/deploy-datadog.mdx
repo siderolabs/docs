@@ -1,0 +1,99 @@
+---
+title: Deploy the Datadog Agent
+description: Deploy the Datadog Agent on a Talos Linux Kubernetes cluster using Helm.
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+This guide walks you through deploying the Datadog Agent on a Talos-managed Kubernetes cluster using the official Datadog Helm chart.
+
+## Prerequisites
+
+Before you begin, you will need the following:
+
+- A running Talos cluster. If you don't have one yet, see the <a href={`../../talos/${version}/getting-started/getting-started`}>Getting Started </a>guide.
+- `kubectl` and `helm` installed locally.
+- A [Datadog account](https://app.datadoghq.com) with an [API and application key](https://docs.datadoghq.com/account_management/api-app-keys/). 
+- Your Datadog site. This is visible in the URL when you are logged into Datadog, for example `us5.datadoghq.com`.
+
+## Step 1: Create the variables
+
+Define the variables that will be used throughout this guide. Replace each placeholder with your actual values:
+ 
+```bash
+DATADOG_API_KEY=<YOUR_DATADOG_API_KEY>
+DATADOG_APP_KEY=<YOUR_DATADOG_APP_KEY>
+CLUSTER_NAME=<YOUR_CLUSTER_NAME>
+DATADOG_SITE=<YOUR_DATADOG_SITE>
+```
+
+## Step 2: Add the Datadog Helm repository
+
+Add the official Datadog Helm repository and update your local cache:
+
+```bash
+helm repo add datadog https://helm.datadoghq.com
+helm repo update
+```
+
+## Step 3: Create the namespace and store your credentials
+
+Create a dedicated namespace for the Datadog Agent, then store your API key and application key as a Kubernetes secret. 
+
+```bash
+kubectl create namespace datadog
+ 
+kubectl create secret generic datadog-secret \
+  --from-literal api-key=$DATADOG_API_KEY \
+  --from-literal app-key=$DATADOG_APP_KEY \
+  --namespace datadog
+```
+
+## Step 4: Create the values file
+
+Create a file named `values.yaml` with the following contents. The `providers.talos.enabled` flag activates all Talos-specific configuration adjustments in the chart. The `kubelet.tlsVerify` flag is set to `false` because Talos uses self-signed kubelet certificates.
+
+```bash
+cat << EOF > values.yaml
+datadog:
+  apiKeyExistingSecret: datadog-secret
+  appKeyExistingSecret: datadog-secret
+  clusterName: $CLUSTER_NAME
+  site: $DATADOG_SITE
+  kubelet:
+    tlsVerify: false
+ 
+providers:
+  talos:
+    enabled: true
+EOF
+```
+
+## Step 5: Install the Datadog Agent
+
+Install the Datadog Agent using the Helm chart and the values file you created:
+
+```bash
+helm upgrade --install datadog-agent datadog/datadog \
+  --namespace datadog \
+  --values values.yaml
+```
+
+## Step 6: Verify the deployment
+
+Check that all Datadog pods have started successfully:
+
+```bash
+kubectl get pods -n datadog
+```
+
+Wait for all pods to reach `Running` status with 0 restarts. You should see output similar to the following:
+
+```
+NAME                                          READY   STATUS    RESTARTS   AGE
+datadog-agent-xxxxx                           2/2     Running   0          2m
+datadog-agent-cluster-agent-xxxxxxxxx-xxxxx   1/1     Running   0          2m
+datadog-agent-operator-xxxxxxxxx-xxxxx        1/1     Running   0          2m
+```
+
+Once the agent pod shows `2/2 Running`, navigate to **Infrastructure** in the Datadog UI. Your Talos node should appear in the host list with a status of **Active**.

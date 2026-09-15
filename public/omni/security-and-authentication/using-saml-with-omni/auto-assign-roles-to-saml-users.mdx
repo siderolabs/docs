@@ -3,49 +3,87 @@ title: Auto-assign roles to SAML users
 description: Automatically assign Omni roles to new SAML users based on their SAML attribute labels.
 ---
 
-This guide shows you how to configure your Omni instance so that new users logging in with SAML authentication are automatically assigned to a role based on their SAML role attributes.
+When SAML authentication is enabled, Omni can automatically assign roles to new users based on their SAML attributes. To configure this, use `SAMLLabelRule` resources to map SAML attribute labels to Omni roles. If no rules are configured, [roles must be assigned manually](../manage-user-in-omni) by an administrator.
 
-Create the file `assign-operator-to-engineers-label.yaml` for the `SAMLLabelRule` resource, with the following content:
+## Prerequisites
 
-Copy
+- SAML authentication must be configured on your Omni instance. See [Authentication and Authorization](../authentication-and-authorization) for setup instructions.
+- `omnictl` must be installed and configured with Admin access to your Omni instance.
+
+## How SAML label rules work
+
+When a SAML user logs in to Omni, their SAML attributes are read and mapped to labels on the user resource. Omni recognises the following SAML attribute names by default and maps them to the `role` label key:
+
+| SAML attribute | Provider |
+|---|---|
+| `http://schemas.microsoft.com/ws/2008/06/identity/claims/role` | Microsoft |
+| `Role` | Google |
+| `role` | Samltest |
+
+For example, a user with the SAML attribute `Role: engineers` will be labeled `saml.omni.sidero.dev/role/engineers` in Omni automatically when using Google or a compatible provider.
+
+If your SAML identity provider uses a different attribute name, you must configure Omni to map it to the `role` key. This can be done via the CLI flag when starting the Omni server:
+
+```bash
+--auth-saml-label-rules='{"your-custom-attribute": "role"}'
+```
+
+**Or** via the Omni configuration file:
 
 ```yaml
+auth:
+  saml:
+    attributeRules:
+      your-custom-attribute: role
+```
+
+For the full list of configuration options, see the [Omni Configuration reference](../../reference/omni-configuration#auth-saml).
+
+Once the correct labels are appearing on your users, a `SAMLLabelRule` resource can automatically assign an Omni role when a matching label is found. If multiple rules match the same user, the role with the highest access level is assigned.
+
+## Create and verify a SAML label rule
+
+The following example creates a rule that assigns the `Operator` role to any new SAML user whose SAML attributes include `Role: engineers`.
+
+### Step 1: Create the rule
+
+Create and apply the `SAMLLabelRule` resource:
+
+```bash
+cat <<EOF | omnictl apply -f -
 metadata:
   namespace: default
   type: SAMLLabelRules.omni.sidero.dev
   id: assign-operator-to-engineers-label
 spec:
-  assignroleonregistration: Operator
+  assignrole: Operator
+  updateoneachlogin: true
   matchlabels:
     - saml.omni.sidero.dev/role/engineers
+EOF
 ```
 
-As an admin, create it on your Omni instance using `omnictl`:
+The fields in the `spec` are:
 
-Copy
+| Field | Description |
+|---|---|
+| `assignrole` | The Omni role to assign to matching users. Valid values are `None`, `Reader`, `Operator`, and `Admin`. The `Auditor` role cannot be assigned this way, so it has to be set on the user directly. Note that a matching rule with `updateoneachlogin` set to true overwrites the user's role on every login, which would undo a manual `Auditor` assignment. |
+| `updateoneachlogin` | If `true`, the role is re-evaluated and updated on every login, not just the first. If `false`, the role is only assigned on the user's first login. |
+| `matchlabels` | A list of SAML-derived labels to match against. Labels follow the format `saml.omni.sidero.dev/<attribute-name>/<attribute-value>`. |
+
+### Step 2: Verify the rule was applied
+
+Log in to Omni as a SAML user with the matching attribute, then confirm the role was assigned by running the following command, replacing `<user-email>` with the user's email address:
 
 ```bash
-omnictl apply -f assign-operator-to-engineers-label.yaml
+omnictl get user <user-email> -o yaml
 ```
 
-This will create a resource that assigns the `Operator` role to any user that logs in with SAML and has the SAML attribute `Role` with the value `engineers`.
+The output should show the assigned role under the user's spec.
 
-Log in to Omni as a new SAML user with the SAML attribute with name `Role` and value `engineers`.
+## Limitations
 
-This will cause the user created on the Omni side to be labeled as `saml.omni.sidero.dev/role/engineers`.
+The following limitations apply when automatically assigning roles to SAML users:
 
-This label will match the `SAMLLabelRule` resource we created above, and the user will automatically be assigned the `Operator` role.
-
-**Note**
-
-When there are multiple matches from different `SAMLLabelRule` resources, the matched role with the highest access level will be assigned to the user.
-
-**Warning**
-
-This role assignment will **only work for the new users** logging in with SAML.
-
-The SAML users who have already logged in to Omni at least once **will not be matched** by the `SAMLLabelRule` resource and their roles will not be updated.
-
-**Warning**
-
-If the logged in SAML user is the **very first user** logging in to an Omni instance, **it will not be matched** by the `SAMLLabelRule` resource and always be assigned the `Admin` role.
+- SAML label rules only apply to users logging in for the first time. If a user has already logged in to Omni at least once, their role will not be updated by a `SAMLLabelRule` and must be updated manually by an administrator.
+- If the SAML user is the first user to log in to an Omni instance, the `SAMLLabelRule` will not apply. The first user is always assigned the `Admin` role, regardless of any label rules.

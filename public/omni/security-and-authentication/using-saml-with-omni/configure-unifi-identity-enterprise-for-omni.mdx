@@ -3,83 +3,115 @@ title: Configure Unifi Identity Enterprise for Omni
 description: Set up Unifi Identity Enterprise as a SAML identity provider for Omni.
 ---
 
-This section describes how to use Unifi Identity Enterprise (here forward UIIE) SSO with Omni via SAML
+This guide walks you through connecting Unifi Identity Enterprise (UIIE) to Omni using SAML-based Single Sign-On (SSO).
 
-First, login to the UIIE Manager portal and navigate to the SSO Apps section in the left menu.
+You’ll complete this in two parts:
 
-Next, Add a new app. Choose “Add Custom App”
+1. Configure a SAML app in the UIIE Manager portal.
+2. Configure Omni for SAML with UIIE
+
+## Configure a SAML app in the UIIE Manager portal
+
+Follow these steps to create and configure a SAML app in the UIIE Manager portal.
+
+### Step 1: Create a new SAML app
+
+Start by creating a custom SAML app in the UIIE Manager portal.
+
+1. Log in to the UIIE Manager portal and navigate to **SSO Apps** in the left menu.
+2. Click **Add a new app** and select **Add Custom App**.
 
 <img src="./images/configure-unifi-identity-add-new-app.png" alt=""/>
 
-Next, click Add on the “SAML 2.0” option for Sign-on Method
+3. Select **Add** on the **SAML 2.0** option for Sign-on Method.
 
 <img src="./images/configure-unifi-identity-add-custom-app.png" alt=""/>
 
-You’ll now be in the Add SAML 2.0 App screen where we’ll define the app.
+### Step 2: Configure the SAML app settings
+
+You will now be on the **Add SAML 2.0 App** screen. Fill in the fields as follows, replacing `<fqdn for omni>` with the fully-qualified domain name of your Omni instance:
+
+| Option                      | Value                                   | Description                                                    |
+| --------------------------- | --------------------------------------- | -------------------------------------------------------------- |
+| Name                        | Omni                                    | A descriptive name for the app.                                |
+| Icon                        | Your choice                             | Upload an icon of your choosing.                               |
+| Single Sign-On URL          | `https://<fqdn for omni>/saml/acs`      | The URL where UIIE sends SAML responses after authentication.  |
+| Audience URI (SP Entity ID) | `https://<fqdn for omni>/saml/metadata` | The URL Omni uses to identify itself to the identity provider. |
+| Default Relay State         | _(leave blank)_                         | Not required.                                                  |
+| Name ID Format              | Unspecified                             | `emailAddress` also works.                                     |
+| App Username                | Email                                   | Email works best; username prefixes may also work.             |
+| SCIM Connection             | Off                                     | Not used.                                                      |
 
 <img src="./images/configure-unifi-identity-enter-a-valid-url.png" alt=""/>
 
-| Option                      | Value                                  | Description                                                             |
-| --------------------------- | -------------------------------------- | ----------------------------------------------------------------------- |
-| Name                        | Omni                                   | A descriptive name for the Web App                                      |
-| Icon                        | \<your choice>                         | Upload an icon of your choosing                                         |
-| Single Sign-On URL          | https://\<fqdn for omni>/saml/acs      | The fully-qualified domain name at which your omni instance will reside |
-| Audience URI (SP Entity ID) | https://\<fqdn for omni>/saml/metadata | The fully-qualified domain name for metadata retrieval                  |
-| Default Relay State         |                                        | Leave this blank                                                        |
-| Name ID Format              | Unspecified                            | Unspecified works, you can probably also choose emailAddress            |
-| App Username                | Email                                  | Works best with emails as usernames however prefixes might work too     |
-| SCIM Connection             | Off                                    | Not used                                                                |
+Click **Add**. On the confirmation screen that follows, click **Done** to proceed.
 
-After entering the above values and clicking the “Add” button, you’ll be taken to another screen with some details. We don’t need anything from here, we’ll get info we need later after further configuration, so just click “Done” to proceed.
+### Step 3: Assign users
 
-You’ll now be on the screen to manage the app, here you’ll want to assign users/groups according to who you would like to have the ability to login to Omni. To start with, you probably only want to assign the person who will be the primary admin, as the first user to login will be granted that role in Omni. Therefore, best practice would be to assign your primary admin, have them login to Omni, then come back into the app here and assign any other users who should have access.
+Assign the users or groups who should be able to log in to Omni. You can do this from the app management screen you are taken to after clicking **Done**.
 
-Once you’ve assigned the user(s) accordingly, click the “Settings” bubble at the top of the screen as some final configuration is needed here.
+<Note>
+The first user to log in to Omni is automatically granted the `Admin` role. It is best practice to assign only your primary admin first, have them log in to Omni, and then return here to assign any additional users.
+</Note>
+
+### Step 4: Configure attribute statements
+
+Attribute statements tell UIIE which user attributes to pass to Omni in the SAML assertion. You need to add mappings for email, first name, and last name.
+
+1. Click the **Settings** tab at the top of the screen.
 
 <img src="./images/configure-unifi-identity-overview-assignments-settings.png" alt=""/>
 
-Expand the “Sign On” section at the bottom of the settings page via the “Show More” down arrow.
+2. Scroll to the bottom of the Settings page and expand the **Sign On** section by clicking **Show More**.
 
 <img src="./images/configure-unifi-identity-sign-on-show-more.png" alt=""/>
 
-At the bottom of this section, you’ll see an “Attribute Statements” block, here the mappings from UIIE to Omni fields needs to be entered as below. Use the “Add Another” button to create new ones.
+3. In the **Attribute Statements** block, add the following mappings. Use the **Add Another** button to add each row:
 
 <img src="./images/configure-unifi-identity-attribute-statements.png" alt=""/>
 
-| Name      | Name Format | Value      | Description              |
-| --------- | ----------- | ---------- | ------------------------ |
-| email     | Unspecified | Email      | The user’s email address |
-| firstName | Unspecified | First Name | The user’s first name    |
-| lastName  | Unspecified | Last Name  | The user’s last name     |
+| Name        | Name Format | Value      | Description               |
+| ----------- | ----------- | ---------- | ------------------------- |
+| `email`     | Unspecified | Email      | The user's email address. |
+| `firstName` | Unspecified | First Name | The user's first name.    |
+| `lastName`  | Unspecified | Last Name  | The user's last name.     |
 
-Lastly, you’ll need the IDP Metadata file which can be obtained via the View Setup Instructions link or downloaded as an xml file via the Identity Provider metadata link; both of which are slightly further up the page.
+### Step 5: Download the IDP metadata file
+
+The IDP metadata file contains the information Omni needs to trust and communicate with UIIE. You will need to copy this file to the host that will run the Omni container.
+
+1. Further up the **Sign On** page, locate the **View Setup Instructions** link or the **Identity Provider metadata** link.
 
 <img src="./images/configure-unifi-identity-sign-on-methods.png" alt=""/>
 
-A copy of this file needs to be on the host which will run the Omni container as we’ll feed it in to the container at runtime. You can copy paste contents or download/upload the file whichever is easiest. For the remainder of this guide, we’ll assume this file ends up at the following location on your container host: `~/uiieIDPmetadata.xml`
+2. Download the IDP metadata file as an XML file and copy it to your container host. The remaining steps in this guide assume the file is saved at `~/uiieIDPmetadata.xml`.
 
-This completes the configurations required in UIIE
+This completes the configuration required in UIIE.
 
-### Configure Omni for SAML with UIIE
+## Configure Omni for SAML with UIIE
 
-To get Omni to use UIIE as a SAML provider, the following flags should be passed to Docker & the Omni container on launch.
+To configure Omni to use UIIE as its SAML provider, pass the following flags when launching the Omni container with Docker. The Docker flag mounts the IDP metadata file into the container, and the Omni flags enable SAML and point Omni to the metadata file.
 
-| Scope  | Flag                                               | Description                                       |
-| ------ | -------------------------------------------------- | ------------------------------------------------- |
-| Docker | `-v $PWD/uiieIDPmetadata.xml:/uiieIDPmetadata.xml` | Make available the IDP metadata file in container |
-| Omni   | `--auth-saml-enabled=true`                         | Enable SAML authentication.                       |
-| Omni   | `--auth-saml-metadata-/uiieIDPmetadata.xml`        | The path to the IDP metadata file.                |
+| Scope  | Flag                                                | Description                                         |
+| ------ | --------------------------------------------------- | --------------------------------------------------- |
+| Docker | `-v $PWD/uiieIDPmetadata.xml:/uiieIDPmetadata.xml`  | Mounts the IDP metadata file into the container.    |
+| Omni   | `--auth-saml-enabled=true`                          | Enables SAML authentication.                        |
+| Omni   | `--auth-saml-metadata=/uiieIDPmetadata.xml`         | The path to the IDP metadata file in the container. |
 
-For example;
+For example:
 
 ```bash
 docker run \
-...
--v $PWD/uiieIDPmetadata.xml:/uiieIDPmetadata.xml
-...
-ghcr.io/siderolabs/omni:latest \
-  --auth-saml-enabled=true
-  --auth-saml-metadata-/uiieIDPmetadata.xml
+  ...
+  -v $PWD/uiieIDPmetadata.xml:/uiieIDPmetadata.xml \
+  ...
+  ghcr.io/siderolabs/omni:latest \
+  --auth-saml-enabled=true \
+  --auth-saml-metadata=/uiieIDPmetadata.xml
 ```
 
-Unfortunately UIIE does not expose group attributes, so you will have to manually assign Omni groups/roles to the users as they are created on first login.
+Alternatively, you can configure these options using a configuration file instead of CLI flags. See [SAML](../../reference/omni-configuration#saml) in the Omni Configuration Examples.
+
+<Note>
+UIIE does not expose group attributes, so you will need to manually assign Omni roles to users after they log in for the first time.
+</Note>

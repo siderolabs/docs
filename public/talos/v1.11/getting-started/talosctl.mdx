@@ -1,6 +1,7 @@
 ---
 title: "talosctl"
 description: "Install Talos Linux CLI"
+canonical: https://docs.siderolabs.com/talos/v1.14/getting-started/talosctl
 ---
 
 import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
@@ -13,6 +14,8 @@ The client can be installed and updated via the [Homebrew package manager](https
 You will need to install `brew` and then you can install `talosctl` from the Sidero Labs tap.
 
 ```bash
+brew tap siderolabs/tap
+brew trust siderolabs/tap
 brew install siderolabs/tap/talosctl
 ```
 

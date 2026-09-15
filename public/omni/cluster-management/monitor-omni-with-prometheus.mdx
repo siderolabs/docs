@@ -1,0 +1,141 @@
+---
+title: Monitor Omni With Prometheus
+description: Expose the state of clusters, machines, and machine sets as Prometheus metrics with the Omni exporter.
+---
+
+The [Omni exporter](https://github.com/siderolabs/omni_exporter) reads an Omni instance and exposes the state of each object it finds as metrics: one set of series per cluster, machine, machine set, upgrade, and etcd backup.
+
+It is a [Prometheus exporter](https://prometheus.io/docs/instrumenting/exporters/), a small service that sits next to something you want to monitor and publishes its state over HTTP in the format Prometheus scrapes. Running it is how you bring the state of your Omni instance into your own monitoring stack, where you can alert on conditions such as a cluster that is no longer ready or a machine that has disconnected, and build dashboards in Grafana alongside the rest of your infrastructure.
+
+## Prerequisites
+
+You need:
+
+- An Omni instance, either SaaS or self-hosted.
+- `omnictl`, installed and configured. See [Install and configure omnictl](../getting-started/install-and-configure-omnictl).
+- A Prometheus instance that can reach the machine you run the exporter on.
+
+## Set up the exporter
+
+Setting up the exporter takes three steps:
+
+- Create an identity for it to authenticate with.
+- Start it against your instance.
+- Point Prometheus at it.
+
+### Step 1: Create a service account
+
+Create a service account for the exporter:
+
+```bash
+omnictl serviceaccount create --use-user-role=false --role=Reader omni-exporter
+```
+
+The `Reader` role grants read-only access to the resources of your instance, which is everything the exporter needs. It cannot create, change, or delete anything, and the exporter never writes to Omni. For more on what each role allows, see the [Omni security model](../security-and-authentication/security-model).
+
+<Note>
+`--use-user-role` defaults to true, which clones the role of the user running the command instead of the role you pass. Set it to false, as shown above, or the account ends up with your own role.
+</Note>
+
+The command prints an `OMNI_SERVICE_ACCOUNT_KEY`. It is shown once, so store it somewhere safe. Service account keys expire after a year by default, and rotating the key requires restarting the exporter.
+
+### Step 2: Run the exporter
+
+Point the exporter at your instance and give it the key. In the command below, replace `<account>.omni.siderolabs.io` with the address of your instance and `<key>` with the key from Step 1:
+
+```bash
+docker run -d --restart unless-stopped -p 10048:10048 \
+  -e OMNI_ENDPOINT=https://<account>.omni.siderolabs.io \
+  -e OMNI_SERVICE_ACCOUNT_KEY=<key> \
+  ghcr.io/siderolabs/omni_exporter:v0.1.0
+```
+
+Pin the image to a release tag, as the example does. Use the newest release, which the [exporter releases page](https://github.com/siderolabs/omni_exporter/releases) lists. Avoid the `latest` tag, which follows the main branch of the exporter and not the newest release. The restart policy keeps the exporter running, since it is meant to stay up continuously.
+
+By default, metrics are served on port 10048, which `--web.listen-address` can change. Confirm the exporter is working before moving on:
+
+```bash
+curl -s http://localhost:10048/metrics | grep '^omni_exporter_up '
+```
+
+A value of 1 confirms that the exporter reached Omni and that every resource type finished its initial sync:
+
+```text
+omni_exporter_up 1
+```
+
+Resource types sync independently, so the value starts at 0 and reaches 1 only once the last of them completes. Retry the command if the exporter has only just started.
+
+### Step 3: Add a scrape job to Prometheus
+
+Add the exporter as a target in your Prometheus configuration:
+
+```yaml
+scrape_configs:
+  - job_name: omni
+    static_configs:
+      - targets: ["localhost:10048"]
+```
+
+Each scrape renders from data the exporter already holds in memory, so scraping more often costs little. The one exception is a small reachability check the exporter makes against Omni on every scrape, which is bounded by a timeout of a few seconds. Keep your Prometheus scrape timeout above that.
+
+## Configure the exporter
+
+The defaults suit most instances, and `--help` lists every flag. The settings below are the ones most often worth changing.
+
+Passing the key as an environment variable is convenient, but it exposes the key to anything that can read the process environment. Use `--omni.service-account-key-file` to read it from a file instead, which also fits a Kubernetes secret mount better. With `docker run`, mount the file into the container and give the flag the path inside it:
+
+```bash
+docker run -d -p 10048:10048 \
+  -v <key-file>:/etc/omni/key:ro \
+  -e OMNI_ENDPOINT=https://<account>.omni.siderolabs.io \
+  ghcr.io/siderolabs/omni_exporter:v0.1.0 --omni.service-account-key-file=/etc/omni/key
+```
+
+The metrics endpoint is unauthenticated by default. Because the metrics describe your infrastructure, restrict access to it. The exporter uses the Prometheus exporter toolkit for this, so TLS and basic authentication are configured through a web configuration file passed with `--web.config.file`, not through flags of the exporter itself. See the [exporter toolkit web configuration reference](https://github.com/prometheus/exporter-toolkit/blob/master/docs/web-configuration.md) for the file format.
+
+If your self-hosted instance serves a certificate the exporter does not trust, add the certificate authority to the trust store of the container. There is an `--omni.insecure-skip-tls-verify` flag, but it disables certificate checking on a connection that carries a service account key, so keep it to temporary testing.
+
+## Understand the metrics
+
+The exporter emits one set of series per object. The table is a representative subset. The [metrics reference](https://github.com/siderolabs/omni_exporter#metrics) in the exporter repository is the authoritative list.
+
+| Metric | Labels | Description |
+| --- | --- | --- |
+| `omni_exporter_up` | | Whether Omni is reachable and every resource type has completed its initial sync and rendered successfully. |
+| `omni_exporter_cluster_ready` | `cluster_id` | Whether the cluster is ready. |
+| `omni_exporter_cluster_phase` | `cluster_id`, `phase` | Whether the cluster is in the given phase. |
+| `omni_exporter_cluster_machines` | `cluster_id` | Number of machines in the cluster. |
+| `omni_exporter_cluster_machines_healthy` | `cluster_id` | Number of healthy machines in the cluster. |
+| `omni_exporter_machine_connected` | `machine_id` | Whether the machine is connected to Omni. |
+| `omni_exporter_machine_info` | `machine_id`, `cluster_id`, `role`, `hostname`, and more | Machine attributes, always 1, to be joined with the state metrics. |
+| `omni_exporter_cluster_machine_stage` | `cluster_id`, `machine_set_id`, `machine_id`, `stage` | Whether the cluster machine is in the given stage. |
+| `omni_exporter_cluster_etcd_backup_last_success_timestamp_seconds` | `cluster_id` | When the last etcd backup of the cluster succeeded. |
+
+Metrics that represent a state with several possible values, such as `omni_exporter_cluster_phase`, emit one series for every possible value, with the current one set to 1 and the rest to 0. A cluster changing phase therefore changes the values of existing series instead of creating and removing them, which keeps queries to simple equality matches such as `omni_exporter_cluster_phase{phase="running"} == 1`.
+
+Descriptive attributes that change often, such as a hostname or a Talos version, live on the `_info` metrics. Keeping them off the state metrics means a machine being renamed does not disturb the series you alert on. Join them back in your query when you need them, for example to see the hostnames of disconnected machines:
+
+```promql
+(omni_exporter_machine_connected == 0) * on (machine_id) group_left (hostname) omni_exporter_machine_info
+```
+
+The exporter performs no aggregation of its own. PromQL does that, so counting the machines of each cluster by stage is a query:
+
+```promql
+sum by (cluster_id, stage) (omni_exporter_cluster_machine_stage)
+```
+
+<Warning>
+Gate alerts on object metrics with `omni_exporter_up == 1`, and alert on `omni_exporter_up == 0` separately. When Omni is unreachable the exporter stops serving object metrics, which is indistinguishable from the objects having been deleted. An alert that fires on the absence of a series will otherwise treat an Omni outage as every cluster disappearing at once.
+</Warning>
+
+## Troubleshoot
+
+Once it is running, the exporter degrades instead of stopping, so an unreachable instance or a failing watch shows up in the metrics and not in a container that has exited. Configuration is the exception: a missing endpoint or an unreadable service account key fails at startup, and the container exits immediately. For anything else, start with `omni_exporter_up`, then narrow down:
+
+- **`omni_exporter_up` is 0 and `omni_exporter_reachable` is 0.** The exporter cannot reach Omni. Check the endpoint, network connectivity, and whether the service account key has expired or been deleted. An expired key looks the same as an unreachable instance from the metrics alone, so check the exporter logs, where the underlying error is reported.
+- **`omni_exporter_up` is 0 but `omni_exporter_reachable` is 1.** Omni is reachable, and at least one resource type has not finished its initial sync or failed to render. This is normal for a few seconds after startup. If it persists, `omni_exporter_collector_success` shows which resource type is affected.
+- **Some object metrics are missing while others are served.** Suppression is per resource type, so a collector that has not completed its initial sync withholds only its own metrics and the rest keep serving. Use `omni_exporter_collector_success` to identify which one. An unreachable Omni is the case that suppresses every resource type at once.
+
+The exporter logs to stderr in JSON by default. Use `--log.format=text` for readable output while troubleshooting, and `--log.level=debug` for more detail.

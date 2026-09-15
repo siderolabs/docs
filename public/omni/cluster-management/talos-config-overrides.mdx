@@ -30,7 +30,7 @@ Here are specific Talos configuration fields that Omni either forbids or silentl
 | `machine.install.extraKernelArgs` | Machine | Kernel arguments that modify networking, certificates, or cluster identity are not allowed. |
 | `machine.network.acceptedCAs` | Machine | Omni manages which CAs are trusted by the machine; overriding this is not permitted. |
 
-## How Omni handles these fields
+## How Omni handles forbidden or ignored fields
 
 If a Talos machine configuration contains any of the above fields:
 

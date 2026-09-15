@@ -1,0 +1,221 @@
+---
+title: "Host DNS"
+description: "How to configure Talos host DNS caching server."
+canonical: https://docs.siderolabs.com/talos/v1.14/networking/host-dns
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+import { release_v1_14 } from '/snippets/custom-variables.mdx';
+
+Talos Linux starting with 1.7.0 provides a caching DNS resolver for host workloads (including host networking pods).
+Host DNS resolver is enabled by default for clusters created with Talos 1.7, and it can be enabled manually on upgrade.
+
+## Enabling host DNS
+
+Host DNS is configured with the `hostDNS` section of the [`ResolverConfig`](../reference/configuration/network/resolverconfig) document:
+
+```yaml
+apiVersion: v1alpha1
+kind: ResolverConfig
+hostDNS:
+  enabled: true
+```
+
+Host DNS can be disabled by setting `enabled: false` as well.
+
+> Note: the v1alpha1 `.machine.features.hostDNS` field is deprecated in Talos 1.14 in favor of the `ResolverConfig` document, and remains supported
+> during the deprecation period.
+> The two sources are mutually exclusive.
+
+> Note: When disabling host DNS, `forwardKubeDNSToHost` must also be set to `false`.
+> Setting `forwardKubeDNSToHost: true` while `hostDNS.enabled` is `false` will result in a configuration validation error.
+
+## Operations
+
+When enabled, Talos Linux starts a DNS caching server on the host, listening on address `127.0.0.53:53` (both TCP and UDP protocols).
+The host `/etc/resolv.conf` file is rewritten to point to the host DNS server:
+
+```shell
+talosctl read /etc/resolv.conf
+```
+
+```text
+nameserver 127.0.0.53
+```
+
+All host-based workloads will use the host DNS server for name resolution.
+Host DNS server forwards requests to the upstream DNS servers, which are either acquired automatically (DHCP, platform sources, kernel args), or specified in the machine configuration.
+
+The upstream DNS servers can be observed with:
+
+```shell
+talosctl get resolvers
+```
+
+```text
+NODE         NAMESPACE   TYPE             ID          VERSION   RESOLVERS
+172.20.0.2   network     ResolverStatus   resolvers   2         ["8.8.8.8","1.1.1.1"]
+```
+
+Logs of the host DNS resolver can be queried with:
+
+```shell
+talosctl logs dns-resolve-cache
+```
+
+Upstream server status can be observed with:
+
+```shell
+talosctl get dnsupstream
+```
+
+```text
+NODE         NAMESPACE   TYPE          ID                  VERSION   HEALTHY   ADDRESS
+172.20.0.2   network     DNSUpstream   #000 Do53 1.1.1.1   1         true      1.1.1.1:53
+172.20.0.2   network     DNSUpstream   #001 Do53 8.8.8.8   1         true      8.8.8.8:53
+```
+
+## Encrypted upstream DNS (DoT and DoH)
+
+The host DNS resolver can talk to its upstream nameservers over an encrypted transport instead of plain DNS:
+
+* `DoT` — [DNS over TLS](https://datatracker.ietf.org/doc/html/rfc7858) (RFC 7858), TCP port `853`.
+* `DoH` — [DNS over HTTPS](https://datatracker.ietf.org/doc/html/rfc8484) (RFC 8484), TCP port `443`, queries are sent as HTTP/2 `POST` requests to `https://<tlsServerName>/dns-query`.
+
+Both are configured per nameserver in the [`ResolverConfig`](../reference/configuration/network/resolverconfig) document:
+
+```yaml
+apiVersion: v1alpha1
+kind: ResolverConfig
+hostDNS:
+  enabled: true
+nameservers:
+  - address: 1.1.1.1
+    protocol: DoH
+    tlsServerName: cloudflare-dns.com
+  - address: 9.9.9.9
+    protocol: DoT
+    tlsServerName: dns.quad9.net
+  - address: 8.8.8.8
+```
+
+The nameserver `address` is always an IP address, and it is the address Talos connects to; `tlsServerName` is used as the TLS SNI and as the name verified against the
+server certificate (and, for `DoH`, as the host part of the request URL), so encrypted DNS does not need a bootstrap resolver of its own.
+Server certificates are validated against the Talos trust store (which can be extended with [custom certificate authorities](../security/certificate-authorities)),
+and TLS 1.3 is required.
+`DoH` additionally honors the `https_proxy`/`no_proxy` settings (see [corporate proxies](./corporate-proxies)).
+
+Since encrypted DNS is implemented by the host DNS resolver, `hostDNS` must be enabled: a machine configuration which uses `DoT` or `DoH` without host DNS is rejected.
+Plain and encrypted nameservers can be mixed, and changing the nameserver configuration does not require a reboot — host DNS re-establishes the upstream connections.
+
+The protocol in use is visible in the upstream status:
+
+```shell
+talosctl get dnsupstream
+```
+
+```text
+NODE         NAMESPACE   TYPE          ID                  VERSION   HEALTHY   ADDRESS
+172.20.0.2   network     DNSUpstream   #000 DoH 1.1.1.1    1         true      1.1.1.1:443
+172.20.0.2   network     DNSUpstream   #001 DoT 9.9.9.9    1         true      9.9.9.9:853
+172.20.0.2   network     DNSUpstream   #002 Do53 8.8.8.8   1         true      8.8.8.8:53
+```
+
+### Why use it
+
+Workloads keep talking plain DNS to `127.0.0.53`, and only the hop from the node to the upstream nameserver is encrypted.
+This means the privacy and integrity benefits apply to everything running on the machine — host processes, host-networking pods, and (with `forwardKubeDNSToHost` enabled,
+which is the default) all Kubernetes pods resolving through `kube-dns` — without any change to the applications or to their DNS configuration.
+Name resolution stops being readable and tamperable by anything on the path between the node and the DNS provider.
+
+The host DNS cache also amortizes the cost: TLS connections to the upstream are long-lived and shared by all workloads on the node, and cached answers are served locally,
+so the extra handshake cost is paid rarely rather than per query.
+
+`DoH` in particular traverses restrictive networks more easily than `DoT`: it uses TCP port `443` and looks like ordinary HTTPS traffic, so it usually passes through
+firewalls and middleboxes which block or intercept port `53` (and often port `853` as well).
+It can also be routed through an HTTPS proxy, which is not possible with plain DNS or `DoT`.
+
+> Note: nameservers using `DoT` or `DoH` are never written to `/etc/resolv.conf`, as the plain DNS clients reading that file cannot speak these protocols.
+> With `forwardKubeDNSToHost` disabled, Kubernetes CoreDNS gets only the plain (`Do53`) nameservers as its upstreams, and would have no upstream at all if every
+> configured nameserver is encrypted — keep `forwardKubeDNSToHost` enabled so that cluster DNS goes through host DNS.
+
+### Encrypted DNS and time synchronization
+
+`DoT` and `DoH` validate the upstream certificate, which requires the system clock to be roughly correct, while NTP servers are usually configured as hostnames,
+which requires DNS resolution.
+On a machine without a working RTC (or with a badly skewed one) these two requirements can deadlock at boot: the certificate is rejected as not yet valid or expired,
+DNS resolution fails, and the time can never be synchronized to fix it.
+
+[NTS](../configure-your-talos-cluster/system-configuration/time-sync#network-time-security-nts) makes this more likely, as the NTS key exchange is itself a TLS
+handshake against the time server.
+Talos tolerates certificate validity failures for the first few NTS key exchanges of a boot, but there is no such fallback for `DoT`/`DoH`: encrypted DNS certificates
+are always validated strictly.
+
+Talos emits a warning when the machine configuration is applied and *every* configured nameserver uses an encrypted protocol.
+To avoid the deadlock, use one of:
+
+* keep at least one plain (`Do53`) nameserver as a fallback, so that time servers can be resolved before the clock is correct;
+* configure time servers by IP address (note that [NTS](../configure-your-talos-cluster/system-configuration/time-sync#network-time-security-nts) requires hostnames,
+  so IP-addressed time servers are queried over plain NTP);
+* rely on a hardware clock which is accurate enough for certificate validation to pass.
+
+## Forwarding `kube-dns` to host DNS
+
+> Note: This feature is enabled by default for new clusters created with Talos 1.8.0 and later.
+
+When host DNS is enabled, by default, `kube-dns` service (`CoreDNS` in Kubernetes) uses host DNS server to resolve external names.
+This way the cache is shared between the host DNS and `kube-dns`.
+
+Talos allows forwarding `kube-dns` to the host DNS resolver to be disabled with:
+
+```yaml
+apiVersion: v1alpha1
+kind: ResolverConfig
+hostDNS:
+  enabled: true
+  forwardKubeDNSToHost: false
+```
+
+This configuration should be applied to all nodes in the cluster, if applied after cluster creation, restart `coredns` pods in Kubernetes to pick up changes.
+
+When `forwardKubeDNSToHost` is enabled, Talos Linux allocates IP address `169.254.116.108` for the host DNS server, and `kube-dns` service is configured to use this IP address as the upstream DNS server:
+This way `kube-dns` service forwards all DNS requests to the host DNS server, and the cache is shared between the host and `kube-dns`.
+
+## Resolving Talos cluster member names
+
+Host DNS can be configured to resolve Talos cluster member names to IP addresses, so that the host can communicate with the cluster members by name.
+Sometimes machine hostnames are already resolvable by the upstream DNS, but this might not always be the case.
+
+Enabling the feature:
+
+```yaml
+apiVersion: v1alpha1
+kind: ResolverConfig
+hostDNS:
+  enabled: true
+  resolveMemberNames: true
+```
+
+When enabled, Talos Linux uses [discovery](../configure-your-talos-cluster/system-configuration/discovery) data to resolve Talos cluster member names to IP addresses:
+
+<CodeBlock lang="sh">
+{`
+$ talosctl get members
+NODE         NAMESPACE   TYPE     ID                             VERSION   HOSTNAME                       MACHINE TYPE   OS                        ADDRESSES
+172.20.0.2   cluster     Member   talos-default-controlplane-1   1         talos-default-controlplane-1   controlplane   Talos ${release_v1_14}   ["172.20.0.2"]
+172.20.0.2   cluster     Member   talos-default-worker-1         1         talos-default-worker-1         worker         Talos ${release_v1_14}   ["172.20.0.3"]
+`}
+</CodeBlock>
+
+With the example output above, `talos-default-worker-1` name will resolve to `172.20.0.3`.
+
+Example usage:
+
+```shell
+talosctl -n talos-default-worker-1 version
+```
+
+When combined with `forwardKubeDNSToHost`, `kube-dns` service will also resolve Talos cluster member names to IP addresses.

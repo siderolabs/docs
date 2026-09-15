@@ -29,7 +29,7 @@ In this tutorial, we will assume:
 We start by setting up access for the infrastructure provider to Omni.
 
 <Info>
-Here, we need to create the service account with the same ID as the ID of the provider service we are going to run. It defaults to bare-metal, hence we use it as the name, but if you plan to use a different ID ([passed via `--id`](https://github.com/siderolabs/omni-infra-provider-bare-metal/blob/v0.1.0-alpha.0/cmd/provider/main.go#L96)) or run multiple provider instances, set the name accordingly for the service account.
+Here, we need to create the service account with the same ID as the ID of the provider service we are going to run. It defaults to bare-metal, hence we use it as the name, but if you plan to use a different ID ([passed via `--id`](https://github.com/siderolabs/omni-infra-provider-bare-metal/blob/v0.8.1/cmd/provider/main.go#L96)) or run multiple provider instances, set the name accordingly for the service account.
 </Info>
 
 <Tabs>
@@ -67,13 +67,15 @@ We will run the provider in a Docker container in our server with IP `172.16.0.4
 <Warning>
 The provider requires its following ports to be accessible:
 
-* `50042`: HTTP and GRPC API port, customizable via `--api-port`)
+* `50042`: HTTP and gRPC API port (customizable via `--api-port`)
 * `69`: TFTP port used to provide iPXE binaries to PXE-booted machines
+* `67`: DHCP proxy broadcast port (for PXE boot DHCPDISCOVER)
+* `4011`: DHCP proxy unicast port (for PXE boot DHCPREQUEST)
 </Warning>
 
 Start by getting the image reference of the latest version of the [provider package](https://github.com/siderolabs/omni-infra-provider-bare-metal/pkgs/container/omni-infra-provider-bare-metal).
 
-At the time of writing, it is `ghcr.io/siderolabs/omni-infra-provider-bare-metal:v0.1.0`, and this is what we shall use in this tutorial.
+At the time of writing, it is `ghcr.io/siderolabs/omni-infra-provider-bare-metal:v0.8.1`, and this is what we shall use in this tutorial.
 
 Set the required environment variables, using the service account key from the previous step:
 
@@ -90,7 +92,7 @@ docker run -d --name=omni-bare-metal-infra-provider \
 --network host \
 -e OMNI_ENDPOINT \
 -e OMNI_SERVICE_ACCOUNT_KEY \
-ghcr.io/siderolabs/omni-infra-provider-bare-metal:v0.7.1 \
+ghcr.io/siderolabs/omni-infra-provider-bare-metal:v0.8.1 \
 --api-advertise-address=172.16.0.42
 ```
 
@@ -103,7 +105,7 @@ docker ps | grep omni-bare-metal-infra-provider
 Sample output:
 
 ```
-7190a326decf   ghcr.io/siderolabs/omni-infra-provider-bare-metal:v0.1.0   "/provider --api-adv…"   About a minute ago   Up About a minute    omni-bare-metal-infra-provider
+7190a326decf   ghcr.io/siderolabs/omni-infra-provider-bare-metal:v0.8.1   "/provider --api-adv…"   About a minute ago   Up About a minute    omni-bare-metal-infra-provider
 ```
 
 Start tailing its logs in a separate shell:
@@ -141,7 +143,7 @@ See all Redfish related flags via the `--help` flag.
 </Info>
 
 <Info>
-The provider will start a DHCP proxy server, responding to DHCP requests from the interface that the `--api-advertise-address`resides in. This DHCP proxy server is only responsible for generating PXE-boot responses for the machines configured to PXE boot. It does not affect the existing DHCP infrastructure otherwise.
+The provider will start a DHCP proxy server, listening for PXE boot requests on the interface that the `--api-advertise-address` resides in. This DHCP proxy server is only responsible for generating PXE-boot responses for the machines configured to PXE boot. It does not affect the existing DHCP infrastructure otherwise.
 
 If you need to run this DHCP proxy on a different interface (so the responses are broadcast to the correct network), you can pass the `--dhcp-proxy-iface-or-ip` flag to the provider, specifying either the name of the network interface or an IP on that machine which belongs to the desired interface.
 </Info>

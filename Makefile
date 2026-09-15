@@ -6,10 +6,48 @@ CONTAINER_NAME := docs-preview
 PORT := 3000
 DOCS_GEN_IMAGE := ghcr.io/siderolabs/docs-gen:latest
 DOCS_CONVERT_IMAGE := ghcr.io/siderolabs/docs-convert:latest
-TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.12.1
-TALOS_VERSION := v1.12
-VALE_IMAGE := jdkato/vale:latest
-VALE_CONFIG ?= .vale.ini
+CHANGELOG_GEN_IMAGE := ghcr.io/siderolabs/changelog-gen:latest
+VERSION_UPGRADE_IMAGE := ghcr.io/siderolabs/version-upgrade-gen:latest
+TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.14.0
+OMNI_CLI_GEN_IMAGE := ghcr.io/siderolabs/omni-cli-gen:latest
+OMNI_CONFIG_GEN_IMAGE := ghcr.io/siderolabs/omni-config-gen:latest
+MDX_NORMALIZE_IMAGE := ghcr.io/siderolabs/mdx-normalize:latest
+CANONICAL_GEN_IMAGE := ghcr.io/siderolabs/canonical-gen:latest
+STYLE_CHECK_IMAGE := ghcr.io/siderolabs/style-guide-checker:latest
+TALOS_VERSION := v1.14
+# Base revision for the *-changed targets (canonical-changed, ...).
+CANONICAL_BASE ?= HEAD
+# Linter images are pinned to exact versions so `make code-review` (and CI) is
+# reproducible: a new linter release can't turn the gate red on unchanged code.
+# Bump these deliberately. Each is overridable from the environment (?=).
+# checkmake has no semver tags, so it is pinned by image digest.
+GOLANGCI_LINT_IMAGE ?= golangci/golangci-lint:v2.12.2
+HADOLINT_IMAGE ?= hadolint/hadolint:v2.14.0
+CHECKMAKE_IMAGE ?= cytopia/checkmake:latest@sha256:ff793674494e472661bc7b4cc623c9a172515ec011c6e802be586f101bd6c043
+
+# Directories that never contain our own Go modules or Dockerfiles but are
+# expensive to walk (public/ is large) or contain throwaway copies (worktrees).
+# Pruning them keeps the discovery below fast on every make invocation.
+DISCOVERY_PRUNE := \( -path ./.git -o -path ./public -o -path ./.claude -o -name node_modules -o -name vendor \) -prune
+
+# Auto-discover every Go module in the repo (any directory with a go.mod) so
+# `code-review` audits new programs automatically — just add a folder with a
+# go.mod and it gets linted, no Makefile edit needed.
+GO_MODULES := $(shell find . $(DISCOVERY_PRUNE) \
+	-o -name go.mod -print | sed 's|^\./||; s|/go.mod$$||' | sort)
+
+# Auto-discover every Dockerfile too, on the same principle: add one and it gets
+# linted automatically.
+DOCKERFILES := $(shell find . $(DISCOVERY_PRUNE) \
+	-o -iname 'Dockerfile*' -print | sed 's|^\./||' | sort)
+
+# Auto-fill the GitHub token from `gh` when it isn't already set in the environment.
+# An exported/CI value wins; otherwise fall back to the local gh keychain. If gh is
+# unavailable this is simply empty, matching the previous behaviour.
+# `export` makes it visible to recipe subprocesses (e.g. the local `go run` targets),
+# not just to the containers that pass it explicitly with `-e`.
+GITHUB_TOKEN ?= $(shell gh auth token 2>/dev/null)
+export GITHUB_TOKEN
 
 # Default target
 .PHONY: help
@@ -19,10 +57,13 @@ help: ## Show this help message
 
 .PHONY: build-mint
 build-mint: ## Build the Mintlify documentation container locally
-	docker build -t $(MINT_IMAGE) ./mintlify
+	docker build -t $(MINT_IMAGE) ./tools/mintlify
 
 .PHONY: docs-preview preview
-docs-preview: ## Build and run the documentation preview server
+docs-preview: ## Build and run the documentation preview server (style-checks changed docs first)
+	@echo "==> Style-checking changed/new docs before preview..."
+	-@$(MAKE) --no-print-directory style-check-changed-auto
+	@echo ""
 	docker run --rm -it \
 		--name $(CONTAINER_NAME) \
 		-p $(PORT):$(PORT) \
@@ -41,131 +82,671 @@ docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multipl
 	docker pull $(DOCS_GEN_IMAGE)
 	docker run --rm -v $(PWD):/workspace -w /workspace $(DOCS_GEN_IMAGE) \
 		common.yaml \
+		talos-v1.14.yaml \
+		talos-v1.13.yaml \
 		talos-v1.12.yaml \
 		talos-v1.11.yaml \
 		talos-v1.10.yaml \
 		talos-v1.9.yaml \
 		talos-v1.8.yaml \
 		talos-v1.7.yaml \
-		talos-v1.6.yaml \
+		talos-enterprise-linux.yaml \
 		omni.yaml \
 		kubernetes-guides.yaml \
+		changelog.yaml \
 		> public/docs.json
 
-docs.json-local: common.yaml omni.yaml docs-gen/main.go ## Generate docs.json using local Go build
-	cd docs-gen && go run . \
-		../common.yaml \
-		../talos-v1.12.yaml \
-		../talos-v1.11.yaml \
-		../talos-v1.10.yaml \
-		../talos-v1.9.yaml \
-		../talos-v1.8.yaml \
-		../talos-v1.7.yaml \
-		../talos-v1.6.yaml \
-		../omni.yaml \
-		../kubernetes-guides.yaml \
-		> ../public/docs.json
+docs.json-local: common.yaml omni.yaml tools/docs-gen/main.go ## Generate docs.json using local Go build
+	cd tools/docs-gen && go run . \
+		../../common.yaml \
+		../../talos-v1.14.yaml \
+		../../talos-v1.13.yaml \
+		../../talos-v1.12.yaml \
+		../../talos-v1.11.yaml \
+		../../talos-v1.10.yaml \
+		../../talos-v1.9.yaml \
+		../../talos-v1.8.yaml \
+		../../talos-v1.7.yaml \
+		../../talos-enterprise-linux.yaml \
+		../../omni.yaml \
+		../../kubernetes-guides.yaml \
+		../../changelog.yaml \
+		> ../../public/docs.json
 
 .PHONY: check-missing
 check-missing: ## Check for MDX files not included in config files
 	docker run --rm -v $(PWD):/workspace -w /workspace $(DOCS_GEN_IMAGE) --detect-missing \
 		common.yaml \
+		talos-v1.14.yaml \
+		talos-v1.13.yaml \
 		talos-v1.12.yaml \
 		talos-v1.11.yaml \
 		talos-v1.10.yaml \
 		talos-v1.9.yaml \
 		talos-v1.8.yaml \
 		talos-v1.7.yaml \
-		talos-v1.6.yaml \
+		talos-enterprise-linux.yaml \
 		omni.yaml \
-		kubernetes-guides.yaml 
+		kubernetes-guides.yaml \
+		changelog.yaml
 
 .PHONY: check-missing-local
 check-missing-local: ## Check for missing files using local Go build
-	cd docs-gen && go run . --detect-missing \
-		../common.yaml \
-		../talos-v1.12.yaml \
-		../talos-v1.11.yaml \
-		../talos-v1.10.yaml \
-		../talos-v1.9.yaml \
-		../talos-v1.8.yaml \
-		../talos-v1.7.yaml \
-		../talos-v1.6.yaml \
-		../omni.yaml \
-		../kubernetes-guides.yaml
+	cd tools/docs-gen && go run . --detect-missing \
+		../../common.yaml \
+		../../talos-v1.14.yaml \
+		../../talos-v1.13.yaml \
+		../../talos-v1.12.yaml \
+		../../talos-v1.11.yaml \
+		../../talos-v1.10.yaml \
+		../../talos-v1.9.yaml \
+		../../talos-v1.8.yaml \
+		../../talos-v1.7.yaml \
+		../../talos-enterprise-linux.yaml \
+		../../omni.yaml \
+		../../kubernetes-guides.yaml \
+		../../changelog.yaml
 
 .PHONY: generate-deps
 generate-deps: ## Install Go dependencies for the generator
-	cd docs-gen && go mod tidy
+	cd tools/docs-gen && go mod tidy
 
 .PHONY: build-docs-gen-container
 build-docs-gen-container: ## Build the docs-gen container locally
-	docker build -t $(DOCS_GEN_IMAGE) ./docs-gen
+	docker build -t $(DOCS_GEN_IMAGE) ./tools/docs-gen
 
 .PHONY: build-docs-convert-container
 build-docs-convert-container: ## Build the docs-convert container locally
-	docker build -t $(DOCS_CONVERT_IMAGE) ./docs-convert
+	docker build -t $(DOCS_CONVERT_IMAGE) ./tools/docs-convert
 
 .PHONY: test-docs-gen
 test-docs-gen: ## Run tests for the docs-gen utility
-	cd docs-gen && go test -v
+	cd tools/docs-gen && go test -v
 
 .PHONY: test-docs-gen-coverage
 test-docs-gen-coverage: ## Run tests with coverage report
-	cd docs-gen && go test -v -coverprofile=coverage.out \
+	cd tools/docs-gen && go test -v -coverprofile=coverage.out \
 		&& go tool cover -html=coverage.out -o coverage.html
 
 .PHONY: test-docs-gen-race
 test-docs-gen-race: ## Run tests with race detection
-	cd docs-gen && go test -v -race
+	cd tools/docs-gen && go test -v -race
 
 .PHONY: test-all
-test-all: test-docs-gen ## Run all tests
+test-all: test-docs-gen test-doc-accuracy ## Run all tests
+
+# ---- Code review / linting -------------------------------------------------
+#
+# `code-review` audits ALL the tooling that builds the docs in one command,
+# using the right linter for each language:
+#   * Go code    -> golangci-lint (.golangci.yml). Catches "orphaned logic" and
+#                   real bugs: `unused` (unused funcs/vars/types/fields),
+#                   `unparam` (unused params), `ineffassign`/`wastedassign`
+#                   (dead assignments), plus govet, staticcheck bug-checks,
+#                   nilerr and bodyclose. Style-only linters are left off (see
+#                   the .golangci.yml header for the rationale).
+#                   Each module's `go test ./...` runs too, so a guarantee a
+#                   tool relies on (mdx-normalize's idempotence, say) is gated
+#                   rather than only checked by hand. The tests run in the
+#                   golangci-lint image, which ships the Go toolchain, so this
+#                   target still needs nothing but Docker.
+#   * Dockerfiles -> hadolint (.hadolint.yaml). Best-practice/correctness checks.
+#   * Makefile    -> checkmake (.checkmake.ini). Structural best practices.
+# Go modules and Dockerfiles are auto-discovered, so new programs are reviewed
+# without editing this file. All three run even if one fails (so you see every
+# problem at once), and the command exits non-zero on any finding — making it a
+# drop-in CI gate.
+
+.PHONY: code-review
+code-review: ## Review all doc-building tooling: Go code, Dockerfiles, and the Makefile
+	@$(call pull_if_missing,$(GOLANGCI_LINT_IMAGE))
+	@$(call pull_if_missing,$(HADOLINT_IMAGE))
+	@$(call pull_if_missing,$(CHECKMAKE_IMAGE))
+	@failed=""; \
+	for m in $(GO_MODULES); do \
+		echo ""; echo "==> Go module: $$m"; \
+		docker run --rm -v $(PWD):/workspace -w /workspace/$$m $(GOLANGCI_LINT_IMAGE) \
+			golangci-lint run --config /workspace/.golangci.yml ./... || failed="$$failed go:$$m"; \
+		docker run --rm -v $(PWD):/workspace -w /workspace/$$m $(GOLANGCI_LINT_IMAGE) \
+			go test ./... || failed="$$failed test:$$m"; \
+	done; \
+	for f in $(DOCKERFILES); do \
+		echo ""; echo "==> Dockerfile: $$f"; \
+		docker run --rm -v $(PWD):/repo -w /repo $(HADOLINT_IMAGE) hadolint "$$f" || failed="$$failed dockerfile:$$f"; \
+	done; \
+	echo ""; echo "==> Makefile"; \
+	docker run --rm -v $(PWD):/data -w /data $(CHECKMAKE_IMAGE) \
+		--config=/data/.checkmake.ini Makefile || failed="$$failed makefile"; \
+	echo ""; \
+	if [ -n "$$failed" ]; then \
+		echo "Code review FAILED. Issues in:$$failed"; \
+		exit 1; \
+	fi; \
+	echo "Code review passed: all Go modules (lint + tests), Dockerfiles, and the Makefile are clean."
+
+# talosctl is a multi-arch image and its `--arch` flag defaults to the running
+# binary's architecture (runtime.GOARCH). Pin the platform so the generated
+# reference docs are deterministic (matching CI) regardless of the contributor's
+# machine — otherwise regenerating on Apple Silicon flips defaults to arm64.
+TALOSCTL_PLATFORM := linux/amd64
+
+# The files the Talos reference generator writes, for scoped normalization:
+# docs-convert emits the configuration reference under .../reference/configuration
+# and moves the CLI doc up to .../reference/cli.mdx. Other pages in that tree
+# (api.mdx, kernel.mdx, talosconfig.mdx, overview.mdx) are not produced here and
+# are deliberately left out so a regeneration only normalizes its own output.
+TALOS_REF_OUTPUT = public/talos/$(TALOS_VERSION)/reference/cli.mdx public/talos/$(TALOS_VERSION)/reference/configuration
 
 .PHONY: generate-talos-reference
 generate-talos-reference: ## Generate Talos reference docs and convert to MDX
 	@echo "Generating Talos reference documentation..."
-	docker pull $(TALOSCTL_IMAGE)
+	docker pull --platform=$(TALOSCTL_PLATFORM) $(TALOSCTL_IMAGE)
 	docker pull $(DOCS_CONVERT_IMAGE)
 	mkdir -p _out/docs
-	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
+	docker run --rm --platform=$(TALOSCTL_PLATFORM) -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
 	@echo "Converting generated docs to MDX..."
 	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD):/workspace $(DOCS_CONVERT_IMAGE) \
 		/workspace/_out/docs /workspace/public/talos/$(TALOS_VERSION)/reference/configuration/
 	rm -rf _out/docs
+	@$(MAKE) --no-print-directory normalize-doc NORMALIZE_PATHS="$(TALOS_REF_OUTPUT)"
+	@echo "Adding canonical links to the regenerated pages..."
+	@$(MAKE) --no-print-directory canonical-changed
 	@echo "Reference documentation generated in public/talos/$(TALOS_VERSION)/reference/configuration"
 
 .PHONY: generate-talos-reference-local
 generate-talos-reference-local: ## Generate Talos reference docs using local Go build
 	@echo "Generating Talos reference documentation..."
-	docker pull $(TALOSCTL_IMAGE)
+	docker pull --platform=$(TALOSCTL_PLATFORM) $(TALOSCTL_IMAGE)
 	mkdir -p _out/docs
-	docker run --rm -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
+	docker run --rm --platform=$(TALOSCTL_PLATFORM) -u $(shell id -u):$(shell id -g) -v $(PWD)/_out/docs:/docs $(TALOSCTL_IMAGE) docs /docs
 	@echo "Converting generated docs to MDX..."
-	cd docs-convert && go run main.go ../_out/docs ../public/talos/$(TALOS_VERSION)/reference/configuration/
+	cd tools/docs-convert && go run main.go ../../_out/docs ../../public/talos/$(TALOS_VERSION)/reference/configuration/
+	@$(MAKE) --no-print-directory normalize-doc-local NORMALIZE_PATHS="$(TALOS_REF_OUTPUT)"
+	@echo "Adding canonical links to the regenerated pages..."
+	@$(MAKE) --no-print-directory canonical-changed-local
 	@echo "Reference documentation generated in public/talos/$(TALOS_VERSION)/reference/configuration/"
 
-.PHONY: vale
-vale: ## Run Vale on a file or directory: make vale DOC=public/path/to/file.mdx
-	@if [ -z "$(DOC)" ]; then \
-		echo "Usage: make vale DOC=public/path/or/file.mdx"; \
-		exit 1; \
-	fi
-	@if [ ! -f "$(VALE_CONFIG)" ]; then \
-		echo "$(VALE_CONFIG) not found at repo root."; \
-		exit 1; \
-	fi
-	@echo "Running Vale on $(DOC)"
-	docker run --rm -v $(PWD):/work -w /work $(VALE_IMAGE) \
-		--config="$(VALE_CONFIG)" $(VALE_ARGS) "$(DOC)"
+OMNI_CONFIG_SCHEMA_URL ?= https://raw.githubusercontent.com/siderolabs/omni/refs/heads/main/internal/pkg/config/schema.json
+OMNI_CONFIG_REF_PATH := public/omni/reference/omni-configuration.mdx
+OMNI_CLI_REF_PATH := public/omni/reference/cli.mdx
+IMAGE_FACTORY_REF_PATH := public/omni/reference/image-factory-configuration.mdx
+IMAGE_FACTORY_CONFIG_URL ?= https://raw.githubusercontent.com/siderolabs/image-factory/main/docs/configuration.md
 
-.PHONY: vale-changed
-vale-changed: ## Run Vale on changed file vs HEAD
-	@files="$$(git diff --name-only --diff-filter=AM HEAD | grep -E '\.mdx?$$|\.md$$' || true)"; \
+# Frontmatter for the generated pages. Defined here (not read from the existing
+# file) so a page is fully restored even if it was deleted or emptied.
+OMNI_CLI_TITLE := omnictl CLI
+OMNI_CLI_DESC := omnictl CLI tool reference.
+IMAGE_FACTORY_TITLE := Image Factory Configuration
+IMAGE_FACTORY_DESC := Complete reference for configuring Omni’s Image Factory service
+
+# Pull an image only if it is not already present locally, so locally-built
+# images (from the build-*-container targets) are usable before publishing.
+pull_if_missing = docker image inspect $(1) >/dev/null 2>&1 || docker pull $(1)
+
+# ---- Container image builds ------------------------------------------------
+
+.PHONY: build-omni-cli-gen-container
+build-omni-cli-gen-container: ## Build the omni-cli-gen container locally
+	docker build -t $(OMNI_CLI_GEN_IMAGE) ./tools/omni-cli-gen
+
+.PHONY: build-omni-config-gen-container
+build-omni-config-gen-container: ## Build the omni-config-gen container locally
+	docker build -t $(OMNI_CONFIG_GEN_IMAGE) ./tools/omni-config-gen
+
+.PHONY: build-mdx-normalize-container
+build-mdx-normalize-container: ## Build the mdx-normalize container locally
+	docker build -t $(MDX_NORMALIZE_IMAGE) ./tools/mdx-normalize
+
+# ---- Normalization ---------------------------------------------------------
+
+# Shell snippet that lists the changed reference .mdx files, one per line:
+# tracked edits (staged + unstaged, vs HEAD) plus new untracked files. A
+# "reference" page is identified purely by a /reference/ path segment, which
+# covers public/omni/reference and every public/talos/v*/reference tree.
+changed_ref_mdx = { git diff --name-only HEAD -- '*.mdx'; git ls-files --others --exclude-standard -- '*.mdx'; } 2>/dev/null | grep '/reference/' | sort -u
+
+# What to normalize. NORMALIZE_PATHS is an optional space-separated list of files
+# and/or directories (directories are expanded to the .mdx files under them). It
+# defaults to the changed reference files (git dirty), so a bare
+# `make normalize-doc` cleans whatever you just touched. The generate-* targets
+# set it to their own output, which keeps each generator hermetic — generating
+# one reference tree never rewrites another.
+NORMALIZE_PATHS ?=
+normalize_roots = $(if $(strip $(NORMALIZE_PATHS)),$(NORMALIZE_PATHS),$$( $(changed_ref_mdx) ))
+
+# expand_roots turns the roots (files and/or dirs) into a newline list of .mdx
+# files. Used at the top of both recipes below. Both recipes word-split that
+# list to iterate it, so a doc path may not contain whitespace — the kebab-case
+# file-naming convention already rules that out.
+expand_roots = for p in $$roots; do if [ -d "$$p" ]; then find "$$p" -name '*.mdx'; elif [ -f "$$p" ]; then echo "$$p"; fi; done | sort -u
+
+# normalize_flags is a shell snippet that prints the normalization flags for the
+# file in "$f", so the path->flags mapping lives in exactly one place (both
+# recipes below use it). Only the two plain-markdown Omni pages get
+# --escape-inline, because escaping "<"/"{" would corrupt the real HTML (<table>
+# markup) in the Talos reference and the schema-generated Omni pages;
+# image-factory additionally needs --strip-hr. Everything else is normalized
+# structurally only (safe on files with HTML/JSX).
+# Leading "(" on each case pattern keeps the parentheses balanced inside the
+# `$( ... )` the recipes wrap this in (POSIX sh otherwise ends the command
+# substitution at the first pattern's ")").
+normalize_flags = case "$$f" in ($(OMNI_CLI_REF_PATH)) printf '%s' '--escape-inline' ;; ($(IMAGE_FACTORY_REF_PATH)) printf '%s' '--strip-hr --escape-inline' ;; esac
+
+# The published mdx-normalize:latest is rebuilt from main, so it can lag the
+# flags this Makefile passes (--escape-inline, --strip-hr) — and pull_if_missing
+# keeps whatever :latest is already cached, so a stale local image never
+# self-heals. Probe the image with the flags first: pull once if the probe
+# fails, and stop with instructions if it still fails, rather than exiting 2
+# per file and leaving the docs unnormalized.
+ensure_normalize_image = \
+	probe='docker run --rm -i $(MDX_NORMALIZE_IMAGE) --strip-hr --escape-inline'; \
+	$(call pull_if_missing,$(MDX_NORMALIZE_IMAGE)); \
+	$$probe </dev/null >/dev/null 2>&1 || { \
+		echo "  $(MDX_NORMALIZE_IMAGE) does not understand the flags; re-pulling..."; \
+		docker pull -q $(MDX_NORMALIZE_IMAGE) >/dev/null 2>&1 || true; \
+	}; \
+	$$probe </dev/null >/dev/null 2>&1 || { \
+		echo "error: $(MDX_NORMALIZE_IMAGE) does not support --escape-inline/--strip-hr."; \
+		echo "       Run 'make build-mdx-normalize-container' to build it from this checkout,"; \
+		echo "       or use the '-local' targets, until CI republishes the image."; \
+		exit 1; \
+	}
+
+.PHONY: normalize-doc
+normalize-doc: ## Normalize reference .mdx (container); defaults to changed files, override with NORMALIZE_PATHS
+	@$(ensure_normalize_image)
+	@roots="$(normalize_roots)"; files=$$( $(expand_roots) ); \
+	[ -n "$$files" ] || { echo "normalize-doc: no reference .mdx files to normalize."; exit 0; }; \
+	for f in $$files; do \
+		flags=$$( $(normalize_flags) ); \
+		echo "  normalize $$flags $$f"; \
+		docker run --rm -i $(MDX_NORMALIZE_IMAGE) $$flags < "$$f" > "$$f.tmp" && mv "$$f.tmp" "$$f" || { rm -f "$$f.tmp"; exit 1; }; \
+	done
+
+# The local path takes all its files in one invocation (the tool accepts
+# multiple paths), so a 93-file Talos regeneration runs the binary once. The
+# container path cannot batch: it pipes each file through stdin on purpose, so
+# the file is never read or written across the bind mount, which avoids Docker
+# Desktop mount-consistency races on a just-written file.
+.PHONY: normalize-doc-local
+normalize-doc-local: ## Normalize reference .mdx (local Go build); defaults to changed files, override with NORMALIZE_PATHS
+	@roots="$(normalize_roots)"; files=$$( $(expand_roots) ); \
+	[ -n "$$files" ] || { echo "normalize-doc-local: no reference .mdx files to normalize."; exit 0; }; \
+	bin=$$(mktemp) || exit 1; \
+	trap 'rm -f "$$bin"' EXIT; \
+	( cd tools/mdx-normalize && go build -o "$$bin" . ) || exit 1; \
+	plain=""; \
+	for f in $$files; do \
+		flags=$$( $(normalize_flags) ); \
+		echo "  normalize $$flags $$f"; \
+		if [ -n "$$flags" ]; then \
+			"$$bin" $$flags "$$f" || exit 1; \
+		else \
+			plain="$$plain $$f"; \
+		fi; \
+	done; \
+	if [ -n "$$plain" ]; then "$$bin" $$plain || exit 1; fi
+
+# ---- Canonical links --------------------------------------------------------
+#
+# Every Talos page declares a `canonical:` link naming the page that is
+# currently authoritative for its content. Auto-generated pages (from
+# `talosctl docs` or a version upgrade) arrive without one, and older versioned
+# pages must defer to the current version.
+#
+# Because every version directory is permanent, a restructure never "moves"
+# anything -- v1.11 keeps networking/vip.mdx while v1.12 onwards has
+# networking/advanced/vip.mdx -- so canonical-gen infers the correspondence:
+# same path, else same file name, else a one-page directory, else file-name word
+# overlap, else body similarity. Where no rule wins outright (a page split into
+# several, or dropped) it points at the newest version that still has the page,
+# and says which pages those were.
+#
+# The current version comes from public/snippets/custom-variables.mdx.
+
+.PHONY: build-canonical-gen-container
+build-canonical-gen-container: ## Build the canonical-gen container locally
+	docker build -t $(CANONICAL_GEN_IMAGE) ./tools/canonical-gen
+
+.PHONY: canonical-links
+canonical-links: ## Add/fix the canonical frontmatter link on every Talos page (container)
+	@$(call pull_if_missing,$(CANONICAL_GEN_IMAGE))
+	docker run --rm -v $(PWD):/workspace -w /workspace $(CANONICAL_GEN_IMAGE)
+
+.PHONY: canonical-links-local
+canonical-links-local: ## Add/fix the canonical frontmatter link on every Talos page using local Go build
+	cd tools/canonical-gen && go run . --variables ../../public/snippets/custom-variables.mdx ../../public/talos
+
+.PHONY: canonical-links-check
+canonical-links-check: ## Report Talos pages whose canonical link is missing or wrong, without writing
+	cd tools/canonical-gen && go run . --check --variables ../../public/snippets/custom-variables.mdx ../../public/talos
+
+.PHONY: canonical-changed
+canonical-changed: ## Add/fix the canonical link on changed .mdx files only (container). Base: CANONICAL_BASE (default HEAD)
+	@$(call pull_if_missing,$(CANONICAL_GEN_IMAGE))
+	@files="$$( { git diff --name-only --diff-filter=AM $(CANONICAL_BASE); git ls-files --others --exclude-standard; } | grep -E '^public/talos/.*\.mdx$$' | sort -u || true)"; \
 	if [ -z "$$files" ]; then \
-		echo "No changed Markdown/MDX files."; \
+		echo "No changed Talos MDX files."; \
 		exit 0; \
 	fi; \
-	echo "Linting changed files:" $$files; \
-	docker run --rm -v $(PWD):/work -w /work $(VALE_IMAGE) \
-		--config="$(VALE_CONFIG)" $(VALE_ARGS) $$files
+	echo "Updating changed files:" $$files; \
+	docker run --rm -v $(PWD):/workspace -w /workspace $(CANONICAL_GEN_IMAGE) $$files
+
+.PHONY: canonical-changed-local
+canonical-changed-local: ## Add/fix the canonical link on changed .mdx files only, using local Go build. Base: CANONICAL_BASE (default HEAD)
+	@files="$$( { git diff --name-only --diff-filter=AM $(CANONICAL_BASE); git ls-files --others --exclude-standard; } | grep -E '^public/talos/.*\.mdx$$' | sort -u || true)"; \
+	if [ -z "$$files" ]; then \
+		echo "No changed Talos MDX files."; \
+		exit 0; \
+	fi; \
+	echo "Updating changed files:" $$files; \
+	cd tools/canonical-gen && go run . --variables ../../public/snippets/custom-variables.mdx $$(for f in $$files; do echo "../../$$f"; done)
+
+# ---- omnictl CLI reference -------------------------------------------------
+
+.PHONY: generate-omni-cli-reference
+generate-omni-cli-reference: ## Generate the omnictl CLI reference (container)
+	@echo "Generating omnictl CLI reference..."
+	@$(call pull_if_missing,$(OMNI_CLI_GEN_IMAGE))
+	@tmp="$$(mktemp)"; \
+	docker run --rm --entrypoint /bin/sh $(OMNI_CLI_GEN_IMAGE) \
+		-c 'omnictl docs /tmp >/dev/null 2>&1 && cat /tmp/cli.md' > "$$tmp" \
+		|| { echo "Error: 'omnictl docs' failed"; rm -f "$$tmp"; exit 1; }; \
+	[ -s "$$tmp" ] || { echo "Error: omnictl did not produce cli.md"; rm -f "$$tmp"; exit 1; }; \
+	{ \
+		printf '%s\n' '---' 'title: $(OMNI_CLI_TITLE)' 'description: $(OMNI_CLI_DESC)' '---' ''; \
+		awk '/^---[[:space:]]*$$/{c++; next} c>=2{print}' "$$tmp" \
+			| sed '/^<!-- markdownlint-disable -->$$/d' \
+			| awk 'NF{p=1} p'; \
+	} > "$(OMNI_CLI_REF_PATH).tmp"; \
+	mv "$(OMNI_CLI_REF_PATH).tmp" "$(OMNI_CLI_REF_PATH)"; \
+	rm -f "$$tmp"
+	@$(MAKE) --no-print-directory normalize-doc NORMALIZE_PATHS="$(OMNI_CLI_REF_PATH)"
+	@echo "Reference documentation generated at $(OMNI_CLI_REF_PATH)"
+
+.PHONY: generate-omni-cli-reference-local
+generate-omni-cli-reference-local: ## Generate the omnictl CLI reference using local omnictl + Go build
+	@echo "Generating omnictl CLI reference..."
+	@command -v omnictl >/dev/null 2>&1 || { echo "Error: omnictl not found in PATH"; exit 1; }
+	@tmp="$$(mktemp -d)"; \
+	omnictl docs "$$tmp" >/dev/null || { echo "Error: 'omnictl docs' failed"; rm -rf "$$tmp"; exit 1; }; \
+	[ -f "$$tmp/cli.md" ] || { echo "Error: omnictl did not produce cli.md"; rm -rf "$$tmp"; exit 1; }; \
+	{ \
+		printf '%s\n' '---' 'title: $(OMNI_CLI_TITLE)' 'description: $(OMNI_CLI_DESC)' '---' ''; \
+		awk '/^---[[:space:]]*$$/{c++; next} c>=2{print}' "$$tmp/cli.md" \
+			| sed '/^<!-- markdownlint-disable -->$$/d' \
+			| awk 'NF{p=1} p'; \
+	} > "$(OMNI_CLI_REF_PATH).tmp"; \
+	mv "$(OMNI_CLI_REF_PATH).tmp" "$(OMNI_CLI_REF_PATH)"; \
+	rm -rf "$$tmp"
+	@$(MAKE) --no-print-directory normalize-doc-local NORMALIZE_PATHS="$(OMNI_CLI_REF_PATH)"
+	@echo "Reference documentation generated at $(OMNI_CLI_REF_PATH)"
+
+# ---- Omni configuration reference ------------------------------------------
+
+.PHONY: generate-omni-config-reference
+generate-omni-config-reference: ## Generate Omni configuration reference docs from JSON schema (container)
+	@echo "Generating Omni configuration reference..."
+	@$(call pull_if_missing,$(OMNI_CONFIG_GEN_IMAGE))
+	docker run --rm $(OMNI_CONFIG_GEN_IMAGE) $(OMNI_CONFIG_SCHEMA_URL) > $(OMNI_CONFIG_REF_PATH).tmp && mv $(OMNI_CONFIG_REF_PATH).tmp $(OMNI_CONFIG_REF_PATH) || { rm -f $(OMNI_CONFIG_REF_PATH).tmp; exit 1; }
+	@$(MAKE) --no-print-directory normalize-doc NORMALIZE_PATHS="$(OMNI_CONFIG_REF_PATH)"
+	@echo "Reference documentation generated at $(OMNI_CONFIG_REF_PATH)"
+
+.PHONY: generate-omni-config-reference-local
+generate-omni-config-reference-local: ## Generate Omni configuration reference docs using local Go build
+	@echo "Generating Omni configuration reference..."
+	cd tools/omni-config-gen && go run . $(OMNI_CONFIG_SCHEMA_URL) > ../../$(OMNI_CONFIG_REF_PATH).tmp && mv ../../$(OMNI_CONFIG_REF_PATH).tmp ../../$(OMNI_CONFIG_REF_PATH) || { rm -f ../../$(OMNI_CONFIG_REF_PATH).tmp; exit 1; }
+	@$(MAKE) --no-print-directory normalize-doc-local NORMALIZE_PATHS="$(OMNI_CONFIG_REF_PATH)"
+	@echo "Reference documentation generated at $(OMNI_CONFIG_REF_PATH)"
+
+# ---- Image Factory configuration reference ---------------------------------
+
+.PHONY: generate-omni-image-factory-reference
+generate-omni-image-factory-reference: ## Generate the Image Factory configuration reference (container)
+	@echo "Generating Image Factory configuration reference..."
+	@tmp="$$(mktemp)"; \
+	curl -fsSL "$(IMAGE_FACTORY_CONFIG_URL)" -o "$$tmp" || { echo "Error: failed to fetch $(IMAGE_FACTORY_CONFIG_URL)"; rm -f "$$tmp"; exit 1; }; \
+	{ \
+		printf '%s\n' '---' 'title: $(IMAGE_FACTORY_TITLE)' 'description: $(IMAGE_FACTORY_DESC)' '---' ''; \
+		sed '1{/^# /d;}' "$$tmp" | awk 'NF{p=1} p'; \
+	} > "$(IMAGE_FACTORY_REF_PATH).tmp"; \
+	mv "$(IMAGE_FACTORY_REF_PATH).tmp" "$(IMAGE_FACTORY_REF_PATH)"; \
+	rm -f "$$tmp"
+	@$(MAKE) --no-print-directory normalize-doc NORMALIZE_PATHS="$(IMAGE_FACTORY_REF_PATH)"
+	@echo "Reference documentation generated at $(IMAGE_FACTORY_REF_PATH)"
+
+.PHONY: generate-omni-image-factory-reference-local
+generate-omni-image-factory-reference-local: ## Generate the Image Factory configuration reference using local Go build
+	@echo "Generating Image Factory configuration reference..."
+	@tmp="$$(mktemp)"; \
+	curl -fsSL "$(IMAGE_FACTORY_CONFIG_URL)" -o "$$tmp" || { echo "Error: failed to fetch $(IMAGE_FACTORY_CONFIG_URL)"; rm -f "$$tmp"; exit 1; }; \
+	{ \
+		printf '%s\n' '---' 'title: $(IMAGE_FACTORY_TITLE)' 'description: $(IMAGE_FACTORY_DESC)' '---' ''; \
+		sed '1{/^# /d;}' "$$tmp" | awk 'NF{p=1} p'; \
+	} > "$(IMAGE_FACTORY_REF_PATH).tmp"; \
+	mv "$(IMAGE_FACTORY_REF_PATH).tmp" "$(IMAGE_FACTORY_REF_PATH)"; \
+	rm -f "$$tmp"
+	@$(MAKE) --no-print-directory normalize-doc-local NORMALIZE_PATHS="$(IMAGE_FACTORY_REF_PATH)"
+	@echo "Reference documentation generated at $(IMAGE_FACTORY_REF_PATH)"
+
+# ---- Aggregate -------------------------------------------------------------
+
+.PHONY: generate-omni-reference
+generate-omni-reference: generate-omni-cli-reference generate-omni-config-reference generate-omni-image-factory-reference ## Regenerate all Omni reference pages (containers)
+
+.PHONY: generate-omni-reference-local
+generate-omni-reference-local: generate-omni-cli-reference-local generate-omni-config-reference-local generate-omni-image-factory-reference-local ## Regenerate all Omni reference pages using local tools
+
+.PHONY: changelog
+changelog: ## Generate the changelog from GitHub releases
+	docker pull $(CHANGELOG_GEN_IMAGE)
+	docker run --rm -v $(PWD):/workspace -w /workspace \
+		-e GITHUB_TOKEN \
+		$(CHANGELOG_GEN_IMAGE) --output public/changelog.mdx
+
+.PHONY: changelog-local
+changelog-local: ## Generate the changelog using local Go build
+	cd tools/changelog-gen && go run . --output ../../public/changelog.mdx
+
+.PHONY: validate-docs-nav
+validate-docs-nav: ## Validate all talos yaml nav configs match their content directories
+	cd tools/docs-validate && go run . --workspace ../..
+
+.PHONY: check-frontmatter
+check-frontmatter: ## Check that every page has the frontmatter fields its section requires
+	cd tools/frontmatter-check && go run . --workspace ../..
+
+# Git ref the "changed" target diffs against. Locally, HEAD catches your
+# working-tree edits; in CI set this to the PR base, e.g. FRONTMATTER_CHECK_BASE=origin/main.
+FRONTMATTER_CHECK_BASE ?= HEAD
+
+.PHONY: check-frontmatter-changed
+check-frontmatter-changed: ## Check frontmatter on changed .mdx files. Base: FRONTMATTER_CHECK_BASE (default HEAD)
+	@files="$$( { git diff --name-only --diff-filter=AM $(FRONTMATTER_CHECK_BASE); git ls-files --others --exclude-standard; } | grep -E '\.mdx$$' | sort -u || true)"; \
+	if [ -z "$$files" ]; then \
+		echo "No changed MDX files."; \
+		exit 0; \
+	fi; \
+	echo "Checking changed files:" $$files; \
+	cd tools/frontmatter-check && go run . $$(for f in $$files; do echo "../../$$f"; done)
+
+.PHONY: sync-docs-nav
+sync-docs-nav: ## Insert newly generated reference pages into their version YAML nav (best-effort, non-blocking)
+	cd tools/docs-validate && go run . --workspace ../.. --fix
+
+# validate-tag distinguishes the two ways a TAG can be wrong, with a tailored
+# message for each, and fails BEFORE the generator writes anything:
+#   1. malformed  -> show the expected format and examples
+#   2. unpublished -> the format is fine but no talosctl image exists for it yet
+define validate-tag
+	@echo "$(TAG)" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)\.[0-9]+)?$$' || { \
+		echo "Error: malformed TAG '$(TAG)'."; \
+		echo "  Expected: vMAJOR.MINOR.PATCH with an optional -alpha.N / -beta.N / -rc.N suffix."; \
+		echo "  Examples: v1.14.0   v1.14.0-alpha.0   v1.14.0-beta.2   v1.14.0-rc.1"; \
+		exit 1; }
+	@docker manifest inspect ghcr.io/siderolabs/talosctl:$(TAG) >/dev/null 2>&1 || { \
+		echo "Error: TAG '$(TAG)' is well-formed but not published yet."; \
+		echo "  No image 'ghcr.io/siderolabs/talosctl:$(TAG)' was found in the registry."; \
+		echo "  The release may not be cut yet — see https://github.com/siderolabs/talos/releases"; \
+		echo "  Pass a TAG whose talosctl image already exists."; \
+		exit 1; }
+endef
+
+.PHONY: upgrade-talos-version
+upgrade-talos-version: ## Upgrade Talos docs to a release tag: make upgrade-talos-version TAG=v1.14.0-beta.0
+	@test -n "$(TAG)" || { echo "Error: TAG is required, e.g. make upgrade-talos-version TAG=v1.14.0-beta.0"; exit 1; }
+	$(validate-tag)
+	docker pull $(VERSION_UPGRADE_IMAGE)
+	docker run --rm -v $(PWD):/workspace -w /workspace \
+		-e GITHUB_TOKEN \
+		$(VERSION_UPGRADE_IMAGE) --tag $(TAG)
+	$(eval NEW_VERSION := $(shell cat .upgrade-version-tmp 2>/dev/null))
+	@rm -f .upgrade-version-tmp
+	$(MAKE) generate-talos-reference
+	$(MAKE) sync-docs-nav
+	$(MAKE) changelog
+	$(MAKE) docs.json
+	@echo ""
+	@$(MAKE) validate-docs-nav || echo "⚠️  WARNING: nav validation reported issues above. The upgrade finished; review and add any remaining pages by hand."
+	@echo ""
+	@echo "Upgrade to $(TAG) complete! Run: make preview to preview your $(NEW_VERSION) docs"
+
+.PHONY: upgrade-talos-version-local
+upgrade-talos-version-local: ## Same as upgrade-talos-version but using the local Go build
+	@test -n "$(TAG)" || { echo "Error: TAG is required, e.g. make upgrade-talos-version-local TAG=v1.14.0-beta.0"; exit 1; }
+	$(validate-tag)
+	cd tools/version-upgrade-gen && go run . --workspace ../.. --tag $(TAG)
+	$(eval NEW_VERSION := $(shell cat .upgrade-version-tmp 2>/dev/null))
+	@rm -f .upgrade-version-tmp
+	$(MAKE) generate-talos-reference-local
+	$(MAKE) sync-docs-nav
+	$(MAKE) changelog
+	$(MAKE) docs.json
+	@echo ""
+	@$(MAKE) validate-docs-nav || echo "⚠️  WARNING: nav validation reported issues above. The upgrade finished; review and add any remaining pages by hand."
+	@echo ""
+	@echo "Upgrade to $(TAG) complete! Run: make preview to preview your $(NEW_VERSION) docs"
+
+.PHONY: build-version-upgrade-container
+build-version-upgrade-container: ## Build the version-upgrade-gen container locally
+	docker build -t $(VERSION_UPGRADE_IMAGE) ./tools/version-upgrade-gen
+
+# ---- Style guide checker ---------------------------------------------------
+
+# Extra flags passed to the checker, e.g. STYLE_CHECK_ARGS="-strict" or "-format github".
+STYLE_CHECK_ARGS ?=
+
+.PHONY: style-check
+style-check: ## Check docs against the style guide (container). Scope with DOC=public/path
+	@$(call pull_if_missing,$(STYLE_CHECK_IMAGE))
+	docker run --rm -v $(PWD):/workspace -w /workspace $(STYLE_CHECK_IMAGE) $(STYLE_CHECK_ARGS) $(if $(DOC),$(DOC),public)
+
+.PHONY: style-check-local
+style-check-local: ## Check docs against the style guide using local Go build. Scope with DOC=public/path
+	@cd tools/style-guide-checker && go run . $(STYLE_CHECK_ARGS) ../../$(if $(DOC),$(DOC),public)
+
+# Git ref the "changed" target diffs against. Locally, HEAD catches your
+# working-tree edits; in CI set this to the PR base, e.g. STYLE_CHECK_BASE=origin/main.
+STYLE_CHECK_BASE ?= HEAD
+
+.PHONY: style-check-changed
+style-check-changed: ## Check changed .mdx files (container). Base: STYLE_CHECK_BASE (default HEAD)
+	@$(call pull_if_missing,$(STYLE_CHECK_IMAGE))
+	@files="$$( { git diff --name-only --diff-filter=AM $(STYLE_CHECK_BASE); git ls-files --others --exclude-standard; } | grep -E '\.mdx$$' | sort -u || true)"; \
+	if [ -z "$$files" ]; then \
+		echo "No changed MDX files."; \
+		exit 0; \
+	fi; \
+	echo "Checking changed files:" $$files; \
+	docker run --rm -v $(PWD):/workspace -w /workspace $(STYLE_CHECK_IMAGE) $(STYLE_CHECK_ARGS) $$files
+
+.PHONY: style-check-changed-local
+style-check-changed-local: ## Check changed .mdx files using local Go build. Base: STYLE_CHECK_BASE (default HEAD)
+	@files="$$( { git diff --name-only --diff-filter=AM $(STYLE_CHECK_BASE); git ls-files --others --exclude-standard; } | grep -E '\.mdx$$' | sort -u || true)"; \
+	if [ -z "$$files" ]; then \
+		echo "No changed MDX files."; \
+		exit 0; \
+	fi; \
+	echo "Checking changed files:" $$files; \
+	cd tools/style-guide-checker && go run . $(STYLE_CHECK_ARGS) $$(for f in $$files; do echo "../../$$f"; done)
+
+.PHONY: style-check-changed-auto
+style-check-changed-auto: ## Check changed .mdx files, preferring local Go and falling back to the container.
+	@files="$$( { git diff --name-only --diff-filter=AM $(STYLE_CHECK_BASE); git ls-files --others --exclude-standard; } | grep -E '\.mdx$$' | sort -u || true)"; \
+	if [ -z "$$files" ]; then \
+		echo "No changed MDX files."; \
+		exit 0; \
+	fi; \
+	echo "Checking changed files:" $$files; \
+	if command -v go >/dev/null 2>&1; then \
+		cd tools/style-guide-checker && go run . $(STYLE_CHECK_ARGS) $$(for f in $$files; do echo "../../$$f"; done); \
+	elif command -v docker >/dev/null 2>&1; then \
+		echo "(go not found — using the container)"; \
+		docker image inspect $(STYLE_CHECK_IMAGE) >/dev/null 2>&1 || docker build -q -t $(STYLE_CHECK_IMAGE) ./tools/style-guide-checker >/dev/null; \
+		docker run --rm -v $(PWD):/workspace -w /workspace $(STYLE_CHECK_IMAGE) $(STYLE_CHECK_ARGS) $$files; \
+	else \
+		echo "Skipping style check: neither go nor docker is available."; \
+	fi
+
+.PHONY: build-style-check-container
+build-style-check-container: ## Build the style-guide-checker container locally
+	docker build -t $(STYLE_CHECK_IMAGE) ./tools/style-guide-checker
+
+# ---- Doc accuracy review (AI) ----------------------------------------------
+#
+# Where the style checker catches *mechanical* style issues, this catches
+# *harmful* ones: a snippet that runs fine but silently loses data (e.g. a
+# stateful service started without its persistence mount), a destructive or
+# irreversible command, a removed safeguard, a security downgrade, or an ordinary
+# wrong flag/value/false claim. It runs the `claude` CLI headless as a
+# documentation reviewer (the tool in tools/doc-accuracy, prompt in
+# reviewer-prompt.md), cross-checking snippets against the upstream Talos, Omni,
+# extensions, and discovery-service repos.
+#
+# Unlike the other tools this one has no container — a model call can't be
+# containerized here — so it runs the Go program directly and needs the `claude`
+# CLI (https://claude.com/claude-code) on PATH and signed in. It is a local,
+# judgment-based review you run before push, not a CI gate; it still exits
+# non-zero on critical findings so you *can* gate on it.
+#
+# DOC_ACCURACY_BASE is the ref "changed" mode diffs against. The tool diffs
+# against the *fork point* (merge-base of the base and HEAD), so the review
+# covers only what your branch introduced — committed and uncommitted — and stays
+# correct even when the branch is behind the base (main moving ahead while you
+# work no longer inflates the changed set). It defaults to the freshest mainline
+# available: upstream/main, then origin/main, then a local main, then HEAD. The
+# tool `git fetch`es a remote base before diffing, so the local target is reliable
+# without you refreshing main by hand. In CI, pass the PR base explicitly, e.g.
+# DOC_ACCURACY_BASE=origin/main.
+#
+# DOC_ACCURACY_MODEL overrides the model. DOC_ACCURACY_FORMAT=github adds
+# ::error/::warning annotations to stdout for CI. DOC_ACCURACY_ARGS passes any
+# other flags straight through (e.g. -fetch=false).
+DOC_ACCURACY_BASE ?= $(shell \
+	if git rev-parse --verify --quiet upstream/main >/dev/null 2>&1; then echo upstream/main; \
+	elif git rev-parse --verify --quiet origin/main >/dev/null 2>&1; then echo origin/main; \
+	elif git rev-parse --verify --quiet main >/dev/null 2>&1; then echo main; \
+	else echo HEAD; fi)
+DOC_ACCURACY_MODEL ?=
+DOC_ACCURACY_FORMAT ?=
+# Extra flags passed straight through, e.g. DOC_ACCURACY_ARGS=-verbose to stream
+# the full reviewer report (off by default: the terminal shows only the compact
+# findings summary; the full report is always saved to _out/).
+DOC_ACCURACY_ARGS ?=
+
+DOC_ACCURACY_FLAGS = \
+	$(if $(DOC_ACCURACY_MODEL),-model $(DOC_ACCURACY_MODEL),) \
+	$(if $(DOC_ACCURACY_FORMAT),-format $(DOC_ACCURACY_FORMAT),) \
+	$(DOC_ACCURACY_ARGS)
+
+.PHONY: check-doc-accuracy
+check-doc-accuracy: ## AI-review changed docs (committed + uncommitted) for accuracy/harm. Scope one file with DOC=public/path; base with DOC_ACCURACY_BASE
+	cd tools/doc-accuracy && go run . -workspace ../.. -base $(DOC_ACCURACY_BASE) $(DOC_ACCURACY_FLAGS) $(DOC)
+
+.PHONY: check-doc-accuracy-all
+check-doc-accuracy-all: ## AI-review every .mdx doc under public/ for accuracy/harm (slow)
+	cd tools/doc-accuracy && go run . -workspace ../.. -all $(DOC_ACCURACY_FLAGS)
+
+.PHONY: test-doc-accuracy
+test-doc-accuracy: ## Run tests for the doc-accuracy tool
+	cd tools/doc-accuracy && go test -v

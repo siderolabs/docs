@@ -1,43 +1,169 @@
 ---
-title: Upgrading Omni Clusters
+title: Upgrade Omni Clusters
 description: Manage Talos Linux and Kubernetes upgrades in Omni.
 ---
 
-Omni makes keeping your cluster up-to-date easy - which is good, as it is important to stay current with Talos Linux and Kubernetes releases, to ensure you are not exposed to already fixed security issues and bugs. Keeping your clusters up-to-date involves updating both the underlying operating system (Talos Linux) and Kubernetes.
+Omni simplifies cluster upgrades.
 
-### Upgrading the operating system
+Regular upgrades help protect against known security issues and ensure you benefit from the latest fixes and improvements. Omni requires machines to run a [supported Talos Linux version](../getting-started/talos-version-support-policy) and will enforce this in a future release.
 
-In order to update the Talos Linux version of all nodes in a cluster, navigate to the overview of the cluster you wish to update. (For example, click the cluster name in the Clusters panel.) If newer Talos Linux versions are available, there will be an indication in the far right, where the current cluster Talos version is listed. Clicking that icon, or the "Update Talos" button in the lower right, will allow you to select the new version of Talos Linux that should be deployed across all nodes of the cluster.
+Upgrading a cluster involves updating both Talos Linux (the operating system) and Kubernetes.
 
-Select the new version, and then "Upgrade" (or "Downgrade", if you are selecting an older version than currently deployed.) (Omni will ensure that the Kubernetes version running in the cluster is compatible with the selected version of Talos Linux.)
+This guide explains how to upgrade Talos Linux and Kubernetes, apply updated Kubernetes manifests, and use node locking to roll out changes in a controlled way.
 
-> **Note**: You may upgrade to any Talos version shown. Omni will only allow supported upgrade paths. In some cases this may require an intermediate upgrade before upgrading to the most recent version.
+## How Omni rolls out configuration changes and upgrades
 
-Omni will then cycle through all nodes in the cluster, safely updating them to the selected version of Talos Linux. Omni will update the control plane nodes first. (Omni ensures the etcd cluster is healthy and will remain healthy after the node being updated leaves the etcd cluster, before allowing a control plane node to be upgraded.)
+Omni applies configuration changes and Talos Linux upgrades to a machine set gradually, a few machines at a time, so the cluster keeps serving workloads while changes roll out. Configuration changes and upgrades are scheduled independently, each with its own concurrency limit:
 
-Omni will drain and cordon each node, update the OS, and then un-cordon the node. Omni always updates nodes with the Talos Linux flag `--preserve=true`, keeping ephemeral data.
+- **Configuration changes** (config patches and labels) are governed by `updateStrategy`.
+- **Talos Linux upgrades** (version changes, extensions, and kernel arguments) are governed by `upgradeStrategy`.
 
-NOTE: If any of your workloads are sensitive to being shut down ungracefully, be sure to use the lifecycle.preStop Pod spec.
+For worker machine sets, both default to a rolling strategy that updates **one machine at a time**. Raise `maxParallelism` to roll changes out faster, or keep it low to limit how many machines are disrupted at once. See [`updateStrategy` and `upgradeStrategy`](../reference/cluster-templates#updatestrategy) in the cluster template reference.
 
-### Kubernetes upgrades
+Control plane machine sets always roll out **one machine at a time**, and this is not configurable. Omni also waits for etcd to be healthy before moving to the next control plane machine, so the control plane never loses quorum during a rollout.
 
-As with the Talos Linux version, Omni will notify you on the right hand side of the cluster overview if there is a new version of Kubernetes available. You may click either the Upgrade icon next to the Kubernetes version, or the `Update Kubernetes` button on the lower right of the cluster overview. Kubernetes upgrades are done non-disruptively to workloads and are run in several phases:
+When a machine needs both an upgrade and a configuration change, Omni upgrades it first and then applies the configuration change, because the new configuration may depend on the new Talos Linux version.
 
-* Images for new Kubernetes components are pre-pulled to the nodes to minimize downtime and test for image availability.
-* New static pod definitions are rendered on the configuration update which is picked up by the kubelet. The command waits for the change to propagate to the API server state.
-* The command updates the kube-proxy daemonset with the new image version.
-* On every node in the cluster, the kubelet version is updated.
+To stage a rollout, for example to validate a change on a few nodes before applying it across the cluster, [lock](#locking-nodes) the nodes you want to hold back.
 
-> Note: The upgrade operation never deletes any resources from the cluster: obsolete resources should be deleted manually.
+## Upgrade Talos Linux
 
-#### Applying changed Kubernetes manifests
+To upgrade Talos Linux across all nodes in a cluster:
 
-Unlike the Talos Linux command `talosctl upgrade-k8s`, Omni does not automatically apply updates to Kubernetes bootstrap manifests on a Kubernetes upgrade. This is to prevent Omni overwriting changes to the bootstrap manifests that you applied manually. (Talos Linux has a `--dry-run` feature on the upgrade command that shows you changes before the upgrade - Omni shows you the changes _after_ the upgrade, but before they are applied.) Thus after each Kubernetes upgrade, it is recommended to examine the `BootStrap Manifests` of the cluster (as shown in the left hand navigation) and apply the changes, if they are appropriate.
+1. Sign in to Omni.
+2. Open **Clusters** from the left navigation.
+3. Select the cluster to upgrade.
+4. Click the upgrade indicator next to the current Talos version, or click **Update Talos** on the cluster panel.
 
-### Locking nodes
+![Upgrade indicator](./images/upgrading-clusters-upgrade-indicators.png)
 
-Omni allows you to control which nodes are upgraded during Talos or Kubernetes upgrade operations. You can lock nodes, which prevents them from receiving configuration updates, upgrades and downgrades. This allows you to ensure that new versions of Talos Linux or Kubernetes, or new config patches, are rolled out in a safe and controlled manner. If you cannot do a blue/green deployment with different clusters, you can roll out a new Kubernetes or Talos Linux release, or config patch, to just some of the nodes in your cluster. Once you have validated your applications perform correctly on the new versions, you can unlock all the nodes, and allow them to be updated also.
+![Update Talos button](./images/upgrading-clusters-update-talos-button.png)
 
-> Note: you cannot lock control plane nodes, as it is not supported to have the Kubernetes version of a worker higher than that of the control plane nodes in a cluster - this may result in API version incompatibility.
+5. Select the version to deploy.
 
-To lock a node, simply select the Lock icon to the right of the node on the Cluster Overview screen, or use the `omnictl cluster machine lock` command. Upgrade and config patch operations will apply to all other nodes in the cluster, but locked nodes will retain their configuration at the time of locking. Unlock the nodes to allow pending cluster updates to complete.
+![Select the update version](./images/upgrading-clusters-update-talos-selection.png)
+
+6. Click **Upgrade**.
+
+Omni ensures that the Kubernetes version running in the cluster is compatible with the selected Talos Linux version before proceeding.
+
+<Note>Omni only allows supported upgrade paths. In some cases, an intermediate upgrade may be required before upgrading to the most recent version.</Note>
+
+### What happens during a Talos Linux upgrade in Omni
+
+Omni upgrades control plane nodes first, verifying that the etcd cluster is healthy and will remain healthy after each node leaves the etcd cluster before proceeding.
+
+For each node, Omni drains and cordons it, updates the OS, then uncordons it. All upgrades retain ephemeral data on the node.
+
+To control how many machines in a machine set are upgraded concurrently, configure [`upgradeStrategy`](../reference/cluster-templates#updatestrategy) in your cluster template.
+
+<Note> If any of your workloads are sensitive to ungraceful shutdowns, configure the `lifecycle.preStop` field in the Pod spec.</Note>
+
+## Upgrade Kubernetes in your Omni clusters
+
+When a new Kubernetes version is available, Omni displays an upgrade indicator in the cluster overview.
+
+To upgrade Kubernetes:
+
+1. Open the cluster.
+2. Click the upgrade indicator next to the Kubernetes version, or select **Update Kubernetes**.
+
+![Upgrade indicator](./images/upgrading-clusters-upgrade-indicators.png)
+
+![Update Kubernetes button](./images/upgrading-clusters-update-kubernetes-button.png)
+
+3. Choose the target version and start the upgrade.
+
+![Select the update version](./images/upgrading-clusters-update-kubernetes.png)
+
+### What happens during a Kubernetes upgrade
+
+Kubernetes upgrades proceed in the following order:
+
+1. Images for new Kubernetes components are pre-pulled to all nodes to minimize downtime and verify image availability.
+2. New static pod definitions are rendered and picked up by the kubelet. Omni waits for the change to propagate to the API server.
+3. The `kube-proxy` daemonset is updated with the new image version.
+4. The kubelet is updated on every node in the cluster.
+
+<Note>Omni does not remove obsolete Kubernetes resources. Clean up unused resources manually if needed.</Note>
+
+### Apply updated Kubernetes manifests
+
+Omni does not automatically apply updates to Kubernetes bootstrap manifests during an upgrade. Bootstrap manifests include cluster-critical components such as CoreDNS, kube-proxy, and the CNI plugin.
+
+This is intentional as it prevents Omni from overwriting changes you have made manually to those manifests.
+
+After the upgrade completes, Omni shows a diff of the proposed changes before applying them. Review these changes and apply only what is appropriate for your cluster.
+
+To do review these changes, open **Bootstrap Manifests** from the left navigation after each Kubernetes upgrade.
+
+![Bootstrap Manifest](./images/upgrading-clusters-bootstrap-manifest-tab.png)
+
+<Note>The `talosctl upgrade-k8s` command provides a `--dry-run` flag that previews manifest changes before the upgrade runs. Omni surfaces these changes after the upgrade completes, but before they are applied.</Note>
+
+## Locking nodes
+
+Locking a node prevents it from receiving configuration updates, upgrades, or downgrades.
+
+This is useful when you want to roll out changes to a subset of nodes first, for example, to validate that your workloads behave correctly on the new version before updating the rest of the cluster.
+
+> **Note:** Control plane nodes cannot be locked. Running a worker node on a higher Kubernetes version than the control plane is unsupported and may cause API version incompatibility.
+
+To lock a node, click the lock icon to the right of the node on the cluster overview page, **or** run the following command, replacing `<machine-id>` with the ID of your machine:
+
+```sh
+omnictl cluster machine lock <machine-id>
+```
+
+Upgrades and config patches apply to all unlocked nodes. Locked nodes retain their configuration from the time they were locked. To allow pending updates to apply, unlock the node.
+
+## Troubleshoot a stalled upgrade
+
+Upgrades occasionally stall due to hardware issues, network interruptions, or unexpected machine behavior. This section covers what to do if an upgrade does not complete as expected, and how to recover if the cluster reaches a broken state.
+
+### Before you start an upgrade
+
+Before upgrading, verify that an etcd backup exists and completed successfully. Backups are your primary recovery path if an upgrade leaves the cluster in an unrecoverable state.
+
+To check the most recent backup status for your cluster, run the following command, replacing `<cluster-name>` with the name of your cluster:
+
+```bash
+omnictl get etcdbackupstatus <cluster-name> -o yaml
+```
+
+Confirm that the error field is empty and that lastbackuptime reflects a recent timestamp. If no backup exists or the last backup failed, create one before proceeding. See [Create Etcd Backups](../cluster-management/etcd-backups) for instructions.
+
+### If a node appears stuck during an upgrade
+
+If a node is not progressing, wait before taking any action. Talos Linux performs several operations during an upgrade, including applying the new image, rebooting, and rejoining the cluster, and some steps can take longer than expected depending on hardware.
+
+If a node remains stuck after several minutes:
+
+1. Check the machine status in the Omni UI. A status of **Rebooting** or **Installing** indicates the upgrade is still in progress.
+
+2. Check the machine logs in the Omni UI or by running the following command, replacing `<machine-id>` with the ID of your machine:
+
+    ```bash
+    omnictl machine-logs <machine-id>
+    ```
+3. If you have access to a serial or VNC console for the machine, use it to inspect the machine state directly. This is especially useful when Talos is unresponsive, since Talos does not allow SSH access by design.
+
+4. If the upgrade cannot proceed, cancel it from the Omni UI.
+
+Talos uses an A/B partition scheme, so cancelling an upgrade will revert the node to the previous version as long as the node is still responsive.
+
+### What not to do during a stalled upgrade
+
+Avoid the following actions while an upgrade is in progress, as they can break etcd quorum and leave the cluster in an unrecoverable state:
+
+- Do not delete machines out-of-band. Deleting a VM directly from your infrastructure provider (such as OpenStack or AWS) without going through Omni leaves Omni waiting for a machine that no longer exists. This disrupts the upgrade and can break control plane quorum.
+
+- Do not add control plane nodes to resolve a quorum issue. Adding machines while the control plane is in a broken state does not restore quorum and makes the situation harder to recover from.
+
+- Do not run `kubectl delete node` on a control plane node. This removes the node from Kubernetes without removing it from Omni or etcd, which can break quorum.
+
+Control plane nodes must always be an odd number (1, 3, 5) to maintain quorum. If you are unsure how many control plane nodes you have, check the cluster overview in the Omni UI before making any changes.
+
+### If the control plane is broken and you have a backup
+
+If the control plane is in a broken state and a valid etcd backup exists, you can recover the cluster by deleting the control plane machineset and restoring from the backup. See [Restore Etcd of a Cluster](../cluster-management/restore-etcd-of-a-cluster-managed-by-cluster-templates) for the full recovery procedure.

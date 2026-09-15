@@ -1,0 +1,237 @@
+---
+title: Omni Configuration Examples
+description: Annotated configuration file examples for self-hosted Omni deployments, organized by section.
+---
+
+This page provides annotated configuration file examples for self-hosted Omni deployments, organized by section so you can assemble the right config for your setup.
+
+Omni accepts a YAML configuration file passed via `--config-path`. Only fields that differ from the defaults need to be specified, fields omitted from the file use their default values. For the full list of available fields, types, and their CLI flag equivalents, see the [Omni Configuration reference](/omni/reference/omni-configuration).
+
+## Pass a config file to Omni on startup
+
+Omni reads its configuration from a YAML file at startup. To use one, create the file on your host, mount it into the Omni container, and point Omni to it with `--config-path`:
+
+```bash
+docker run -d \
+  --name omni \
+  --net=host \
+  --cap-add=NET_ADMIN \
+  --device /dev/net/tun:/dev/net/tun \
+  --restart=unless-stopped \
+  -v $(pwd)/omni-config.yaml:/omni-config.yaml:ro,Z \
+  -v $(pwd)/omni.asc:/omni.asc:ro,Z \
+  -v $HOME/sqlite:/_out/sqlite:rw,Z \
+  ghcr.io/siderolabs/omni:${OMNI_VERSION} \
+    --config-path=/omni-config.yaml
+```
+
+The `:ro,Z` flag mounts the file as read-only inside the container. The `:Z` suffix ensures compatibility with SELinux if it is enabled on your host.
+
+`--config-path` is repeatable, so you can split your configuration across multiple files if needed:
+
+```bash
+    --config-path=/omni-config.yaml \
+    --config-path=/omni-auth.yaml
+```
+
+## Configure authentication
+
+Omni supports [Auth0, OIDC, and SAML as authentication providers](../security-and-authentication/authentication-and-authorization). Only one provider should be enabled at a time. When using OIDC or SAML, set `auth0.enabled: false` explicitly, since Auth0 is the default provider.
+
+### Auth0
+
+Use this when authenticating users through Auth0 as your identity provider.
+
+```yaml
+auth:
+  initialUsers:
+    - admin@example.com
+    - operator@example.com
+  initialServiceAccount:
+    enabled: true
+  auth0:
+    enabled: true
+    domain: your-tenant.auth0.com
+    clientID: your-auth0-client-id
+```
+
+### OIDC
+
+Use this with any OIDC-compliant provider such as Dex, Google, or a custom provider. This is the auth configuration used in the [Run Omni On-Prem](/omni/self-hosted/run-omni-on-prem) guide.
+
+```yaml
+auth:
+  initialUsers:
+    - admin@example.com
+  auth0:
+    enabled: false
+  oidc:
+    enabled: true
+    providerURL: https://<oidc-provider-host>
+    clientID: <oidc-client-id>
+    clientSecret: <oidc-client-secret>
+    scopes:
+      - openid
+      - profile
+      - email
+```
+
+### SAML
+
+Use this with a SAML 2.0 provider such as [Keycloak](/omni/self-hosted/configure-keycloak-for-omni), [Okta](/omni/security-and-authentication/using-saml-with-omni/configure-okta-for-omni), or [Oracle Cloud](/omni/security-and-authentication/using-saml-with-omni/configure-oracle-cloud-for-omni).
+
+`metadata` and `url` are mutually exclusive: use `metadata` for a URL served by your IdP, or `url` for a direct SAML provider URL or local file path.
+
+```yaml
+auth:
+  auth0:
+    enabled: false
+  saml:
+    enabled: true
+    metadata: https://<idp-host>/saml/metadata  # mutually exclusive with url
+    nameIDFormat: urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress
+    # Map IdP assertion attributes to Omni identity labels.
+    # The key is the SAML attribute name from your IdP; the value is the Omni label key.
+    labelRules:
+      role: role
+    attributeRules:
+      email: email
+```
+
+For role auto-assignment from SAML group attributes, see [Auto-assign roles to SAML users](/omni/security-and-authentication/using-saml-with-omni/auto-assign-roles-to-saml-users).
+
+## Configure service endpoints and TLS
+
+Each Omni service needs to know what address to listen on and what URL to advertise to clients. TLS certificate and key files must be valid for the domains used in `advertisedURL` fields.
+
+```yaml
+services:
+  # The main Omni API and UI.
+  api:
+    endpoint: 0.0.0.0:443
+    advertisedURL: https://omni.example.com
+    certFile: /etc/omni/tls/tls.crt
+    keyFile: /etc/omni/tls/tls.key
+
+  # Proxies Kubernetes API requests to managed clusters.
+  kubernetesProxy:
+    endpoint: 0.0.0.0:8095
+    advertisedURL: https://omni-k8s.example.com
+    certFile: /etc/omni/tls/tls.crt
+    keyFile: /etc/omni/tls/tls.key
+
+  # Handles machine join requests and issues SideroLink tokens.
+  machineAPI:
+    advertisedURL: grpc://omni-siderolink.example.com:8090
+
+  # SideroLink manages node-to-Omni connectivity over WireGuard.
+  siderolink:
+    joinTokensMode: strict
+    wireGuard:
+      advertisedEndpoint: 203.0.113.10:50180
+
+  # Workload proxy exposes HTTP services running in managed clusters through Omni.
+  # Requires a wildcard DNS record and TLS certificate for *.proxy.omni.example.com.
+  workloadProxy:
+    enabled: true
+    subdomain: proxy
+    useOmniSubdomain: true
+```
+
+## Configure storage backends
+
+Omni uses etcd as its primary datastore and SQLite for machine logs, audit logs, and other frequently updated state. Use embedded etcd for a single Omni instance, or point to an external etcd cluster for high availability.
+
+```yaml
+storage:
+  default:
+    kind: etcd
+    etcd:
+      # Set embedded: true for a single Omni instance.
+      # Set embedded: false and configure endpoints for external etcd (required for HA).
+      embedded: true
+      embeddedDBPath: /var/lib/omni/etcd/
+      # privateKeySource is required. Accepts a file path or a Vault reference.
+      privateKeySource: "vault://secret/omni-private-key"
+      # privateKeySource: "file:///omni.asc"
+
+  sqlite:
+    path: /var/lib/omni/sqlite.db
+
+# Etcd backup configuration.
+# For S3-based backups, configure credentials via environment variables, not in this file.
+etcdBackup:
+  s3Enabled: true
+```
+
+## Full working example
+
+The following is a complete, annotated configuration file combining all sections above. It uses Auth0 as the authentication provider. Replace all placeholder values with your actual deployment values before use.
+
+```yaml
+# Account identification.
+# Generate this UUID once and never change it after initial setup.
+account:
+  id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+
+# Authentication configuration.
+auth:
+  auth0:
+    enabled: true
+    clientID: your-auth0-client-id
+    domain: your-tenant.auth0.com
+  initialUsers:
+    - admin@example.com
+    - operator@example.com
+  initialServiceAccount:
+    enabled: true
+
+# Service endpoints and TLS configuration.
+services:
+  api:
+    endpoint: 0.0.0.0:443
+    advertisedURL: https://omni.example.com
+    certFile: /etc/omni/tls/tls.crt
+    keyFile: /etc/omni/tls/tls.key
+  kubernetesProxy:
+    endpoint: 0.0.0.0:8095
+    advertisedURL: https://omni-k8s.example.com
+    certFile: /etc/omni/tls/tls.crt
+    keyFile: /etc/omni/tls/tls.key
+  machineAPI:
+    advertisedURL: grpc://omni-siderolink.example.com:8090
+  siderolink:
+    joinTokensMode: strict
+    wireGuard:
+      advertisedEndpoint: 203.0.113.10:50180
+  workloadProxy:
+    enabled: true
+    subdomain: proxy
+    useOmniSubdomain: true
+
+# Storage backends.
+storage:
+  default:
+    kind: etcd
+    etcd:
+      embedded: true
+      embeddedDBPath: /var/lib/omni/etcd/
+      privateKeySource: "vault://secret/omni-private-key"
+  sqlite:
+    path: /var/lib/omni/sqlite.db
+
+# Etcd backup configuration with S3 storage.
+etcdBackup:
+  s3Enabled: true
+
+# Feature flags.
+features:
+  enableBreakGlassConfigs: true
+```
+
+## Notes
+
+- Replace all placeholder values (credentials, domain names, IP addresses, file paths) with your actual deployment values.
+- `account.id` must be a unique UUID generated once for your installation. Do not change it after initial setup.
+- For S3-based etcd backups, configure S3 credentials via environment variables as described in the [Run Omni On-Prem](/omni/self-hosted/run-omni-on-prem) guide.
+- For production deployments, see [Options for running Omni](/omni/self-hosted/options-for-running-omni) and [Run Omni on Kubernetes](/omni/self-hosted/run-omni-on-k8s) for additional guidance.

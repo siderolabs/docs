@@ -8,31 +8,16 @@ import { version } from '/snippets/custom-variables.mdx';
 [Kubernetes Dynamic Resource Allocation](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/) (DRA) is a new way of sharing host level resources into pods.
 These resources include GPU devices, high performance networking, and other hardware that a workload may need access to.
 
-DRA is enabled by default as a beta feature in Kubernetes 1.34 and can also be enabled in Kubernetes 1.33.
+DRA reached GA in Kubernetes 1.34, and the feature gate is locked on (always enabled, cannot be disabled) starting in Kubernetes 1.35.
 DRA replaces [device plugins](./device-plugins.mdx) for accessing resources from workloads.
 
-## Enable DRA in the cluster
+## Prerequisites
 
-Make sure the cluster has DRA enabled (Kubernetes 1.34+) or uses the following patch to enable the feature. This patch can be applied to all nodes in the cluster via `talosctl` or via Omni.
+Ensure you have the following:
 
-```yaml
-machine:
-  kubelet:
-    extraArgs:
-      feature-gates: DynamicResourceAllocation=true
-cluster:
-  apiServer:
-    extraArgs:
-      feature-gates: DynamicResourceAllocation=true
-  controllerManager:
-    extraArgs:
-      feature-gates: DynamicResourceAllocation=true
-  scheduler:
-    extraArgs:
-      feature-gates: DynamicResourceAllocation=true
-```
+- A cluster running Kubernetes 1.33 or later. DRA requires no additional configuration and is enabled by default.
 
-You should have at least one node in the cluster with NVIDIA hardware and configured via the <a href={`../../talos/${version}/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary`}>NVIDIA system extension and patch</a>.
+- At least one node with NVIDIA hardware, configured using either <a href={`../../talos/${version}/hardware-and-drivers/nvidia-gpu`}>NVIDIA GPU (OSS drivers)</a> or <a href={`../../talos/${version}/hardware-and-drivers/nvidia-gpu-proprietary`}>NVIDIA GPU (Proprietary drivers)</a>.
 
 ## 1. Deploy the NVIDIA DRA plugin via Helm
 
@@ -43,63 +28,122 @@ helm repo add nvidia https://helm.ngc.nvidia.com/nvidia
 helm repo update
 ```
 
-Install the driver in the kube-system namespace or create a new namespace and label it with appropriate [Pod Security Admission](../security/pod-security).
-
-```sh
-helm install nvidia-dra-driver-gpu nvidia/nvidia-dra-driver-gpu \
-    --version="25.8.0" \
-    --namespace kube-system \
-    --set resources.gpus.enabled=false \
-    --set nvidiaDriverRoot=/usr/local/glibc/lib
+```bash
+kubectl create ns nvidia-dra-driver-gpu
+kubectl label --overwrite ns nvidia-dra-driver-gpu pod-security.kubernetes.io/enforce=privileged
 ```
 
-Check the kubelet plugin pod is running.
+First we need to disable the device plugin component of GPU operator since we will be using the DRA plugin instead.
 
 ```sh
-kubectl get pods -n kube-system -l app.kubernetes.io/name=nvidia-dra-driver-gpu
+helm upgrade --wait  --install -n gpu-operator gpu-operator nvidia/gpu-operator \
+  --set driver.enabled=false \
+  --set toolkit.enabled=false \
+  --set hostPaths.driverInstallDir=/usr/local \
+  --set devicePlugin.enabled=false
+```
+
+```sh
+helm upgrade --install -n nvidia-dra-driver-gpu \
+  --set resources.gpus.enabled=true \
+  --set nvidiaDriverRoot=/usr/local \
+  --set gpuResourcesEnabledOverride=true \
+  nvidia-dra-driver-gpu nvidia/nvidia-dra-driver-gpu
+```
+
+> Note: the validation steps currently mention older versions of resource claims, follow the steps below to verify that the DRA plugin is running and managing the NVIDIA GPU resources.
+
+Refer to the [dra validation documentation](https://github.com/kubernetes-sigs/dra-driver-nvidia-gpu/wiki/Validate-setup-for-GPU-allocation#validate-that-dra-driver-is-running).
+
+```sh
+kubectl -n nvidia-dra-driver-gpu get pods
 ```
 
 Verify ResourceSlice objects
 
 ```sh
-kubectl get resourceslices -o yaml
+kubectl get resourceslices
 ```
+
+There should be a ResourceSlice object with the `gpu.nvidia.com` driver.
 
 ## 2. Deploy test workload
 
 Create a pod that consumes the ResourceSlice via a ResourceClaimTemplate.
 
 ```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: dra-example-workload
-spec:
-  runtimeClassName: nvidia
-  restartPolicy: OnFailure
-  resourceClaims:
-  - name: gpu-claim
-    resourceClaimTemplateName: gpu-template
-  containers:
-  - name: cuda-container
-    image: "nvcr.io/nvidia/cloud-native/gpu-operator-validator:v25.3.4"
-    resources:
-      claims:
-      - name: gpu-claim
 ---
-apiVersion: resource.k8s.io/v1beta1
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dra-gpu-share-test
+---
+apiVersion: resource.k8s.io/v1
 kind: ResourceClaimTemplate
 metadata:
-  name: gpu-template
+  name: single-gpu
+  namespace: dra-gpu-share-test
 spec:
   spec:
     devices:
       requests:
       - name: gpu
-        deviceClassName: gpu.nvidia.com
-        selectors:
-        - cel:
-            expression: 'device.attributes["type"].string == "gpu"'
+        exactly:
+          deviceClassName: gpu.nvidia.com
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod
+  namespace: dra-gpu-share-test
+  labels:
+    app: pod
+spec:
+  containers:
+  - name: ctr0
+    image: ubuntu:22.04
+    command: ["bash", "-c"]
+    args: ["nvidia-smi -L; trap 'exit 0' TERM; sleep 9999 & wait"]
+    resources:
+      claims:
+      - name: shared-gpu
+  - name: ctr1
+    image: ubuntu:22.04
+    command: ["bash", "-c"]
+    args: ["nvidia-smi -L; trap 'exit 0' TERM; sleep 9999 & wait"]
+    resources:
+      claims:
+      - name: shared-gpu
+  resourceClaims:
+  - name: shared-gpu
+    resourceClaimTemplateName: single-gpu
+  tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Exists"
+    effect: "NoSchedule"
+```
+
+```sh
+kubectl apply -f dra-gpu-share-test.yaml
+```
+
+Verify that the pod is running and has access to the GPU resources.
+
+```sh
+kubectl logs pod -n dra-gpu-share-test --all-containers --prefix
+```
+
+The output is expected to show the same GPU UUID from both containers. Example:
+
+```text
+[pod/pod/ctr0] GPU 0: NVIDIA A100-SXM4-40GB (UUID: GPU-4404041a-04cf-1ccf-9e70-f139a9b1e23c)
+[pod/pod/ctr1] GPU 0: NVIDIA A100-SXM4-40GB (UUID: GPU-4404041a-04cf-1ccf-9e70-f139a9b1e23c)
+```
+
+clean up
+
+```sh
+kubectl delete ns dra-gpu-share-test
 ```
 
 ## Notes

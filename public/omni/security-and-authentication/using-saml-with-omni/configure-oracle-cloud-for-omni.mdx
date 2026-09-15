@@ -3,74 +3,107 @@ title: Configure Oracle Cloud for Omni
 description: Set up Oracle Cloud Identity Domains to authenticate users into Omni via SAML.
 ---
 
-This section describes how to use Oracle Cloud SSO with Omni via SAML.
+This guide walks through configuring Oracle Cloud Identity Domains as a SAML provider for Omni, then enabling SAML authentication on the Omni container.
 
-## 1. Login to Oracle Cloud.
+## Configure Oracle Cloud Identity Domains
 
-On the left menu, select *Identity & Security* > *Domains*.
+This section walks through creating a SAML application in Oracle Cloud and collecting the IdP metadata file needed to complete the Omni configuration.
 
-Click your desired domain, then select *Integrated Applications*.
+### Step 1: Navigate to your domain
 
-Click *Add Application* > *SAML Application* > *Launch Workflow*.
+To get started, log in to Oracle Cloud and navigate to your identity domain.
 
-Give the application a name ("Omni" for example) and leave all other fields blank.
+1. Log in to Oracle Cloud.
+2. On the left menu, select **Identity & Security** > **Domains**.
+3. Click your desired domain, then select **Integrated Applications**.
 
-Select *Submit*.
+### Step 2: Create a SAML application
 
-Select the created application, then click *SAML SSO Configuration* > *Edit SSO Configuration*.
+Create a new SAML application to represent your Omni instance.
 
-We can now define our application configuration.
+1. Click **Add Application** > **SAML Application** > **Launch Workflow**.
+2. Give the application a name, for example "Omni".
+3. Leave all other fields blank, then click **Submit**.
 
-Only update the fields mentioned in the table below.
+### Step 3: Configure SSO settings
 
-| Option                      | Value                                  | Description                                                             |
-| --------------------------- | -------------------------------------- | ----------------------------------------------------------------------- |
-| Entity ID                   | https://\<fqdn for omni>/saml/metadata | The fully-qualified domain name for metadata retrieval
-| Assertion consumer URL      | https://\<fqdn for omni>/saml/acs      | The fully-qualified domain name for acs
-| Name ID Format              | Email address                          |
-| Name ID Value               | Primary email                          |
-| Enable single logout        | Disabled                               |
+Open the SSO configuration for the application you just created and update the fields below. Leave all other fields at their defaults.
 
-At the bottom of this section, you’ll see an "Attribute configuration" block, here the mappings from Oracle to Omni fields needs to be entered as below. Use the “Add attribute" button to create new ones.
+1. Select the application, then click **SAML SSO Configuration** > **Edit SSO Configuration**.
+2. Update only the fields listed in the table below.
 
-| Name      | Name Format | Value      | Description              |
-| --------- | ----------- | ---------- | ------------------------ |
-| email     | Unspecified | Primary email      | The user’s email address |
-| firstName | Unspecified | First name | The user’s first name    |
-| lastName  | Unspecified | Last name  | The user’s last name     |
+| Option                 | Value                               | Description                                            |
+| ---------------------- | ----------------------------------- | ------------------------------------------------------ |
+| Entity ID              | `https://<omni-fqdn>/saml/metadata` | The fully-qualified domain name for metadata retrieval |
+| Assertion Consumer URL | `https://<omni-fqdn>/saml/acs`      | The fully-qualified domain name for the ACS endpoint   |
+| Name ID Format         | Email address                       | The format used to identify the user                   |
+| Name ID Value          | Primary email                       | The value sent as the Name ID in the assertion         |
+| Enable single logout   | Disabled                            | Leave single logout disabled                           |
 
-<img src="./images/configure-oracle-cloud-app-configuration.png" alt=""/>
+### Step 4: Map attributes
 
-Once saved, head to the "Users" configuration section.
+At the bottom of the **SAML SSO Configuration** page, configure the attribute mappings that allow Omni to identify users by name and email.
 
-Add any users that you wish to have access to Omni.
+1. Locate the **Attribute Configuration** block.
+2. Use the **Add Attribute** button to create the following mappings.
 
-Once complete, head back to the "SAML SSO Configuration" tab and hit "Download" on the "Identity Provider Metadata" field.
+| Name      | Name Format | Value         | Description              |
+| --------- | ----------- | ------------- | ------------------------ |
+| email     | Unspecified | Primary email | The user's email address |
+| firstName | Unspecified | First name    | The user's first name    |
+| lastName  | Unspecified | Last name     | The user's last name     |
 
-A copy of this file needs to be on the host which will run the Omni container as we’ll feed it in to the container at runtime. You can copy paste contents or download/upload the file whichever is easiest. For the remainder of this guide, we’ll assume this file ends up at the following location on your container host: `~/oraclemetadata.xml`
+<img src="./images/configure-oracle-cloud-app-configuration.png" alt="Oracle Cloud attribute configuration" />
 
-This completes the configurations required in Oracle Cloud.
+### Step 5: Assign users
 
-## 2. Configure Omni SAML
+Add the users who should have access to Omni. You can add more users at any time by returning to this section.
 
-To get Omni to use Oracle as a SAML provider, the following flags should be passed to Docker & the Omni container on launch.
+1. Navigate to the **Users** section of the application.
+2. Add any users that should have access to Omni.
 
-| Scope  | Flag                                               | Description                                       |
-| ------ | -------------------------------------------------- | ------------------------------------------------- |
-| Docker | `-v $PWD/oraclemetadata.xml:/oraclemetadata.xml` | Make available the IDP metadata file in container |
-| Omni   | `--auth-saml-enabled=true`                         | Enable SAML authentication.                       |
-| Omni   | `--auth-saml-metadata-/oraclemetadata.xml`        | The path to the IDP metadata file.                |
-| Omni   | `--auth-saml-name-id-format=urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress` | Ensures Omni process the email address correctly. |
+### Step 6: Download the IdP metadata file
 
-For example;
+Download the IdP metadata file and place it on the host that will run the Omni container. The remaining steps in this guide assume the file is saved at `~/oraclemetadata.xml`.
+
+1. Head back to the **SAML SSO Configuration** tab.
+2. Click **Download** next to the **Identity Provider Metadata** field.
+3. Copy or upload the file to the following path on your container host:
+
+```bash
+~/oraclemetadata.xml
+```
+
+This completes the configuration required in Oracle Cloud.
+
+---
+
+## Configure Omni to use Oracle Cloud
+
+To enable SAML authentication, pass the required flags to the Omni container at startup. Alternatively, you can set these values using the [Omni configuration file](../../reference/omni-configuration#saml) instead of CLI flags.
+
+### Step 1: Review the required flags
+
+Before starting the container, familiarize yourself with the flags needed for both Docker and Omni. The Docker flag mounts the IdP metadata file into the container, and the Omni flags enable and configure SAML authentication.
+
+| Scope  | Flag                                               | Description                                        |
+| ------ | -------------------------------------------------- | -------------------------------------------------- |
+| Docker | `-v $PWD/oraclemetadata.xml:/oraclemetadata.xml`   | Mounts the IdP metadata file into the container    |
+| Omni   | `--auth-saml-enabled=true`                         | Enables SAML authentication                        |
+| Omni   | `--auth-saml-metadata=/oraclemetadata.xml`         | Path to the IdP metadata file inside the container |
+| Omni   | `--auth-saml-name-id-format=urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress` | Ensures Omni processes the email address correctly |
+
+### Step 2: Start the container
+
+Run the Omni container with the flags from Step 1. The example below shows a minimal `docker run` command with the required flags in place.
 
 ```bash
 docker run \
-...
--v $PWD/oraclemetadata.xml:/oraclemetadata.xml
-...
-ghcr.io/siderolabs/omni:latest \
-  --auth-saml-enabled=true
-  --auth-saml-metadata-/oraclemetadata.xml
+  ...
+  -v $PWD/oraclemetadata.xml:/oraclemetadata.xml \
+  ...
+  ghcr.io/siderolabs/omni:latest \
+  --auth-saml-enabled=true \
+  --auth-saml-metadata=/oraclemetadata.xml \
   --auth-saml-name-id-format=urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress
 ```

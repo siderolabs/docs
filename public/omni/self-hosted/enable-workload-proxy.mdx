@@ -1,0 +1,194 @@
+---
+title: Enable Workload Proxy
+description: Configure the workload proxy feature for a self-hosted Omni instance.
+---
+
+The workload proxy lets you expose HTTP services from managed clusters through Omni. Only users with access to the cluster can reach them. On Omni SaaS no setup is needed. On a self-hosted instance, you need to configure DNS, TLS, and routing before it works.
+
+This guide assumes Omni is already running. If not, see [Run Omni On-Prem](./run-omni-on-prem).
+
+<Note>
+**Using the Helm chart?** The chart handles workload proxy configuration, TLS, and ingress routing all in one place. See the [Workload Proxy section](https://github.com/siderolabs/omni/tree/main/deploy/helm/omni#workload-proxy-optional) of the Helm chart README. You don't need the rest of this guide.
+</Note>
+
+## Requirements
+
+You need:
+
+- A wildcard DNS record pointing to your Omni host (the examples in this guide use `*.omni.example.com`).
+- A wildcard TLS certificate for that domain.
+- A routing rule forwarding traffic for that domain to Omni. See [Step 4: Route traffic to Omni](#step-4-route-traffic-to-omni) below.
+
+The exact domain depends on which layout you choose. See [Step 2: Choose your domain layout](#step-2-choose-your-domain-layout).
+
+## Step 1: Enable workload proxy
+
+Add the following to your Omni configuration and restart Omni. For the full list of workload proxy options, see the [Omni Configuration reference](/omni/reference/omni-configuration#servicesworkloadproxy).
+
+<Tabs>
+  <Tab title="Config file (YAML)">
+
+```yaml
+services:
+  workloadProxy:
+    enabled: true
+    useOmniSubdomain: true
+    subdomain: ""
+```
+
+  </Tab>
+  <Tab title="CLI flags">
+
+```bash
+--workload-proxying-enabled \
+--workload-proxying-use-omni-subdomain \
+--workload-proxying-subdomain=""
+```
+
+  </Tab>
+</Tabs>
+
+## Step 2: Choose your domain layout
+
+These examples use `omni.example.com` as the Omni domain. Pick one option.
+
+<Tabs>
+  <Tab title="Direct subdomains (recommended)">
+
+`useOmniSubdomain: true`, empty `subdomain`
+
+Services appear directly under Omni's domain:
+
+```
+https://grafana.omni.example.com/
+```
+
+One wildcard cert and DNS record for `*.omni.example.com` covers all exposed services.
+
+  </Tab>
+  <Tab title="Subdomain prefix">
+
+`useOmniSubdomain: true`, `subdomain: proxy`
+
+Services land one level deeper, under a subdomain of Omni:
+
+```
+https://grafana.proxy.omni.example.com/
+```
+
+Requires a wildcard cert and DNS record for `*.proxy.omni.example.com`.
+
+  </Tab>
+  <Tab title="Sibling domain">
+
+`useOmniSubdomain: false`, `subdomain: omni-apps`
+
+The proxy domain sits alongside Omni rather than under it:
+
+```
+https://grafana.omni-apps.example.com/
+```
+
+Requires a wildcard cert and DNS record for `*.omni-apps.example.com`.
+
+  </Tab>
+</Tabs>
+
+`grafana` here is the alias you set on the Service via annotation, or a randomly generated prefix. When `useOmniSubdomain` is `true`, aliases can contain dashes.
+
+## Step 3: Obtain a TLS certificate
+
+The workload proxy domain needs a wildcard certificate.
+
+If you followed the on-prem guide and used cfssl, add the wildcard entry for your proxy domain to the `hosts` array in your `wildcard-csr.json`. Using the Direct subdomains option as an example, the full array becomes:
+
+```json
+"hosts": [
+  "${OMNI_ENDPOINT}",
+  "${AUTH_ENDPOINT}",
+  "*.${OMNI_ENDPOINT}",
+  "127.0.0.1",
+  "${HOST_PUBLIC_IP}",
+  "${HOST_PRIVATE_IP}"
+]
+```
+
+Adjust the wildcard entry to match your chosen domain layout. Then regenerate the certificate and restart Omni with the updated cert files.
+
+For a publicly trusted wildcard certificate, use certbot with a DNS-01 challenge (wildcard certs require DNS validation). The example below uses the Direct subdomains domain. Adjust the `-d` values to match your chosen layout:
+
+```bash
+certbot certonly --manual --preferred-challenges dns \
+  -d "omni.example.com" \
+  -d "*.omni.example.com"
+```
+
+## Step 4: Route traffic to Omni
+
+The wildcard domain traffic needs to reach Omni. How you set that up depends on whether you have a reverse proxy in front of it.
+
+### No reverse proxy
+
+If Omni is listening directly on port 443, pass the wildcard certificate to Omni via `--cert` and `--key` (or `services.api.certFile` / `services.api.keyFile` in the config file). With your chosen wildcard domain in the certificate's SAN and DNS pointing to your host, Omni routes workload proxy traffic internally.
+
+### nginx
+
+If you're running nginx in front of Omni (see [Expose Omni with Nginx](./expose-omni-with-nginx-https)), add a server block for the wildcard domain. The following example uses the Direct subdomains domain (`*.omni.example.com`). Adjust `server_name` to match your chosen layout. The example assumes Omni is on `127.0.0.1:8080`:
+
+```nginx
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    listen 0.0.0.0:443 ssl;
+    listen [::0]:443 ssl;
+    server_name *.omni.example.com;
+
+    ssl_certificate /path/to/wildcard-fullchain.pem;
+    ssl_certificate_key /path/to/wildcard-key.pem;
+
+    proxy_http_version 1.1;
+    proxy_send_timeout 1h;
+    proxy_read_timeout 1h;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+    }
+}
+```
+
+### Traefik (Kubernetes)
+
+With Traefik v3 as your ingress controller, use an `IngressRoute` that matches the wildcard hostname and forwards to the Omni service:
+
+```yaml
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: omni-workload-proxy
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: HostRegexp(`.+\.omni\.example\.com`)
+      services:
+        - kind: Service
+          name: omni
+          port: omni
+          passHostHeader: true
+          scheme: h2c
+  tls:
+    secretName: omni-workload-proxy-wildcard-tls
+```
+
+For a full example including the cert-manager `Certificate` resource for the wildcard cert, see the [Helm chart README](https://github.com/siderolabs/omni/tree/main/deploy/helm/omni#workload-proxy-optional).
+
+## Next steps
+
+With the proxy running and DNS and TLS in place, see [Expose a Workload via Service Proxy](../cluster-management/expose-a-workload-via-service-proxy) to enable the feature on a cluster and annotate services.

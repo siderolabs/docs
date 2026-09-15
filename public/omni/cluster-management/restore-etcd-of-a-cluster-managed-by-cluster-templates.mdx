@@ -1,40 +1,52 @@
 ---
-title: Restore Etcd of a Cluster Managed by Cluster Templates
-description: Etcd recovery workflow for template-managed Omni clusters.
+title: Restore Etcd of a Cluster
+description: Recover a template-managed Omni cluster from an etcd backup.
 ---
 
-This tutorial has the following requirements:
+Etcd holds all Kubernetes cluster state. If etcd becomes corrupted or unavailable, restoring from a backup is the primary recovery path. This guide walks through restoring an etcd snapshot to a cluster managed by cluster templates in Omni.
 
-* The CLI tool `omnictl` must be installed and configured.
-* The cluster which you want to restore **must still exist** (not be deleted from Omni) and have past backups available.
-* The cluster **must be managed using cluster templates** (not via the UI).
+Before following this guide, ensure you have created etcd backups for your cluster. If you have not, see [Create Etcd Backups](./etcd-backups).
 
-### Finding the cluster's UUID
+## Prerequisites
 
-To find the cluster's UUID, run the following command, replacing `my-cluster` with the name of your cluster:
+- [`omnictl`](../getting-started/install-and-configure-omnictl) must be installed and configured.
+- [`talosctl`](../getting-started/how-to-install-talosctl) must be installed and `talosconfig` must be configured for the cluster you want to restore. You can download `talosconfig` from the Omni UI or by running `omnictl talosconfig -c <cluster-name>`.
+- The cluster must still exist in Omni and must not have been deleted. Omni cannot restore a cluster that no longer exists as a resource.
+- The cluster must be managed using cluster templates. If your cluster was created via the UI, see [Export a Cluster Template](../cluster-management/export-a-cluster-template-from-a-cluster-created-in-the-ui) to convert it first.
+- At least one etcd backup must be available for the cluster.
+
+## Step 1: Find the cluster UUID
+
+Start by exporting your cluster name as an environment variable. Replace `<cluster-name>` with the name of your cluster:
 
 ```bash
-omnictl get clusteruuid my-cluster
+export CLUSTER_NAME=<cluster-name>
 ```
 
-The output will look like this:
+Then retrieve the cluster UUID:
 
+```bash
+omnictl get clusteruuid $CLUSTER_NAME
 ```
+
+The output will look similar to this:
+
+```bash
 NAMESPACE   TYPE          ID              VERSION   UUID
 default     ClusterUUID   my-cluster      1         bb874758-ee54-4d3b-bac3-4c8349737298
 ```
 
-Note the `UUID` column, which contains the cluster's UUID.
+Note the value in the `UUID` column, you will need it in a later step.
 
-### Finding the snapshot to restore
+## Step 2: Find the snapshot to restore
 
 List the available snapshots for the cluster:
 
 ```bash
-omnictl get etcdbackup -l omni.sidero.dev/cluster=my-cluster
+omnictl get etcdbackup -l omni.sidero.dev/cluster=$CLUSTER_NAME
 ```
 
-The output will look like this:
+The output will look similar to this:
 
 ```
 NAMESPACE   TYPE         ID                         VERSION     CREATED AT                         SNAPSHOT
@@ -43,25 +55,31 @@ external    EtcdBackup   my-cluster-1701184515   undefined   {"nanos":0,"seconds
 external    EtcdBackup   my-cluster-1701184500   undefined   {"nanos":0,"seconds":1701184500}   FFFFFFFF9A99FC0C.snapshot
 ```
 
-The `SNAPSHOT` column contains the snapshot name which you will need to restore the cluster. Let's assume you want to restore the cluster to the snapshot `FFFFFFFF9A99FBFD.snapshot`.
+Note the value in the `SNAPSHOT` column for the snapshot you want to restore, you will need this in a later step. Use the `CREATED AT` timestamp to identify the most appropriate snapshot.
 
-### Deleting the existing control plane
+## Step 3: Delete the existing control plane
 
-To restore the cluster, we need to first delete the existing control plane of the cluster. This will take the cluster into the non-bootstrapped state. Only then we can create the new control plane with the restored etcd.
+To restore etcd, the existing control plane must be deleted first. This puts the cluster into a non-bootstrapped state so that a new control plane can be created with the restored etcd snapshot.
 
-Use the following command to delete the control plane, replacing `my-cluster` with the name of your cluster:
+Run the following command to delete the existing control planes:
 
 ```bash
-omnictl delete machineset my-cluster-control-planes
+omnictl delete machineset $CLUSTER_NAME-control-planes
 ```
 
-### Creating the restore template
+## Step 4: Create the restore template
 
-Edit your cluster template manifest `template-manifest.yaml`, edit the list of control plane machines for your needs, and add the `bootstrapSpec` section to the control plane, with cluster UUID and the snapshot name we found above:
+Retrieve your existing cluster template file. If you do not have it locally, you can export it by running:
+
+```bash
+omnictl cluster template export -c $CLUSTER_NAME > restore-template.yaml
+```
+
+Open the file and add a `bootstrapSpec` block to the `ControlPlane` section, substituting the cluster UUID from Step 1 and the snapshot name from Step 2:
 
 ```yaml
 kind: Cluster
-name: my-cluster
+name: <cluster-name>
 kubernetes:
   version: v1.28.2
 talos:
@@ -69,49 +87,44 @@ talos:
 ---
 kind: ControlPlane
 machines:
-  - 430d882a-51a8-48b3-ae00-90c5b0b5b0b0
-  - e865efbc-25a1-4436-bcd9-0a431554e328
-  - 820c2b44-568c-461e-91aa-c2fc228c0b2e
+  - <controlplane-machine-uuid-1>
+  - <controlplane-machine-uuid-2>
+  - <controlplane-machine-uuid-3>
 bootstrapSpec:
-  clusterUUID: bb874758-ee54-4d3b-bac3-4c8349737298 # The cluster UUID we found above
-  snapshot: FFFFFFFF9A99FBFD.snapshot # The snapshot name we found above
+  clusterUUID: <cluster-uuid>       # UUID from Step 1
+  snapshot: <snapshot-name>         # snapshot name from Step 2
 ---
 kind: Workers
 machines:
-  - 18308f52-b833-4376-a7c8-1cb9de2feafd
-  - 79f8db4d-3b6b-49a7-8ac4-aa5d2287f706
+  - <worker-machine-uuid-1>
+  - <worker-machine-uuid-2>
 ```
 
-### Syncing the template
+## Step 5: Sync the restore template
 
-To sync the template, run the following command:
+Apply the template to trigger the restore:
 
 ```bash
-omnictl cluster template sync -f template-manifest.yaml
-omnictl cluster template status -f template-manifest.yaml
+omnictl cluster template sync -f restore-template.yaml
 ```
 
-After the sync, your cluster will be restored to the snapshot you specified.
-
-### Restarting Kubelet on worker nodes
-
-To ensure a healthy cluster operation, the kubelet needs to be restarted on all worker nodes.
-
-<Info>
-For this step, you need [talosctl](../getting-started/how-to-install-talosctl) to be installed and **talosconfig** to be configured for this cluster. You can download talosconfig using the Web UI or by
-
-```
-omnictl talosconfig -c my-cluster
-```
-</Info>
-
-Get the IDs of the worker nodes:
+Monitor the status until the cluster is fully restored:
 
 ```bash
-omnictl get clustermachine -l omni.sidero.dev/role-worker,omni.sidero.dev/cluster=my-cluster
+omnictl cluster template status -f restore-template.yaml
 ```
 
-The output will look like this:
+## Step 6: Restart kubelet on worker nodes
+
+After the restore completes, kubelet must be restarted on all worker nodes to ensure healthy cluster operation.
+
+First, retrieve the IDs of the worker nodes:
+
+```bash
+omnictl get clustermachine -l omni.sidero.dev/role-worker,omni.sidero.dev/cluster=$CLUSTER_NAME
+```
+
+The output will look similar to this:
 
 ```
 NAMESPACE   TYPE             ID                                     VERSION
@@ -121,11 +134,31 @@ default     ClusterMachine   5f93376a-95f6-496c-b4b7-630a0607ac7f   3
 default     ClusterMachine   c863ccdf-cdb7-4519-878e-5484a1be119a   3
 ```
 
-Gather the IDs in this output, and issue a kubelet restart on them using `talosctl`:
+Run a kubelet restart for each worker node ID in the output, replacing each ID with those from your cluster:
 
 ```bash
-talosctl -n 26b87860-38b4-400f-af72-bc8d26ab6cd6 service kubelet restart
-talosctl -n 2f6af2ad-bebb-42a5-b6b0-2b9397acafbc service kubelet restart
-talosctl -n 5f93376a-95f6-496c-b4b7-630a0607ac7f service kubelet restart
-talosctl -n c863ccdf-cdb7-4519-878e-5484a1be119a service kubelet restart
+talosctl -n <worker-node-id-1> service kubelet restart
+talosctl -n <worker-node-id-2> service kubelet restart
+talosctl -n <worker-node-id-3> service kubelet restart
+talosctl -n <worker-node-id-4> service kubelet restart
+```
+
+## Step 7: Verify the restore
+
+Confirm that all nodes are ready and the cluster is healthy:
+
+```bash
+kubectl get nodes
+```
+
+All nodes should show a status of `Ready`. If any nodes remain `NotReady` after a few minutes, check the kubelet status on the affected node:
+
+```bash
+talosctl -n <node-id> service kubelet
+```
+
+You can also verify etcd membership is healthy by running:
+
+```bash
+talosctl -n <controlplane-node-id> etcd members
 ```

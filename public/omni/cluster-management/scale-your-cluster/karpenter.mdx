@@ -283,7 +283,7 @@ export INSTANCE_ROLE_NAME="talos-karpenter-role"
 Next, attach the required policies that grant Karpenter the permissions to launch, tag, and terminate EC2 instances for this cluster:
 
 ```bash
-curl -fsSL https://docs.siderolabs.com/scripts/karpenter-iam.template \
+curl -fsSL https://docs.siderolabs.com/static/omni/karpenter-iam-template.json \
   | envsubst > karpenter-policy.json
 
 export KARPENTER_POLICY_ARN=$(aws iam create-policy \

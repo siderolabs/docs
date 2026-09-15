@@ -10,8 +10,10 @@ navigation:
         - group: "CNI"
           folder: "kubernetes-guides/cni"
           pages:
+            - "flannel.mdx"
             - "deploy-calico.mdx"
             - "deploying-cilium.mdx"
+            - "kube-router.mdx"
             - "multus.mdx"
 
         - group: "CSI"
@@ -20,7 +22,10 @@ navigation:
             - "storage.mdx"
             - "local-storage.mdx"
             - "ceph-with-rook.mdx"
+            - "dell-powerstore.mdx"
+            - "longhorn.mdx"
             - "simplyblock-storage.mdx"
+            - "seaweedfs.mdx"
             - "synology-csi.mdx"
 
         - group: "Security"
@@ -29,26 +34,30 @@ navigation:
             - "pod-security.mdx"
             - "seccomp-profiles.mdx"
             - "usernamespace.mdx"
+            - "wiz-kubernetes-connector.mdx"
 
         - group: "Monitoring & Observability"
           folder: "kubernetes-guides/monitoring-and-observability"
           pages:
             - "deploy-metrics-server.mdx"
             - "etcd-metrics.mdx"
+            - "deploy-datadog.mdx"
 
         - group: "Advanced Guides"
           folder: "kubernetes-guides/advanced-guides"
           pages:
             - "deploy-traefik.mdx"
+            - "deploy-argocd.mdx"
+            - "deploy-flux.mdx"
             - "dynamic-resource-allocation.mdx"
             - "device-plugins.mdx"
             - "gcp-workload-identity.mdx"
             - "hpa.mdx"
             - "inlinemanifests.mdx"
-            - "kubeprism.mdx"
             - "kuberay.mdx"
             - "kueue.mdx"
             - "node-labels.mdx"
             - "spegel.mdx"
+            - "support-for-third-party-cni-and-csi-components.mdx"
             - "talos-api-access-from-k8s.mdx"
             - "upgrading-kubernetes.mdx"

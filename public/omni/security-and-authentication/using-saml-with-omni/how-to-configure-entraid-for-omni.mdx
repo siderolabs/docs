@@ -1,24 +1,32 @@
 ---
-title: Configure Entra ID AD for Omni
+title: Configure Entra ID for Omni
 description: Set up Microsoft Entra ID (Azure AD) as a SAML identity provider for Omni.
 ---
 
-In the Azure portal, click "Enterprise Applications".
+This guide walks through registering Omni as a SAML application in Microsoft Entra ID and collecting the metadata URL needed to complete the Omni configuration.
 
-Click "New Application" and search for "Entra SAML Toolkit".
+## Step 1: Create a new enterprise application
 
-Name this application something more meaningful if desired and click "Create".
+In the Azure portal, navigate to **Enterprise Applications** and click **New Application**. Search for **Entra SAML Toolkit**, optionally rename the application to something more descriptive, then click **Create**.
 
-Under the "Manage" section of the application, select "Single sign-on", then "SAML" as the single sign-on method.
+## Step 2: Configure Single Sign-On
 
-In section 1 of this form, enter identifier, reply, and sign on URLs that match the following and save:
+Under the **Manage** section of the application, select **Single sign-on**, then choose **SAML** as the sign-on method.
 
-* Identifier (Entity ID): `https://<domain name for omni>/saml/metadata`
-* Reply URL (Assertion Consumer Service URL): `https://<domain name for omni>/saml/acs`
-* Sign on URL: `https://<domain name for omni>/login`
+In the **Basic SAML Configuration** section, enter the following URLs and click **Save**.
 
-From section 3, copy the "App Federation Metadata Url" for later use.
+| Field                                    | Value                                          |
+| ---------------------------------------- | ---------------------------------------------- |
+| Identifier (Entity ID)                   | `https://<omni-domain>/saml/metadata`          |
+| Reply URL (Assertion Consumer Service URL) | `https://<omni-domain>/saml/acs`             |
+| Sign on URL                              | `https://<omni-domain>/login`                  |
 
-Again, under the "Manage" section of the application, select "Users and groups".
+Replace `<omni-domain>` with the domain name of your Omni instance.
 
-Add any users or groups you wish to give access to your Omni environment here.
+## Step 3: Copy the App Federation Metadata URL
+
+In the **SAML Signing Certificate** section, copy the **App Federation Metadata URL**. You will need this when configuring Omni in the next section.
+
+## Step 4: Assign users and groups
+
+Under the **Manage** section of the application, select **Users and groups**. Add any users or groups that should have access to your Omni environment.

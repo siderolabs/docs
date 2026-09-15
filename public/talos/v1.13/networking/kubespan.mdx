@@ -4,6 +4,7 @@ description: "Learn to use KubeSpan to connect Talos Linux machines securely acr
 aliases:
   - ../../guides/kubespan
   - ../../kubernetes-guides/network/kubespan
+canonical: https://docs.siderolabs.com/talos/v1.14/networking/kubespan
 ---
 
 import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
@@ -71,24 +72,19 @@ Failure to do so can result in a pod being assigned the 51820 port and conflicti
 
 ### Cilium compatibility limitations
 
-KubeSpan and [Cilium](https://cilium.io) can generally be used together.
-However, some advanced Cilium configurations are **not compatible** with KubeSpan.
+KubeSpan and Cilium can generally be used together, but some Cilium configurations require specific settings to avoid asymmetric routing.
 
-Cilium expects all inter-node traffic to flow directly over the node’s primary interface (for example, `eth0`).
-With KubeSpan enabled, Talos intercepts that traffic and routes it through the WireGuard mesh.
-This leads to asymmetric routing and broken pod-to-pod communication across nodes.
+As of Talos 1.13, Cilium's native routing mode works with KubeSpan when `advertiseKubernetesNetworks: true` is set.
+Configure Cilium with the following BPF settings:
 
-We recommend the following workarounds:
+```yaml
+bpf:
+  masquerade: true        # can be set to false if masquerading isn't needed
+  hostLegacyRouting: true # required — eBPF host routing bypasses the kernel routing table and conflicts with KubeSpan
+```
 
-* If you need advanced Cilium features (e.g., full eBPF datapath with masquerading), use [Cilium’s built-in WireGuard
-  encryption](https://docs.cilium.io/en/stable/security/network/encryption/) instead of Kubespan.
-
-* If you prefer to use KubeSpan for secure node-to-node connectivity, run Cilium
-  with its **default configuration**, which is compatible with KubeSpan.
-
-> **Note**: Not all Cilium setups are affected.
-> Only certain advanced configurations (like full eBPF masquerading) cause incompatibility.
-> Default Cilium deployments work as expected with KubeSpan.
+If you don't need native routing, Cilium's default configuration works with KubeSpan out of the box.
+For advanced eBPF features without these constraints, use Cilium's built-in WireGuard encryption instead of KubeSpan.
 
 ## Enabling
 
@@ -98,18 +94,18 @@ To enable KubeSpan for a new cluster, we can use the `--with-kubespan` flag in `
 This will enable peer discovery and KubeSpan.
 
 ```yaml
-machine:
-    network:
-        kubespan:
-            enabled: true # Enable the KubeSpan feature.
 cluster:
     discovery:
         enabled: true
         # Configure registries used for cluster member discovery.
         registries:
-            kubernetes: # Kubernetes registry is problematic with KubeSpan, if the control plane endpoint is routeable itself via KubeSpan.
+            kubernetes: # Kubernetes registry is problematic with KubeSpan, if the control plane endpoint is routable itself via KubeSpan.
               disabled: true
             service: {}
+---
+apiVersion: v1alpha1
+kind: KubeSpanConfig
+enabled: true # Enable the KubeSpan feature.
 ```
 
 > The default discovery service is an external service hosted by Sidero Labs at `https://discovery.talos.dev/`.
@@ -117,16 +113,16 @@ cluster:
 
 ### Enabling for an existing cluster
 
-In order to enable KubeSpan on an existing cluster, enable `kubespan` and `discovery` settings in the machine config for each machine in the cluster (`discovery` is enabled by default):
+In order to enable KubeSpan on an existing cluster, add `KubeSpanConfig` and `discovery` settings in the machine config for each machine in the cluster (`discovery` is enabled by default):
 
 ```yaml
-machine:
-  network:
-    kubespan:
-      enabled: true
 cluster:
   discovery:
     enabled: true
+---
+apiVersion: v1alpha1
+kind: KubeSpanConfig
+enabled: true
 ```
 
 ## Configuration
@@ -136,17 +132,18 @@ KubeSpan automatically discovers cluster members, exchanges WireGuard public key
 In most cases, no additional configuration is required. However, the following options are available for advanced use cases:
 
 ```yaml
-machine:
-  network:
-    kubespan:
-      enabled: false
-      advertiseKubernetesNetworks: false
-      allowDownPeerBypass: false
-      mtu: 1420
-      filters:
-        endpoints:
-          - 0.0.0.0/0
-          - ::/0
+apiVersion: v1alpha1
+kind: KubeSpanConfig
+enabled: true
+advertiseKubernetesNetworks: false
+allowDownPeerBypass: false
+mtu: 1420
+filters:
+    endpoints:
+      - 0.0.0.0/0
+      - ::/0
+    excludeAdvertisedNetworks:
+        - 2007::/64
 ```
 
 `advertiseKubernetesNetworks`
@@ -193,13 +190,13 @@ This is useful when:
 **Example:**
 
 ```yaml
-machine:
-  network:
-    kubespan:
-      filters:
-        endpoints:
-          - 0.0.0.0/0
-          - ::/0
+apiVersion: v1alpha1
+kind: KubeSpanConfig
+filters:
+    endpoints:
+      - 0.0.0.0/0
+      - ::/0
+      - "!123.0.0.0/24"
 ```
 
 `filters.excludeAdvertisedNetworks`
@@ -215,13 +212,11 @@ Excluded networks will not be reachable over KubeSpan.
 **Example:**
 
 ```yaml
-machine:
-  network:
-    kubespan:
-      enabled: true
-      filters:
-        excludeAdvertisedNetworks:
-          - 172.16.64.0/20
+apiVersion: v1alpha1
+kind: KubeSpanConfig
+filters:
+  excludeAdvertisedNetworks:
+    - 172.16.64.0/20
 ```
 
 In this example, the `172.16.64.0/20` subnet will not be advertised to other cluster members.

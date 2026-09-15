@@ -1,275 +1,590 @@
 ---
 title: Run Omni On-Prem
-description: Run Omni on your infrastructure
+description: Deploy a self-hosted Omni instance on any internet-connected Linux host
 ---
 
-import { omni_release } from '/snippets/custom-variables.mdx';
+This guide walks you through deploying Omni on a Linux host with internet access. By the end, you will have a fully functional Omni instance running with TLS, an OIDC identity provider, and either embedded or external etcd.
 
-This guide shows you how to run Omni on-prem. This guide assumes that Omni will be deployed on an Ubuntu machine. Small differences should be expected when using a different OS.
+<Note>Omni is licensed under the [Business Source License](https://github.com/siderolabs/omni/blob/main/LICENSE) and requires a support contract for production use. Contact [Sidero sales](mailto:sales@siderolabs.com) for a production license.</Note>
 
-For SAML integration sections, this guide assumes Azure AD will be the provider for SAML.
+## Prerequisites
 
-Omni is available via a [Business Source License](https://github.com/siderolabs/omni/blob/main/LICENSE) which allows free installations in non-production environments. If you would like to deploy Omni for production use please contact [Sidero sales](mailto:sales@siderolabs.com?subject=Omni%20license%20inquiry\&body=Hello,%20I%20would%20like%20to%20purchase%20an%20on-prem%20license%20for%20Omni.). If you would like to subscribe to the hosted version of Omni please see the [SaaS pricing](https://www.siderolabs.com/pricing/);
+You will need:
 
-### Prerequisites
+- A Linux host with at least **2 vCPUs and 4 GB RAM**
+- A domain name or IP address for your Omni instance
+- **Docker** installed on the host
+- The following ports open and accessible:
 
-There are several prerequisites for deploying Omni on-prem. We will assume you have an Ubuntu machine available. Any distribution with Docker should work.
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| 443 | TCP | Omni UI and API |
+| 8090 | TCP | SideroLink API |
+| 8091 | TCP | Event sink |
+| 8100 | TCP | Kubernetes proxy |
+| 5556 | TCP | Dex OIDC |
+| 50180 | UDP | WireGuard |
 
-#### Install Docker
+## Step 1: Install Docker
 
-Install Docker according to the Ubuntu installation guide [here](https://docs.docker.com/engine/install/ubuntu/). You will also need the docker compose plugin package if you want to use the example docker compose template.
+Omni and its supporting services run as Docker containers. Follow the [official Docker installation guide](https://docs.docker.com/engine/install/) for your Linux distribution.
 
-```
-curl -L https://get.docker.io | sh
-```
-
-#### Generate certificates
-
-On-prem Omni will require valid SSL certificates. This means that self-signed certs _will not_ work. Generating certificates is left as an exercise to the user, but here is a rough example that was tested using [DigitalOcean's DNS integration](https://certbot-dns-digitalocean.readthedocs.io/en/stable/) with certbot to generate certificates. The process should be very similar for other providers like Route53.
-
-```bash
-# Install certbot
-$ sudo snap install --classic certbot
-
-# Allow for root access
-$ sudo snap set certbot trust-plugin-with-root=ok
-
-# Install DNS provider
-$ snap install certbot-dns-<provider>
-
-# Create creds file with API tokens
-$ echo '<creds example' > creds.ini
-
-# Create certs for desired domain
-$ certbot certonly --dns-<provider> -d <domain name for onprem omni>
-```
-
-### Configure authentication
-
-#### Auth0
-
-Create an [Auth0 account](https://auth0.com/signup).
-
-On the account level, configure "Authentication - Social" to allow GitHub and Google login.
-
-Create an Auth0 application of the type "single page web application".
-
-Configure the Auth0 application with the following:
-
-* Allowed callback URLs: `https://<domain name for onprem omni>`
-* Allowed web origins: `https://<domain name for onprem omni>`
-* Allowed logout URLs: `https://<domain name for onprem omni>`
-
-Disable username/password auth on "Authentication - Database - Applications" tab.
-
-Enable GitHub and Google login on the "Authentication - Social" tab.
-
-Enable email access in the GitHub settings.
-
-Take note of the following information from the Auth0 application:
-
-* Domain
-* Client ID
-
-#### SAML identity providers
-
-Other identity providers also work with Omni. Configuring these should be similar to Auth0.
-
-* [EntraID/Azure AD](../security-and-authentication/using-saml-with-omni/how-to-configure-entraid-for-omni)
-* [Keycloak](./configure-keycloak-for-omni)
-* [Okta](../security-and-authentication/using-saml-with-omni/configure-okta-for-omni)
-* [Workspace ONE Access](../security-and-authentication/using-saml-with-omni/configure-workspace-one-access-for-omni)
-* [Unifi Identity Enterprise](../security-and-authentication/using-saml-with-omni/configure-unifi-identity-enterprise-for-omni)
-
-### Create etcd encryption key
-
-Generate a GPG key:
+After installing, add your user to the `docker` group so you can run Docker without `sudo`:
 
 ```bash
-gpg --quick-generate-key "Omni (Used for etcd data encryption) how-to-guide@siderolabs.com" rsa4096 cert never
+sudo usermod -aG docker $USER
+newgrp docker
 ```
 
-Find the fingerprint of the generated key:
+## Step 2: Install cfssl
+
+`cfssl` generates and signs the TLS certificates used by Omni and Dex.
 
 ```bash
-gpg --list-secret-keys
+CFSSL_VERSION=$(curl -sI https://github.com/cloudflare/cfssl/releases/latest \
+  | grep -i location | awk -F '/' '{print $NF}' | tr -d '\r')
+
+curl -L -o cfssl \
+  https://github.com/cloudflare/cfssl/releases/download/${CFSSL_VERSION}/cfssl_${CFSSL_VERSION#v}_linux_amd64
+curl -L -o cfssljson \
+  https://github.com/cloudflare/cfssl/releases/download/${CFSSL_VERSION}/cfssljson_${CFSSL_VERSION#v}_linux_amd64
+
+chmod +x cfssl cfssljson
+sudo mv cfssl cfssljson /usr/local/bin/
 ```
 
-Using the fingerprint, add an encryption subkey and export:
+## Step 3: Set environment variables
+
+Set variables that define your host's network addresses and the internal hostnames for Omni and Dex. They are referenced throughout the guide, so set them before proceeding.
 
 ```bash
-gpg --quick-add-key <fingerprint> rsa4096 encr never
-gpg --export-secret-key --armor how-to-guide@siderolabs.com > omni.asc
+export HOST_PUBLIC_IP=$(curl -s https://ifconfig.me)
+export HOST_PRIVATE_IP=$(hostname -I | awk '{print $1}')
+export OMNI_ENDPOINT=omni.internal
+export AUTH_ENDPOINT=auth.internal
+export OMNI_USER_EMAIL="admin@omni.internal"
+
+echo "Public IP:  $HOST_PUBLIC_IP"
+echo "Private IP: $HOST_PRIVATE_IP"
 ```
 
-**Note:** Do not add passphrases to keys during creation.
+<Note>If your host does not have a public IP (e.g. a local VM), set `HOST_PUBLIC_IP` to the IP your local machine uses to reach the host.</Note>
 
-### Deploy Omni
+### 3.1: Add internal hostnames to `/etc/hosts`
 
-There are two easy ways to run Omni: docker-compose and a simple `docker run`. We recommend using docker-compose, but both are detailed in separate tabs below.
+Omni and Dex use `.internal` hostnames that are not registered in public DNS. This maps them to localhost so the host can resolve them.
+
+```bash
+echo "127.0.0.1 ${OMNI_ENDPOINT} ${AUTH_ENDPOINT}" | sudo tee -a /etc/hosts
+```
+
+## Step 4: Generate TLS certificates
+
+Omni and Dex communicate over TLS. In this step, you create a root CA and use it to sign a certificate covering both service endpoints. The CA certificate is also distributed to client machines in **Step 9** so their browsers trust the Omni UI.
+
+<Note>If you already have a trusted internal CA, use it to sign the certificate in **Step 4.3** and skip **Steps 4.1 and 4.2**.</Note>
+
+### 4.1: Create the root CA
+
+Run this command to generate a self-signed root CA, the trust anchor for all certificates in this setup.
+
+It produces `ca-key.pem` (private key), `ca.pem` (public cert), and `ca.csr` (signing request).
+
+```bash
+cat <<EOF > ca-csr.json
+{
+  "CN": "Internal Root CA",
+  "key": { "algo": "rsa", "size": 4096 },
+  "names": [{ "C": "US", "O": "Internal Infrastructure", "OU": "Security" }]
+}
+EOF
+
+cfssl gencert -initca ca-csr.json | cfssljson -bare ca
+```
+
+Add the CA to the host's system trust store so services running on this machine trust certificates signed by it:
+
+```bash
+sudo cp ca.pem /usr/local/share/ca-certificates/ca.crt
+sudo update-ca-certificates
+```
+
+### 4.2: Create the signing configuration
+
+Create a signing configuration that tells `cfssl` how to sign certificates. The `web-server` profile is used for Omni and Dex. The `client` profile is used for external etcd authentication.
+
+```bash
+cat <<EOF > ca-config.json
+{
+  "signing": {
+    "default": { "expiry": "8760h" },
+    "profiles": {
+      "web-server": {
+        "usages": ["signing", "key encipherment", "server auth"],
+        "expiry": "8760h"
+      },
+      "client": {
+        "usages": ["signing", "key encipherment", "client auth"],
+        "expiry": "8760h"
+      }
+    }
+  }
+}
+EOF
+```
+
+### 4.3: Generate the server certificate
+
+Generate a single wildcard certificate covering both the Omni and Dex endpoints. Both IPs are included so TLS connections work regardless of whether clients connect by hostname or IP.
+
+```bash
+cat <<EOF > wildcard-csr.json
+{
+  "CN": "Internal Wildcard",
+  "hosts": [
+    "${OMNI_ENDPOINT}",
+    "${AUTH_ENDPOINT}",
+    "127.0.0.1",
+    "${HOST_PUBLIC_IP}",
+    "${HOST_PRIVATE_IP}"
+  ],
+  "key": { "algo": "rsa", "size": 4096 }
+}
+EOF
+```
+
+<Tip>If you plan to use [workload proxy](./enable-workload-proxy), add a wildcard SAN for your proxy domain to the `hosts` array now to avoid regenerating the certificate later. The exact value depends on your domain layout. See [Choose your domain layout](./enable-workload-proxy#step-2-choose-your-domain-layout).</Tip>
+
+Sign the certificate using the CA and configuration from the previous steps:
+
+```bash
+cfssl gencert \
+  -ca=ca.pem \
+  -ca-key=ca-key.pem \
+  -config=ca-config.json \
+  -profile=web-server wildcard-csr.json | cfssljson -bare server
+```
+
+Bundle the server certificate with the CA so clients can verify the full chain:
+
+```bash
+cat server.pem ca.pem > server-chain.pem
+```
+
+This produces `server-key.pem` (private key), `server.pem` (public cert), and `server-chain.pem` (cert bundled with CA). Make them readable by all service users by running:
+
+```bash
+chmod 644 server*.pem
+```
+
+## Step 5: Generate the etcd encryption key
+
+Omni encrypts all data written to etcd at rest using a GPG key. This generates the key and exports it to `omni.asc`, which Omni reads on startup.
+
+<Warning>Do not set a passphrase on this key. Omni reads the key file on startup and cannot prompt for a passphrase interactively.</Warning>
+
+```bash
+gpg --batch --passphrase '' \
+  --quick-generate-key \
+  "Omni (Used for etcd data encryption) omni@internal.local" \
+  rsa4096 cert never
+
+FINGERPRINT=$(gpg --with-colons --list-keys "omni@internal.local" \
+  | awk -F: '$1 == "fpr" {print $10; exit}')
+
+gpg --batch --passphrase '' \
+  --quick-add-key ${FINGERPRINT} rsa4096 encr never
+
+gpg --export-secret-key --armor omni@internal.local > omni.asc
+```
+
+## Step 6: Set up an identity provider
+
+Omni requires an OIDC or SAML identity provider for user authentication. This guide uses [Dex](https://dexidp.io/), configured with a static user. Dex can also act as a proxy to upstream providers such as LDAP, SAML, GitHub, and Okta, see the [Dex connector documentation](https://dexidp.io/docs/connectors/) for details.
+
+If you already have an existing SAML or OIDC provider and want to connect it directly to Omni, skip this step and see [Authentication and Authorization](../security-and-authentication/authentication-and-authorization).
+
+### 6.1: Create a password hash for the admin user
+
+You will be prompted to enter a password. This becomes your Omni login password. The hash is stored in the Dex configuration and never transmitted in plain text.
+
+```bash
+read -rs -p "Enter password for Omni admin user: " OMNI_ADMIN_PASSWORD
+echo
+export OMNI_USER_PASSWORD=$(echo "$OMNI_ADMIN_PASSWORD" | docker run -i --rm httpd:2.4-alpine \
+  htpasswd -inBC 15 admin | cut -d: -f2)
+unset OMNI_ADMIN_PASSWORD
+```
+
+### 6.2: Write the Dex configuration
+
+Create a `dex.yaml` configuration file, which configures Dex to serve OIDC over TLS on port 5556, registers Omni as an OAuth2 client, and creates a single static login user.
+
+```bash
+cat <<EOF > dex.yaml
+issuer: https://${AUTH_ENDPOINT}:5556
+
+storage:
+  type: memory
+
+web:
+  https: 0.0.0.0:5556
+  tlsCert: /etc/dex/tls/server-chain.pem
+  tlsKey: /etc/dex/tls/server-key.pem
+
+enablePasswordDB: true
+
+staticClients:
+  - name: Omni
+    id: omni
+    secret: omni-dex-secret
+    redirectURIs:
+      - https://${OMNI_ENDPOINT}/oidc/consume
+
+staticPasswords:
+  - email: "${OMNI_USER_EMAIL}"
+    username: "admin"
+    preferredUsername: "admin"
+    hash: "${OMNI_USER_PASSWORD}"
+EOF
+```
+
+### 6.3: Run Dex
+
+Start Dex as a container, mounting the configuration file and TLS certificates. The `:Z` flag on volume mounts ensures compatibility with SELinux if it is enabled on your host.
+
+```bash
+docker run -d \
+  --name dex \
+  --restart=unless-stopped \
+  -p 5556:5556 \
+  -v $(pwd)/dex.yaml:/etc/dex/dex.yaml:ro,Z \
+  -v $(pwd)/server-key.pem:/etc/dex/tls/server-key.pem:ro,Z \
+  -v $(pwd)/server-chain.pem:/etc/dex/tls/server-chain.pem:ro,Z \
+  ghcr.io/dexidp/dex:v2.41.1 \
+    dex serve /etc/dex/dex.yaml
+```
+
+## Step 7: Run Omni
+
+In this step you will start the Omni container and connect it to the services you set up in the previous steps: the TLS certificates from **Step 4**, the encryption key from **Step 5**, and the identity provider from **Step 6**.
+
+### 7.1: Get the latest Omni version
+
+Fetch the latest Omni release tag from GitHub and store it in `OMNI_VERSION`:
+
+```bash
+export OMNI_VERSION=$(curl -sI https://github.com/siderolabs/omni/releases/latest \
+  | grep -i location | awk -F '/' '{print $NF}' | tr -d '\r')
+
+echo "Using Omni version: $OMNI_VERSION"
+```
+
+### 7.2: Merge the CA trust bundle
+
+**Step 7.5** mounts a certificate at `/etc/ssl/certs/ca-certificates.crt` so the container trusts the certificate generated in **Step 4**. This path is also the container's system trust store, used to verify TLS connections to external hosts such as the Image Factory. Merge your CA into the image's existing trust bundle so both the internal certificate and the standard public certificate authorities remain trusted:
+
+```bash
+CID=$(docker create ghcr.io/siderolabs/omni:${OMNI_VERSION})
+docker cp $CID:/etc/ssl/certs/ca-certificates ./base-ca-certificates
+docker rm $CID
+
+cat base-ca-certificates ca.pem > combined-ca-certificates.crt
+```
+
+### 7.3: Create the SQLite storage directory
+
+Omni uses SQLite alongside etcd for certain internal state.
+
+This command creates the directory on the host that will be mounted into the container:
+
+```bash
+mkdir -p $HOME/sqlite
+```
+
+### 7.4: Configure EULA acceptance
+
+Self-hosted Omni requires the first user to accept the End User License Agreement (EULA) before the instance can be used. Until the EULA is accepted, all UI and CLI actions are blocked at the API level.
+
+You can accept the EULA programmatically when starting Omni by using CLI flags or a configuration file, or you can complete acceptance through the Omni UI after **Step 9**. Choose the method that best fits your deployment workflow.
+
+<Note>
+If your organization has a separate agreement with Sidero Labs, that agreement takes precedence and the EULA does not apply.
+</Note>
 
 <Tabs>
+  <Tab title="CLI flags">
 
-  <Tab title="Docker Compose">
-    #### Export variables
+  You can pass your EULA details as CLI flags when starting your Omni instance in **Step 7.5**:
 
-    You will need to specify some customizations for your installation. Export these variables with your information to use in the provided templates
+  ```bash
+  --eula-accept-name="John Doe"
+  --eula-accept-email="john@doe.com"
+  ```
+  
+  You can also store this information as environment variables and pass them to your Omni instance. Replace the placeholders with your own values:
 
-  <Info>If you are running multiple Omni instances connected to a shared etcd backend you will need to set the `accountUUID` to a unique value. If you are not using shared backend storage then this option does not need to be unique.</Info>
-
-    <CodeBlock lang="sh">
-      {`export OMNI_VERSION=${omni_release}\nOMNI_ACCOUNT_UUID=$(uuidgen)\nOMNI_DOMAIN_NAME=omni.siderolabs.com\nOMNI_WG_IP=10.10.1.100\nOMNI_ADMIN_EMAIL=omni@siderolabs.com\nAUTH0_CLIENT_ID=xxxyyyzzz\nAUTH0_DOMAIN=dev-aaabbbccc.us.auth0.com
-      `}
-    </CodeBlock>
-
-    #### Download Assets
-
-    To pull down the Omni deployment assets for Docker Compose, simply grab them with curl as follows.
-
-    ```bash
-    curl https://raw.githubusercontent.com/siderolabs/omni/${OMNI_VERSION}/deploy/env.template \
-      | envsubst > omni.env
-
-    curl https://raw.githubusercontent.com/siderolabs/omni/${OMNI_VERSION}/deploy/compose.yaml -o compose.yaml
-    ```
-
-    #### Verify settings
-
-    Open the omni.env file to check that all of your variables have been set to your environment requirements.
-
-    #### Run It!
-
-    With your environment file in hand, it's now time to run Omni. This can be done with a simple docker compose command:
-
-    ```
-    docker compose --env-file omni.env up -d
-    ```
+  ```bash
+  export EULA_NAME="Your Name"
+  export EULA_EMAIL="your@email.com"
+  ```
 
   </Tab>
+  <Tab title="Configuration file">
 
-  <Tab title="Docker Run" >
-    Deploying with a `docker run` is quite straight forward, with only some slight differences depending on the auth mechanism in use.
+  If you prefer to configure EULA acceptance using the Omni configuration file, and you are passing the configuration using the `--config-path` flag, add the following to your configuration file instead. Replace the placeholders with your own values:
+ 
+  ```yaml
+  eulaAccept:
+    name: Your Name
+    email: your@email.com
+  ```
+ 
+  See the [Omni configuration reference](../reference/omni-configuration) for the full list of supported options.
+  
+  </Tab>
+  <Tab title="UI">
+  If you prefer to accept the EULA through the browser, skip this step and continue to **Step 7.5** without the EULA flags.
 
-    #### Auth0
+  When you open the Omni UI in **Step 9.4**, Omni redirects you to `/eula`, where you must complete EULA acceptance before you can log in.
+  </Tab>
+</Tabs>
 
-    ```bash
-    docker run \
-      --net=host \
-      --cap-add=NET_ADMIN \
-      --device /dev/net/tun \
-      -v $PWD/etcd:/_out/etcd \
-      -v <path to TLS certificate>:/tls.crt \
-      -v <path to TLS key>:/tls.key \
-      -v $PWD/omni.asc:/omni.asc \
-      ghcr.io/siderolabs/omni:<tag> \
-        --account-id=$(uuidgen) \
-        --name=onprem-omni \
-        --cert=/tls.crt \
-        --key=/tls.key \
-        --siderolink-api-cert=/tls.crt \
-        --siderolink-api-key=/tls.key \
-        --private-key-source=file:///omni.asc \
-        --event-sink-port=8091 \
-        --bind-addr=0.0.0.0:443 \
-        --siderolink-api-bind-addr=0.0.0.0:8090 \
-        --k8s-proxy-bind-addr=0.0.0.0:8100 \
-        --advertised-api-url=https://<domain name for onprem omni>/ \
-        --siderolink-api-advertised-url=https://<domain name for onprem omni>:8090/ \
-        --siderolink-wireguard-advertised-addr=<ip address of the host running Omni>:50180 \
-        --advertised-kubernetes-proxy-url=https://<domain name for onprem omni>:8100/ \
-        --auth-auth0-enabled=true \
-        --auth-auth0-domain=<Auth0 domain> \
-        --auth-auth0-client-id=<Auth0 client ID> \
-        --initial-users=<email address>
-    ```
+### 7.5: Start Omni
 
-    **Note:** The `siderolink-wireguard-advertised-addr` **must** point to an IP, not the domain name.
+Choose the etcd mode that matches your setup. Embedded etcd is suitable for a single Omni instance. External etcd is required for high availability or if you need to manage the datastore independently.
 
-    **Note:** you can omit the `--cert`, `--key`, `--siderolink-api-cert`, and `--siderolink-api-key` flags to run Omni insecurely.
+The commands below use CLI flags to start Omni. If you prefer to use a configuration file instead, see [Omni configuration Examples](../reference/omni-configuration).
 
-    Configuration options are available in the help menu (`--help`).
+<Tabs>
+  <Tab title="Embedded etcd (default)">
 
-    #### SAML
+  Omni uses embedded etcd for cluster state. This command creates the directory on the host that will be mounted into the container:
 
-    ```bash
-    docker run \
-      --net=host \
-      --cap-add=NET_ADMIN \
-      --device /dev/net/tun \
-      -v $PWD/etcd:/_out/etcd \
-      -v <path to full chain TLS certificate>:/tls.crt \
-      -v <path to TLS key>:/tls.key \
-      -v $PWD/omni.asc:/omni.asc \
-      ghcr.io/siderolabs/omni:<tag> \
-        --account-id=$(uuidgen) \
-        --name=onprem-omni \
-        --cert=/tls.crt \
-        --key=/tls.key \
-        --siderolink-api-cert=/tls.crt \
-        --siderolink-api-key=/tls.key \
-        --private-key-source=file:///omni.asc \
-        --event-sink-port=8091 \
-        --bind-addr=0.0.0.0:443 \
-        --siderolink-api-bind-addr=0.0.0.0:8090 \
-        --k8s-proxy-bind-addr=0.0.0.0:8100 \
-        --advertised-api-url=https://<domain name for onprem omni>/ \
-        --siderolink-api-advertised-url=https://<domain name for onprem omni>:8090/ \
-        --siderolink-wireguard-advertised-addr=<ip address of the host running Omni>:50180 \
-        --advertised-kubernetes-proxy-url=https://<domain name for onprem omni>:8100/ \
-        --auth-saml-enabled=true \
-        --auth-saml-url=<app federation metadata url copied during Azure AD setup>
-    ```
+  ```bash
+  mkdir -p $HOME/etcd
+  ```
 
-    **Note**
+  With the etcd directory in place, start the Omni container:
 
-    In a default setup, the first user that logs in via SAML will be the “admin”. All subsequent users will receive a read-only role and may need to be granted additional access by the admin user from the “Users” tab in Omni.
+  ```bash
+  docker run -d \
+    --name omni \
+    --net=host \
+    --cap-add=NET_ADMIN \
+    --device /dev/net/tun:/dev/net/tun \
+    --restart=unless-stopped \
+    -v $(pwd)/combined-ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro,Z \
+    -v $(pwd)/server-key.pem:/server-key.pem:ro,Z \
+    -v $(pwd)/server-chain.pem:/server-chain.pem:ro,Z \
+    -v $(pwd)/omni.asc:/omni.asc:ro,Z \
+    -v $HOME/etcd:/_out/etcd:rw,Z \
+    -v $HOME/sqlite:/_out/sqlite:rw,Z \
+    ghcr.io/siderolabs/omni:${OMNI_VERSION} \
+      --name=omni \
+      --cert=/server-chain.pem \
+      --key=/server-key.pem \
+      --machine-api-cert=/server-chain.pem \
+      --machine-api-key=/server-key.pem \
+      --machine-api-bind-addr=0.0.0.0:8090 \
+      --private-key-source=file:///omni.asc \
+      --event-sink-port=8091 \
+      --bind-addr=0.0.0.0:443 \
+      --k8s-proxy-bind-addr=0.0.0.0:8100 \
+      --advertised-api-url=https://${OMNI_ENDPOINT}/ \
+      --siderolink-api-advertised-url=https://${OMNI_ENDPOINT}:8090/ \
+      --siderolink-wireguard-advertised-addr=${HOST_PUBLIC_IP}:50180 \
+      --advertised-kubernetes-proxy-url=https://${OMNI_ENDPOINT}:8100/ \
+      --auth-auth0-enabled=false \
+      --auth-oidc-enabled=true \
+      --auth-oidc-provider-url=https://${AUTH_ENDPOINT}:5556 \
+      --auth-oidc-client-id=omni \
+      --auth-oidc-client-secret=omni-dex-secret \
+      --auth-oidc-scopes=openid \
+      --auth-oidc-scopes=profile \
+      --auth-oidc-scopes=email \
+      --sqlite-storage-path=/_out/sqlite/omni.db \
+      --initial-users=${OMNI_USER_EMAIL} \
+      --eula-accept-name="${EULA_NAME}" \
+      --eula-accept-email="${EULA_EMAIL}"
+  ```
+  </Tab>
+  <Tab title="External etcd">
 
-    #### OIDC
+  Use this if you have a completed external etcd cluster. See [Run an etcd Cluster On-Prem](./run-an-etcd-cluster) to set one up first.
 
-    ```bash
-    docker run \
-      --net=host \
-      --cap-add=NET_ADMIN \
-      --device /dev/net/tun \
-      -v $PWD/etcd:/_out/etcd \
-      -v <path to full chain TLS certificate>:/tls.crt \
-      -v <path to TLS key>:/tls.key \
-      -v $PWD/omni.asc:/omni.asc \
-      ghcr.io/siderolabs/omni:<tag> \
-        --account-id=$(uuidgen) \
-        --name=onprem-omni \
-        --cert=/tls.crt \
-        --key=/tls.key \
-        --siderolink-api-cert=/tls.crt \
-        --siderolink-api-key=/tls.key \
-        --private-key-source=file:///omni.asc \
-        --event-sink-port=8091 \
-        --bind-addr=0.0.0.0:443 \
-        --siderolink-api-bind-addr=0.0.0.0:8090 \
-        --k8s-proxy-bind-addr=0.0.0.0:8100 \
-        --advertised-api-url=https://<domain name for onprem omni>/ \
-        --siderolink-api-advertised-url=https://<domain name for onprem omni>:8090/ \
-        --siderolink-wireguard-advertised-addr=<ip address of the host running Omni>:50180 \
-        --advertised-kubernetes-proxy-url=https://<domain name for onprem omni>:8100/ \
-        --auth-oidc-enabled \
-        --auth-oidc-provider-url <URL of the OIDC provider> \
-        --auth-oidc-client-id <id copied from the OIDC provider> \
-        --auth-oidc-client-secret <secret copied from the OIDC provider> \
-        --auth-oidc-logout-url <logout URL, optional, copied from the OIDC provider> \
-        --auth-oidc-scopes openid \
-        --auth-oidc-scopes profile \
-        --auth-oidc-scopes email
-    ```
+  Set the private IPs of your etcd nodes.
 
-    **Note**
+  ```bash
+  export ETCD1_IP=<etcd-node-1-private-ip>
+  export ETCD2_IP=<etcd-node-2-private-ip>
+  export ETCD3_IP=<etcd-node-3-private-ip>
+  ```
 
-    The `siderolink-wireguard-advertised-addr` **must** point to an IP, not the domain name.
+  Start Omni with the external etcd flags. The `--etcd-embedded=false` flag disables the internal etcd instance. The `--etcd-endpoints` flag lists all three nodes so Omni can fail over automatically if one goes down:
 
-    **Note**
-
-    Note that you can omit the `--cert`, `--key`, `--siderolink-api-cert`, and `--siderolink-api-key` flags to run Omni insecurely.
-
-    Configuration options are available in the help menu (`--help`).
+  ```bash
+  docker run -d \
+    --name omni \
+    --net=host \
+    --cap-add=NET_ADMIN \
+    --device /dev/net/tun:/dev/net/tun \
+    --restart=unless-stopped \
+    -v $(pwd)/combined-ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro,Z \
+    -v $(pwd)/server-key.pem:/server-key.pem:ro,Z \
+    -v $(pwd)/server-chain.pem:/server-chain.pem:ro,Z \
+    -v $(pwd)/omni.asc:/omni.asc:ro,Z \
+    -v $HOME/etcd-certs/ca.pem:/etcd/ca.crt:ro,Z \
+    -v $HOME/etcd-certs/client.pem:/etcd/client.crt:ro,Z \
+    -v $HOME/etcd-certs/client-key.pem:/etcd/client.key:ro,Z \
+    -v $HOME/sqlite:/_out/sqlite:rw,Z \
+    ghcr.io/siderolabs/omni:${OMNI_VERSION} \
+      --name=omni \
+      --cert=/server-chain.pem \
+      --key=/server-key.pem \
+      --machine-api-cert=/server-chain.pem \
+      --machine-api-key=/server-key.pem \
+      --machine-api-bind-addr=0.0.0.0:8090 \
+      --private-key-source=file:///omni.asc \
+      --event-sink-port=8091 \
+      --bind-addr=0.0.0.0:443 \
+      --k8s-proxy-bind-addr=0.0.0.0:8100 \
+      --advertised-api-url=https://${OMNI_ENDPOINT}/ \
+      --siderolink-api-advertised-url=https://${OMNI_ENDPOINT}:8090/ \
+      --siderolink-wireguard-advertised-addr=${HOST_PUBLIC_IP}:50180 \
+      --advertised-kubernetes-proxy-url=https://${OMNI_ENDPOINT}:8100/ \
+      --etcd-embedded=false \
+      --etcd-endpoints=https://${ETCD1_IP}:2379,https://${ETCD2_IP}:2379,https://${ETCD3_IP}:2379 \
+      --auth-auth0-enabled=false \
+      --auth-oidc-enabled=true \
+      --auth-oidc-provider-url=https://${AUTH_ENDPOINT}:5556 \
+      --auth-oidc-client-id=omni \
+      --auth-oidc-client-secret=omni-dex-secret \
+      --auth-oidc-scopes=openid \
+      --auth-oidc-scopes=profile \
+      --auth-oidc-scopes=email \
+      --sqlite-storage-path=/_out/sqlite/omni.db \
+      --initial-users=${OMNI_USER_EMAIL} \
+      --eula-accept-name="${EULA_NAME}" \
+      --eula-accept-email="${EULA_EMAIL}"
+  ```
 
   </Tab>
 </Tabs>
+
+## Step 8: Verify services are running
+
+Check that both Omni and Dex containers started successfully:
+
+```bash
+docker ps --format "table {{.Names}}\t{{.Status}}"
+```
+
+**Expected output:**
+
+```
+NAMES    STATUS
+omni     Up X minutes
+dex      Up X minutes
+```
+
+Confirm Omni is serving on port 443:
+
+```bash
+curl -k https://127.0.0.1:443
+```
+
+This should return the Omni HTML page.
+
+## Step 9: Access the Omni UI
+
+Omni is running on your host, but your local machine does not yet trust the CA certificate or know how to resolve the internal hostnames. The steps below set that up.
+
+### 9.1: Copy the CA certificate to your local machine
+
+Copy `ca.pem` from the host to your local machine. You will install it as a trusted root in the next step.
+
+<Tabs>
+  <Tab title="AWS">
+
+  Replace `<HOST_PUBLIC_IP>` with your instance's public IP and `~/path/to/your-key.pem` with your SSH key path.
+
+  ```bash
+  scp -i ~/path/to/your-key.pem ubuntu@<HOST_PUBLIC_IP>:~/ca.pem ~/Downloads/ca.pem
+  ```
+  </Tab>
+  <Tab title="GCP">
+
+  Replace `<instance-name>` and `<your-zone>` with your GCP instance name and zone.
+
+  ```bash
+  gcloud compute scp <instance-name>:~/ca.pem ~/Downloads/ca.pem --zone=<your-zone>
+  ```
+  </Tab>
+  <Tab title="DigitalOcean / Bare metal / Local VM">
+
+  Replace `<HOST_PUBLIC_IP>` with your host's IP.
+
+  ```bash
+  scp ubuntu@<HOST_PUBLIC_IP>:~/ca.pem ~/Downloads/ca.pem
+  ```
+  </Tab>
+</Tabs>
+
+### 9.2: Trust the CA certificate
+
+Add the CA to your local machine's system trust store. This tells your browser and OS to trust TLS certificates signed by this CA, including the Omni and Dex endpoints.
+
+<Tabs>
+  <Tab title="Linux (RHEL)">
+  On Red Hat and Fedora based distros you can copy the `ca.pem` file into the `/etc/pki/ca-trust/source/anchors/` folder and then run the following command to generate the trusted root store:
+
+  ```bash
+  sudo cp ca.pem /etc/pki/ca-trust/source/anchors/
+  sudo update-ca-trust
+  ```
+  </Tab>
+  <Tab title="Linux (Ubuntu)">
+  On Ubuntu and Debian based Linux distros you can copy the `ca.pem` file into the `/usr/local/share/ca-certificates/` directory and rename it to `ca.crt`
+
+  ```bash
+  sudo cp ca.pem /usr/local/share/ca-certificates/ca.crt
+  sudo update-ca-certificates
+  ```
+  </Tab>
+  <Tab title="macOS">
+  For macOS you should open the *Keychain Access* application and drag the `ca.pem` file into the window to install it.
+  </Tab>
+  <Tab title="Windows">
+  On Windows you should rename the certificate extension from `.pem` to `.crt`. You can then double click on the file and select *Install Certificate* -> *Local Machine*. You then need to select "Place all certificates in the following store" and select the *Trusted Root Certification Authorities*.
+
+  If you're using Windows Subsystem for Linux (WSL) you should follow the Linux guide for installing the certificate.
+  </Tab>
+</Tabs>
+
+### 9.3: Add internal hostnames to your local hosts file
+
+Map the Omni and Dex hostnames to your host's public IP so your local machine can resolve them. Replace `<HOST_PUBLIC_IP>` with your host's public IP.
+
+<Tabs>
+  <Tab title="macOS / Linux">
+
+  ```bash
+  sudo sh -c 'echo "<HOST_PUBLIC_IP>  omni.internal auth.internal" >> /etc/hosts'
+  ```
+
+  </Tab>
+  <Tab title="Windows">
+
+  Add the following line to `C:\Windows\System32\drivers\etc\hosts`:
+
+  ```
+  <HOST_PUBLIC_IP>  omni.internal auth.internal
+  ```
+
+  </Tab>
+</Tabs>
+
+### 9.4: Log into Omni
+
+Open `https://omni.internal` in your browser and sign in with the email and password you set in **Step 6.2**.

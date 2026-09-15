@@ -3,6 +3,7 @@ title: "NVIDIA Fabric Manager"
 description: "In this guide we'll follow the procedure to enable NVIDIA Fabric Manager."
 aliases:
   - ../../guides/nvidia-fabricmanager
+canonical: https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/hardware-and-drivers/nvidia-fabricmanager
 ---
 
 import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
@@ -41,6 +42,6 @@ machine:
       - name: nvidia_uvm
       - name: nvidia_drm
       - name: nvidia_modeset
-  sysctls:
-    net.core.bpf_jit_harden: 1
+      # If you have an NVIDIA baseboard (like a DGX B200), also load the infiniband module:      
+      #- name: ib_umad
 ```

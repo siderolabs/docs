@@ -3,6 +3,7 @@ title: "Upgrading Talos Linux"
 description: "Guide to upgrading a Talos Linux machine."
 aliases:
   - ../guides/upgrading-talos
+canonical: https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/lifecycle-management/upgrading-talos
 ---
 
 import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
@@ -63,7 +64,7 @@ as:
 
 <CodeBlock lang="sh">
 {`
-  $ talosctl upgrade --nodes 10.20.30.40 \\
+  talosctl upgrade --nodes 10.20.30.40 \\
   --image ghcr.io/siderolabs/installer:${release_v1_12}
 `}
 </CodeBlock>

@@ -93,7 +93,7 @@ navigation:
             - "interactive-dashboard.mdx"
             - "scaling-up.mdx"
             - "scaling-down.mdx"
-            - "workers-on-controlplane.mdx"
+            - "workloads-on-controlplane.mdx"
 
         - group: "Networking"
           folder: "talos/v1.9/networking"
@@ -153,6 +153,7 @@ navigation:
                 - "system-configuration/performance-tuning"
                 - "system-configuration/time-sync"
                 - "system-configuration/discovery"
+                - "system-configuration/kubeprism"
                 - "system-configuration/reproducible-machine-configuration"
                 - "system-configuration/insecure"
             - group: "Images & Container Runtime"

@@ -5,25 +5,58 @@ description: Set up your first Talos cluster with Omni.
 
 import { version } from '/snippets/custom-variables.mdx';
 
-This guide walks you through creating a high-availability Kubernetes cluster managed by [Omni](https://www.siderolabs.com/omni/) using [Talos Linux](https://talos.dev).  
+This guide walks you through creating a high-availability Kubernetes cluster managed by [Omni](https://www.siderolabs.com/omni/) using [Talos Linux](https://talos.dev).
 While the example uses UTM/QEMU for local virtualization, the same process applies to bare metal machines, cloud instances, or edge devices.
 
-If you prefer a visual walkthrough, you can follow this short video tutorial:
+If you just want to evaluate Omni quickly, you can register a few disposable local machines with Omni in minutes, then build a cluster from them, before working through the full guide.
 
-<iframe 
+<Accordion title="Try Omni out in ~5 minutes locally">
+  Want to evaluate Omni without provisioning real machines? On macOS or Linux you can boot throwaway VMs locally with QEMU and register them with your Omni instance.
+
+  <Note>This is a local trial path for evaluation only. For bare metal, cloud, or edge deployments, see the rest of this guide.</Note>
+
+  You'll need `talosctl` 1.12+ and `omnictl` installed:
+
+  ```bash
+    brew tap siderolabs/tap
+    brew trust siderolabs/tap
+    brew install siderolabs/tap/sidero-tools
+  ```
+
+  Boot temporary VMs that auto-register with Omni as available machines:
+
+  ```bash
+    sudo -E talosctl cluster create qemu \
+      --name talos-omni-cluster-default  \
+      --omni-api-endpoint $(omnictl jointoken omni-endpoint) \
+      --workers 0 --controlplanes 3
+  ```
+
+  After a minute or two, the VMs appear under **Machines** in your Omni dashboard as *available* machines, they aren't a cluster yet. Continue to [Step 3: Create cluster](#step-3-create-cluster) to build a cluster from them.
+
+  **Tear down** when you're done:
+
+  ```bash
+    sudo -E talosctl cluster destroy --name talos-omni-cluster-default
+  ```
+</Accordion>
+
+For a visual walkthrough of the full setup covered in this guide, see the video below:
+
+<iframe
   className="w-full aspect-video rounded-xl"
-  src="https://www.youtube.com/embed/0gPF0_fLins?si=GxvIplSRlN0v68qs" 
-  title="YouTube video player" 
-  frameborder="0" 
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" 
-  allowfullscreen>  
+  src="https://www.youtube.com/embed/0gPF0_fLins?si=GxvIplSRlN0v68qs"
+  title="YouTube video player"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin"
+  allowfullscreen>
 </iframe>
 
 ## Prerequisites
 
 You must have the following to create a cluster with Omni:
 
-- **Network access**: Your machines must have outbound internet access and be able to reach the **WireGuard endpoint** shown on your Omni Home panel.  
+- **Network access**: Your machines must have outbound internet access and be able to reach the **WireGuard endpoint** shown on your Omni Home panel.
 
     This endpoint lists an IP address and port (e.g., `199.99.99.100:10001`) that nodes connect to.
 
@@ -38,74 +71,77 @@ You must have the following to create a cluster with Omni:
 - **CLI tools**: To work effectively with Omni, you’ll need the CLI tools `omnictl`, `talosctl`, and `kubelogin`. Download `talosctl`, `kubectl`, `kubectl-oidc-login`, and `omnictl` for macOS and Linux systems by running this command:
 
   ```bash
-  brew install siderolabs/tap/sidero-tools
+    brew tap siderolabs/tap
+    brew trust siderolabs/tap
+    brew install siderolabs/tap/sidero-tools
   ```
 
   For manual and Windows installation, refer to the <a href={`../../talos/${version}/getting-started/talosctl#alternative-install`}>alternate installation methods</a> in the Talos documentation.
 
-- `talosconfig` **and** `omniconfig` **files**: Download the `talosconfig` and `omniconfig` configuration files from your Omni dashboard.
-
-  These files let you manage your Talos nodes and connect to Omni from your local environment.
-
-  ![Talosconfig and Omniconfig](./images/getting-started-talosconfig-omniconfig.png)
-
-  Alternatively, you can download the `talosconfig` file from the CLI by running the following command. 
-  Replace the `<cluster-name>` placeholder with your cluster’s name:
-
-  ```bash
-  omnictl talosconfig --cluster <cluster-name>
-  ```
-
-  Once you’ve set up these prerequisites, you can move on to creating your cluster with Omni.
-
 ## Step 1: Download installation media
 
-Omni is a Bring Your Own Machine platform. You only need to boot a machine from a Talos image configured to connect to your Omni instance.
+Omni is a Bring Your Own Machine platform. You only need to boot a machine from a Talos Omni image configured to connect to your Omni instance.
 
-You can download this Omni image from either the Omni UI or the CLI:
+You can download the Talos Omni image using either the CLI or the Omni UI:
+
+<Note>For Omni accounts that include a Talos Enterprise Linux entitlement (Talos 1.13 and later), your images and artifacts are served from Enterprise Image Factory.</Note>
 
 <Tabs>
-<Tab title="Omni UI">
-To download the Omni image from the Omni dashboard:
+  <Tab title="CLI">
 
-1. Log in to your Omni dashboard.
-2. Click the **Download Installation Media** button to open its modal.
+  To download a Talos Omni image, you must first create a preset. A preset is a saved configuration for generating installation media. The default preset produces a bare metal amd64 ISO. To customize the architecture, platform, or extensions, see the [CLI reference](/omni/reference/cli#omnictl-media-preset-create).
 
-![Download Installation Media](./images/getting-started-installation-media.png)
+  <Note>`omnictl media` requires Omni v1.8.0 or later.</Note>
 
-3. Choose the appropriate image for your machine.
+  ```bash
+  omnictl media preset create my-preset
+  omnictl media download my-preset
+  ```
 
-![Appropriate Omni image](./images/getting-started-appropriate-image.png)
+  Presets persist in Omni after the image is downloaded. When you no longer need the preset, delete it:
 
-4. Click **Download** to begin downloading the Omni image.
+  ```bash
+  omnictl media preset delete my-preset
+  ```
 
-</Tab>
-<Tab title="CLI">
+  </Tab>
 
-Run this command to download the installation media:
+  <Tab title="Omni UI">
 
-```bash
-omnictl download iso
-```
-</Tab>
+  To download the Talos Omni image from the Omni dashboard:
+
+  1. Log in to your Omni dashboard.
+  2. Click the **Download Installation Media** button to open the **Create New Media** wizard.
+
+  ![Download Installation Media](./images/getting-started-installation-media.png)
+
+  3. On each page of the **Create New Media** wizard, select the appropriate options for your setup, then click **Next** to continue.
+
+     The **Create New Media** wizard is identical to the [Image Factory](https://factory.talos.dev/) and it is split across multiple pages. Each page presents a different set of configuration options, such as architecture, hardware type, and Talos Linux version, that you can use to customize your Talos Omni image.
+
+  4. Select the appropriate boot option for your machine on the Schematic Ready page to download the Talos Omni image.
+
+  <Note>For Omni accounts with a Talos Enterprise Linux entitlement, the Schematic Ready page also shows a **Vulnerability Scan** section with the CVE count after VEX suppression, and a link to download the full report.</Note>
+
+  </Tab>
 </Tabs>
-
-> **Note**: Some platforms (like cloud providers) require additional steps to import the image, for example, uploading to an S3 bucket or creating a VM image. Follow the platform-specific instructions if prompted.
 
 ## Step 2: Boot your machines
 
-Boot each machine you want to add to the cluster using the Omni image you downloaded in Step 1.
+Boot each machine you want to add to the cluster using the Omni image you downloaded in **Step 1**.
 
 After the machines have booted, they’ll appear in the **Machines** section.
 
 Depending on your environment, you can use the following methods:
 
+<Note>If your environment is not listed here, see the [Register machines with Omni documentation](../omni-cluster-setup/registering-machines/register-machines-with-omni) for more details</Note>
+
 <Tabs>
 <Tab title="Local (QEMU / UTM)">
-To create temporary VMs on your local system (requires Talosctl v1.12+), replace the `$COPY_FROM_OMNI` placeholder with the API endpoint from your Omni dashboard, then run:
+To create temporary VMs on your local system (requires Talosctl v1.12+):
 
 ```bash
-talosctl cluster create qemu --omni-api-endpoint $COPY_FROM_OMNI
+talosctl cluster create qemu --omni-api-endpoint $(omnictl jointoken omni-endpoint) --workers 0 --controlplanes 3
 ```
 This command boots virtual machines locally and connects them to your Omni instance.
 </Tab>
@@ -114,13 +150,11 @@ If you have `omnictl` configured, you can create EC2 instances directly:
 
 ```bash
 aws ec2 run-instances \
-  --image-id $(aws ec2 describe-images --owners 540036508848 \
-  --filters "Name=architecture,Values=x86_64" \
-  --query "Images[0].ImageId" --output text) \
-  --count 3 \
-  --instance-type t3.small \
-  --associate-public-ip-address \
-  --user-data "$(omnictl jointoken machine-config)"
+    --image-id $(aws ec2 describe-images --owners 540036508848     --filters "Name=architecture,Values=x86_64"     --query 'Images | sort_by(@, &CreationDate) | reverse(@) | [?!contains(Name, `beta`) && !contains(Name, `alpha`) && !contains(Name, `Beta`) && !contains(Name, `Alpha`)] | [0].[ImageId]'     --output text) \
+    --count 3 \
+    --instance-type t3.small   \
+    --associate-public-ip-address \
+    --user-data "$(omnictl jointoken machine-config)"
 ```
 
 This launches three EC2 instances that automatically join your Omni cluster.
@@ -139,9 +173,15 @@ This runs the SideroLabs Booter utility, which provisions PXE-booted machines us
 </Tab>
 </Tabs>
 
+<Warning>
+**Machine not appearing?** Verify that the machine has outbound access to **UDP** (the WireGuard port shown on your Omni Home panel) and **TCP 443**. If a firewall or NAT rule blocks either port, the machine will not be able to register. For more information, see the [Prerequisites](#prerequisites) section and the [Omni Firewall and Egress Requirements](../omni-cluster-setup/omni-firewall-egress-requirement) documentation.
+</Warning>
+
 ## Step 3: Create cluster
 
-Now that your machines are visible in Omni, you can create your cluster by following these steps:
+Now that your machines are visible in Omni, you can create your cluster either via the UI or cluster templates. Refer to the [create a cluster documentation](./create-a-cluster) for information on how to create a cluster template.
+
+To create a cluster via the Omni UI by following these steps:
 
 1. In the Omni sidebar, go to **Clusters** → **Create Cluster**.
 
@@ -154,7 +194,7 @@ Now that your machines are visible in Omni, you can create your cluster by follo
 3. (Optional) Add configuration patches. See [Create a Patch for Cluster Machines](../omni-cluster-setup/create-a-patch-for-cluster-machines) to learn how to create and apply patches.
 
 4. Under the **Available Machines** section, select at least one machine as a control plane by clicking **CP**.
-    
+
   <Note>For high availability, use an odd number of control plane nodes. We suggest using 3 nodes.</Note>
 
     ![Control Plane button](./images/getting-started-control-plane.jpeg)
@@ -167,23 +207,42 @@ Now that your machines are visible in Omni, you can create your cluster by follo
 
 You’ll be redirected to the **Cluster Overview** page, where you can monitor the cluster’s creation progress.
 
-## Step 4: Download the `kubeconfig` file
+<Warning>
+If the cluster remains in a pending or provisioning state after you click Create Cluster, check the following:
 
-Click the **⋯** button next to your cluster, then select **Download kubeconfig** to download the file.
+- **Machine connectivity**: Verify that all selected machines are still connected in the Machines list.
+- **etcd quorum**: For a 3-node control plane, all three nodes must be healthy before etcd can establish quorum. If one or more nodes are unavailable, cluster creation will stall.
+- **Node startup**: Newly provisioned nodes may take a minute or two to finish booting and become ready to join the cluster.
 
-![Download kubeconfig](./images/getting-started-download-kubeconfig.png)
+If the issue persists, see the cluster [troubleshooting documentation](../troubleshooting/troubleshooting).
+</Warning>
 
-Alternatively, you can download the `kubeconfig` file from your CLI with this command:
+## Step 4: Download the `talosconfig` and `omniconfig` configuration files
+
+Download the `talosconfig` and `omniconfig` configuration files from your Omni dashboard.
+
+These files let you manage your Talos nodes and connect to Omni from your local environment.
+
+![Talosconfig and Omniconfig](./images/getting-started-talosconfig-omniconfig.png)
+
+**Alternatively**, you can download the `talosconfig` file from the CLI by running the following command.
+Replace the `<cluster-name>` placeholder with your cluster’s name:
 
 ```bash
-omnictl kubeconfig --cluster <cluster-name>
+omnictl talosconfig --cluster <cluster-name>
 ```
 
-Replace the `<cluster-name>` placeholder with the name of your cluster.
+## Step 5: Download the `kubeconfig` file
 
-## Step 5: Merge your configuration
+To make `omnictl`, `talosctl`, and `kubectl` automatically detect your cluster configuration:
 
-To make `omnictl`, `talosctl`, and `kubectl` automatically detect your cluster configuration, merge each configuration file into its default location:
+1. Export your cluster name in a variable, replacing the `<cluster-name>` variable with your name of the cluster:
+
+```bash
+export CLUSTER_NAME=<cluster-name>
+```
+
+2. Merge each configuration file into its default location:
 
 ```bash
 # Merge Omni configuration
@@ -192,9 +251,8 @@ omnictl config merge $HOME/Downloads/omniconfig.yaml
 # Merge Talos configuration
 talosctl config merge $HOME/Downloads/talosconfig.yaml
 
-# Merge kubeconfig (combine and flatten)
-export KUBECONFIG=~/.kube/config:$HOME/Downloads/talos-default-kubeconfig.yaml
-kubectl config view --flatten > ~/.kube/config
+# Merge kubeconfig
+omnictl kubeconfig --cluster $CLUSTER_NAME
 ```
 
 ## Step 6: Access your Kubernetes cluster
@@ -205,9 +263,42 @@ Once your cluster is created, you can confirm that your nodes are registered in 
 kubectl get nodes
 ```
 
-> **Note**: The first time you run `kubectl`, a browser window will open prompting you to sign in with your identity provider (Google or GitHub).
-> 
-> If you see the error `error: unknown command "oidc-login"`, ensure you’ve installed the kubectl-oidc-login plugin as described in the [prerequisites section](#install-cli-tools).
+The first time you run `kubectl`, a browser window will open prompting you to sign in with your identity provider (Google or GitHub).
+
+If you see the error `error: unknown command "oidc-login"`, ensure you’ve installed the kubectl-oidc-login plugin as described in the [prerequisites section](#prerequisites).
+
+<Note>If your Omni account includes a Talos Enterprise Linux entitlement, you can access vulnerability reports for your cluster. See [Use Talos Enterprise Linux with Omni](../../talos-enterprise-linux/working-with-talos-enterprise-linux/use-talos-enterprise-linux-with-omni).</Note>
+
+## Step 7: Deploy your first workload
+
+To run your first application on the cluster:
+
+1. Deploy a sample application:
+
+```bash
+ kubectl apply -f \
+    https://raw.githubusercontent.com/siderolabs/example-workload/refs/heads/main/deploy/example-svc-nodeport.yaml
+```
+
+2. Verify that the pods and services are running:
+
+```bash
+kubectl get pods,services
+```
+
+3. Forward the service port to your local machine:
+
+```bash
+kubectl port-forward svc/example-workload 8080:8080
+```
+
+4. To view the application, open [http://localhost:8080](http://localhost:8080) in your browser or run:
+
+```bash
+curl http://localhost:8080
+```
+
+For a more complete example of a production-style cluster, including a monitoring stack, GitOps-based application management, and supporting infrastructure, see the examples in our [community contrib repo](https://github.com/siderolabs/contrib/blob/main/examples/omni).
 
 ## Explore Omni
 
@@ -217,21 +308,8 @@ From here, you can explore what else Omni can do, such as:
 
 * [etcd backup and restores](../cluster-management/etcd-backups)
 * [Omni cluster upgrades](../cluster-management/upgrading-clusters)
-* [Expose an HTTP service from a cluster](../cluster-management/expose-an-http-service-from-a-cluster)
+* [Expose a Workload via Service Proxy](../cluster-management/expose-a-workload-via-service-proxy)
 * [Scale your clusters up or down](../cluster-management/scale-your-cluster/scale-a-cluster-up-or-down)
 * [Machine classes](../omni-cluster-setup/create-a-machine-class)
 * [Cluster templates](../reference/cluster-templates)
 * [Infrastructure providers](../infrastructure-and-extensions/infrastructure-providers)
-
-## Example: Deploy a Kubernetes workload on your Omni cluster
-
-You can find an example of a more advanced managed cluster, complete with a monitoring stack and application management, in our [community contrib repo](https://github.com/siderolabs/contrib/blob/main/examples/omni).
-
-This example includes components such as:
-
-* [Cilium](https://cilium.io/get-started/) for cluster networking
-* [Hubble](https://docs.cilium.io/en/stable/gettingstarted/hubble\_intro/) for network observability
-* [ArgoCD](https://argo-cd.readthedocs.io/en/stable/) for application management
-* [Rook/Ceph](https://rook.io/docs/rook/latest-release/Getting-Started/intro/) for persistent storage
-* [Prometheus](https://prometheus.io/docs/introduction/overview/) for metrics collection and alerting
-* [Grafana](https://grafana.com/docs/grafana/latest/introduction/) for metrics visualization

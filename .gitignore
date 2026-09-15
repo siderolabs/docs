@@ -1,6 +1,22 @@
 # Generated documentation files
-docs-convert/docs/
+tools/docs-convert/docs/
 _out/
 
 # Local Netlify folder
 .netlify
+
+# Temp file written by upgrade-talos-version
+.upgrade-version-tmp
+
+# Go build artifacts (compiled binary in each tool dir, named after the dir)
+tools/version-upgrade-gen/version-upgrade-gen
+tools/changelog-gen/changelog-gen
+tools/docs-gen/docgen
+tools/docs-convert/docs-convert
+tools/docs-validate/docs-validate
+tools/mdx-normalize/mdx-normalize
+tools/omni-config-gen/omni-config-gen
+tools/style-guide-checker/style-guide-checker
+tools/doc-accuracy/doc-accuracy
+tools/canonical-gen/canonical-gen
+tools/frontmatter-check/frontmatter-check

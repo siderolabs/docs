@@ -1,31 +1,41 @@
 ---
 title: Using SAML and ACLs for fine-grained access control
-description: Apply fine-grained cluster access control using SAML and Access Policies.
+description: Apply fine-grained cluster access control using SAML roles and Omni Access Policies.
 ---
 
-In this tutorial we will use SAML and ACLs to control fine-grained access to Kubernetes clusters.
+If your Omni instance uses a SAML identity provider, you can drive cluster access control directly from the roles defined in your identity provider, without managing individual user permissions in Omni.
 
-Let's assume that at our organization:
+This page shows how to use SAML roles as the basis for Access Policy rules. For a general introduction to Access Policies and how they work, see [Manage Access Policies (ACLs)](../how-to-manage-acls).
 
-* We run a Keycloak instance as the SAML identity provider.
-* Have our Omni instance already configured to use Keycloak as the SAML identity provider.
-* Our Omni instance has 2 types of clusters:
-  * Staging clusters with the name prefix `staging-`: `staging-1`, `staging-2`, etc.
-  * Production clusters with the name prefix `prod-`: `prod-1`, `prod-2`, etc.
-* We want the users with the SAML role `omni-cluster-admin` to have full access to all clusters.
-* We want the users with the SAML role `omni-cluster-support` to have full access to staging clusters and read-only access to production clusters.
+## How SAML roles map to Omni labels
 
-## Sign in as the initial SAML User
+When a user signs in via SAML, Omni reads their role attributes from the SAML assertion and attaches them as labels in the format:
 
-If our Omni instance has no users yet, the initial user who signs in via SAML will be automatically assigned to the Omni `Admin` role.
+```
+saml.omni.sidero.dev/role/<role-name>=
+```
 
-We sign in as the user `admin@example.org` and get the Omni `Admin` role.
+For example, a user with the SAML role `cluster-support` will have the label:
 
-## Configuring the AccessPolicy
+```
+saml.omni.sidero.dev/role/cluster-support=
+```
 
-We need to configure the ACL to assign the `omni-cluster-support` role to the users with the SAML role `omni-cluster-support` and the `omni-cluster-admin` role to the users with the SAML role `omni-cluster-admin`.
+You can use these labels in the `usergroups` section of an Access Policy to match users by their SAML role, without listing individual users by email.
 
-Create the following YAML file `acl.yaml`:
+## Configure SAML-based access control
+
+Follow these steps to set up role-based cluster access using your SAML identity provider.
+
+### Step 1: Sign in as the initial SAML user
+
+The first user to sign in via SAML is automatically assigned the Omni `Admin` role. Sign in before configuring any access policies so you have an admin account to apply them with.
+
+### Step 2: Create an access policy
+
+The example below gives users with the SAML role `omni-cluster-support` full access to staging clusters and read-only access to production clusters. Users with the SAML role `omni-cluster-admin` get full access to all clusters.
+
+Adjust the SAML role names, cluster name patterns, and Omni roles to match your setup. For all available roles and the full `AccessPolicy` schema, see the [Access Policies reference](../../reference/acls).
 
 ```yaml
 metadata:
@@ -115,65 +125,75 @@ spec:
         role: Operator
 ```
 
-As the admin user `admin@example.org`, apply this ACL using omnictl:
+Apply the policy as the Omni admin user:
 
 ```bash
-$ omnictl apply -f acl.yaml
+omnictl apply -f acl.yaml
 ```
 
-## Access the clusters
+### Step 3: Verify cluster access
 
-Now, in an incognito window, log in as a support engineer, `cluster-support-1@example.org`. Since the user is not assigned to any Omni role yet, they cannot use Omni Web.
+SAML users start with no Omni account-level role, which means they cannot use Omni Web or list all clusters, but they can still access specific clusters through an ACL. This step shows what that looks like in practice.
 
-Download `omnictl` and `omniconfig` from the UI, and try to list the clusters by using it:
+Sign in as a support engineer, `cluster-support-1@example.org`, and download `omnictl` and `omniconfig` from the Omni UI.
+
+Try to list all clusters:
 
 ```bash
-$ omnictl --omniconfig ./support-omniconfig.yaml get cluster
-NAMESPACE   TYPE   ID   VERSION
+omnictl --omniconfig ./support-omniconfig.yaml get cluster
+```
+
+This will fail because the user has no Omni account-level role:
+
+```
 Error: rpc error: code = PermissionDenied desc = failed to validate: 1 error occurred:
 	* rpc error: code = PermissionDenied desc = unauthorized: access denied: insufficient role: "None"
 ```
 
-You won't be able to list the clusters because the user is not assigned to any Omni role.
-
-Now try to get the cluster `staging-1`:
+Now try to get a specific staging cluster:
 
 ```bash
-$ omnictl --omniconfig ./support-omniconfig.yaml get cluster staging-1
+omnictl --omniconfig ./support-omniconfig.yaml get cluster staging-1
+```
+
+This succeeds because the ACL grants the user access to `staging-1` directly:
+
+```
 NAMESPACE   TYPE      ID          VERSION
 default     Cluster   staging-1   5
 ```
 
-You can get the cluster `staging-1` because the ACL allows the user to access the cluster.
-
-Finally, try to delete the cluster `staging-1`:
+Try to delete the same cluster:
 
 ```bash
-$ omnictl --omniconfig ./support-omniconfig.yaml delete cluster staging-1
+omnictl --omniconfig ./support-omniconfig.yaml delete cluster staging-1
+```
+
+This also succeeds because the ACL grants `Operator`-level access to staging clusters:
+
+```
 torn down Clusters.omni.sidero.dev staging-1
 destroyed Clusters.omni.sidero.dev staging-1
 ```
 
-The operation will succeed, because the ACL allows `Operator`-level access to the cluster for the user.
-
-Try to do the same operations with the cluster `prod-1`:
+Now try the same operations against a production cluster:
 
 ```bash
-$ omnictl --omniconfig ./support-omniconfig.yaml get cluster prod-1
-NAMESPACE   TYPE      ID          VERSION
-default     Cluster   prod-1   5
+omnictl --omniconfig ./support-omniconfig.yaml get cluster prod-1
+omnictl --omniconfig ./support-omniconfig.yaml delete cluster prod-1
+```
 
-$ omnictl --omniconfig ./support-omniconfig.yaml delete cluster prod-1
+This fails because the ACL grants only `Reader`-level access to production clusters:
+
+```
 Error: rpc error: code = PermissionDenied desc = failed to validate: 1 error occurred:
 	* rpc error: code = PermissionDenied desc = unauthorized: access denied: insufficient role: "Reader"
 ```
 
-The user will be able to get the cluster but not delete it, because the ACL allows only `Reader`-level access to the cluster for the user.
+As the admin user, both get and delete operations succeed across staging and production clusters.
 
-If you do the same operations as the admin user, you'll notice that you are able to both get and delete staging and production clusters.
+### Step 4: Allow SAML users to access the Omni web UI
 
-## Assign Omni roles to users
+SAML users without an Omni account-level role cannot use the Omni web UI. Access Policies grant cluster-level access but do not assign an account-level role.
 
-If you want to allow SAML users to use Omni Web, you need to assign them at least the `Reader` role. As the admin, sign in to Omni Web and assign the role `Reader` to both `cluster-support-1@example.org` and `cluster-admin-1@example.org`.
-
-Now, as the support engineer, you can sign out & sign in again to Omni Web and see the clusters `staging-1` and `prod-1` in the UI.
+To allow a user to use the web UI, assign them at least the `Reader` role from the Users section of the Omni dashboard.

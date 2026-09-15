@@ -1,53 +1,111 @@
 ---
 title: Create Etcd Backups
-description: Configure and manage etcd backups in Omni.
+description: Configure S3 backup storage, create manual backups, and enable automatic etcd backups for Omni-managed clusters.
 ---
 
-## CLI
+Etcd is the key-value store that holds all Kubernetes cluster state. If etcd becomes corrupted or unavailable, your cluster will stop functioning. Omni supports creating etcd backups so that you can restore a cluster to a known good state if something goes wrong.
 
-First of all, check the current overall status of the cluster backup subsystem:
+Omni supports two backup storage backends: `local` and `s3`. 
 
-```shell
+The backend is selected during Omni initialization. 
+
+This guide covers how to configure S3 backup storage, create a manual backup, and enable automatic backups.
+
+To restore a cluster from a backup, see [Restore Etcd of a Cluster Managed by Cluster Templates](./restore-etcd-of-a-cluster-managed-by-cluster-templates).
+
+## Check backup status
+
+Before configuring backups, check the current state of the backup subsystem:
+
+```bash
 omnictl get etcdbackupoverallstatus
 ```
 
-If you have a freshly created Omni instance, the output will be similar to this:
+On a freshly created Omni instance, the output will look similar to this:
 
-```shell
+```bash
 NAMESPACE   TYPE                      ID                          VERSION   CONFIGURATION NAME   CONFIGURATION ERROR   LAST BACKUP STATUS   LAST BACKUP ERROR   LAST BACKUP TIME   CONFIGURATION ATTEMPT
 ephemeral   EtcdBackupOverallStatus   etcdbackup-overall-status   1         s3                   not initialized
 ```
 
-The combination of the `CONFIGURATION NAME` and `CONFIGURATION ERROR` fields display the current backup store configuration status.
-Currently, Omni supports two backup stores: `local` and `s3`.
-These are configured during Omni initialization.
-The output above indicates that the backup store is set to use the `s3` store.
-However, the s3 configuration itself has not yet been added, so the `CONFIGURATION ERROR` field shows `not initialized`.
-The rest of the fields show as empty because no backups have been created yet.
+The key fields to pay attention to are:
+
+| Field | Description |
+|---|---|
+| `CONFIGURATION NAME` | The backup backend currently configured (`s3` or `local`). |
+| `CONFIGURATION ERROR` | Any error with the current backup configuration. `not initialized` means the backend has been selected but not yet configured. |
+| `LAST BACKUP STATUS` | The result of the most recent backup attempt. |
+| `LAST BACKUP ERROR` | Any error from the most recent backup attempt. |
+| `LAST BACKUP TIME` | When the most recent backup completed. |
+| `CONFIGURATION ATTEMPT` | The number of times Omni has attempted to apply the backup configuration. |
+
+In the output above, `CONFIGURATION NAME` is `s3` and `CONFIGURATION ERROR` shows `not initialized`, which means the S3 backend has been selected but the credentials have not yet been configured. The remaining fields are empty because no backups have been created yet.
+
+## Configure S3 backup storage
+
+Omni stores etcd backups in an S3-compatible bucket. Before creating any backups, you need to provide Omni with the credentials and configuration it needs to access your bucket. This section covers compatibility considerations for non-AWS providers and how to apply the S3 configuration.
 
 ### S3-compatible providers
 
-Omni uses the AWS S3 API for storing etcd backups. Providers that advertise S3 compatibility may work when configured with a custom `endpoint`, but Omni does not maintain an exhaustive compatibility list.
-
-Compatibility with non-AWS providers is best effort and depends on how closely the provider matches AWS S3 behavior. Changes in client SDK behavior may affect third-party providers over time.
+Omni uses the AWS S3 API for storing etcd backups. Non-AWS providers that advertise S3 compatibility may work when configured with a custom `endpoint`, but Omni does not maintain a compatibility list for third-party providers.
 
 If you use a non-AWS S3 provider:
 
-* Test backup and restore workflows before relying on them in production.
-
-* Some providers may require additional configuration, such as a `region` value or provider-specific credentials.
-
-* Ensure the endpoint and credentials are valid and accessible from Omni.
+- Test backup and restore workflows before relying on them in production.
+- Some providers may require additional configuration, such as a `region` value or provider-specific credentials.
+- Ensure the endpoint and credentials are valid and accessible from Omni.
 
 During configuration, Omni validates access by attempting to list objects in the bucket. If validation fails, the configuration is not applied.
 
-### S3 configuration
+### Required S3 permissions
 
-To use S3 as the backup storage, you will first need to configure the S3 credentials for Omni to use.
-This can be done by creating an `EtcdBackupS3Configs.omni.sidero.dev` resource in Omni.
-Below is an example for Minio S3:
+The credentials (or IAM role) Omni uses need the following permissions on the bucket:
+
+| Permission | Why Omni needs it |
+|---|---|
+| `s3:ListBucket` | Validating the configuration, and listing existing backups. |
+| `s3:GetObject` | Reading backups, both when listing them and when restoring a cluster. |
+| `s3:PutObject` | Uploading backups. This also covers the multipart upload operations that are used for larger snapshots. |
+| `s3:AbortMultipartUpload` | Cleaning up a multipart upload if a backup upload fails partway through. |
+
+Omni never deletes objects from the bucket, so no delete permission is required.
+
+<Note>Because Omni never deletes old backups, the bucket grows without bound as long as automatic or manual backups keep running. Configure a [bucket lifecycle rule](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html) (or your provider's equivalent) to expire objects after a retention period that fits your recovery needs, so you don't have to clean up the bucket manually.</Note>
+
+An example AWS IAM policy that grants the minimum required access to a bucket named `mybucket`:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "OmniEtcdBackupsListBucket",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::mybucket"
+    },
+    {
+      "Sid": "OmniEtcdBackupsObjectAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:AbortMultipartUpload"
+      ],
+      "Resource": "arn:aws:s3:::mybucket/*"
+    }
+  ]
+}
+```
+
+### Apply the S3 configuration
+
+To configure S3 as the backup backend, create an `EtcdBackupS3Configs.omni.sidero.dev` resource. 
+
+The following example configures Omni to use a MinIO S3 instance, edit this example to fit your S3 instance:
 
 ```yaml
+cat <<EOF > etcd-backup-s3-conf.yaml
 metadata:
   namespace: default
   type: EtcdBackupS3Configs.omni.sidero.dev
@@ -59,56 +117,75 @@ spec:
   accesskeyid: access
   secretaccesskey: secret123
   sessiontoken: ""
+EOF
 ```
 
-Let's go through the fields:
+The fields in the `spec` are:
 
-- `bucket` - the name of the S3 bucket for storing backups. This is the only field required in all cases.
-- `region` - the region of the S3 bucket. If not provided, Omni will use the default region.
-- `endpoint` - the S3 endpoint. If not provided, Omni will use the default AWS S3 endpoint.
-- `accesskeyid` and `secretaccesskey` - the credentials to access the S3 bucket. If not provided,
-  Omni will assume it runs in an EC2 instance with an IAM role that has access to the specified S3 bucket.
-- `sessiontoken` - the session token (if any) for accessing the S3 bucket.
+| Field | Required | Description |
+|---|---|---|
+| `bucket` | Yes | The name of the S3 bucket to store backups in. |
+| `region` | No | The S3 bucket region. Defaults to the AWS default region if not set. |
+| `endpoint` | No | The S3 endpoint URL. Defaults to the AWS S3 endpoint if not set. Required for non-AWS providers. |
+| `accesskeyid` | No | The access key ID for the S3 bucket. If not set, Omni assumes it is running on an EC2 instance with an IAM role that has access to the bucket. |
+| `secretaccesskey` | No | The secret access key for the S3 bucket. |
+| `sessiontoken` | No | A session token for temporary credentials, if required. |
 
-Save it as `<file-name>.yaml` and apply using `omnictl apply -f <file-name>.yaml`.
-During resource creation, Omni will validate the provided credentials by attempting to list the objects in the bucket.
-It will return an error if the validation fails and will not update the resource.
+Apply the S3 configuration:
 
-Let's get our overall status again and check the output:
+```bash
+omnictl apply -f etcd-backup-s3-conf.yaml
+```
 
-```shell
+Omni validates the credentials during resource creation by attempting to list objects in the bucket. If validation fails, the resource will not be created and an error will be returned.
+
+To confirm the configuration was applied successfully, check the backup status again:
+
+```bash
+omnictl get etcdbackupoverallstatus
+```
+
+The `CONFIGURATION ERROR` field should now be empty:
+
+```bash
 NAMESPACE   TYPE                      ID                          VERSION   CONFIGURATION NAME   CONFIGURATION ERROR   LAST BACKUP STATUS   LAST BACKUP ERROR   LAST BACKUP TIME   CONFIGURATION ATTEMPT
 ephemeral   EtcdBackupOverallStatus   etcdbackup-overall-status   2         s3
 ```
 
-Note that the `CONFIGURATION ERROR` field is now empty, indicating that the provided configuration is valid.
+## Create a manual backup
 
-### Manual backup
+To trigger a backup immediately, create and apply an `EtcdManualBackups.omni.sidero.dev` resource.
 
-Now, let's create a manual backup. To do that, we need to create a resource:
+<Note>The `<unix-timestamp>` value must be no more than one minute in the future or past. The `nanos` field must always be `0`.</Note>
 
-```yaml
+1. Run the following command, replacing `<cluster-name>` with the name of your cluster:
+
+```bash
+cat <<EOF > etcd-manual-backup.yaml
 metadata:
   namespace: ephemeral
   type: EtcdManualBackups.omni.sidero.dev
-  id: <your-cluster-name>
+  id: <cluster-name>
 spec:
   backupat:
-    seconds: <unix-timestamp>
+    seconds: $(date +%s)
     nanos: 0
+EOF
 ```
 
-The `<unix-timestamp>` should be no more than one minute in the future or in the past. The easiest way to get the
-current timestamp is to simply invoke `date +%s` in your shell. The `nanos` field should always be `0`.
+2. Apply the resource:
 
-After you save the resource as `<file-name>.yaml`, apply it using `omnictl apply -f <file-name>.yaml`.
-In a few seconds, you can check the status of the backup:
+```bash
+omnictl apply -f etcd-manual-backup.yaml
+```
 
-```shell
+3. After a few seconds, check the per-cluster backup status:
+
+```bash
 omnictl get etcdbackupstatus -o yaml
 ```
 
-This command prints per-cluster backup status. The output will be similar to this:
+The output will look similar to this:
 
 ```yaml
 metadata:
@@ -129,77 +206,62 @@ spec:
     nanos: 985220192
 ```
 
-You can also get the overall status of the backup subsystem:
+4. To check the overall backup subsystem status:
 
-```yaml
-metadata:
-  namespace: ephemeral
-  type: EtcdBackupOverallStatuses.omni.sidero.dev
-  id: etcdbackup-overall-status
-  version: 3
-  owner: EtcdBackupOverallStatusController
-  phase: running
-spec:
-  configurationname: s3
-  configurationerror: ""
-  lastbackupstatus:
-    status: 1
-    error: ""
-    lastbackuptime:
-      seconds: 1702166400
-      nanos: 985220192
-    lastbackupattempt:
-      seconds: 1702166400
-      nanos: 985220192
+```bash
+omnictl get etcdbackupoverallstatus -o yaml
 ```
 
-### Automatic backup
+## Enable automatic backups
 
-Omni also supports automatic backups. You can enable this feature by directly editing the cluster resource
-`Clusters.omni.sidero.dev` or by using cluster templates. Let's explore how we can do this in both ways.
+Omni supports scheduled automatic backups. 
 
-#### Cluster templates
+You can configure the backup interval using either cluster templates or by editing the cluster resource directly. 
 
-Enabling automatic backups using cluster templates is quite straightforward.
-First, you'll need a template that resembles the following:
+<Tabs>
+<Tab title="Cluster templates">
+
+To enable automatic etcd backups using a cluster template:
+
+1. Add a `features.backupConfiguration` block to your cluster template:
 
 ```yaml
+cat <<EOF > etcd-backup.yaml
 kind: Cluster
 name: talos-default
 kubernetes:
   version: v1.28.2
 talos:
   version: v1.5.5
+# add the backupConfiguration block to your cluster templates
 features:
   backupConfiguration:
     interval: 1h
 ---
 kind: ControlPlane
 machines:
-  - 1dd4397b-37f1-4196-9c37-becef670b64a
+  - <controlplane-machine-uuid> # control plane machine uuid
 ---
 kind: Workers
 machines:
-  - 0d1f01c3-0a8a-4560-8745-bb792e3dfaad
-  - a0f29661-cd2d-4e25-a6c9-da5ca4c48d58
+  - <worker-machine-one-uuid> # worker machine uuid
+  - <worker-machine-two-uuid> # worker machine uuid
+EOF
 ```
 
-This is the minimal example of a cluster template for a cluster with a single-node control plane and two worker nodes.
-Your machine UUIDs will likely be different, and the Kubernetes and Talos versions will probably also differ.
-You will need both of these, as well as the cluster name, in your cluster template.
-To obtain these, refer to the `clustermachinestatus` and `cluster` resources.
+Replace `<controlplane-machine-uuid>`, `<worker-machine-one-uuid>`, and `<worker-machine-two-uuid>` with the UUIDs of your control plane and worker machines. 
 
-In this example, we are going to set the backup interval for the cluster to one hour. Save this template
-as `<file-name>.yaml`. Before applying this change, we want to ensure that no automatic backup is enabled for this
-cluster. To do that, let's run the following command:
+For more information on configuring cluster features with cluster templates, see the [Cluster Template reference documentation](../reference/cluster-templates).
 
-```shell
-omnictl cluster template -f <file-name>.yaml diff
+2. Before applying, check whether automatic backups are already enabled on the cluster:
+
+```bash
+omnictl cluster template -f etcd-backup.yaml diff
 ```
 
-The Omni response will resemble the following:
+If automatic backups are **not** yet enabled, the output will show the backup configuration being added:
 
-```shell
+```bash
 --- Clusters.omni.sidero.dev(default/talos-default)
 +++ Clusters.omni.sidero.dev(default/talos-default)
 @@ -19,4 +19,7 @@
@@ -213,37 +275,47 @@ The Omni response will resemble the following:
 +      nanos: 0
 ```
 
-Now that we have verified that Omni does not already have an automatic backup enabled, we will apply the change:
+If automatic backups are **already enabled**, the diff will show an existing `backupconfiguration` block with a non-null value. 
 
-```shell
-omnictl cluster template -f <file-name>.yaml sync
+In that case, you can update the `interval` value in your template and re-run the diff to confirm the change before applying, **or** skip to step 4 to verify the existing backup schedule is working as expected.
+
+3. Apply the template:
+
+```bash
+omnictl cluster template -f etcd-backup.yaml sync
 ```
 
-If you didn't have any backups previously, Omni will not wait for an hour and will immediately create a fresh backup.
-You can verify this by running the following command:
+<Note> If no backups exist for the cluster yet, Omni will create one immediately rather than waiting for the first scheduled interval.</Note>
 
-```shell
-omnictl get etcdbackup --selector omni.sidero.dev/cluster=talos-default
+4. Verify that the backup was created by running the following command, replacing `<cluster-name>` with the name of your cluster:
+
+```bash
+omnictl get etcdbackup --selector omni.sidero.dev/cluster=<cluster-name>
 ```
 
-Keep in mind that to obtain the backup status, you will need to use the label selector `omni.sidero.dev/cluster`
-along with your cluster name. In this example it is `talos-default`.
+This command will output something similar to this:
 
-```shell
+```bash
 NAMESPACE   TYPE         ID                         VERSION     CREATED AT
 external    EtcdBackup   talos-default-1702166400   undefined   {"nanos":0,"seconds":1702166400}
 ```
+</Tab>
+<Tab title="Cluster resource">
 
-#### Cluster resource
+If your cluster is not managed by cluster templates, you can enable automatic backups by editing the cluster resource directly.
 
-Another way to enable automatic backups is by directly editing the cluster resource.
-To do this, first, you'll need to retrieve the cluster resource from the Omni:
+To enable automatic etcd backups by editing the cluster resource directly:
 
-```shell
-omnictl get cluster talos-default -o yaml
+1. Retrieve the current cluster resource, replace the `<cluster-name>` placeholder with the name of your cluster:
+
+```bash
+omnictl get cluster <cluster-name> -o yaml > cluster-backup.yaml
 ```
 
+2. In the `cluster-backup.yaml` file, add the `backupconfiguration` block while preserving all existing fields:
+
 ```yaml
+# cluster-backup.yaml
 metadata:
   namespace: default
   type: Clusters.omni.sidero.dev
@@ -260,32 +332,21 @@ spec:
   features:
     enableworkloadproxy: false
     diskencryption: false
-```
-
-Add fields related to the backup configuration while preserving the existing fields:
-
-```yaml
-metadata:
-  namespace: default
-  type: Clusters.omni.sidero.dev
-  id: talos-default
-  finalizers:
-    - KubernetesUpgradeStatusController
-    - TalosUpgradeStatusController
-    - SecretsController
-    - ClusterController
-spec:
-  installimage: ""
-  kubernetesversion: 1.28.2
-  talosversion: 1.5.5
-  features:
-    enableworkloadproxy: false
-    diskencryption: false
+  # add the backupconfiguration block
   backupconfiguration:
     interval:
       seconds: 3600
       nanos: 0
 ```
 
-Save it to the file and apply using `omnictl apply -f <file-name>.yaml`. You will get the output similar to the one
-above for the cluster template.
+3. Apply the updated file:
+
+```bash
+omnictl apply -f cluster-backup.yaml
+```
+</Tab>
+</Tabs>
+
+## Next steps
+
+To restore a cluster from an etcd backup, see [Restore Etcd of a Cluster Managed by Cluster Templates](./restore-etcd-of-a-cluster-managed-by-cluster-templates).

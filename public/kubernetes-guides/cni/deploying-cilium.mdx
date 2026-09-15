@@ -1,68 +1,276 @@
 ---
 title: "Deploy Cilium CNI"
-description: "In this guide you will learn how to set up Cilium CNI on Talos."
+description: "Learn how to install Cilium CNI on Talos Linux using one of several supported methods."
 aliases:
   - ../../guides/deploying-cilium
 ---
 
-> Cilium can be installed either via the `cilium` cli or using `helm`.
+import { k8s_release, version } from '/snippets/custom-variables.mdx';
 
-This documentation will outline installing Cilium CNI v1.18.0 on Talos in six different ways.
-Adhering to Talos principles we'll deploy Cilium with IPAM mode set to Kubernetes, and using the `cgroupv2` and `bpffs` mount that talos already provides.
-As Talos does not allow loading kernel modules by Kubernetes workloads, `SYS_MODULE` capability needs to be dropped from the Cilium default set of values, this override can be seen in the helm/cilium cli install commands.
-Each method can either install Cilium using kube proxy (default) or without: [Kubernetes Without kube-proxy](https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/).
+Cilium CNI can be installed on Talos Linux using several methods, ranging from a fully declarative GitOps-friendly approach to a quick one-command install for development clusters.
 
-In this guide we assume that [KubePrism](../advanced-guides/kubeprism) is enabled and configured to use the port 7445.
+The right method depends on whether you're using Omni, what your production requirements are, and how much you want the installation to persist across reboots.
 
-## Machine configuration preparation
+Each method supports both the default kube-proxy mode and [kube-proxy-free](https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/) operation, covered by tabs in each section.
 
-When generating the machine config for a node set the CNI to none.
-For example using a config patch:
+| Method | Recommended for | Notes |
+|---|---|---|
+| [Omni manifest sync](#method-1-omni-manifest-sync) | Omni users | Recommended path for Omni clusters |
+| [Helm](#method-2-helm) | All other Talos clusters | Four variants — inline, apply, hosted, CLI; choose based on your workflow |
+| [Cilium CLI](#method-3-cilium-cli) | Development / testing | Quickest path, least declarative |
 
-Create a `patch.yaml` file with the following contents:
+## Prerequisites
 
-```yaml
+Talos Linux has specific requirements that apply regardless of which installation method you choose:
+
+- IPAM mode must be set to `kubernetes`
+- Talos already provides `cgroupv2` and `bpffs` mounts — do not let Cilium attempt to mount these
+- Talos does not allow Kubernetes workloads to load kernel modules, so the `SYS_MODULE` capability must be dropped from Cilium's default capability set
+- This guide assumes <a href= {`../../talos/${version}/configure-your-talos-cluster/system-configuration/kubeprism`}>KubePrism</a> is enabled and configured on port `7445`
+
+### Machine configuration prerequisites
+
+In addition to the above prerequisites, the **Cilium CLI** and **Helm** methods all require that you first configure your machine with CNI set to `none`. Set this before bootstrapping.
+
+To do that:
+
+<Tabs>
+<Tab title="With kube-proxy">
+**Step 1.** Create a patch file that sets the CNI to `none`:
+
+For Talos v1.14 and later:
+
+```bash
+cat <<'EOF' > patch.yaml
+apiVersion: v1alpha1
+kind: KubeFlannelCNIConfig
+$patch: delete
+EOF
+```
+
+On Talos versions earlier than v1.14:
+
+```bash
+cat <<'EOF' > patch.yaml
 cluster:
   network:
     cni:
       name: none
+EOF
 ```
+
+**Step 2.** Generate the machine config with the patch applied:
 
 ```bash
 talosctl gen config \
-    my-cluster https://mycluster.local:6443 \
-    --config-patch @patch.yaml
+    <cluster-name> https://<cluster-endpoint>:6443 \
+    --config-patch-control-plane @patch.yaml
 ```
 
-Or if you want to deploy Cilium without kube-proxy, you also need to disable kube proxy:
+</Tab>
+<Tab title="Without kube-proxy">
+**Step 1.** Create a patch file that sets the CNI to `none` and disables kube-proxy:
 
-Create a `patch.yaml` file with the following contents:
+```bash
+cat <<'EOF' > patch.yaml
+apiVersion: v1alpha1
+kind: KubeFlannelCNIConfig
+$patch: delete
+---
+apiVersion: v1alpha1
+kind: KubeProxyConfig
+enabled: false
+EOF
+```
 
-```yaml
+On Talos versions earlier than v1.14:
+
+```bash
+cat <<'EOF' > patch.yaml
 cluster:
   network:
     cni:
       name: none
   proxy:
     disabled: true
+EOF
 ```
+
+**Step 2.** Generate the machine config with the patch applied:
 
 ```bash
 talosctl gen config \
-    my-cluster https://mycluster.local:6443 \
-    --config-patch @patch.yaml
+    <cluster-name> https://<cluster-endpoint>:6443 \
+    --config-patch-control-plane @patch.yaml
 ```
+</Tab>
+</Tabs>
 
-### Installation using Cilium CLI
+<Note>
+  Things to note:
+    - This step applies only to the Helm and Cilium CLI methods, if you're using Omni, skip it. The CNI-disable patch for Omni clusters is applied via the cluster template in [Method 1](#method-1-omni-manifest-sync) instead.
+    - After bootstrapping, Talos will hang at phase 18/19 with `retrying error: node not ready` — expected, since nodes aren't marked ready until a CNI is running. You have about 10 minutes to apply Cilium before the node retries.
+</Note>
 
-> Note: It is recommended to template the cilium manifest using helm and use it as part of Talos machine config, but if you want to install Cilium using the Cilium CLI, you can follow the steps below.
+## Method 1: Omni manifest sync
 
-Install the [Cilium CLI](https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/#install-the-cilium-cli) following the steps here.
+If you are using [Omni](https://www.siderolabs.com/platform/saas-for-kubernetes/), the recommended approach is to deploy Cilium using the [manifest sync](../../omni/cluster-management/sync-kubernetes-manifests) feature in a cluster template. Omni will wait until the Kubernetes API is available and the cluster is healthy before applying the Cilium manifests.
 
-#### With kube-proxy
+**Step 1.** Create a `values.yaml` file with the Cilium Helm values by running:
+
+<Tabs>
+<Tab title="With kube-proxy">
 
 ```bash
-cilium install \
+cat <<EOF > values.yaml
+ipam:
+  mode: kubernetes
+kubeProxyReplacement: false
+securityContext:
+  capabilities:
+    ciliumAgent:
+      - CHOWN
+      - KILL
+      - NET_ADMIN
+      - NET_RAW
+      - IPC_LOCK
+      - SYS_ADMIN
+      - SYS_RESOURCE
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    cleanCiliumState:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - SYS_RESOURCE
+cgroup:
+  autoMount:
+    enabled: false
+  hostRoot: /sys/fs/cgroup
+EOF
+```
+</Tab>
+<Tab title="Without kube-proxy">
+
+```bash
+cat <<EOF > values.yaml
+ipam:
+  mode: kubernetes
+kubeProxyReplacement: true
+k8sServiceHost: localhost
+k8sServicePort: 7445
+securityContext:
+  capabilities:
+    ciliumAgent:
+      - CHOWN
+      - KILL
+      - NET_ADMIN
+      - NET_RAW
+      - IPC_LOCK
+      - SYS_ADMIN
+      - SYS_RESOURCE
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    cleanCiliumState:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - SYS_RESOURCE
+cgroup:
+  autoMount:
+    enabled: false
+  hostRoot: /sys/fs/cgroup
+EOF
+```
+</Tab>
+</Tabs>
+
+**Step 2.** Render the Cilium manifests using Helm:
+
+```bash
+helm repo add cilium https://helm.cilium.io/
+helm repo update
+helm template \
+    cilium \
+    cilium/cilium \
+    --version 1.18.0 \
+    --namespace kube-system \
+    --values values.yaml > cilium.yaml
+```
+
+**Step 3.** Reference the rendered manifest in your Omni cluster template using the `file` field:
+
+<Tabs>
+<Tab title="With kube-proxy">
+
+For Talos v1.14 and later:
+
+<CodeBlock lang="yaml">
+{`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: cilium\n      file: cilium.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni\n    inline:\n      apiVersion: v1alpha1\n      kind: KubeFlannelCNIConfig\n      $patch: delete\n...\n# Include machines for template`}
+</CodeBlock>
+
+On Talos versions earlier than v1.14:
+
+<CodeBlock lang="yaml">
+{`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: cilium\n      file: cilium.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni\n    inline:\n      cluster:\n        network:\n          cni:\n            name: none\n...\n# Include machines for template`}
+
+</CodeBlock>
+</Tab>
+<Tab title="Without kube-proxy">
+
+When deploying without kube-proxy, set `proxy.disabled: true` in the `patches` block:
+
+For Talos v1.14 and later, disable the CNI and kube-proxy:
+
+<CodeBlock lang="yaml">
+{`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: cilium\n      file: cilium.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni-and-proxy\n    inline:\n      apiVersion: v1alpha1\n      kind: KubeFlannelCNIConfig\n      $patch: delete\n  - name: disable-kube-proxy\n    inline:\n      apiVersion: v1alpha1\n      kind: KubeProxyConfig\n      enabled: false\n...\n# Include machines for template`}
+</CodeBlock>
+
+On Talos versions earlier than v1.14:
+
+<CodeBlock lang="yaml">
+{`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: cilium\n      file: cilium.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni-and-proxy\n    inline:\n      cluster:\n        network:\n          cni:\n            name: none\n        proxy:\n          disabled: true\n...\n# Include machines for template`}
+</CodeBlock>
+
+</Tab>
+</Tabs>
+
+**Step 4.** Apply the cluster template:
+
+```bash
+omnictl cluster template sync --file cluster-template.yaml
+```
+
+See [Sync Kubernetes Manifests](../../omni/cluster-management/sync-kubernetes-manifests) for more on manifest sync modes and status monitoring.
+
+## Method 2: Helm
+
+Helm is the recommended approach for Talos clusters not managed by Omni. There are four variants depending on how you want to manage and apply the Cilium manifest. Choose the one that fits your workflow:
+
+- **CLI install**: Installs Cilium directly with `helm install` without generating a manifest file. Simplest Helm path but least declarative.
+- **Inline manifest**: Embeds the manifest directly in the machine configuration; applied automatically on bootstrap and reapplied on control plane reboots. Recommended for production.
+- **Manifest apply**: Generates the manifest with `helm template` and applies it manually with `kubectl`. Useful for one-off installs or when you want to inspect the manifest first.
+- **Hosted manifest**: Generates the manifest, hosts it at a URL, and patches the machine config to fetch it automatically during bootstrap. Requires secure internal hosting.
+
+<Tabs>
+<Tab title="CLI install">
+
+Install Cilium directly using `helm install` during the bootstrap window.
+
+<Tabs>
+<Tab title="With kube-proxy">
+
+```bash
+helm repo add cilium https://helm.cilium.io/
+helm repo update
+
+helm install \
+    cilium \
+    cilium/cilium \
+    --version 1.18.0 \
+    --namespace kube-system \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=false \
     --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
@@ -71,10 +279,18 @@ cilium install \
     --set cgroup.hostRoot=/sys/fs/cgroup
 ```
 
-#### Without kube-proxy
+</Tab>
+<Tab title="Without kube-proxy">
 
 ```bash
-cilium install \
+helm repo add cilium https://helm.cilium.io/
+helm repo update
+
+helm install \
+    cilium \
+    cilium/cilium \
+    --version 1.18.0 \
+    --namespace kube-system \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
     --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
@@ -85,10 +301,20 @@ cilium install \
     --set k8sServicePort=7445
 ```
 
-Or if you want to deploy Cilium with support for Gateway API (requires installing cilium without kube-proxy), install [Gateway API CRDs](https://docs.cilium.io/en/stable/network/servicemesh/gateway-api/gateway-api/#prerequisites) and set some extra parameters:
+</Tab>
+<Tab title="Without kube-proxy + Gateway API">
+
+Install [Gateway API CRDs](https://docs.cilium.io/en/stable/network/servicemesh/gateway-api/gateway-api/#prerequisites) first, then:
 
 ```bash
-cilium install \
+helm repo add cilium https://helm.cilium.io/
+helm repo update
+
+helm install \
+    cilium \
+    cilium/cilium \
+    --version 1.18.0 \
+    --namespace kube-system \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
     --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
@@ -102,30 +328,31 @@ cilium install \
     --set gatewayAPI.enableAppProtocol=true
 ```
 
-> Note: If you plan to use gRPC and GRPCRoutes with TLS, you must enable ALPN by setting `gatewayAPI.enableAlpn=true`.
-> Since gRPC relies on HTTP/2, ALPN is required to negotiate HTTP/2 support between the client and server.
+</Tab>
+</Tabs>
 
-### Installation using Helm
+After Cilium is installed successfully, the bootstrap process will continue and complete.
 
-Refer to [Installing with Helm](https://docs.cilium.io/en/stable/installation/k8s-install-helm/) for more information.
+</Tab>
+<Tab title="Inline manifest">
 
-First we'll need to add the helm repo for Cilium.
+The Cilium manifest is embedded directly in the machine configuration and applied automatically during bootstrap.
+
+> **Before you start:**
+> - Only add the Cilium inline manifest to control plane node machine configurations, and make sure all control plane nodes have an identical configuration.
+> - Changing the namespace when templating with Helm does not generate a manifest that creates that namespace. If you change the namespace, manually prepend the namespace YAML at the top of the inline manifest.
+> - Talos only creates missing resources from inline manifests — it never deletes or updates them. To update the manifest, edit all control plane machine configurations and run `talosctl upgrade-k8s`.
+
+**Step 1.** Generate the Cilium manifest:
+
+<Tabs>
+<Tab title="With kube-proxy">
 
 ```bash
 helm repo add cilium https://helm.cilium.io/
 helm repo update
-```
 
-### Method 1: Helm install
-
-After applying the machine config and bootstrapping Talos will appear to hang on phase 18/19 with the message: retrying error: node not ready.
-This happens because nodes in Kubernetes are only marked as ready once the CNI is up.
-As there is no CNI defined, the boot process is pending and will reboot the node to retry after 10 minutes, this is expected behavior.
-
-During this window you can install Cilium manually by running the following:
-
-```bash
-helm install \
+helm template \
     cilium \
     cilium/cilium \
     --version 1.18.0 \
@@ -135,13 +362,17 @@ helm install \
     --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
     --set securityContext.capabilities.cleanCiliumState="{NET_ADMIN,SYS_ADMIN,SYS_RESOURCE}" \
     --set cgroup.autoMount.enabled=false \
-    --set cgroup.hostRoot=/sys/fs/cgroup
+    --set cgroup.hostRoot=/sys/fs/cgroup > cilium.yaml
 ```
 
-Or if you want to deploy Cilium without kube-proxy, also set some extra parameters:
+</Tab>
+<Tab title="Without kube-proxy">
 
 ```bash
-helm install \
+helm repo add cilium https://helm.cilium.io/
+helm repo update
+
+helm template \
     cilium \
     cilium/cilium \
     --version 1.18.0 \
@@ -153,25 +384,44 @@ helm install \
     --set cgroup.autoMount.enabled=false \
     --set cgroup.hostRoot=/sys/fs/cgroup \
     --set k8sServiceHost=localhost \
-    --set k8sServicePort=7445
+    --set k8sServicePort=7445 > cilium.yaml
 ```
 
-And with GatewayAPI support:
+</Tab>
+</Tabs>
 
-```bash
-...
-    --set=gatewayAPI.enabled=true \
-    --set=gatewayAPI.enableAlpn=true \
-    --set=gatewayAPI.enableAppProtocol=true
+**Step 2.** Embed the generated manifest in your machine configuration:
+
+<Note>On Talos versions 1.13 and earlier, use the deprecated `cluster.inlineManifests` field instead — see [inlineManifests and extraManifests](../advanced-guides/inlinemanifests) for the older format.</Note>
+
+```yaml
+apiVersion: v1alpha1
+kind: KubeInlineManifestConfig
+name: cilium
+manifest: |
+  ---
+  # Source: cilium/templates/cilium-agent/serviceaccount.yaml
+  apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: "cilium"
+    namespace: kube-system
+  ---
+  # Paste the full contents of cilium.yaml here
 ```
 
-After Cilium is installed the boot process should continue and complete successfully.
+</Tab>
+<Tab title="Manifest apply">
 
-### Method 2: Helm manifests install
+Generate the manifest with `helm template` and apply it manually with `kubectl` during the bootstrap window.
 
-Instead of directly installing Cilium you can instead first generate the manifest and then apply it:
+<Tabs>
+<Tab title="With kube-proxy">
 
 ```bash
+helm repo add cilium https://helm.cilium.io/
+helm repo update
+
 helm template \
     cilium \
     cilium/cilium \
@@ -187,9 +437,13 @@ helm template \
 kubectl apply -f cilium.yaml
 ```
 
-Without kube-proxy:
+</Tab>
+<Tab title="Without kube-proxy">
 
 ```bash
+helm repo add cilium https://helm.cilium.io/
+helm repo update
+
 helm template \
     cilium \
     cilium/cilium \
@@ -207,21 +461,29 @@ helm template \
 kubectl apply -f cilium.yaml
 ```
 
-### Method 3: Helm manifests hosted install
+</Tab>
+</Tabs>
 
-After generating `cilium.yaml` using `helm template`, instead of applying this manifest directly during the Talos boot window (before the reboot timeout).
-You can also host this file somewhere and patch the machine config to apply this manifest automatically during bootstrap.
-To do this patch your machine configuration to include this config instead of the above:
+</Tab>
+<Tab title="Hosted manifest">
 
-Create a `patch.yaml` file with the following contents:
+Generate the manifest, host it at a secure internal URL, and patch the machine config to fetch it automatically during bootstrap.
 
-```yaml
+<Warning>The Helm-generated Cilium manifest contains sensitive key material. Do not host it somewhere publicly accessible.</Warning>
+
+**Step 1.** Generate `cilium.yaml` using `helm template` as shown in the Manifest apply tab above.
+
+**Step 2.** Host the file at a secure internal URL, then patch your machine configuration:
+
+```bash
+cat <<EOF > patch.yaml
 cluster:
   network:
     cni:
       name: custom
       urls:
         - https://server.yourdomain.tld/some/path/cilium.yaml
+EOF
 ```
 
 ```bash
@@ -229,101 +491,83 @@ talosctl gen config \
   my-cluster https://mycluster.local:6443 \
   --config-patch @patch.yaml
 ```
+</Tab>
+</Tabs>
 
-However, beware of the fact that the helm generated Cilium manifest contains sensitive key material.
-As such you should definitely not host this somewhere publicly accessible.
+## Method 3: Cilium CLI
 
-### Method 4: Helm manifests inline install
+Install the [Cilium CLI](https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/#install-the-cilium-cli) following the upstream instructions, then run:
 
-A more secure option would be to include the `helm template` output manifest inside the machine configuration.
-The machine config should be generated with CNI set to `none`
-
-Create a `patch.yaml` file with the following contents:
-
-```yaml
-cluster:
-  network:
-    cni:
-      name: none
-```
+<Tabs>
+<Tab title="With kube-proxy">
 
 ```bash
-talosctl gen config \
-  my-cluster https://mycluster.local:6443 \
-  --config-patch @patch.yaml
+cilium install \
+    --set ipam.mode=kubernetes \
+    --set kubeProxyReplacement=false \
+    --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
+    --set securityContext.capabilities.cleanCiliumState="{NET_ADMIN,SYS_ADMIN,SYS_RESOURCE}" \
+    --set cgroup.autoMount.enabled=false \
+    --set cgroup.hostRoot=/sys/fs/cgroup
 ```
 
-if deploying Cilium with `kube-proxy` disabled, you can also include the following:
-
-Create a `patch.yaml` file with the following contents:
-
-```yaml
-cluster:
-  network:
-    cni:
-      name: none
-  proxy:
-    disabled: true
-```
+</Tab>
+<Tab title="Without kube-proxy">
 
 ```bash
-talosctl gen config \
-  my-cluster https://mycluster.local:6443 \
-  --config-patch @patch.yaml
+cilium install \
+    --set ipam.mode=kubernetes \
+    --set kubeProxyReplacement=true \
+    --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
+    --set securityContext.capabilities.cleanCiliumState="{NET_ADMIN,SYS_ADMIN,SYS_RESOURCE}" \
+    --set cgroup.autoMount.enabled=false \
+    --set cgroup.hostRoot=/sys/fs/cgroup \
+    --set k8sServiceHost=localhost \
+    --set k8sServicePort=7445
 ```
 
-To do so patch this into your machine configuration:
+</Tab>
+<Tab title="Without kube-proxy + Gateway API">
 
-``` yaml
-cluster:
-  inlineManifests:
-    - name: cilium
-      contents: |
-        --
-        # Source: cilium/templates/cilium-agent/serviceaccount.yaml
-        apiVersion: v1
-        kind: ServiceAccount
-        metadata:
-          name: "cilium"
-          namespace: kube-system
-        ---
-        # Source: cilium/templates/cilium-operator/serviceaccount.yaml
-        apiVersion: v1
-        kind: ServiceAccount
-        -> Your cilium.yaml file will be pretty long....
+Install [Gateway API CRDs](https://docs.cilium.io/en/stable/network/servicemesh/gateway-api/gateway-api/#prerequisites) first, then:
+
+<Note>If you plan to use gRPC and GRPCRoutes with TLS, you must enable ALPN (`gatewayAPI.enableAlpn=true`). gRPC relies on HTTP/2, and ALPN is required to negotiate HTTP/2 support between client and server.</Note>
+
+```bash
+cilium install \
+    --set ipam.mode=kubernetes \
+    --set kubeProxyReplacement=true \
+    --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
+    --set securityContext.capabilities.cleanCiliumState="{NET_ADMIN,SYS_ADMIN,SYS_RESOURCE}" \
+    --set cgroup.autoMount.enabled=false \
+    --set cgroup.hostRoot=/sys/fs/cgroup \
+    --set k8sServiceHost=localhost \
+    --set k8sServicePort=7445 \
+    --set gatewayAPI.enabled=true \
+    --set gatewayAPI.enableAlpn=true \
+    --set gatewayAPI.enableAppProtocol=true
 ```
 
-This will install the Cilium manifests at just the right time during bootstrap.
-
-Beware though:
-
-- Changing the namespace when templating with Helm does not generate a manifest containing the yaml to create that namespace.
-As the inline manifest is processed from top to bottom make sure to manually put the namespace yaml at the start of the inline manifest.
-- Only add the Cilium inline manifest to the control plane nodes machine configuration.
-- Make sure all control plane nodes have an identical configuration.
-- If you delete any of the generated resources they will be restored whenever a control plane node reboots.
-- As a safety measure, Talos only creates missing resources from inline manifests, it never deletes or updates anything.
-- If you need to update a manifest make sure to first edit all control plane machine configurations and then run `talosctl upgrade-k8s` as it will take care of updating inline manifests.
+</Tab>
+</Tabs>
 
 ## Known issues
 
-- There are some gotchas when using Talos and Cilium on the Google cloud platform when using internal load balancers.
-For more details: [GCP ILB support / support scope local routes to be configured](https://github.com/siderolabs/talos/issues/4109)
+The following are known issues when running Cilium on Talos Linux. Each entry includes a workaround where one exists.
 
-- When using Talos `forwardKubeDNSToHost=true` option (which is enabled by default) in combination with cilium `bpf.masquerade=true`.
-There is a known issue that causes `CoreDNS` to not work correctly.
-As a workaround, configuring `forwardKubeDNSToHost=false` resolves the issue.
-For more details see [the discussion here](https://github.com/siderolabs/talos/pull/9200)
+- **GCP internal load balancers**: There are known issues when using Talos and Cilium on Google Cloud Platform with internal load balancers. See [GCP ILB support / support scope local routes to be configured](https://github.com/siderolabs/talos/issues/4109) for details.
 
-## Other things to know
+- **CoreDNS not working with `forwardKubeDNSToHost` and `bpf.masquerade`**: When using Talos `forwardKubeDNSToHost=true` (enabled by default) together with Cilium `bpf.masquerade=true`, CoreDNS may not work correctly. Setting `forwardKubeDNSToHost=false` resolves the issue. See [the discussion here](https://github.com/siderolabs/talos/pull/9200) for more context.
 
-- After installing Cilium, `cilium connectivity test` might hang and/or fail with errors similar to
+- **`cilium connectivity test` fails with PodSecurity errors**: After installing Cilium, `cilium connectivity test` may hang or fail with an error like:
 
-    ```Error creating: pods "client-69748f45d8-9b9jg" is forbidden: violates PodSecurity "baseline:latest": non-default capabilities (container "client" must not include "NET_RAW" in securityContext.capabilities.add)```
+  ```text
+  Error creating: pods "client-69748f45d8-9b9jg" is forbidden: violates PodSecurity "baseline:latest":
+  non-default capabilities (container "client" must not include "NET_RAW" in securityContext.capabilities.add)
+  ```
 
-  This is expected, you can workaround it by adding the `pod-security.kubernetes.io/enforce=privileged` [label on the namespace level](../security/pod-security).
+  This is expected. Work around it by adding the `pod-security.kubernetes.io/enforce=privileged` [label on the namespace level](../security/pod-security).
 
-- Talos has full kernel module support for eBPF, See:
-  - [Cilium System Requirements](https://docs.cilium.io/en/stable/operations/system_requirements/)
-  - [Talos Kernel Config AMD64](https://github.com/siderolabs/pkgs/blob/main/kernel/build/config-amd64)
-  - [Talos Kernel Config ARM64](https://github.com/siderolabs/pkgs/blob/main/kernel/build/config-arm64)
+## Additional resources
+
+Talos has full kernel module support for eBPF. See [Cilium System Requirements](https://docs.cilium.io/en/stable/operations/system_requirements/), [Talos Kernel Config AMD64](https://github.com/siderolabs/pkgs/blob/main/kernel/build/config-amd64), and [Talos Kernel Config ARM64](https://github.com/siderolabs/pkgs/blob/main/kernel/build/config-arm64).

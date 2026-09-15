@@ -3,73 +3,104 @@ title: Register a Bare Metal Machine (ISO)
 description: Provision a bare metal server in Omni by booting from a Talos ISO image.
 ---
 
-### Dashboard <a href="#dashboard" id="dashboard"></a>
+To provision a bare metal machine in Omni, you would have to, download the Talos Omni ISO image and then boot your bare metal machine with this image.
 
-Upon logging in you will be presented with the Omni dashboard.
+This guide breaks the action of registering a bare metal machine into three steps:
 
-### Download the ISO <a href="#download-the-iso" id="download-the-iso"></a>
+1. Download the Talos Omni ISO image
+2. Write the ISO to a USB stick
+3. Boot the bare metal machine using the USB stick
 
-First, download the ISO from the Omni portal by clicking on the “Download Installation Media” button on the right.
+## Step 1:  Download the Talos Omni ISO image
 
-Select the version of Talos for the cluster, then click on the “Options” dropdown menu and search for, or scroll down to, the “ISO” option.&#x20;
+You can download the Talos Omni ISO image either via the CLI or the Omni UI. To do so:
 
-<img src="./images/register-a-bare-metal-machine-iso-download-install-media.png" alt=""/>
+<Tabs>
+   <Tab title="CLI">
+   Run these commands to create a preset and download a bare metal Talos Omni ISO image:
 
-Notice there are two options: one for `amd64` and another for `arm64`. Select the appropriate architecture for the machine you are registering. Now that you have selected the ISO option for the appropriate architecture, click the “Download” button.
+   ```bash
+   omnictl media preset create bare-metal-preset --arch amd64
+   omnictl media download bare-metal-preset
+   ```
 
-### Write the ISO to a USB Stick <a href="#write-the-iso-to-a-usb-stick" id="write-the-iso-to-a-usb-stick"></a>
+   Presets persist in Omni after the image is downloaded. When you no longer need the preset, delete it:
 
-First, plug the USB drive into your local machine. Now, find the device path for your USB drive and write the ISO to the USB drive.
+   ```bash
+   omnictl media preset delete bare-metal-preset
+   ```
+   </Tab>
+
+   <Tab title="Omni UI">
+   To download the Talos Omni image from the Omni dashboard:
+
+   1. Log in to your Omni dashboard.
+   2. Click the **Download Installation Media** button to open the **Create New Media** wizard.
+
+   ![Download Installation Media](./images/register-a-bare-metal-machine-iso-download-installation-media-button.png)
+
+   3. On each page of the **Create New Media** wizard, select the appropriate options for your setup, then click **Next** to continue.
+
+      The **Create New Media** wizard is identical to the [Image Factory](https://factory.talos.dev/) and it is split across multiple pages. Each page presents a different set of configuration options, such as architecture, hardware type, and Talos Linux version, that you can use to customize your Talos Omni image.
+
+   4. Select the appropriate boot option for your machine on the Schematic Ready page to download the Talos Omni image.
+   </Tab>
+</Tabs>
+
+## Step 2: Write the ISO to a USB Stick
+
+After downloading the ISO image, you can boot your machine using a physical USB drive or mount the ISO remotely using out-of-band management tools — which is common in data center environments where physical access is limited.
+
+<Note>
+If your server supports out-of-band management (e.g., iDRAC, iLO, IPMI), you can mount
+the ISO as virtual media instead of using a physical USB drive. Refer to your hardware
+vendor's documentation for instructions.
+</Note>
+
+To use a physical USB drive, plug it into your local machine, then identify the device path of the USB drive and write the ISO image to it.
 
 <Tabs>
    <Tab title="MacOS" >
-
-      ```
+```bash
       diskutil list
       ...
       /dev/disk2 (internal, physical):
          #:                       TYPE NAME                    SIZE       IDENTIFIER
          0:                                                   *31.9 GB    disk2
       ...
-      ```
+```
 
       In this example `disk2` is the USB drive.
-
-      ```
+```bash
       dd if=<path to ISO> of=/dev/disk2 conv=fdatasync
-      ```
-      
+```
+
    </Tab>
 
    <Tab title="Linux">
-
-      ```
-      $ lsblk
+```bash
+      lsblk
       ...
       NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
       sdb      8:0    0 39.1G  0 disk
       ...
-      ```
+```
 
       In this example `sdb` is the USB drive.
-
-      ```
+```bash
       dd if=<path to ISO> of=/dev/sdb conv=fdatasync
-      ```
-
+```
    </Tab>
 </Tabs>
 
-### Boot the machine
+## Step 3: Boot the machine
 
-Now that we have our bootable USB drive, plug it into the machine you are registering. Once the machine is booting you will notice logs from Talos Linux on the console stating that it is reachable over an IP address.
+With your bootable USB drive ready, plug it into the machine you want to register and power it on.
 
-<Warning>
-Machines must be able to egress to your account’s WireGuard port and TCP port 443.
-</Warning>
+During startup, you will see Talos Linux logs on the console indicating that the machine is reachable via an IP address.
 
-### Conclusion <a href="#conclusion" id="conclusion"></a>
+<Warning> Machines must be able to connect outbound (egress) with UDP to your Omni account’s WireGuard port or TCP port 443 if you're using HTTP/2 tunneling. </Warning>
 
-Navigate to the “Machines” menu in the sidebar of Omni. You should now see a machine listed.
+Once the machine has booted, go to the **Machines** menu in the Omni sidebar. Your machine should now appear in the list.
 
-You now have a bare metal machine registered with Omni and ready to provision.
+Your bare metal machine is now successfully registered with Omni and ready to be provisioned.

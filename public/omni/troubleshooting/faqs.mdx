@@ -4,6 +4,8 @@ weight: 999
 description: "Frequently Asked Questions about Omni."
 ---
 
+import { version } from '/snippets/custom-variables.mdx';
+
 ## What do you need to self-host Omni?
 
 Omni relies on what we call the "Sidero Stack" which consists of the following components:
@@ -47,3 +49,26 @@ To ensure clusters are treated separately, each cluster must have a unique `serv
 - Running a separate ArgoCD instance per cluster
 
 As long as the `server` URL is different, ArgoCD will treat the clusters as separate clusters.
+
+## Should I enable embedded service discovery in Omni?
+
+In most cases, **no**.
+
+Omni can run an embedded discovery service for Talos clusters, but this mode has several limitations and is generally intended only for **air-gapped environments**.
+
+### Limitations of embedded service discover in Omni
+
+Embedded service discovery in Omni has several limitations compared to the public Talos Discovery Service, including:
+
+- **Dependency on Omni availability**: If Omni becomes unavailable, the embedded discovery service is also unavailable.
+  As a result, cluster discovery may fail and nodes might not rejoin the cluster after reboot.
+
+- **No public IP awareness**: Embedded discovery cannot detect public IPs, which means it cannot assist with **KubeSpan NAT traversal**.
+
+- **Tighter coupling with Omni**: Cluster discovery becomes dependent on Omni rather than running as an independent service.
+
+### Recommendation
+
+For most deployments, use the **public <a href={`../../talos/${version}/configure-your-talos-cluster/system-configuration/discovery`}>Talos Discovery Service</a>**.
+
+For **air-gapped environments**, run a standalone discovery service alongside Omni instead of relying on the embedded discovery service.

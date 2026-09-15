@@ -3,6 +3,7 @@ title: "Oracle"
 description: "Creating a cluster via the CLI (oci) on OracleCloud.com."
 aliases:
   - ../../../cloud-platforms/oracle
+canonical: https://docs.siderolabs.com/talos/v1.14/platform-specific-installations/cloud-platforms/oracle
 ---
 
 import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
@@ -20,7 +21,7 @@ Prepare an image for upload:
 
 1. Generate an image using [Image Factory](https://factory.talos.dev).
 
-2. Download the disk image artifact (e.g: <a href={`https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_11}/oracle-arm64.raw.xz`}>
+2. Download the disk image artifact in qcow2 format (e.g: <a href={`https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${release_v1_11}/oracle-arm64.qcow2`}>
   Oracle arm64
 </a>)
 
@@ -57,30 +58,14 @@ Prepare an image for upload:
    }
    ```
 
-4. Extract the xz or zst archive:
-
-   ```shell
-   xz --decompress ./oracle-arm64.raw.xz
-
-   # or
-
-   zstd --decompress ./oracle-arm64.raw.zst
-   ```
-
-5. Convert the image to a `qcow2` format (using [qemu](https://formulae.brew.sh/formula/qemu#default)):
-
-   ```shell
-   qemu-img convert -f raw -O qcow2 oracle-arm64.raw oracle-arm64.qcow2
-   ```
-
-6. Create an archive containing the image and metadata called `talos-oracle-arm64.oci`:
+4. Create an archive containing the image and metadata called `talos-oracle-arm64.oci`:
 
    ```shell
    tar zcf oracle-arm64.oci oracle-arm64.qcow2 image_metadata.json
    ```
 
-7. Upload the image to a storage bucket.
-8. Create an image, using the *new* URL format for the storage bucket object.
+5. Upload the image to a storage bucket.
+6. Create an image, using the *new* URL format for the storage bucket object.
 
 > Note: file names depends on configuration of deployment such as architecture, adjust accordingly.
 

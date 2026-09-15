@@ -42,10 +42,17 @@ d. Click Download to begin downloading the Omni image
 </Tab>
 <Tab title="CLI">
 
-Run this command to download the installation media:
+Run these commands to create a preset and download a bare metal Talos Omni ISO image:
 
 ```bash
-omnictl download iso
+omnictl media preset create join-preset --arch amd64
+omnictl media download join-preset
+```
+
+Presets persist in Omni after the image is downloaded. When you no longer need the preset, delete it:
+
+```bash
+omnictl media preset delete join-preset
 ```
 </Tab>
 </Tabs>

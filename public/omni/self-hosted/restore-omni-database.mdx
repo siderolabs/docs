@@ -1,0 +1,86 @@
+---
+title: Omni On-Prem etcd Data Recovery
+description:  Recover etcd data from a self-hosted Omni instance that's running without a host-mounted etcd volume, before the container gets recreated.
+--- 
+
+For a while, the [self-hosted Omni guide](./run-omni-on-prem) was missing the etcd volume mount in the `docker run` example. Omni instances set up by following it keep the embedded etcd data inside the container instead of on the host. The data is intact, but it is deleted together with the container, e.g., when the container is recreated for an upgrade.
+
+## Check if you are affected
+
+Run this on the host. If your container is not named `omni`, use its name instead (`docker ps -a` lists them).
+
+```bash
+docker inspect omni --format '{{range .Mounts}}{{println .Destination}}{{end}}' | grep -qEx '/_out(/etcd)?' \
+  && echo "The etcd data directory is mounted. This instance is not affected." \
+  || echo "The etcd data directory is not mounted. This instance is affected."
+```
+
+If it prints "not affected", you are done. Otherwise, follow the steps below.
+
+## Move the data to the host
+
+The commands below use the current directory. The copy taken in step 3 lands in `./etcd`, and step 5 mounts that same directory into the new container as its permanent data directory on the host. Because of this, run all steps from the directory you normally start Omni from, the one holding the certificate files from the setup guide.
+
+Run the commands one at a time, and if one of them errors, stop there.
+
+1. Check the container is not set to auto-remove.
+
+```bash
+docker inspect omni --format '{{.HostConfig.AutoRemove}}'
+```
+
+This must print `false`. If it prints `true`, do not stop the container. Stopping it would delete it together with the data. [Contact support](https://support.siderolabs.com/) in that case.
+
+2. Stop Omni. Do not remove the container.
+
+```bash
+docker stop -t 60 omni
+```
+
+This stops etcd from writing, so that the copy taken in the next step is consistent. The data stays inside the stopped container.
+
+3. Copy the etcd data out of the container.
+
+```bash
+mkdir -p etcd
+docker cp omni:/_out/etcd/. ./etcd
+```
+
+The `/.` form copies the directory contents, and works the same whether `./etcd` existed before or not.
+
+4. Keep the old container as a backup.
+
+```bash
+docker rename omni omni-old
+```
+
+The old container still holds the original copy of the data. Renaming it keeps it around until the new instance is checked, and frees the `omni` name.
+
+5. Start Omni again with the missing mount added.
+
+Use the same `docker run` command and the same image version as before, and add this to the mounts:
+
+```
+-v "$PWD/etcd:/_out/etcd" \
+```
+
+If you are not sure which image the old container was running, `docker inspect omni-old --format '{{.Config.Image}}'` prints it. Do not upgrade in the same step. First get back to a working state, then upgrade the normal way.
+
+6. Check everything is there, then clean up.
+
+Log in to Omni and confirm your clusters and machines are all present. Re-run the check command from above, it should now print "not affected". Only then remove the backup container:
+
+```bash
+docker rm omni-old
+```
+
+If you pass any other host paths to Omni without a mount (e.g., a local etcd backup directory), copy those out of `omni-old` the same way before removing it.
+
+## If you run Omni with docker compose
+
+Do not run `docker compose down`. It removes the container together with the data. Instead:
+
+- Stop with `docker compose stop omni`, then copy the data out as in step 3.
+- Make an extra copy on the host (`cp -a etcd etcd.bak`) instead of renaming the container. Compose removes the old container on the next `docker compose up -d` even when it was renamed, so the rename does not protect anything there.
+- Add the volume to the compose file and run `docker compose up -d`.
+- After checking everything is there, remove the extra copy with `rm -rf etcd.bak`.

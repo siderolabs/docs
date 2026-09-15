@@ -1,26 +1,58 @@
 ---
-title: Create a Patch For Cluster Machines
+title: Create a Patch for Cluster Machines
 description: Apply configuration changes to machines within a cluster.
 ---
 
-Omni allows you to create patches and target the patches to all members of a cluster; all control plane nodes; all worker nodes; or specific machines. Upon logging in, click the “Clusters” menu item on the left. Now, select “Config Patches” from the menu under the ellipsis:
+Omni allows you to create configuration patches and apply them to specific groups of machines within a cluster. You can target:
 
-<img src="./images/create-a-patch-for-cluster-machines-config-patches.png" alt=""/>
+- All machines in a cluster
+- Control plane nodes
+- Worker nodes
+- Individual machines
 
-(You can also navigate to the specific cluster, and then select Config Patches in the right hand menu.)
+## Create and apply a configuration patch
 
-Next, click “Create Patch”:
+To create and apply a configuration patch in Omni:
 
-<img src="./images/create-a-patch-for-cluster-machines-create-patch-red.png" alt=""/>
+1. Select the **Clusters** tab in the left-hand menu.
 
-Pick the specific machine or class of machines from the “Patch Target” dropdown:
+2. Open the cluster menu (**⋯**) and select **Config Patches**.
 
-<img src="./images/create-a-patch-for-cluster-machines-patch-target.png" alt=""/>
+   <img src="./images/create-a-patch-for-cluster-machines-config-patches.png" alt="Navigate to Config Patches" />
 
-Type in the desired config patch:
+   **Alternatively**, you can:
+   - Open a specific cluster
+   - Select **Config Patches** from the right-hand panel
 
-<img src="./images/create-a-patch-for-cluster-machines-goblin.png" alt=""/>
+   <img src="./images/create-a-patch-for-cluster-machines-config-patch-right-side.png" alt="Config patch" />
 
-Click “Save” to create the config patch.
+3. Click **Create Patch**.
 
-For an example of a patch to enable node-to-node network encryption - the KubeSpan feature of Talos Linux - see [Creating a Hybrid Cluster](../cluster-management/create-a-hybrid-cluster).
+   <img src="./images/create-a-patch-for-cluster-machines-create-patch-red.png" alt="Create a patch" />
+
+4. Select a target from the **Patch Target** dropdown.
+
+   <img src="./images/create-a-patch-for-cluster-machines-patch-target.png" alt="Select patch target" />
+
+   You can target the entire cluster, a group of machines (for example, all workers) or a specific machine.
+
+5. Enter your configuration patch.
+
+   <img src="./images/create-a-patch-for-cluster-machines-goblin.png" alt="Enter configuration patch" />
+
+6. Click **Save** to create the patch.
+
+Once saved, Omni applies the configuration to the selected machines.
+
+## Review Configuration Changes
+
+Starting with Omni v1.6.0, you can use the configuration diff view to review both pending and applied changes.
+
+To view these changes:
+
+1. Select a machine in your cluster
+2. Navigate to the **Config History** tab
+
+<img src="./images/create-a-patch-for-cluster-machines-config-history.png" alt="Config history" />
+
+From here, you can inspect how configurations have changed over time and verify updates before or after they are applied.

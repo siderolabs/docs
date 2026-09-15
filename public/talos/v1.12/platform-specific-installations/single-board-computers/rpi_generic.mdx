@@ -3,6 +3,7 @@ title: "Raspberry Pi Series"
 description: "Installing Talos on Raspberry Pi SBC's using raw disk image."
 aliases:
   - ../../../single-board-computers/rpi_generic
+canonical: https://docs.siderolabs.com/talos/v1.14/platform-specific-installations/single-board-computers/rpi_generic
 ---
 
 import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
@@ -307,6 +308,25 @@ The custom `installer` image can now be used to upgrade Talos machine.
 ## config.txt information
 
 Refer to the default [config.txt](https://github.com/siderolabs/sbc-raspberrypi/blob/main/installers/rpi_generic/src/config.txt) file used by the [sbc-raspberrypi](https://github.com/siderolabs/sbc-raspberrypi) overlay.
+
+### Overlay options
+
+The `rpi_generic` overlay provides two options for customizing the `config.txt` boot configuration file:
+
+| Option | Description |
+|--------|-------------|
+| `configTxt` | Replaces the entire `config.txt` file with the provided contents |
+| `configTxtAppend` | Appends the provided contents to the existing `config.txt` file |
+
+These options must be set at image generation time using the [Image Factory](../../learn-more/image-factory) or Imager.
+
+Changing `config.txt` on a running system is not supported. To apply any changes, you must generate new installation media.
+
+<Note>
+Customizations to `config.txt` are not preserved automatically during upgrades.
+
+If you are using Omni to manage your machines, custom `config.txt` is not currently supported. Omni does not preserve or apply these changes, and upgrading with a custom image is not permitted.
+</Note>
 
 ### Configure the `config.txt` file for usage with the `vc4` system extension
 

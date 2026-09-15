@@ -1,0 +1,19 @@
+---
+title: Talos Version Support Policy
+description: Omni support policy for Talos Linux versions, end-of-support timelines, and upgrade requirements.
+---
+
+Omni requires machines to run a supported version of Talos Linux.
+Versions that fall below the minimum supported version are considered **unsupported** and must be upgraded.
+
+For the current minimum supported Talos Linux version and the general support window, see the [Support Matrix](./support-matrix).
+
+## Talos Version Compatibility
+
+Starting with **Omni v1.11.0** (estimated **October 2026**), Omni requires all registered machines to meet the minimum supported Talos Linux version. To ensure system stability and feature compatibility, Omni will not start if any registered machines are running versions below this baseline.
+
+Until then, Omni will display warning notifications for machines running unsupported or soon-to-be-unsupported versions.
+
+## How to upgrade
+
+Follow the [Upgrading Clusters](../cluster-management/upgrading-clusters) guide to upgrade Talos Linux on your machines through Omni.

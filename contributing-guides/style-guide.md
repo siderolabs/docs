@@ -27,7 +27,7 @@ Use an unordered ****list for non-sequential items (features, tips, caveats).
 - **No stacked headings:** Don’t put a heading immediately after another heading. Add at least one sentence before the next heading.
 - **Hierarchy:** Do not jump backwards when using headers. Follow this sequence: Page title→ `##` → `###`not `###` then `##`.
 - **Keep it progressive:** Move down one level at a time as you drill into detail.
-- Use sentence case.
+- Use title case for page titles, and sentence case for headings and subheadings.
 
 ## 3) Referencing UI Text
 

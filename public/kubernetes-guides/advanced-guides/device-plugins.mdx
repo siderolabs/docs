@@ -48,7 +48,7 @@ spec:
       - operator: "Exists"
         effect: "NoSchedule"
       containers:
-      - image: squat/generic-device-plugin
+      - image: squat/generic-device-plugin:0.2.0
         args:
         - --device
         - |
@@ -92,7 +92,7 @@ Apply the manifest to your cluster:
 kubectl apply -f generic-device-plugin.yaml
 ```
 
-Once the device plugin is deployed, you can verify that the nodes have a new resource: `squat.ai/tun` (the `tun` name comes from the name of the group in the device plugin configuration).:
+Once the device plugin is deployed, you can verify that the nodes have a new resource: `devic.es/tun` (the `tun` name comes from the name of the group in the device plugin configuration).:
 
 ```sh
 $ kubectl describe node worker-1
@@ -101,7 +101,7 @@ Allocated resources:
   Resource           Requests     Limits
   --------           --------     ------
   ...
-  squat.ai/tun       0            0
+  devic.es/tun       0            0
 ```
 
 ## Deploy a pod with the device
@@ -112,7 +112,7 @@ The request for the device is specified as a [resource](https://kubernetes.io/do
 ```yaml
 requests:
   limits:
-    squat.ai/tun: "1"
+    devic.es/tun: "1"
 ```
 
 Here is an example non-privileged pod spec that requests the `/dev/net/tun` device:
@@ -132,7 +132,7 @@ spec:
       - inf
     resources:
       limits:
-        squat.ai/tun: "1"
+        devic.es/tun: "1"
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:

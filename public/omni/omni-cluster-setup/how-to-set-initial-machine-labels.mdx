@@ -1,42 +1,59 @@
 ---
-title: Set Initial Machine Labels Using Omnictl or Image Factory
-description: Configure machine labels at boot time for automated grouping and selection in Omni.
+title: Set Initial Machine Labels
+description: Set machine labels at boot time and understand labels derived from platform metadata for automated grouping and selection in Omni.
 ---
 
-Machine labels can be useful for organizing and selecting machines in your Omni environment. For example, you might use them to distinguish between different environments (production, staging, development) or geographical locations (regions, zones). This helps various automation scenarios, such as integrating with your CI pipeline.
+import { release } from '/snippets/custom-variables.mdx';
 
-<Info>
-Choose label keys and values that are meaningful for your infrastructure organization.
-</Info>
+Machine labels help you organize and manage machines in your Omni environment more effectively.
 
-The simplest way to set machine labels is by using the "Download Installation Media" form from the homepage of Omni, which allows you set machine labels in the downloaded media (or the generated PXE endpoint.)
+For example, you can use labels to group machines by environment (production, staging, or development) or by location (regions and zones). This makes it easier to automate workflows such as CI/CD pipelines and targeted deployments.
 
-<img src="./images/how-to-set-initial-machine-labels-download-install-media.png" alt=""/>
+This guide shows how to set machine labels at boot time when generating installation media or PXE URLs. You can add labels using one of the following methods:
 
-This guide demonstrates how to set initial machine labels when generating boot media / URL using the `omnictl` CLI tool or using [Image Factory](https://factory.talos.dev) directly.
+- Through the Omni UI
+- Using the `omnictl` CLI  
+- Using Image Factory 
 
-Both methods allow you to label your machines programmatically.
+## Set machine labels using the Omni UI
 
-## Using `omnictl`
+To set machine labels using the Omni UI:
 
-When generating Talos installation media or a PXE boot URL using `omnictl`, you can set initial machine labels using the `--initial-labels` flag. This allows you to assign key-value pairs as labels to the machines that boot from that media or the PXE boot URL.
+  1. Log in to your Omni dashboard.
 
-Here's the basic syntax for adding initial labels:
+  2. Click the **Download Installation Media** button to open the **Create New Media** wizard.
+
+  3. On each page of the **Create New Media** wizard, select the appropriate options for your setup, then click **Next** to continue.
+
+      The **Create New Media** wizard is identical to the [Image Factory](https://factory.talos.dev/) and it is split across multiple pages. Each page presents a different set of configuration options, such as architecture, hardware type, and Talos Linux version, that you can use to customize your Talos Omni image.
+
+  4. In the **Machine User Labels** section add the labels you want your machines to have and click **Next** to continue customizing your Talos Omni image.
+
+  ![Machine User Labels](./images/how-to-set-initial-machine-labels-machine-user-labels.png)
+
+  5. Select the appropriate boot option for your machine on the **Schematic Ready** page to download the Talos Omni image.
+
+  6. Boot your machines using the downloaded image to have your machines labelled.
+
+## Set machine user labels using `omnictl`
+
+When generating Talos installation media or a PXE boot URL with `omnictl`, you can define initial machine labels using the `--initial-labels` flag. This lets you assign key-value pairs to any machine that boots from that media.
+
+Here is how to create a preset with machine user labels and download from it. This command creates a preset with the machine labels `environment=production` and `region=us-west` and downloads an image from that preset. For all available options, see the [CLI reference](/omni/reference/cli#omnictl-media-preset-create).
 
 ```bash
-omnictl download <image-name> \
-  --initial-labels <key1>=<value1>,<key2>=<value2> \
-  [--pxe]
-```
-
-Let's say you want to download an `amd64` ISO image and set two labels: `environment=production` and `region=us-west`. Here's how you would do that:
-
-```bash
-omnictl download iso --arch amd64 \
+omnictl media preset create labels-preset --arch amd64 \
   --initial-labels environment=production,region=us-west
+omnictl media download labels-preset
 ```
 
-Running this command will prepare a schematic under the hood and submit it in a request to the Image Factory. The generated schematic will look like the following:
+Presets persist in Omni after the image is downloaded. When you no longer need the preset, delete it:
+
+```bash
+omnictl media preset delete labels-preset
+```
+
+Behind the scenes, these commands generate a schematic and submit it to Image Factory. The schematic includes both the required kernel arguments for connecting to Omni and the labels you specified:
 
 ```yaml
 customization:
@@ -52,34 +69,40 @@ customization:
             region: us-west
 ```
 
-The schematic will also get a unique ID, such as `d2f4229b6157ba7e1dba8c3b4de42263e4baa35111e960b6a18841332d0f2035`.
+Each generated schematic is assigned a unique ID, which can later be used to download installation media or construct PXE URLs.
 
-Here, you can see that the custom image contains the extra Kernel arguments for Talos to connect to your Omni instance on boot using [Siderolink](https://www.talos.dev/v1.7/talos-guides/network/siderolink/). It also contains the machine labels you have specified in a nested yaml in the meta section with key `12`. Here, the key `12` is a Talos META key reserved for Omni for the initial machine labels.
+The schematic includes the extra kernel arguments Talos needs to connect to your Omni instance on boot via SideroLink, as well as your machine labels stored in the `meta` section under key `12` — a Talos META key reserved by Omni for initial machine labels.
 
 <Info>
-These initial labels work not only for ISOs but for most installation media and for PXE boot URL. For example, to get a PXE boot URL for a Raspberry Pi board, you can run
+Initial labels work across most installation methods, including ISOs and PXE boot URLs. 
 
-`omnictl download rpi_generic --initial-labels environment=production,region=us-west --pxe`.
+**For example:**
 
-This command will print the PXE boot URL and exit.
+```bash
+omnictl media download labels-preset --format pxe
+```
+
+This prints a PXE boot URL and exits without downloading a file.
 </Info>
 
-## Using Image Factory directly
+## Set machine user labels using Image Factory
 
-Instead of using your Omni instance to generate labeled boot media or PXE URLs, you can use the image factory directly.
+Instead of using `omnictl`, you can generate labeled boot media or PXE URLs by sending requests directly to the Image Factory API. This is useful when you need more control over schematic generation or want to integrate with your own tooling.
 
-To do this, you need to craft an HTTP POST request with the schematic YAML in its body.
+### Step 1: Get your Omni kernel arguments
 
-First, you need to find the Kernel arguments for your Omni instance.
+You need the kernel arguments for your Omni instance. 
 
-You can do this by either:
+Retrieve them using **either** one of these methods:
 
-* clicking "Copy Kernel Parameters" on your Omni overview page, which will copy them to your clipboard
-* or by running `omnictl get connectionparams -oyaml` , which will print them under `.spec.args` field.
+1. Click **Copy Kernel Parameters** on your Omni overview page
+2. Run `omnictl get connectionparams -oyaml` and read the values under `.spec.args`
 
-Note that this is a one-time operation - these kernel arguments will stay the same for all the machines you boot from the generated schematic ID.
+These kernel arguments are the same for all machines you boot from a given schematic, so this is a one-time lookup.
 
-After retrieving the Kernel arguments, split them by white spaces, and put them into your request body. Your CURL command should look like the following:
+### Step 2: Submit a schematic to Image Factory
+
+Split the kernel arguments by whitespace and include them in a `curl` POST request to the Image Factory:
 
 ```bash
 curl -X POST https://factory.talos.dev/schematics \
@@ -99,41 +122,62 @@ customization:
 '
 ```
 
-This command will produce output similar to:
+The response will contain a schematic ID:
 
 ```json
 {"id":"d2f4229b6157ba7e1dba8c3b4de42263e4baa35111e960b6a18841332d0f2035"}
 ```
 
 <Info>
-&#x20;Note that the printed schematic ID is the same as the one we got when we used `omnictl`.
+This schematic ID will be identical to the one generated when using `omnictl` with the same labels.
 </Info>
 
-Then you can use this ID in your PXE boot URL or download an installation media, for example:
+### Step 3: Download the installation media
 
-```bash
-curl -O https://factory.talos.dev/image/d2f4229b6157ba7e1dba8c3b4de42263e4baa35111e960b6a18841332d0f2035/v1.7.6/metal-amd64.iso
-```
+Use the schematic ID to download your installation media:
 
-For more options, see the [Image Factory](https://github.com/siderolabs/image-factory/blob/main/README.md) reference.
+<CodeBlock>
+{`
+curl -O https://factory.talos.dev/image/d2f4229b6157ba7e1dba8c3b4de42263e4baa35111e960b6a18841332d0f2035/${release}/metal-amd64.iso
+`}
+</CodeBlock>
+
+For additional options, see the [Image Factory reference](https://github.com/siderolabs/image-factory/blob/main/README.md).
 
 <Warning>
-Although Image Factory has a [web UI](https://factory.talos.dev), it is currently not possible to specify META values on the UI. Therefore, the initial machine labels cannot be specified on the UI at the moment.&#x20;
+The standalone [Image Factory web UI](https://factory.talos.dev) does not currently support specifying META values, so initial machine labels cannot be set there. 
 
-The version of the Image Factory UI built into Omni **does** support specifying initial machine labels.
+However, the Image Factory UI built into Omni **does** support initial machine labels.
 </Warning>
+
+## Set machine user labels using platform metadata
+
+Omni can automatically create machine user labels from the platform metadata tags that the underlying platform exposes to Talos Linux. For example, an EC2 instance's tags are exposed by Talos as platform metadata tags, and Omni surfaces them as machine labels when the machine joins. This works for any platform that exposes tags through Talos `PlatformMetadata`, not just AWS EC2.
+
+You can inspect the platform metadata tags Talos sees on a machine with:
+
+```bash
+omnictl get machinestatus -oyaml <machine-id> | yq '.spec.platformmetadata.tags'
+```
+
+Machine user labels based on platform metadata are populated **once**, when the machine first joins Omni. After the labels are created successfully, Omni records that the initialization has happened and does not reconcile these labels ever again for that machine. As a result:
+
+- Rebooting the machine does **not** recreate the labels.
+- Changing the platform tags after the machine has joined (for example, editing the instance tags in EC2) is **not** reflected as updated labels in Omni.
+
+Labels created from platform metadata behave like any other user label. You can edit or remove them after they are created, and your changes won't get overwritten. If a platform metadata tag has the same key as a label you set yourself, the pre-existing label takes precedence. 
 
 ## Verifying labels
 
-After a machine boots from the labeled media/PXE URL and registers with Omni, you can verify the labels using the Omni web interface or the `omnictl` CLI tool.
+After a machine registers with Omni, you can verify its labels using the Omni UI or omnictl. This applies both to user labels set at boot (from labeled media or a PXE URL) and to user labels derived from platform metadata. They appear alongside one another.
 
-To check labels using `omnictl`, you can use either of these commands (replace `<machine-id>` with the actual machine ID):
+To check labels with omnictl, run either of the following commands, replacing `<machine-id>` with your machine's ID:
 
 ```bash
 omnictl get machinelabels -oyaml <machine-id>
 ```
 
-or
+**or**
 
 ```bash
 omnictl get machinestatus -oyaml <machine-id>

@@ -1,7 +1,8 @@
 ---
-title: What's New in Talos 1.12.0
+title: What's New in Talos 1.13.0
 weight: 50
-description: "Discover the latest features and updates in Talos Linux 1.12."
+description: "Discover the latest features and updates in Talos Linux 1.13."
+canonical: https://docs.siderolabs.com/talos/v1.13/getting-started/what's-new-in-talos
 ---
 
 import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
@@ -12,257 +13,279 @@ For critical changes, refer to the [upgrade notes](../configure-your-talos-clust
 
 ## Important changes
 
-### Network configuration
+### `talosctl debug`
 
-Talos v1.12 introduces new [network configuration documents](../networking/configuration/overview).
-These changes follow the new ["multi-doc" configuration](https://github.com/siderolabs/talos/issues/10925) concept, and allow more granular machine configuration.
+Talos Linux now provides a way to run and attach to the [privileged debug container](../troubleshooting/talosctl-debug) with a user-provided container image.
+The debug container might be used for troubleshooting and debugging purposes.
 
-Asides from providing more granular/flexible configuration, the new "multi-doc" configuration documents can be applied at any time, including maintenance mode, and can also be embedded into the boot image,
-or supplied via the `talos.config.early` kernel command line argument.
+### Container Image Signature Verification
 
-The new documents replace the previous network configuration under [.machine.network](../../v1.11/reference/configuration/v1alpha1/config#network), including:
-- `hostname`: replaced by [HostnameConfig](../reference/configuration/network/hostnameconfig)
-- `interfaces` replaced by:
-    - [LinkConfig](../reference/configuration/network/linkconfig)
-    - [LinkAliasConfig](../reference/configuration/network/linkaliasconfig)
-    - [EthernetConfig](../reference/configuration/network/ethernetconfig)
-    - [BondConfig](../reference/configuration/network/bondconfig)
-    - [BridgeConfig](../reference/configuration/network/bridgeconfig)
-    - [DHCPv4Config](../reference/configuration/network/dhcpv4config)
-    - [DHCPv6Config](../reference/configuration/network/dhcpv6config)
-    - [VLANConfig](../reference/configuration/network/vlanconfig)
-    - [WireGuardConfig](../reference/configuration/network/wireguardconfig)
-    - [DummyLinkConfig](../reference/configuration/network/dummylinkconfig)
-    - [Layer2VIPConfig](../reference/configuration/network/layer2vipconfig)
-- `nameservers`, `searchDomains`, `disableSearchDomain`: replaced by [ResolverConfig](../reference/configuration/network/resolverconfig)
-- `extraHostEntries`: replaced by [StaticHostConfig](../reference/configuration/network/statichostconfig)
+Talos now supports machine-wide container [image signature verification](../security/verifying-image-signatures) via the new [`ImageVerificationConfig`](../reference/configuration/security/imageverificationconfig) machine config document.
 
-This change **does not** affect KubeSpan configuration, which still resides under [`.machine.network`](../reference/configuration/v1alpha1/config#network)
+Any image which gets pulled on the node will be verified against the configured rules, and if no rule matches, it will be pulled without verification.
 
-The previous configuration ([machine.network](../../v1.11/reference/configuration/v1alpha1/config.mdx#network)) (with the exception of KubeSpan configuration) is now deprecated, but supported for backwards compatibility.
+### NVIDIA GPU Support
 
-### New user volume types
+Talos switched to using CDI and now supports configuring NVIDIA GPU via the gpu-operator helm chart.
+See the [upgrade notes](../configure-your-talos-cluster/lifecycle-management/upgrading-talos#nvidia-gpu-users)
+for more details on how to configure NVIDIA GPU support in Talos.
 
-The [UserVolumeConfig](../reference/configuration/block/uservolumeconfig) document has been extended with a new `volumeType` field to specify the type of user volume.
+### Flannel CNI with Network Policy Support
 
-#### `directory`
+Talos Linux now supports optionally deploying Flannel CNI with [network policy support](https://kubernetes.io/docs/concepts/services-networking/network-policies/) enabled.
+The network policy implementation is [kube-network-policies](https://github.com/kubernetes-sigs/kube-network-policies/).
 
-When `volumeType` is set to `directory`, provisioning and filesystem operations are skipped, and a directory is created under `/var/mnt/<name>`.
-The `directory` type enables lightweight storage volumes backed by a host directory, eliminating the need for a full block device partition.
+To enable Flannel CNI with network policy support, use the following machine configuration patch:
 
-When `volumeType` is set to `directory`:
+```yaml
+cluster:
+  network:
+    cni:
+      name: flannel
+      flannel:
+        kubeNetworkPoliciesEnabled: true
+```
 
- * A directory is created at `/var/mnt/<name>`
- * `provisioning`, `filesystem`, and `encryption` are not allowed
+(If the cluster is already running, sync the bootstrap manifests after applying the patch to deploy the new CNI configuration.)
 
-> Note: This mode does not provide filesystem-level isolation and inherits the `EPHEMERAL` partition capacity limits.
-> It should not be used for workloads requiring predictable storage quotas.
+### Kubernetes Bootstrap Manifests
 
-#### `disk`
+Talos now uses inventory-backed [server-side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) when applying bootstrap manifests
+(including `extraManifests` and `inlineManifests`).
+Purging of unneeded manifests is automatically performed by [`talosctl upgrade-k8s`](../../../kubernetes-guides/advanced-guides/upgrading-kubernetes/).
+The switch and inventory backfill is automatic and no action is needed from the user.
 
-When `volumeType` is set to `disk`, Talos provisions a user volume on the disk that matches the `diskSelector` criteria.
+### Upgrade Flow
 
-When `volumeType` is set to `disk`:
+Talos now exposes install and upgrade operations via the `LifecycleService` API, enabling programmatic installs and upgrades through a single, consistent interface.
+The legacy upgrade API is deprecated; new integrations should migrate to `LifecycleService` for future compatibility.
 
- * Size-specific settings are not allowed in the provisioning block (`minSize`, `maxSize`, `grow`)
+`talosctl` upgrades now route through `LifecycleService`, aligning CLI behavior with the new install/upgrade API and unifying the upgrade path.
+This change is transparent to users but standardizes the backend used for upgrades.
 
-### Disk encryption
+A user-facing change is that upgrade process (running new boot assets) happens while the machine is still running workloads, followed by a machine reboot wrapped with
+Kubernetes node drain and uncordon. Draining the node is now optional.
 
-#### TPM encryption
+## Storage Subsystem
 
-Talos versions prior to v1.12 used PCR 7 state and signed policies locked to PCR 11 for TPM-based disk encryption.
+### External Volumes
 
-Talos now supports configuring which PCR states are used for TPM-based disk encryption via the `options.pcrs` field in the `tpm` section of the disk encryption configuration.
-If no options are specified, Talos defaults to using PCR 7 for backward compatibility with existing installations.
-This change improves compatibility with systems that may have varying PCR 7 states due to UEFI Secure Boot configurations, and allows users to disable locking to PCR 7 state entirely if desired.
+Talos now supports virtiofs-based [external volumes](../configure-your-talos-cluster/storage-and-disk-management/disk-management/external) via the new
+[ExternalVolumeConfig](../reference/configuration/block/externalvolumeconfig/)
+document.
 
-Signed PCR policies remain bound to PCR 11.
-You can view the currently used PCRs with the `talosctl get volumestatus <volume> -o yaml` command.
+The virtiofs external volumes are not supported when SELinux is running in [enforcing mode](../security/selinux).
 
-#### Device mapper names
+### Negative Max Volume Size
 
-Talos Linux now consistently provides mapped names for encrypted volumes in the format `/dev/mapper/luks2-<volume-id>`.
-This change should not affect system or user volumes but allows for easier identification of encrypted volumes, particularly raw encrypted volumes.
+Negative max size represents the amount of space to be left free on the device, rather than the size the volume should consume.
 
-### Logging
+For example:
 
-The kernel log (`dmesg`) is now also available as the service log named `kernel` (accessible via `talosctl logs kernel`).
+* a max size of "-10GiB" means the volume can grow to the available space minus 10GiB.
+* a max size of "-25%" means the volume can grow to the available space minus 25%.
 
-Talos now stores system component logs in `/var/log` with automatic log rotation, keeping the two most recent log files. This change enables collecting logs from Talos just like any other Linux system.
+## Network Subsystem
 
-### GRUB kernel command line
+### KubeSpan Configuration
 
-Talos Linux introduces a new machine configuration option, `.machine.install.grubUseUKICmdline`, to control whether GRUB should use the kernel command line provided by the boot assets (UKI) or the command line constructed by Talos itself (legacy behavior).
+A new `KubeSpanConfig` document has been introduced to configure KubeSpan settings.
+It replaces and deprecates the previous method of configuring KubeSpan via the `.machine.network.kubespan` field.
 
-This option defaults to `true` for new installations, meaning GRUB will use the command line from the UKI, making it easier to customize kernel parameters via boot asset generation.
-For existing installations upgrading to v1.12, this option defaults to `false` to preserve the legacy behavior.
+The old configuration field will continue to work for backward compatibility.
 
-This change unifies the kernel command line across UEFI (`systemd-boot`) and BIOS (GRUB) boot modes.
+KubeSpan now supports filtering of advertised networks using the `excludeAdvertisedNetworks` field in the `KubeSpanConfig` document.
+This allows users to specify a list of CIDRs to exclude from the advertised networks. Please note that routing must be symmetric for any
+pair of peers, so if one peer excludes a certain network, the other peer must also exclude it. In other words, for any given pair of peers,
+and any pair of their addresses, the traffic should either go through KubeSpan or not, but not one way or the other.
 
-### CRI registry configuration
+### LinkAliasConfig Pattern-Based Multi-Alias
 
-The CRI registry configuration in v1alpha1 legacy machine configuration under `.machine.registries` is now deprecated but remains supported for backward compatibility.
-New configuration documents — [RegistryMirrorConfig](../reference/configuration/cri/registrymirrorconfig), [RegistryAuthConfig](../reference/configuration/cri/registryauthconfig), and [RegistryTLSConfig](../reference/configuration/cri/registrytlsconfig)—should be used instead.
+[`LinkAliasConfig`](../reference/configuration/network/linkaliasconfig/) now supports pattern-based alias names using `%d` format verb (e.g. `net%d`).
 
-### Out of memory (OOM) handling
+When the alias name contains a `%d` format verb, the selector is allowed to match multiple links.
+Each matched link receives a sequential alias (e.g. `net0`, `net1`, ...) based on hardware address order
+of the links. Links already aliased by a previous config are automatically skipped.
 
-Talos now includes a [userspace OOM handler](../configure-your-talos-cluster/system-configuration/oom),
-which automatically evicts workloads based on memory pressure.
+This enables creating stable aliases from any N links using a single config document,
+useful for `BondConfig` and `BridgeConfig` member interfaces on varying hardware.
 
-The OOM handler can be configured via the [OOMConfig](../reference/configuration/runtime/oomconfig) document.
+### ProbeConfig
+
+The [`TCPProbeConfig`](../reference/configuration/network/tcpprobeconfig/) configuration document allows to configure TCP probes for network reachability checks.
+This allows to define a custom connectivity condition instead of Talos default condition (whether a default gateway exists).
+
+### ResolverConfig
+
+The nameservers configuration in [machine configuration](../reference/configuration/network/resolverconfig/) now overwrites any previous layers (defaults, platform, etc.) when specified.
+Previously a smart merge was performed to keep IPv4/IPv6 nameservers from lower layers if the machine configuration specified only one type.
+
+### Routing Rules Support
+
+Talos now supports configuring Linux routing rules via the new [`RoutingRuleConfig`](../reference/configuration/network/routingruleconfig/) machine config document.
+
+### VRF Support
+
+Talos now supports VRF (Virtual Routing and Forwarding) via the new [`VRFConfig`](../reference/configuration/network/vrfconfig/) machine config document.
 
 ## Kubernetes
 
-### API server cipher suites
+### Component Configuration Extra Arguments
 
-The Kubernetes API server in Talos has been updated to use a more secure set of TLS cipher suites by default.
-This aligns with the best practices documented in the CIS 1.12 benchmark.
+Several Talos configuration fields that previously accepted single string values for extra arguments have been updated to accept slices of strings as well.
+This includes fields such as `.cluster.apiServer.extraArgs`.
 
-You can still expand the list of supported cipher suites via the `cluster.apiServer.extraArgs."tls-cipher-suites"` machine configuration field if needed.
-
-### etcd
-
-The etcd container image is now pulled from `registry.k8s.io/etcd` instead of `gcr.io/etcd-development/etcd`.
-
-## Machine configuration
-
-### Ethernet configuration
-
-The [Ethernet configuration](../reference/configuration/network/ethernetconfig) now includes a `wakeOnLAN` field to enable Wake-on-LAN (WOL) support.
-This field allows you to enable WOL and specify the desired WOL modes.
-
-### Deprecations
-
-Talos now ignores the following machine configuration fields:
-
-- `machine.features.rbac` (locked to `true`)
-- `machine.features.apidCheckExtKeyUsage` (locked to `true`)
-- `cluster.apiServer.disablePodSecurityPolicy` (locked to `true`)
-
-These fields were removed from the default machine configuration schema in v1.12 and are now always set to the locked values listed above.
-
-### Embedding machine configuration
-
-Talos Linux now supports [embedding machine configuration](../configure-your-talos-cluster/system-configuration/acquire) directly into the boot image.
+> Note: If you were relying on the resources EtcdConfigs, KubeletConfigs, ControllerManagerConfigs, SchedulerConfigs or APIServerConfigs, the protobuf format has changed from `map<string,string>` to `map<string,message>`.
 
 ## Miscellaneous
 
-### Extra binaries
+### Linux Kernel built with ThinLTO
 
-Talos Linux now includes the `nft` binary in the rootfs to support CNIs that invoke the `nft` command.
+Talos now uses a kernel built using `Clang` compiler, and optimized using ThinLTO. This should bring a small performance improvement,
+alongside some hardening features, such as BTI on supported ARM systems.
 
-### Talos force reboot
+### Dynamic Linux Kernel Preemption Model
 
-Talos now supports a "force" reboot mode, which allows you to skip graceful userland termination.
-This is useful when a userland service (e.g., the kubelet) becomes stuck during graceful shutdown, preventing the regular reboot flow from completing.
+Talos Linux now defaults to dynamic Linux kernel preemption model, the default value `none` matches
+previous version, but now with kernel argument `preempt=` the preemption model can be changed.
 
-Additionally, `talosctl` has been updated to support this feature via the `talosctl reboot --mode force` command.
+See [Linux kernel documentation](https://docs.kernel.org/admin-guide/kernel-parameters.html) for more
+information on supported values.
 
-### Kernel module signature verification
+This change only applies to amd64 (x86_64) architecture.
 
-Talos now supports optionally disabling kernel module signature verification by setting the `module.sig_enforce=0` kernel parameter.
-By default, kernel module signature verification is enabled (`module.sig_enforce=1`).
-When using Factory or Imager, supply the `-module.sig_enforce module.sig_enforce=0` kernel parameters to disable module signature enforcement.
+### Container Image Decompression
 
-This change provides an easier way to load custom kernel modules, though it does reduce system security.
+Talos now ships with `igzip` (amd64) and `pigz` (arm64) to speed up container image decompression.
 
-### Kernel security posture profile (KSPP)
+### `/proc/PID/mem` Access Hardening
 
-Talos now enables a stricter set of KSPP sysctl settings by default.
-You can view the list of overridden settings using the `talosctl get kernelparamstatus` command.
+A new kernel parameter `proc_mem.force_override=never` has been introduced by default to enhance system security
+by preventing unwanted writes to protected process memory via `/proc/PID/mem`.
+If the kernel parameter is removed, default behavior is restored, allowing access only if the process is traced.
 
-### `talosctl image cache-serve`
+### Container Device Interface
 
-`talosctl` includes a new `image cache-serve` subcommand.
-It allows you to serve the created OCI image registry over HTTP/HTTPS.
-It is a read-only registry, meaning images cannot be pushed to it; however, the backing storage can be updated by re-running the `cache-create` command.
+Talos now enables [CDI](https://github.com/cncf-tags/container-device-interface) by default.
+System extensions can bring in dynamic CDI spec files under `/run/cdi`.
 
-Additionally, `talosctl image cache-create` has some changes:
+### Resource Viewer in Interactive Dashboard
 
-* New flag `--layout`: accepts `oci` (_default_) or `flat`:
-  * `oci` preserves the current behavior
-  * `flat` does not repack the artifact layer but moves it to a destination directory, allowing it to be served by `talosctl image cache-serve`
-* Modified flag `--platform`: now accepts multiple OS/architecture combinations:
-  * comma-separated (`--platform=linux/amd64,linux/arm64`)
-  * multiple instances (`--platform=linux/amd64 --platform=linux/arm64`)
+The [interactive dashboard](../deploy-and-manage-workloads/interactive-dashboard/) now includes a resource viewer screen, which provides a way to inspect the running Talos machine state when using the video console is the only option
+(e.g. when the network is not working and `talosctl` cannot be used).
 
-### UEFI boot
+### VM Hot-Add Support
 
-When using UEFI boot with systemd-boot as the bootloader (on new Talos installations from version 1.10 onwards), Talos will no longer modify the UEFI boot order.
-Talos 1.11 introduced a fix to create a UEFI boot entry and set it as the first boot entry; however, this behavior caused issues on some systems.
-To avoid further issues, Talos will now only create the UEFI boot entry if it does not exist and will not modify the boot order.
+Talos now includes udev rules to support hot-adding of CPUs in virtualized environments.
 
-## Component updates
+### Talos Imager Enhancements
 
- * Linux: 6.18.0
- * Kubernetes: 1.35.0
- * CNI Plugins: 1.8.0
- * cryptsetup: 2.8.1
- * LVM2: 2_03_37
- * systemd-udevd: 257.8
- * runc: 1.3.4
- * CoreDNS: 1.13.1
- * etcd: 3.6.6
- * Flannel: 0.27.4
- * Flannel CNI plugin: v1.8.0-flannel2
- * containerd: 2.1.5
+Talos [`imager`](../platform-specific-installations/boot-assets/#imager) now can run rootless.
+The flags `--privileged` and `-v /dev:/dev` are no longer required for `docker run`.
 
-Talos is built with Go 1.25.5.
+Talos disk images are now reproducible. Building the same version of Talos multiple times will yield
+identical disk images.
+
+Note: VHD and VMDK (Azure and VMware) images are not currently reproducible due to limitations in the underlying image creation tools.
+Users verifying reproducible images should use raw images, verify checksums, and convert them to VHD/VMDK as needed.
+
+### Image APIs Updated
+
+Talos Linux provides new APIs to manage container images on the node: listing, pulling, importing and removing images.
+The new pull APIs provide pull progress notifications.
+
+The CLI commands `talosctl image pull`, `talosctl image list` and `talosctl image remove` have been updated to interact with the new APIs.
+
+### Environment Configuration Document
+
+A new [`EnvironmentConfig`](../reference/configuration/runtime/environmentconfig) document has been introduced to allow users to specify environment variables for Talos components.
+It replaces and deprecates the previous method of setting environment variables via the `.machine.env` field.
+
+Multiple values for the same environment variable will replace previous values, with the last one taking precedence.
+
+To remove an environment variable, remove it from the `EnvironmentConfig` document and restart the node.
+
+### Image Bundles
+
+The `talosctl images k8s-bundle` command now accepts an optional version override argument.
+
+The `talosctl images talos-bundle` command now accepts optional `--overlays` and `--extensions` flags.
+If those are set to `false`, the command will not attempt to reach out to the container registry to fetch the latest versions and digests of the overlays and extensions.
+
+## Component Updates
+
+* Linux: 6.18.24
+* containerd: 2.2.3
+* runc: 1.4.2
+* etcd: 3.6.9
+* CoreDNS: 1.14.2
+* Kubernetes: 1.36.0
+* CNI: 1.9.1
+* Flannel CNI plugin: v1.9.1-flannel1
+* Flannel: 0.28.2
+* LVM2: 2_03_38
+* systemd: 259.5
+* cryptsetup: 2.8.3
+* iptables: 1.8.12
+* musl: 1.2.6
+
+Talos is built with Go 1.26.2.
 
 ## Contributors
 
 * Andrey Smirnov
 * Mateusz Urbanek
 * Noel Georgi
-* Dmitrii Sharshakov
-* Amarachi Iheanacho
 * Orzelius
+* Mickaël Canévet
+* Dmitrii Sharshakov
 * Laura Brehm
-* Oguz Kilcan
-* Justin Garrison
 * Artem Chernyshev
-* Utku Ozdemir
-* Bryan Lee
 * Edward Sammut Alessi
-* George Gaál
-* Jorik Jonker
-* Michael Smith
-* Nicole Hubbard
-* 459below
-* Adrian L Lange
-* Alp Celik
-* Andrew Longwill
-* Birger Johan Nordølum
-* Chris Sanders
-* Dmitry
-* Febrian
-* Florian Grignon
-* Fred Heinecke
-* Giau. Tran Minh
-* Grzegorz Rozniecki
-* Guillaume LEGRAIN
-* Hector Monsalve
-* Joakim Nohlgård
-* Lennard Klein
-* Markus Freitag
+* Fritz Schaal
 * Max Makarov
-* Mike Beaumont
-* Misha Aksenov
-* MrMrRubic
-* Olivier Doucet
-* Pranav
-* Sammy ETUR
-* Serge Logvinov
+* Andreas Freund
+* Bryan Lee
+* Justin Garrison
+* Nico Berlee
+* Pranav Patil
+* Spencer Smith
+* Utku Ozdemir
+* Zadkiel AHARONIAN
+* Alexis La Goutte
+* Andras BALI
+* Andreas Lüdeke
+* Andrei Kvapil
+* Birger Johan Nordølum
+* Camillo Rossi
+* Christopher Puschmann
+* Daniil Kivenko
+* David Orman
+* Dmitrii Sharshakov
+* Dominik Pitz
+* Florian Ströger
+* Gregor Gruener
+* Jaakko Sirén
+* Jan Paul
+* Jean-Francois Roy
+* Joakim Nohlgård
+* Jonas Lammler
+* Kai Zhang
+* Kevin Tijssen
+* Lennard Klein
+* Matthew Sanabria
+* Michal Baumgartner
+* Olav Thoresen
 * Serge van Ginderachter
 * Skye Soss
-* Skyler Mäntysaari
-* SuitDeer
-* Tom
-* aurh1l
-* frozenprocess
-* frozensprocess
-* kassad
-* leppeK
-* samoreno
-* theschles
-* winnie
+* Stanley Chan
+* Sébastien Masset
+* Tim Jones
+* arita
+* dataprolet
+* drew
+* eseiker
+* greenpsi
+* lmacka
+* pranav767
+* pythoner6

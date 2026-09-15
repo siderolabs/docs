@@ -81,7 +81,13 @@ Users with this role have no access to Omni-managed resources and can only see l
 
 ### Reader
 
-The `Reader` role provides read-only access and is typically used for audit, observability, or support scenarios. Users with this role can view clusters, machines, and other resources, but cannot modify them.
+The `Reader` role provides read-only access and is typically used for observability or support scenarios. Users with this role can view clusters, machines, and other resources, but cannot modify them.
+
+### Auditor
+
+The `Auditor` role provides everything the `Reader` role does, plus access to the audit log. It is intended for auditing and compliance scenarios, and for automation such as the audit log exporter, which previously required the far broader `Admin` role.
+
+Audit log access is granted by exact role rather than by seniority, so the `Operator` role does not include it even though it is otherwise more privileged than `Auditor`. Only `Auditor` and `Admin` can read the audit log.
 
 ### Operator
 

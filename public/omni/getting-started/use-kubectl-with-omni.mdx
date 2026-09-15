@@ -19,6 +19,8 @@ Before you begin, you need `omnictl`, `omniconfig`, and the `oidc-login` plugin 
 **On macOS and Linux**: Install `omnictl` and `oidc-login` with a single command:
 
 ```bash
+brew tap siderolabs/tap
+brew trust siderolabs/tap
 brew install siderolabs/tap/sidero-tools
 ```
 
@@ -32,6 +34,15 @@ Once installed, follow the [Configure omnictl](./install-and-configure-omnictl#s
 You can download the `kubeconfig` file for your cluster using either the Omni UI or the CLI:
 
 <Tabs>
+<Tab title="CLI">
+
+To download the `kubeconfig` file using the CLI, run the following command. Replace `<cluster-name>` with the name of your cluster:
+
+```bash
+omnictl kubeconfig --cluster <cluster-name>
+```
+</Tab>
+
 <Tab title="UI">
 
 To download the `kubeconfig` file using the Omni UI:
@@ -42,15 +53,6 @@ To download the `kubeconfig` file using the Omni UI:
 3. Select your cluster.
 4. Click **Download kubeconfig** in the cluster dashboard.
 ![Download kubeconfig](./images/use-kubectl-with-omni-clusters-download-kubeconfig.png)
-</Tab>
-
-<Tab title="CLI">
-
-To download the `kubeconfig` file using the CLI, run the following command. Replace `<cluster-name>` with the name of your cluster:
-
-```bash
-omnictl kubeconfig --cluster <cluster-name>
-```
 </Tab>
 </Tabs>
 

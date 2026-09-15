@@ -3,54 +3,75 @@ title: "Deploy Calico CNI"
 description: "In this guide you will learn how to set up Calico CNI on Talos in two modes: eBPF and NFTables."
 ---
 
-This documentation is designed to get you up and running with Talos and Calico CNI. Since both Calico and Talos support multiple networking technologies, you will learn how to run your environment with both the [Calico eBPF dataplane](https://docs.tigera.io/calico/latest/operations/ebpf/enabling-ebpf) and [NFTables](https://docs.tigera.io/calico/latest/getting-started/kubernetes/nftables). Optionally, you can also enable Calico's network [observability stack](https://docs.tigera.io/calico/latest/observability/) to gain insights into your cluster networking and policy behavior.
+import { k8s_release } from '/snippets/custom-variables.mdx';
 
-## Configuring Talos
+This guide sets up Calico CNI (Container Network Interface) on Talos and Omni. Calico supports two dataplane modes, [eBPF](https://docs.tigera.io/calico/latest/operations/ebpf/enabling-ebpf) and [NFTables](https://docs.tigera.io/calico/latest/getting-started/kubernetes/nftables), and you can optionally enable Calico's network [observability stack](https://docs.tigera.io/calico/latest/observability/) to inspect cluster networking and policy behavior.
+
+## Step 1: Disable the default CNI
 
 To install Calico, you first need to disable the default CNI. This can be done by applying a patch file during cluster creation.
-Store the following YAML template in a file (`patch.yaml`).
 
-```yaml
-cluster:
-  network:
-    cni:
-      name: none
-```
+<Tabs>
+  <Tab title="Talos v1.14+">
 
-After generating the patch file add the `--config-patch` argument to your `talosctl gen config`.
+    For Talos v1.14 and later, delete the default Flannel CNI document:
+
+    ```bash
+    cat <<'EOF' > patch.yaml
+    apiVersion: v1alpha1
+    kind: KubeFlannelCNIConfig
+    $patch: delete
+    EOF
+    ```
+
+  </Tab>
+  <Tab title="Talos < v1.14">
+
+    On Talos versions earlier than v1.14, set the CNI to `none`:
+
+    ```bash
+    cat <<'EOF' > patch.yaml
+    cluster:
+      network:
+        cni:
+          name: none
+    EOF
+  ```
+
+  </Tab>
+</Tabs>
+
+You'll apply this patch along with the rest of the template in Step 2.
 
 ```bash
 talosctl gen config \
-    my-cluster https://calico-talos.local:6443 \
-    --config-patch @patch.yaml
+    <cluster-name> https://<cluster-endpoint>:6443 \
+    --config-patch-control-plane @patch.yaml
 ```
 
-## Installing Tigera operator
+## Step 2: Install Calico
 
-Recommended way to install Calico is via `Tigera-operator` manifest. The operator will make sure that all Calico components are always up and running.
+Calico installs via the Tigera operator. Choose the tab that matches how you manage your cluster.
 
-> **Note:** If you’d like to install Calico using Helm, check out the [Install using Helm documentation](https://docs.tigera.io/calico/latest/getting-started/kubernetes/helm).
+<Tabs><Tab title="kubectl">
 
-Use the following command to install the latest Tigera operator.
+Installing via the Tigera operator manifest keeps all Calico components running and up to date. To install with Helm instead, see the [Helm installation guide](https://docs.tigera.io/calico/latest/getting-started/kubernetes/helm).
 
-```bash
-kubectl create -f https://docs.tigera.io/calico/latest/manifests/tigera-operator.yaml
-```
-
-### Configuring Calico networking
-
-Calico has a pluggable dataplane architecture that lets you choose the networking technology based on your use case. You can configure the dataplane by setting the `linuxDataplane` key in the installation manifest.
-
-> **Note**: To learn more about the available Calico configurations, check out the [Installation reference documentation](https://docs.tigera.io/calico/latest/reference/installation/api).
+1. Set the Calico version to install:
+   ```bash
+   export CALICO_VERSION=v3.31.4
+   ```
+2. Install the Tigera operator:
+   ```bash
+   kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/${CALICO_VERSION}/manifests/tigera-operator.yaml
+   ```
+3. Configure the dataplane. See the [Installation reference](https://docs.tigera.io/calico/latest/reference/installation/api) for all available options.
 
 <Tabs>
   <Tab title="NFTables">
 
-Use the following command to run Calico with NFTables backend.
-
 ```bash
 kubectl create -f -<<EOF
-# This section includes base Calico installation configuration.
 apiVersion: operator.tigera.io/v1
 kind: Installation
 metadata:
@@ -78,9 +99,7 @@ EOF
   </Tab>
   <Tab title="eBPF">
 
-By default, Calico uses the `/var` directory to mount cgroups. However, since this path is not writable in Talos Linux, you need to change it to `/sys/fs/cgroup`.
-
-Use the following command to update the cgroup mount path:
+Calico's eBPF mode mounts cgroups from `/sys/fs/cgroup` instead of Talos's default `/var` path. Set the cgroup path first:
 
 ```bash
 kubectl create -f -<<EOF
@@ -93,12 +112,7 @@ spec:
 EOF
 ```
 
-There are three values that we need to set for eBPF in the installation manifest
-1. `linuxDataplane` needs to be set to `BPF`.
-2. `bpfNetworkBootstrap` needs to be set to `Enabled`.
-3. kubeProxyManagement to `Enabled` so that the Tigera operator automatically disables the kube-proxy.
-
-Next, you have to configure Calico:
+Then apply the Installation resource. Three fields matter here: set `linuxDataplane` to `BPF`, `bpfNetworkBootstrap` to `Enabled`, and `kubeProxyManagement` to `Enabled` so the operator disables kube-proxy automatically.
 
 ```bash
 kubectl create -f -<<EOF
@@ -122,46 +136,161 @@ spec:
   kubeletVolumePluginPath: None
 EOF
 ```
-</Tab>
+
+  </Tab>
 </Tabs>
 
-## Deploy Calico Whisker network observability stack
+  </Tab>
+  <Tab title="Omni manifest sync">
 
-Use the following command to enable Calico observability stack:
+Omni installs Calico by referencing manifests in a cluster template, using the [manifest sync](../../omni/cluster-management/sync-kubernetes-manifests) feature.
 
-```bash
-kubectl create -f -<<EOF
-# Configures the Calico Goldmane flow aggregator.
+1. Set the Calico version to install:
+   ```bash
+   export CALICO_VERSION=v3.31.4
+   ```
+2. Download the Tigera operator manifest:
+   ```bash
+   curl -Lo tigera-operator.yaml https://raw.githubusercontent.com/projectcalico/calico/${CALICO_VERSION}/manifests/tigera-operator.yaml
+   ```
+3. Create an `installation.yaml` file with your dataplane configuration:
+
+<Tabs>
+  <Tab title="NFTables">
+
+```yaml
 apiVersion: operator.tigera.io/v1
-kind: Goldmane
+kind: Installation
 metadata:
   name: default
+spec:
+  calicoNetwork:
+    bgp: Disabled
+    linuxDataplane: Nftables
+    ipPools:
+    - name: default-ipv4-ippool
+      blockSize: 26
+      cidr: 10.244.0.0/16
+      encapsulation: VXLAN
+      natOutgoing: Enabled
+      nodeSelector: all()
+  kubeletVolumePluginPath: None
 ---
-# Configures the Calico Whisker observability UI.
 apiVersion: operator.tigera.io/v1
-kind: Whisker
+kind: APIServer
 metadata:
   name: default
-EOF
 ```
 
-Use the following command to access Calico Whisker:
+  </Tab>
+  <Tab title="eBPF">
 
-```bash
-kubectl port-forward -n calico-system service/whisker 8081:8081
+Calico's eBPF mode mounts cgroups from `/sys/fs/cgroup` instead of Talos's default `/var` path, so `installation.yaml` also needs a `FelixConfiguration` resource:
+
+```yaml
+apiVersion: crd.projectcalico.org/v1
+kind: FelixConfiguration
+metadata:
+  name: default
+spec:
+  cgroupV2Path: "/sys/fs/cgroup"
+---
+apiVersion: operator.tigera.io/v1
+kind: Installation
+metadata:
+  name: default
+spec:
+  calicoNetwork:
+    bgp: Disabled
+    linuxDataplane: BPF
+    bpfNetworkBootstrap: Enabled
+    kubeProxyManagement: Enabled
+    ipPools:
+    - name: default-ipv4-ippool
+      blockSize: 26
+      cidr: 10.244.0.0/16
+      encapsulation: VXLAN
+      natOutgoing: Enabled
+      nodeSelector: all()
+  kubeletVolumePluginPath: None
+---
+apiVersion: operator.tigera.io/v1
+kind: APIServer
+metadata:
+  name: default
 ```
 
-Fire up a browser and point it to `localhost:8081` to observe your policies and network flows.
+  </Tab>
+</Tabs>
 
-## Next steps
+4. Reference both manifests in your Omni cluster template:
 
-- Enable Calico Prometheus and Grafana integrations, click here to [learn more](https://docs.tigera.io/calico/latest/operations/monitor/).
+<Tabs>
+  <Tab title="Talos v1.14+">
+
+    For Talos v1.14 and later, disable the default CNI with the `KubeFlannelCNIConfig` document:
+
+    <CodeBlock lang="yaml">
+      {`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: tigera-operator\n      file: tigera-operator.yaml\n      mode: one-time\n    - name: calico-installation\n      file: installation.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni\n    inline:\n      apiVersion: v1alpha1\n      kind: KubeFlannelCNIConfig\n      $patch: delete\n...\n# Include machines for template`}
+    </CodeBlock>
+
+  </Tab>
+  <Tab title="Talos < v1.14">
+
+    On Talos versions earlier than v1.14, disable the default CNI with `cni.name: none`:
+
+    <CodeBlock lang="yaml">
+      {`kind: Cluster\nname: my-cluster\nkubernetes:\n  version: ${k8s_release}\n  manifests:\n    - name: tigera-operator\n      file: tigera-operator.yaml\n      mode: one-time\n    - name: calico-installation\n      file: installation.yaml\n      mode: one-time\npatches:\n  - name: disable-default-cni\n    inline:\n      cluster:\n        network:\n          cni:\n            name: none\n...\n# Include machines for template`}
+    </CodeBlock>
+  </Tab>
+</Tabs>
+
+5. Apply the cluster template:
+   ```bash
+   omnictl cluster template sync --file cluster-template.yaml
+   ```
+
+Omni waits until the Kubernetes API is available and the cluster is healthy before applying the manifests. See [Sync Kubernetes manifests](../../omni/cluster-management/sync-kubernetes-manifests) for more on manifest sync modes and status monitoring.
+
+  </Tab>
+  
+</Tabs>
+
+## Step 3: Enable network observability (optional)
+
+Calico's Whisker stack adds a UI for observing cluster networking and policy behavior. This step works with either installation method above.
+
+1. Deploy the Goldmane flow aggregator and the Whisker UI:
+
+  ```bash
+  kubectl create -f -<<EOF
+  apiVersion: operator.tigera.io/v1
+  kind: Goldmane
+  metadata:
+    name: default
+  ---
+  apiVersion: operator.tigera.io/v1
+  kind: Whisker
+  metadata:
+    name: default
+  EOF
+   ```
+2. Port-forward the Whisker service:
+
+  ```bash
+  kubectl port-forward -n calico-system service/whisker 8081:8081
+  ```
+
+3. Open `localhost:8081` in a browser to view policies and network flows.
 
 ## Considerations
 
-**In eBPF mode**, if you cannot disable kube-proxy for any reason please make sure to adjust `BPFKubeProxyIptablesCleanupEnabled` to `false`.
-This can be done with kubectl as follows:
+In eBPF mode, if you can't disable kube-proxy, set `bpfKubeProxyIptablesCleanupEnabled` to `false`:
 
-```bash
-kubectl patch felixconfiguration default --patch='{"spec": {"bpfKubeProxyIptablesCleanupEnabled": false}}'
-```
+  ```bash
+  kubectl patch felixconfiguration default --patch='{"spec": {"bpfKubeProxyIptablesCleanupEnabled": false}}'
+  ```
+
+## Next steps
+
+- Enable Calico's [Prometheus and Grafana integrations](https://docs.tigera.io/calico/latest/operations/monitor/) for further observability.

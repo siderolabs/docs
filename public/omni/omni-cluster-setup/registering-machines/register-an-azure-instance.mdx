@@ -3,6 +3,8 @@ title: Register an Azure Instance
 description: Provision an Azure VM in Omni using a custom Talos image.
 ---
 
+import { release } from '/snippets/custom-variables.mdx';
+
 ### Dashboard <a href="#dashboard" id="dashboard"></a>
 
 Upon logging in you will be presented with the Omni dashboard.
@@ -16,10 +18,6 @@ Once downloaded to your local machine, untar with `tar -xvf /path/to/image`
 ### Upload the image
 
 <Tabs>
-  <Tab title="UI">
-    In the Azure console, navigate to `Storage accounts`, and create a new storage account. Once the account is provisioned, navigate to the resource and click `Upload`. In the `Upload Blob` form, select `Create New` container, and name your container (e.g. `omni-may-2023`). Now click `Browse for Files`, and select the `disk.vhd` file that you uncompressed above, then select `Upload`.
-  </Tab>
-
   <Tab title="CLI">
 
     We’ll make use of the following environment variables throughout the setup. Edit the variables below with your correct information.
@@ -54,17 +52,15 @@ Once downloaded to your local machine, untar with `tar -xvf /path/to/image`
       -n omni-azure.vhd
     ```
   </Tab>
+  <Tab title="UI">
+    In the Azure console, navigate to `Storage accounts`, and create a new storage account. Once the account is provisioned, navigate to the resource and click `Upload`. In the `Upload Blob` form, select `Create New` container, and name your container (e.g. {`omni-talos-${release}`}). Now click `Browse for Files`, and select the `disk.vhd` file that you uncompressed above, then select `Upload`.
+  </Tab>
 
 </Tabs>
 
 ### Convert the image
 
 <Tabs>
-
-  <Tab title="UI">
-    In the Azure console select `Images`, and then `Create`. Select a Resource Group, Name your image (e.g. omni-may), and set the OS type to Linux. Now `Browse` to the storage blob created above, navigating to the container with the uploaded `disk.vhd`. Select “Standard HDD” for account type, then click `Review and Create`, then `Create`.
-  </Tab>
-
   <Tab title="CLI">
     Now that the image is present in our blob storage, we’ll register it.
 
@@ -75,6 +71,10 @@ Once downloaded to your local machine, untar with `tar -xvf /path/to/image`
       --os-type linux \
       -g $GROUP
     ```
+  </Tab>
+
+  <Tab title="UI">
+    In the Azure console select `Images`, and then `Create`. Select a Resource Group, Name your image (e.g. {`omni-talos-${release}`}), and set the OS type to Linux. Now `Browse` to the storage blob created above, navigating to the container with the uploaded `disk.vhd`. Select “Standard HDD” for account type, then click `Review and Create`, then `Create`.
   </Tab>
 
 </Tabs>

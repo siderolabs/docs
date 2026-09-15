@@ -3,33 +3,21 @@ title: Create a Machine Class
 description: Define a reusable group of machines based on labels and conditions for automated cluster allocation.
 ---
 
-This guide shows you how to create a machine class.
+A machine class is a reusable group of machines defined by labels and conditions. It allows you to match machines based on criteria like architecture and core count (e.g., `amd64` architecture with more than 2 cores). 
+
+Machine classes are used for automated cluster allocation, instead of selecting individual machines, you reference a machine class, and Omni picks matching machines automatically.
+
+You can create a machine class them via the CLI with `omnictl apply` or through the UI under the **Machine Classes** section.
 
 <Tabs>
-
-  <Tab title="UI">
-    First, click the “Machine Classes” section  in the sidebar on the left
-
-    Next, click the “Create Machine Class” button on the right.
-
-    Add machine query conditions by typing them manually in the input box.
-
-    <img src="./images/create-a-machine-class-delete-icon-red.png" alt=""/>
-
-    Clicking the label in the machine list will add them to the input box.
-
-    <img src="./images/create-a-machine-class-amd64-red.png" alt=""/>
-
-    Clicking on “+” will add blocks to match the machines using boolean `OR` operator.
-
-    <img src="./images/create-a-machine-class-plus-icon-red.png" alt=""/>
-
-    <img src="./images/create-a-machine-class-conditions-red.png" alt=""/>
-
-    Name the machine class, then click “Create Machine Class”.
-  </Tab>
   <Tab title="CLI">
-    Create a file called `machine-class.yaml` with the following content:
+
+    This example creates a machine class named test using the CLI.
+
+    It selects machines that meet both of the following conditions:
+
+    - `omni.sidero.dev/arch = amd64` — The machine must use an amd64 (x86_64) architecture
+    - `omni.sidero.dev/cores > 2` — The machine must have more than 2 cores
 
     ```yaml
     metadata:
@@ -38,15 +26,32 @@ This guide shows you how to create a machine class.
       id: test
     spec:
       matchlabels:
-        # matches machines with amd64 architecture and more than 2 CPUs
-        - omni.sidero.dev/arch = amd64, omni.sidero.dev/cpus > 2
+        # matches machines with amd64 architecture and more than 2 cores
+        - omni.sidero.dev/arch = amd64, omni.sidero.dev/cores > 2
     ```
 
-    Create the machine class:
+    Apply the configuration with:
 
     ```bash
     omnictl apply -f machine-class.yaml
     ```
+  </Tab>
+
+  <Tab title="UI">
+    1. Click **Machine Classes** in the left sidebar.
+    2. Click **Create Machine Class**.
+    3. Add match conditions by typing them into the input box, or click a label
+      in the machine list to add it automatically.
+
+    <img src="./images/create-a-machine-class-delete-icon-red.png" alt=""/>
+    <img src="./images/create-a-machine-class-amd64-red.png" alt=""/>
+
+    4. To match machines using additional condition blocks joined by `OR`, click **+**.
+
+    <img src="./images/create-a-machine-class-plus-icon-red.png" alt=""/>
+    <img src="./images/create-a-machine-class-conditions-red.png" alt=""/>
+
+    5. Give the machine class a name, then click **Create Machine Class**.
   </Tab>
 
 </Tabs>

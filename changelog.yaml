@@ -1,0 +1,8 @@
+navigation:
+  tabs:
+    - tab: "Changelog"
+      groups:
+        - group: "Changelog"
+          folder: "/"
+          pages:
+            - "changelog.mdx"

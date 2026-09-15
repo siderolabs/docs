@@ -3,7 +3,9 @@ title: Modify Kernel Arguments
 description: Add or update additional Talos kernel arguments through Omni.
 ---
 
-You can add extra kernel arguments to Talos when creating the installation media, or modify them later on existing machines.
+import { version } from '/snippets/custom-variables.mdx';
+
+You can add kernel arguments when creating installation media, or modify them later on existing machines. For a full list of available kernel arguments, refer to the <a href= {`../../talos/${version}/reference/kernel)`}>Kernel argument reference documentation</a>.
 
 <Note>
   Some kernel arguments are added automatically by Omni (for example, the SideroLink arguments), while others are provided by Talos.
@@ -13,28 +15,112 @@ You can add extra kernel arguments to Talos when creating the installation media
   This document describes how to modify _additional_ kernel arguments only.
 </Note>
 
-## Add additional kernel arguments during installation media creation
+## Add kernel arguments during installation media creation
 
-On the overview page, click **Download installation media** on the right.
+You can include additional kernel arguments into your Talos Omni image using either cluster templates, the Omni CLI or the Omni UI.
 
-Add the kernel arguments you want to pass to Talos Linux in the **Additional kernel arguments** field:
+<Tabs>
+<Tab title="Cluster templates">
 
-<img src="./images/modify-kernel-arguments-download-installation-media.png" alt="Download installation media"/>
+  You can add kernel arguments to your machines by defining them in the machine configuration within your cluster template.
 
-Click **Download**.
+  Use the `kernelArgs` field in your cluster template to specify which extensions to install. For more details, see the [Cluster Templates reference documentation](../reference/cluster-templates).
 
-When a machine boots from that installation media, it includes the additional kernel arguments in its kernel command line.
+  The code block below defines the configuration for a cluster named `my-cluster`, including kernel arguments for both control plane and worker machines.
 
-If the additional arguments are not empty, Omni creates a `KernelArgs` resource for that machine.
-This resource can be viewed and modified later to update the kernel arguments.
+  ```yaml
+  kind: Cluster
+  name: my-cluster
+  kubernetes:
+    version: v1.35.0
+  talos:
+    version: v1.12.2
+  ---
+  kind: ControlPlane
+  machines:
+    - ec2d0bff-ea56-3ee5-cae3-d56663de6272
+  ---
+  kind: Workers
+  machines:
+    - ec2fe180-8445-eea2-410f-af334b831fcb
+  ---
+  kind: Machine
+  name: ec2d0bff-ea56-3ee5-cae3-d56663de6272
+  install:
+    disk: /dev/xvda
+  kernelArgs:
+    - talos.dashboard.disabled=1
+  ---
+  kind: Machine
+  name: ec2fe180-8445-eea2-410f-af334b831fcb
+  install:
+    disk: /dev/xvda
+  kernelArgs:
+    - console=ttyS0,115200n8
+  ```
 
-For example:
+  After defining your cluster template, validate it using:
+
+  ```bash
+  omnictl cluster template validate -f cluster.yaml
+  ```
+
+  If the validation succeeds, sync the template to apply the configuration to your Omni instance:
+
+  ```bash
+  omnictl cluster template sync -f cluster.yaml --verbose
+  ```
+
+  After syncing, the control plane machine will boot with the `talos.dashboard.disabled=1` kernel argument, while the worker machine will boot with the `console=ttyS0,115200n8` kernel argument.
+</Tab>
+<Tab title="CLI">
+
+You can bake kernel arguments into your image by adding the `--extra-kernel-args` flag when creating a preset, then downloading from it.
+
+For example, to download a Talos Omni ISO image with the kernel argument `talos.dashboard.disabled=1`, run:
+
+```bash
+omnictl media preset create kernel-args-preset --arch amd64 --extra-kernel-args talos.dashboard.disabled=1
+omnictl media download kernel-args-preset
+```
+
+When you no longer need the preset, delete it:
+
+```bash
+omnictl media preset delete kernel-args-preset
+```
+
+You can then boot your machines with this downloaded Talos Omni image.
+</Tab>
+<Tab title="UI">
+
+To add kernel arguments to your machines:
+
+  1. Log in to your Omni dashboard.
+
+  2. Click the **Download Installation Media** button to open the **Create New Media** wizard.
+
+  3. On each page of the **Create New Media** wizard, select the appropriate options for your setup, then click **Next** to continue.
+
+     The **Create New Media** wizard is identical to the [Image Factory](https://factory.talos.dev/) and it is split across multiple pages. Each page presents a different set of configuration options, such as architecture, hardware type, and Talos Linux version, that you can use to customize your Talos Omni image.
+
+  4. Select the kernel arguments you would like to boot your machines with in the **Extra kernel command line arguments** section, click **Next** and continue with your setup.
+
+  5. Select the appropriate boot option for your machine on the **Schematic Ready** page to download the Talos Omni image.
+
+  6. Boot your machines using the downloaded image. The selected kernel arguments will already be installed.
+</Tab>
+</Tabs>
+
+Once you boot your machine with kernel arguments, Omni automatically creates a `KernelArgs` resource for that machine. You can view and update this resource later to modify the kernel arguments.
+
+To retrieve the resource, run:
 
 ```bash
 omnictl get kernelargs $MACHINE_ID -o yaml
 ```
 
-Example output:
+**Example output:**
 
 ```yaml
 metadata:
@@ -77,7 +163,6 @@ spec:
 
     <img src="./images/modify-kernel-arguments-update.png" alt="Update kernel args popup" style={{width: "60%"}}/>
   </Tab>
-
   <Tab title="CLI">
     1. Save the existing arguments to a file:
 

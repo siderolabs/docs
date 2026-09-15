@@ -1,0 +1,86 @@
+---
+title: "Time Servers"
+description: "Learn how to configure time servers (NTP sync)."
+canonical: https://docs.siderolabs.com/talos/v1.14/networking/configuration/time
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos Linux defaults to using `time.cloudflare.com` as the NTP server for time synchronization, with [NTS](#network-time-security-nts) (Network Time Security) enabled.
+
+## Configuration
+
+To customize the NTP servers used by Talos, create a [TimeSyncConfig](../../reference/configuration/network/timesyncconfig) document like:
+
+```yaml
+apiVersion: v1alpha1
+kind: TimeSyncConfig
+ntp:
+    servers:
+        - 0.pool.ntp.org
+        - 1.pool.ntp.org
+```
+
+See [Time Sync](../../configure-your-talos-cluster/system-configuration/time-sync) for more details about time synchronization in Talos Linux.
+
+## Network time security (NTS)
+
+[NTS](https://datatracker.ietf.org/doc/html/rfc8915) authenticates NTP: the client performs a TLS key exchange with the time server, and the NTP packets themselves
+are then cryptographically authenticated, so an on-path attacker can't tamper with the time a node receives.
+
+NTS is used by default with the default time server (`time.cloudflare.com`) when no time server configuration is provided at all.
+As soon as time servers are configured from any source, NTS is only used if it is explicitly enabled in the `TimeSyncConfig` document:
+
+```yaml
+apiVersion: v1alpha1
+kind: TimeSyncConfig
+ntp:
+    useNTS: true
+    servers:
+        - time.cloudflare.com
+```
+
+Time servers coming from other sources (DHCP, kernel arguments, platform metadata) are always queried over plain NTP.
+
+Requirements and behavior when NTS is enabled:
+
+* Every time server must be specified as a hostname, not as an IP address: the hostname is required to validate the server's TLS certificate.
+  The machine configuration is rejected if an IP address is used, and time servers from other sources which are IP addresses are skipped with a warning.
+* The key exchange runs over TCP to port `4460` of the time server (unless the server address specifies a different port), while NTP itself keeps using UDP port `123`
+  (or the port negotiated during the key exchange), so both need to be allowed through the firewall.
+* Server certificates are validated against the Talos trust store.
+* Enabling or disabling NTS does not require a reboot: the time syncer is restarted when the setting changes.
+
+See [Time Sync](../../configure-your-talos-cluster/system-configuration/time-sync#network-time-security-nts) for the way NTS is bootstrapped when the machine
+clock is wrong at boot time.
+
+> Note: NTS requires time server hostnames to be resolved, and [encrypted DNS](../host-dns#encrypted-dns-and-time-synchronization) (`DoT`/`DoH`) requires a correct
+> clock to validate certificates.
+> When every configured nameserver uses `DoT` or `DoH`, a machine which boots with a wrong clock cannot resolve its time servers, and cannot fix the clock either.
+> Keep at least one plain DNS nameserver as a fallback in that case.
+
+## Observing status
+
+Use `talosctl` to get the current time synchronization configuration of a node:
+
+```bash
+talosctl get timeservers
+```
+
+```text
+NODE         NAMESPACE   TYPE               ID            VERSION   TIMESERVERS                USENTS
+172.20.0.2   network     TimeServerStatus   timeservers   1         ["time.cloudflare.com"]    true
+```
+
+To see all time server configuration sources, use the following:
+
+```bash
+talosctl get timeserverspec --namespace=network-config
+```
+
+```text
+NODE         NAMESPACE        TYPE             ID                    VERSION
+172.20.0.2   network-config   TimeServerSpec   default/timeservers   1
+```

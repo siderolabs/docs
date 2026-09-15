@@ -1,8 +1,7 @@
 ---
 title: "Scale up a Talos cluster"
 description: "How to add more nodes to a Talos Linux cluster."
-aliases:
-
+canonical: https://docs.siderolabs.com/talos/v1.14/deploy-and-manage-workloads/scaling-up
 ---
 
 import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
@@ -11,21 +10,23 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 To add more nodes to a Talos Linux cluster, follow the same procedure as when initially creating the cluster:
 
-- boot the new machines to install Talos Linux
-- apply the `worker.yaml` or `controlplane.yaml` configuration files to the new machines
+- Boot the new machines to install Talos Linux
+- Apply the appropriate configuration file (`worker.yaml` or `controlplane.yaml`) to each new machine
 
-You need the `controlplane.yaml` and `worker.yaml` that were created when you initially deployed your cluster.
-These contain the certificates that enable new machines to join.
+## Get the appropriate machine configuration
 
-Once you have the IP address, you can then apply the correct configuration for each machine you are adding, either `worker` or `controlplane`.
+You need a valid `controlplane.yaml` or `worker.yaml` to apply to new nodes. If your cluster has been upgraded since it was initially created, your original files may be stale, regenerate them instead using the [reproducible machine configuration workflow](../configure-your-talos-cluster/system-configuration/reproducible-machine-configuration).
+
+## Apply configuration to new nodes
+
+Once you have the machine config, apply it to each new node using its IP address:
 
 ```bash
-  talosctl apply-config --insecure \
-    --nodes [NODE IP] \
-    --file controlplane.yaml
+talosctl apply-config --insecure \
+  --nodes <NODE-IP> \
+  --file <new-config-yaml>
 ```
 
-The insecure flag is necessary because the PKI has not yet been made available to the node.
+The `--insecure` flag is required because the PKI infrastructure has not yet been made available to the new node.
 
-You do not need to bootstrap the new node.
-Regardless of whether you are adding a control plane or worker node, it will now join the cluster in its role.
+You do not need to bootstrap the new node. Whether you are adding a control plane or worker node, it will join the cluster automatically in its assigned role.

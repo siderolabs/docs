@@ -95,7 +95,7 @@ navigation:
             - "interactive-dashboard.mdx"
             - "scaling-up.mdx"
             - "scaling-down.mdx"
-            - "workers-on-controlplane.mdx"
+            - "workloads-on-controlplane.mdx"
 
         - group: "Networking"
           folder: "talos/v1.12/networking"
@@ -140,7 +140,9 @@ navigation:
             - "rbac.mdx"
             - "selinux.mdx"
             - "verifying-images.mdx"
+            - "talos-default-hardening-and-cis-compliance.mdx"
             - "talos-security-checklist.mdx"
+            - "subscribe-to-security-advisories.mdx"
 
         - group: "Build and extend Talos"
           folder: "talos/v1.12/build-and-extend-talos"
@@ -175,6 +177,7 @@ navigation:
                 - "system-configuration/performance-tuning"
                 - "system-configuration/time-sync"
                 - "system-configuration/discovery"
+                - "system-configuration/kubeprism"
                 - "system-configuration/reproducible-machine-configuration"
                 - "system-configuration/insecure"
                 - "system-configuration/oom"
@@ -206,6 +209,7 @@ navigation:
             - group: "Hardware & Drivers"
               pages:
                 - "hardware-and-drivers/amd-gpu"
+                - "hardware-and-drivers/hailo"
                 - "hardware-and-drivers/nvidia-fabricmanager"
                 - "hardware-and-drivers/nvidia-gpu"
                 - "hardware-and-drivers/nvidia-gpu-proprietary"

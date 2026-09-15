@@ -1,0 +1,53 @@
+# golangci-lint configuration for the Go code that powers the `make` targets
+# (docs-gen, docs-convert, docs-validate, mdx-normalize, changelog-gen,
+# omni-config-gen, version-upgrade-gen).
+#
+# Each of those directories is its own Go module, so `make code-review` runs
+# golangci-lint once per module using this shared config.
+#
+# This uses the v2 config format, matching the Talos repo
+# (https://github.com/siderolabs/talos/blob/main/.golangci.yml).
+#
+# The philosophy here is a HIGH-SIGNAL gate: enable the linters that catch real
+# problems and "orphaned logic" (dead code, unused params, dead assignments,
+# logic bugs), and leave off the purely-stylistic linters (formatting nits,
+# "there's a shorter way to write this", missing doc comments). Those can be
+# turned on later once the code is fully cleaned up.
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  # Start from nothing and turn on exactly the checks we want, so the gate is
+  # explicit and predictable.
+  default: none
+  enable:
+    - unused       # unused funcs/vars/consts/types/fields -> the core "orphaned logic" check
+    - unparam      # function params/results that are never used (orphaned args)
+    - govet        # suspicious constructs (the `go vet` checks) -> real bugs
+    - ineffassign  # assignments whose value is never read (dead assignments)
+    - wastedassign # a value is assigned but overwritten before it is read
+    - staticcheck  # correctness checks; limited to real-bug categories below
+    - nilerr       # returns nil after an `if err != nil` check -> logic bug
+    - bodyclose    # HTTP response bodies that are never closed -> resource leak
+  settings:
+    staticcheck:
+      # staticcheck bundles bug checks (SA*) with style/simplification checks
+      # (S1*, ST1*, QF*). Keep only the bug checks so this gate stays about
+      # correctness, not style.
+      checks:
+        - all
+        - -S1*
+        - -ST1*
+        - -QF*
+  exclusions:
+    generated: lax
+    rules:
+      # Test files legitimately carry unused helpers/params and throwaway
+      # assignments; don't fail the build on those.
+      - path: _test\.go
+        linters:
+          - unparam
+          - ineffassign
+          - wastedassign

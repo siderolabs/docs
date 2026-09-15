@@ -3,11 +3,70 @@ title: Create a Hybrid Cluster
 description: Create a hybrid Talos cluster across networks using KubeSpan.
 ---
 
-This guide shows you how to create a cluster consisting of any combination of bare metal, cloud virtual machines, on-premise virtual machines, or SBCs, using KubeSpan. KubeSpan is a feature of Talos Linux that provides full node-to-node network encryption with WireGuard, and enables Kubernetes to operate securely even when machines in the cluster are on different networks.
+import { version } from '/snippets/custom-variables.mdx';
 
-Refer to the general guide on creating a cluster to get started. To create a hybrid cluster, navigate to the cluster, then apply the following cluster patch by clicking on "Config Patches", and create a new patch with the target of "Cluster":
+A hybrid cluster is a Kubernetes cluster whose nodes span multiple networks or infrastructure types, for example, a mix of bare metal machines, cloud virtual machines, or on-premises virtual machines.
 
-<img src="./images/create-a-hybrid-cluster-create-patch-kubescan-enabled.png" alt="Create Patch"/>
+Kubernetes requires all nodes can reach each other directly without NAT. When nodes are spread across different networks, this assumption breaks down. <a href={`../../talos/${version}/networking/kubespan`}>Kubespan</a> addresses this by establishing an encrypted WireGuard tunnel between every node in the cluster. The tunnel flattens the network so all nodes can communicate securely regardless of where they are hosted.
+
+## Prerequisites
+
+Before proceeding, create a cluster with nodes across your intended infrastructure. To learn how to create a cluster, follow the [Getting Started with Omni guide](../getting-started/getting-started).
+
+## Enable KubeSpan
+
+Once your cluster is created with nodes spanning multiple networks, enable KubeSpan to allow those nodes to communicate.
+
+KubeSpan can be enabled via a config patch, applied either through the Omni UI or a cluster template.
+
+<Tabs>
+<Tab title="Cluster Templates">
+
+To enable KubeSpan using a cluster template, add the following patch to your cluster template definition:
+
+```yaml
+patches:
+  - name: kubespan-enabled
+    inline:
+      apiVersion: v1alpha1
+      kind: KubeSpanConfig
+      enabled: true
+```
+
+On Talos versions earlier than v1.13, you can use the older configuration field:
+
+```yaml
+patches:
+  - name: kubespan-enabled
+    inline:
+      machine:
+        network:
+          kubespan:
+            enabled: true
+```
+
+For more information on patching Omni clusters inline or with patch files, see the [Cluster Template reference documentation](../reference/cluster-templates#patches).
+
+</Tab>
+<Tab title="UI">
+
+To enable KubeSpan using the UI:
+
+1. Navigate to your cluster in Omni.
+2. Click the **...** button next to the cluster you want to patch.
+3. Select **Config Patches** from the dropdown.
+4. Click **Create Patch** to open the **Create Patch** page.
+5. Apply the following patch:
+
+```yaml
+apiVersion: v1alpha1
+kind: KubeSpanConfig
+enabled: true
+```
+
+<img src="./images/create-a-hybrid-cluster-create-patch-kubespan-enabled-v1.13.png" alt="Create a new cluster-scoped config patch" />
+
+On Talos versions earlier than v1.13, you can use the older configuration field:
 
 ```yaml
 machine:
@@ -16,4 +75,11 @@ machine:
       enabled: true
 ```
 
-All machines in this cluster will have this patch applied to them, and use WireGuard encryption for all node-to-node traffic.
+<img src="./images/create-a-hybrid-cluster-create-patch-kubespan-enabled.png" alt="Create a new cluster-scoped config patch" />
+
+</Tab>
+</Tabs>
+
+Once this patch is applied, all node-to-node traffic in the cluster will be encrypted using WireGuard, allowing nodes to communicate with each other securely regardless of which network they are on.
+
+<Note> WireGuard encryption adds overhead that reduces network throughput compared to a native network connection. If nodes on the same network need native throughput performance, configure <a href= {`../../talos/${version}/networking/kubespan#filtering-advertised-networks`}>`filters.excludeAdvertisedNetworks`</a> to exclude same-network traffic from the WireGuard tunnel.</Note>

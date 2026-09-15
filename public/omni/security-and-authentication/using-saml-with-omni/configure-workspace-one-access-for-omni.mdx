@@ -3,102 +3,116 @@ title: Configure Workspace ONE Access for Omni
 description: Set up Workspace ONE Access as a SAML identity provider for Omni.
 ---
 
-Workspace ONE Access
+This guide walks through creating a Web App in Workspace ONE Access (WSOA) and configuring Omni to authenticate against it via SAML.
 
-This section describes how to create a _Web App_ inside Workspace ONE Acces (WSOA).
+## Configure Workspace ONE Access
 
-First, login to the WSOA user interface and browse to _**Resources -> Web Apps -> New**_
+This section walks through creating and configuring the Web App inside WSOA.
 
-<img src="./images/configure-workspace-one-access-web-apps-resources.png" alt=""/>
+### Step 1: Create a new Web App
 
-Next, enter values for the following options before clicking on _Next_.
+Log in to the WSOA user interface and navigate to **Resources → Web Apps → New**.
+
+<img src="./images/configure-workspace-one-access-web-apps-resources.png" alt="Workspace ONE Access Web Apps page" />
+
+Enter the following values to identify the application, then click **Next**.
 
 | Option      | Value       | Description                              |
 | ----------- | ----------- | ---------------------------------------- |
 | Name        | Omni        | A descriptive name for the Web App       |
 | Description | Sidero Omni | A description for the Web App            |
-| Icon        | Image       | An icon to be displayed on the dashboard |
+| Icon        | Image       | An icon to display on the dashboard      |
 
-<img src="./images/configure-workspace-one-access-definition.png" alt=""/>
+<img src="./images/configure-workspace-one-access-definition.png" alt="Web App definition settings" />
 
-On the _**Single Sign-On**_ page, enter the following values:
+### Step 2: Configure Single Sign-On
+
+On the **Single Sign-On** page, configure the authentication type and endpoint URLs. The SSO URL and Recipient URL both point to Omni's Assertion Consumer Service endpoint, and the Application ID points to its SAML metadata URL.
 
 | Option              | Value                               | Description                                       |
 | ------------------- | ----------------------------------- | ------------------------------------------------- |
-| Authentication Type | SAML 2.0                            | The Authentication type. Options are SAML or OIDC |
-| Configuration       | Manual                              | We will use manual to specify the fields          |
-| Single Sign-On URL  | `https://{omni-host}/saml/acs`      | The SSO URL for Omni                              |
-| Recipient URL       | `https://{omni-host}/saml/acs`      | The Recipient URL for Omni                        |
-| Application ID      | `https://{omni-host}/saml/metadata` | The Omni metadata URL                             |
-| Username format     | Unspecified                         | The username format is unspecified                |
-| Username value      | `${user.userName}`                  | The username sent in the SAML assertion           |
+| Authentication Type | SAML 2.0                            | The authentication protocol to use                |
+| Configuration       | Manual                              | Manually specify all fields                       |
+| Single Sign-On URL  | `https://{omni-host}/saml/acs`      | Omni's Assertion Consumer Service URL             |
+| Recipient URL       | `https://{omni-host}/saml/acs`      | Must match the Single Sign-On URL                 |
+| Application ID      | `https://{omni-host}/saml/metadata` | Omni's SAML metadata URL                          |
+| Username format     | Unspecified                         | No specific username format required              |
+| Username value      | `${user.userName}`                  | The username to include in the SAML assertion     |
 | Relay State URL     | Blank                               | Leave this empty                                  |
 
-<img src="./images/configure-workspace-one-access-single-sign-on-authentication-type-settings.png" alt=""/>
+<img src="./images/configure-workspace-one-access-single-sign-on-authentication-type-settings.png" alt="Single Sign-On authentication type settings" />
 
-Still on the _**Single Sign-On**_ page, in the _**Advanced Properties**_ section, set the following toggle buttons;
+### Step 3: Configure advanced signing properties
+
+Still on the **Single Sign-On** page, scroll to the **Advanced Properties** section and set the following toggles. The key settings here are enabling assertion signing (required by Omni) while leaving response signing and assertion encryption off.
 
 | Option                      | Value            | Description                      |
 | --------------------------- | ---------------- | -------------------------------- |
-| Sign Response               | False            | Sign the SAML response.          |
-| Sign Assertion              | True             | Sign the SAML assertion.         |
-| Encrypt Assertion           | False            | Encrypt the SAML assertion.      |
-| Include Assertion Signature | False            | Include the assertion signature. |
-| Device SSO Response         | False            | Enable Device SSO response.      |
-| Enable Force Authn Request  | False            | Enable Force Authn Request.      |
-| Signature Algorithm         | SHA-256 with RSA | The signature algorithm.         |
-| Digest Algorithm            | SHA-256          | The digest algorithm.            |
-| Assertion Lifetime          | 200              | The assertion lifetime.          |
+| Sign Response               | False            | Do not sign the full SAML response |
+| Sign Assertion              | True             | Sign the SAML assertion (required) |
+| Encrypt Assertion           | False            | Do not encrypt the assertion     |
+| Include Assertion Signature | False            | Do not embed the signature separately |
+| Device SSO Response         | False            | Disable Device SSO               |
+| Enable Force Authn Request  | False            | Do not force re-authentication   |
+| Signature Algorithm         | SHA-256 with RSA | Algorithm used to sign the assertion |
+| Digest Algorithm            | SHA-256          | Algorithm used to compute the digest |
+| Assertion Lifetime          | 200              | How long (in seconds) the assertion is valid |
 
-<img src="./images/configure-workspace-one-access-single-sign-on-relay-state-url.png" alt=""/>
+<img src="./images/configure-workspace-one-access-single-sign-on-relay-state-url.png" alt="Advanced signing properties" />
 
-At the bottom of the _**Single Sign-On**_ page, in the _**Custom Attribute Mapping**_ section, add the following attributes:
+### Step 4: Map custom attributes
+
+At the bottom of the **Single Sign-On** page, add the following entries in the **Custom Attribute Mapping** section. These attributes allow Omni to identify users and apply group-based role assignments.
 
 | Name      | Format      | Namespace | Value               | Description              |
 | --------- | ----------- | --------- | ------------------- | ------------------------ |
-| email     | Unspecified |           | `${user.email}`     | The user’s email address |
-| firstName | Unspecified |           | `${user.firstName}` | The user’s first name    |
-| lastName  | Unspecified |           | `${user.lastName}`  | The user’s last name     |
-| groups    | Unspecified |           | `${groupNames}`     | The user’s groups        |
+| email     | Unspecified |           | `${user.email}`     | The user's email address |
+| firstName | Unspecified |           | `${user.firstName}` | The user's first name    |
+| lastName  | Unspecified |           | `${user.lastName}`  | The user's last name     |
+| groups    | Unspecified |           | `${groupNames}`     | The user's group memberships |
 
-<img src="./images/configure-workspace-one-access-custom-attribute-mapping.png" alt=""/>
+<img src="./images/configure-workspace-one-access-custom-attribute-mapping.png" alt="Custom attribute mapping configuration" />
 
-Click _**Next**_ to continue and select the access policy as required by your organization.
+### Step 5: Select an access policy
 
-<img src="./images/configure-workspace-one-access-access-policies.png" alt=""/>
+Click **Next** and select the access policy required by your organization.
 
-Now it’s time to click the _**Save & Assign**_ button and permit the Users and Groups allowed to login to Omni.
+<img src="./images/configure-workspace-one-access-access-policies.png" alt="Access policy selection" />
 
-<img src="./images/configure-workspace-one-access-cancel-back-save.png" alt=""/>
+### Step 6: Assign users and groups
 
-On the _**Assign**_ screen, enter the following:
+Click **Save & Assign** and configure who is permitted to log in to Omni.
 
-* Select the permitted group from your backing Active Directory or LDAP server.
-* Set the _**Deployment Type**_ to _**Automatic**_.
+- Select the permitted group from your Active Directory or LDAP server.
+- Set **Deployment Type** to **Automatic**.
 
-<img src="./images/configure-workspace-one-access-application-omni-updated.png" alt=""/>
+<img src="./images/configure-workspace-one-access-cancel-back-save.png" alt="Save and assign screen" />
 
-Finally, obtain the _**IdP**_ Metadata URL by clicking on _**Settings**_ and then the _**Copy URL**_ link.
+<img src="./images/configure-workspace-one-access-application-omni-updated.png" alt="Application assignment configuration" />
 
-<img src="./images/configure-workspace-one-access-web-apps-new.png" alt=""/>
+### Step 7: Obtain the IdP metadata URL
+
+Navigate to **Settings** and click **Copy URL** to copy the IdP metadata URL.
+
+<img src="./images/configure-workspace-one-access-web-apps-new.png" alt="Settings page showing Copy URL link" />
 
 <Info>
-This is the URL that will be used by Omni in the command line arguments in the next section.
+Copy this URL — you will pass it to Omni as the `--auth-saml-url` flag in the next step.
 </Info>
 
-<img src="./images/configure-workspace-one-access-settings-download-saml-metadata.png" alt=""/>
+<img src="./images/configure-workspace-one-access-settings-download-saml-metadata.png" alt="SAML metadata download settings" />
 
-### Omni
+## Configure Omni to use Workspace ONE Access
 
-Provide the following flags to the Omni container on launch.
+Pass the following flags to the Omni container at startup to enable SAML authentication. Alternatively, you can set these values in the [Omni configuration file](../../reference/omni-configuration) instead of passing them as CLI flags.
 
 | Flag                                             | Description                                                                                                       |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| `--auth-saml-enabled`                            | Enable SAML authentication.                                                                                       |
-| `--auth-saml-url`                                | The URL to the IdP metadata file.                                                                                 |
-| `--auth-saml-label-rules='{"groups": "groups"}'` | This extracts the `groups` attribute from the SAML assertion into the label `saml.omni.sidero.dev/groups/<value>` |
+| `--auth-saml-enabled`                            | Enables SAML authentication                                                                                       |
+| `--auth-saml-url`                                | The IdP metadata URL copied in Step 7                                                                             |
+| `--auth-saml-label-rules='{"groups": "groups"}'` | Extracts the `groups` attribute from the SAML assertion and maps it to the label `saml.omni.sidero.dev/groups/<value>` |
 
-For example;
+For example:
 
 ```bash
 --auth-saml-enabled=true
@@ -106,9 +120,9 @@ For example;
 --auth-saml-label-rules='{"groups": "groups"}'
 ```
 
-Now that you have started Omni with the correct flags, refer to the [Auto-assign roles to SAML users](https://omni.siderolabs.com/docs/how-to-guides/how-to-auto-assign-roles-to-saml-users/) guide for information on how to automatically assign roles to users based on their SAML attributes.
+Once Omni is running with these flags, refer to the [Auto-assign roles to SAML users](https://omni.siderolabs.com/docs/how-to-guides/how-to-auto-assign-roles-to-saml-users/) guide to automatically assign roles based on SAML group attributes.
 
-Note that when using groups, the group name is prefixed with `saml.omni.sidero.dev/groups/` instead of role. For example;
+When using groups, the label prefix is `saml.omni.sidero.dev/groups/` rather than a role name directly. For example:
 
 ```yaml
 metadata:
