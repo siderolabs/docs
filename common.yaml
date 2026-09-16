@@ -33,6 +33,10 @@ logo:
 thumbnails:
   background: "/images/og-background.png"
 
+banner:
+  content: "Join us at [TalosCon](http://taloscon.com/) in Amsterdam, Oct 15–16. Tickets are free!"
+  dismissible: true
+
 navbar:
   links:
     - label: "Enterprise Support"

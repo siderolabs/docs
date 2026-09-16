@@ -8,6 +8,10 @@
     "dark": "#FB326E"
   },
   "favicon": "/images/favicon.svg",
+  "banner": {
+    "content": "Join us at [TalosCon](http://taloscon.com/) in Amsterdam, Oct 15–16. Tickets are free!",
+    "dismissible": true
+  },
   "contextual": {
     "options": [
       "copy",
