@@ -163,13 +163,11 @@ You can reduce some of the contention problems by parceling Persistent Volumes f
 
 ## Object storage
 
-Ceph comes with an S3-compatible object store, but there are other options, as
-well.
-These can often be built on top of other storage backends.
-For instance, you may have your block storage running with Mayastor but assign a
-Pod a large Persistent Volume to serve your object store.
+An S3-compatible object store is often built on top of one of the storage backends above, rather than run as a separate system.
+For instance, you may have your block storage running with Mayastor but assign a Pod a large Persistent Volume to serve your object store.
 
-One of the most popular open source add-on object stores is [MinIO](https://min.io/).
+Many storage systems include an S3-compatible object store.
+These include some already covered on this page, such as [Rook/Ceph](https://rook.io/docs/rook/v1.20/Storage-Configuration/Object-Storage-RGW/object-storage/) and [SeaweedFS](https://github.com/seaweedfs/seaweedfs/wiki/Amazon-S3-API).
 
 ## iSCSI
 
