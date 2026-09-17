@@ -35,7 +35,7 @@ More information regarding virtual machine hardware versions can be found in the
 
 Using the VIP chosen in the prereq steps, we will now generate the base configuration files for the Talos machines.
 This can be done with the `talosctl gen config ...` command.
-Take note that we will also use a JSON6902 patch when creating the configs so that the control plane nodes get some special information about the VIP we chose earlier, as well as a daemonset to install vmware tools on talos nodes.
+Take note that we will also use a strategic merge patch when creating the configs so that the control plane nodes get some special information about the VIP we chose earlier, as well as a daemonset to install vmware tools on talos nodes.
 
 First, download `cp.patch.yaml` to your local machine and edit the VIP to match your chosen IP.
 You can do this by issuing: 
@@ -49,24 +49,19 @@ curl -fsSLO https://raw.githubusercontent.com/siderolabs/docs/main/static/talos/
 It's contents should look like the following:
 
 ```yaml
-- op: add
-  path: /machine/network
-  value:
-    interfaces:
-      - interface: eth0
-        dhcp: true
-        vip:
-          ip: <VIP>
+apiVersion: v1alpha1
+kind: Layer2VIPConfig
+name: <VIP>
+link: eth0
 ```
 
 With the patch in hand, generate machine configs with:
 
 ```bash
-$ talosctl gen config vmware-test https://<VIP>:<port> --config-patch-control-plane @cp.patch.yaml
-created controlplane.yaml
-created worker.yaml
-created talosconfig
+talosctl gen config vmware-test https://<VIP>:<port> --config-patch-control-plane @cp.patch.yaml
 ```
+
+This creates `controlplane.yaml`, `worker.yaml` and `talosconfig`.
 
 At this point, you can modify the generated configs to your liking if needed.
 Optionally, you can specify additional patches by adding to the `cp.patch.yaml` file downloaded earlier, or create your own patch files.
@@ -74,11 +69,11 @@ Optionally, you can specify additional patches by adding to the `cp.patch.yaml` 
 ### Validate the configuration files
 
 ```bash
-$ talosctl validate --config controlplane.yaml --mode cloud
-controlplane.yaml is valid for cloud mode
-$ talosctl validate --config worker.yaml --mode cloud
-worker.yaml is valid for cloud mode
+talosctl validate --config controlplane.yaml --mode cloud
+talosctl validate --config worker.yaml --mode cloud
 ```
+
+Each command reports that the file is valid for cloud mode.
 
 > Note: Using VMXNET network interfaces in VMware will cause the default [Flannel CNI](https://github.com/flannel-io/flannel) backend (vxlan) to not work between nodes.
 > To avoid this problem it is recommended to use Intel e1000 network interfaces or apply the patch below to [disable incompatible features](https://github.com/flannel-io/flannel/blob/master/Documentation/backends.md).
@@ -127,7 +122,7 @@ You can do this by issuing:
 
 <CodeBlock lang="sh">
   {`
-curl -fsSL "https://raw.githubusercontent.com/siderolabs/docs/main/static/talos/${version_v1_14}/vmware/cp.patch.yaml" | sed s/latest/${release_v1_14}/ > vmware.sh
+curl -fsSL "https://raw.githubusercontent.com/siderolabs/docs/main/static/talos/${version_v1_14}/vmware/vmware.sh" | sed s/latest/${release_v1_14}/ > vmware.sh
   `}
 </CodeBlock>
 
