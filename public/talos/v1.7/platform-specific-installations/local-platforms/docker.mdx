@@ -124,22 +124,22 @@ kubectl --context admin@cluster2 get nodes
 To run Talos in a container manually, run:
 
 <CodeBlock>{`
-docker run --rm -it
-  --name tutorial
-  --hostname talos-cp
-  --read-only
-  --privileged
-  --security-opt seccomp=unconfined
-  --mount type=tmpfs,destination=/run
-  --mount type=tmpfs,destination=/system
-  --mount type=tmpfs,destination=/tmp
-  --mount type=volume,destination=/system/state
-  --mount type=volume,destination=/var
-  --mount type=volume,destination=/etc/cni
-  --mount type=volume,destination=/etc/kubernetes
-  --mount type=volume,destination=/usr/libexec/kubernetes
-  --mount type=volume,destination=/opt 
-  -e PLATFORM=container 
+docker run --rm -it \
+  --name tutorial \
+  --hostname talos-cp \
+  --read-only \
+  --privileged \
+  --security-opt seccomp=unconfined \
+  --mount type=tmpfs,destination=/run \
+  --mount type=tmpfs,destination=/system \
+  --mount type=tmpfs,destination=/tmp \
+  --mount type=volume,destination=/system/state \
+  --mount type=volume,destination=/var \
+  --mount type=volume,destination=/etc/cni \
+  --mount type=volume,destination=/etc/kubernetes \
+  --mount type=volume,destination=/usr/libexec/kubernetes \
+  --mount type=volume,destination=/opt \
+  -e PLATFORM=container \
   ghcr.io/siderolabs/talos:${release_v1_7 }
 
 `}
