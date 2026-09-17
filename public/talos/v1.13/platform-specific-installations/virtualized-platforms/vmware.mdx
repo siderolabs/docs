@@ -122,12 +122,13 @@ If you wish to carry out the manual approach, simply skip ahead to the "Manual A
 
 ### Scripted install
 
-Download the `vmware.sh` script to your local machine.
+Download the `vmware.sh` script to your local machine and make it executable.
 You can do this by issuing:
 
 <CodeBlock lang="sh">
   {`
 curl -fsSL "https://raw.githubusercontent.com/siderolabs/docs/main/static/talos/${version_v1_13}/vmware/vmware.sh" | sed s/latest/${release_v1_13}/ > vmware.sh
+chmod +x vmware.sh
   `}
 </CodeBlock>
 
