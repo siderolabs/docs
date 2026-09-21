@@ -573,15 +573,6 @@
                         ]
                       },
                       {
-                        "group": "Misc",
-                        "pages": [
-                          "talos/v1.14/reference/configuration/extensions/extensionserviceconfig",
-                          "talos/v1.14/reference/configuration/hardware/pcidriverrebindconfig",
-                          "talos/v1.14/reference/configuration/security/trustedrootsconfig",
-                          "talos/v1.14/reference/configuration/siderolink/siderolinkconfig"
-                        ]
-                      },
-                      {
                         "group": "Security",
                         "pages": [
                           "talos/v1.14/reference/configuration/security/imageverificationconfig",
