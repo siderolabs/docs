@@ -1,18 +1,83 @@
 ---
-title: "Adding a Kernel Module"
-description: "Create a system extension that includes kernel modules."
-canonical: https://docs.siderolabs.com/talos/v1.14/build-and-extend-talos/custom-images-and-development/kernel-module
+title: "Building a System Extension"
+description: "Create, build, and install a custom Talos system extension, using a kernel module as the worked example."
+canonical: https://docs.siderolabs.com/talos/v1.14/build-and-extend-talos/custom-images-and-development/building-a-system-extension
 ---
 
 import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+import { release_v1_14 } from '/snippets/custom-variables.mdx';
 
 <VersionWarningBanner />
 
-[System extensions](./system-extensions) in Talos provide ways to add files to the root filesystem and make it possible to run privileged containers as services.
-But Talos still requires that kernel modules be signed with a trusted signing key to be loaded at run time.
+[System extensions](./system-extensions) add files to the Talos Linux root filesystem and make it possible to run privileged containers as services.
 
-To add a kernel module to Talos you will need to create a system extension that is built with the kernel and signed by the same signing key.
-System extensions without kernel modules work without this requirement, but there are a couple extra steps needed when adding kernel modules.
+This guide builds a system extension, packages it into an installer image, and installs it on a machine.
+The worked example is a kernel module, which additionally requires a custom kernel build.
+An extension that ships no kernel modules does not need one: start at [Create an extension](#create-an-extension).
+
+<Note>
+    The public Image Factory at `factory.talos.dev` builds images only from the official Talos Linux system extension catalog.
+    A custom extension is not in that catalog, so this guide builds its images with the `imager` container instead.
+    See [Boot assets](../../platform-specific-installations/boot-assets) for the difference between the two.
+</Note>
+
+## Extension structure
+
+A system extension is a container image containing a `manifest.yaml` file at the root and a `rootfs` directory holding the files to install:
+
+```bash
+├── manifest.yaml
+└── rootfs
+    └── usr
+        └── local
+            └── bin
+                └── my-binary
+```
+
+Everything under `rootfs` is laid out as it should appear on the installed machine.
+
+The `manifest.yaml` file carries the extension's metadata; [Create an extension](#create-an-extension) below shows a complete one.
+
+### `rootfs` restrictions
+
+The contents of `rootfs` are restricted:
+
+- no special files (FIFOs, devices, and so on)
+- no world-writeable files or directories
+
+Paths must fall within one of the following:
+
+- `/etc/cri/conf.d`
+- `/usr/lib/firmware`
+- `/usr/lib/modules`
+- `/usr/lib/udev/rules.d`
+- `/usr/local`
+- `/usr/lib/ld-linux-x86-64.so.2` and `/usr/lib/ld-linux-aarch64.so.1`, the glibc loaders
+- `/usr/bin/ldconfig`, `/etc/ld.so.conf` and `/etc/ld.so.cache`, also glibc
+- `/usr/share/glvnd`, `/usr/share/egl` and `/etc/vulkan`, for OpenGL and Vulkan
+- `/usr/bin/nvidia-modprobe`, `/usr/bin/nvidia-pcc`, `/usr/bin/nvidia-smi`, `/usr/bin/nvidia-ctk` and `/usr/bin/nvidia-cdi-hook`
+- `/usr/bin/nvme`
+
+Add a `test` step to `pkg.yaml` to check the `rootfs` against these rules at build time:
+
+```yaml
+  - test:
+      - |
+        mkdir -p /extensions-validator-rootfs
+        cp -r /rootfs/ /extensions-validator-rootfs/rootfs
+        cp /pkg/manifest.yaml /extensions-validator-rootfs/manifest.yaml
+        /extensions-validator validate --rootfs=/extensions-validator-rootfs --pkg-name="${PKG_NAME}"
+```
+
+The build then fails with `path "..." is not allowed in extensions` for a file outside the permitted paths.
+Without this step nothing checks the layout: the extension builds, and `imager` packages it into an image without complaint.
+
+## Kernel module signing
+
+A kernel module has to be signed by the kernel it will run on, so an extension that ships one is built against a custom kernel.
+The next two sections build that kernel.
+
+Extensions that ship binaries, firmware, or configuration files do not need one, and can start at [Create an extension](#create-an-extension).
 
 ## Create a package hello
 
@@ -114,9 +179,6 @@ For easier reference in this guide I will save these images as `$KERNEL_IMAGE` a
 System extensions are the way to add software and files to a Talos Linux root filesystem.
 Just like packages they are built as containers and then layered with Talos to create a bootable squashfs image.
 
-The only unique thing about building a system extension with a kernel module is we need to build it against the kernel we just built in the previous step.
-If we don't do this then our kernel module won't be signed and cannot be loaded at runtime.
-
 The process is very similar to creating a package.
 Start by cloning the extensions repo:
 
@@ -153,14 +215,41 @@ metadata:
   version: 0.1
   author: me
   description: |
-    An extension that adds a kernel module
+    An example system extension
   compatibility:
     talos:
       version: ">= v1.10.0"  # what version of Talos is supported
 ```
 
-Create a `pkg.yaml` file in the my-module folder which works similarly to our `pkg.yaml` file for our package, but this time starts from the base image we built in the first step.
-The local directory is mounted into the container at `/pkg` so we can copy files from that directory.
+The `pkg.yaml` file describes how the extension is built.
+An extension that ships files rather than kernel modules depends only on the base stage.
+Place the file you want to install in the my-module folder, next to `pkg.yaml`.
+The folder is mounted into the container at `/pkg`, so the file can be installed into `/rootfs` from there:
+
+```yaml
+name: my-module
+variant: scratch
+shell: /bin/sh
+dependencies:
+  - stage: base
+steps:
+  - install:
+      - mkdir -p /rootfs/usr/local/bin
+      - install -m 0755 /pkg/my-binary /rootfs/usr/local/bin/my-binary
+  - test:
+      - |
+        mkdir -p /extensions-validator-rootfs
+        cp -r /rootfs/ /extensions-validator-rootfs/rootfs
+        cp /pkg/manifest.yaml /extensions-validator-rootfs/manifest.yaml
+        /extensions-validator validate --rootfs=/extensions-validator-rootfs --pkg-name="${PKG_NAME}"
+finalize:
+  - from: /rootfs
+    to: /rootfs
+  - from: /pkg/manifest.yaml
+    to: /
+```
+
+An extension that ships a kernel module instead uses a `pkg.yaml` which works similarly to our `pkg.yaml` file for our package, but this time starts from the base image we built in the first step.
 
 ```yaml
 name: my-module
@@ -173,6 +262,12 @@ steps:
   - install:
       - mkdir -p /rootfs/usr/lib/modules
       - cp -R /usr/lib/modules/* /rootfs/usr/lib/modules/
+  - test:
+      - |
+        mkdir -p /extensions-validator-rootfs
+        cp -r /rootfs/ /extensions-validator-rootfs/rootfs
+        cp /pkg/manifest.yaml /extensions-validator-rootfs/manifest.yaml
+        /extensions-validator validate --rootfs=/extensions-validator-rootfs --pkg-name="${PKG_NAME}"
 finalize:
   - from: /rootfs
     to: /rootfs
@@ -189,7 +284,7 @@ echo 'VERSION: "0.1"' > vars.yaml
 
 ## Build extension
 
-You now have a complete extension config and can build it with the kernel from your previous pkg build.
+You now have a complete extension config and can build it.
 
 ```bash
 make my-module REGISTRY=127.0.0.1:5005 \
@@ -207,8 +302,22 @@ Copy the image that get's pushed and save it as `${EXTENSION_IMAGE}`.
 ## Test the extension
 
 Now we need to create installation media to boot Talos.
-We will build and use [imager](../../platform-specific-installations/boot-assets) to include our extension.
+We will use [imager](../../platform-specific-installations/boot-assets) to include our extension.
 
+An extension that ships no kernel modules can use the released `imager` directly, with no Talos checkout and no custom kernel:
+
+<CodeBlock lang="bash">
+{`
+docker run --rm -t -v $PWD/_out:/out \\
+  ghcr.io/siderolabs/imager:${release_v1_14} installer \\
+  --arch amd64 \\
+  --system-extension-image \${EXTENSION_IMAGE}
+`}
+</CodeBlock>
+
+This writes the installer image to `_out/installer-amd64.tar`, and you can continue from the `crane push` step below.
+
+An extension that ships a kernel module needs an installer built against the kernel from the earlier steps.
 Clone the Talos repo.
 
 ```bash
@@ -269,8 +378,9 @@ talosctl gen config --install-image $REGISTRY/$USER/installer:$TAG \
     test https://192.168.100.100:6443     # cluster name and endpoint
 ```
 
-Now create a configuration patch that loads your kernel module by name.
+If your extension ships a kernel module, create a configuration patch that loads it by name.
 This should be the name of the `.ko` file you built in the package and put in the `/modules` directory.
+An extension without kernel modules needs no patch: apply the configuration on its own, without `-p`.
 
 ```yaml
 # my-module.yaml
@@ -301,7 +411,7 @@ If you already have Talos running on a machine you can apply the installer durin
 talosctl upgrade -i $REGISTRY/$USER/installer:$TAG
 ```
 
-Make sure you still create a patch to load the kernel module and apply it to the machine.
+If your extension ships a kernel module, create a patch to load it and apply that to the machine as well.
 
 ```yaml
 # my-module.yaml

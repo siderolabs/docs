@@ -164,7 +164,7 @@ navigation:
                 - "custom-images-and-development/customizing-the-kernel"
                 - "custom-images-and-development/developing-talos"
                 - "custom-images-and-development/extension-services"
-                - "custom-images-and-development/kernel-module"
+                - "custom-images-and-development/building-a-system-extension"
                 - "custom-images-and-development/oci-base-spec"
                 - "custom-images-and-development/overlays"
                 - "custom-images-and-development/system-extensions"
