@@ -48,7 +48,7 @@ extraArgs:
     <tr>
       <td>`extraArgs`</td>
       <td>Args</td>
-      <td>Extra command line arguments to supply to the kube-apiserver.</td>
+      <td>Extra command line arguments to supply to the kube-apiserver.<br /><br />Arguments owned by other configuration documents are rejected:<br />`anonymous-auth`, `authentication-config` and `oidc-*` are set via `KubeAuthenticationConfig`, while<br />`authorization-config`, `authorization-mode` and `authorization-webhook-*` are set via `KubeAuthorizerConfig`.<br /><br />The single exception is `oidc-signing-algs`, which cannot be set at all: see `KubeAuthenticationConfig`.</td>
       <td></td>
     </tr>
     <tr>

@@ -542,6 +542,7 @@
                           "talos/v1.14/reference/configuration/network/layer2vipconfig",
                           "talos/v1.14/reference/configuration/network/linkaliasconfig",
                           "talos/v1.14/reference/configuration/network/linkconfig",
+                          "talos/v1.14/reference/configuration/network/macvlanconfig",
                           "talos/v1.14/reference/configuration/network/networkdefaultactionconfig",
                           "talos/v1.14/reference/configuration/network/networkruleconfig",
                           "talos/v1.14/reference/configuration/network/resolverconfig",
@@ -552,6 +553,7 @@
                           "talos/v1.14/reference/configuration/network/vethconfig",
                           "talos/v1.14/reference/configuration/network/vlanconfig",
                           "talos/v1.14/reference/configuration/network/vrfconfig",
+                          "talos/v1.14/reference/configuration/network/vxlanconfig",
                           "talos/v1.14/reference/configuration/network/wireguardconfig"
                         ]
                       },
