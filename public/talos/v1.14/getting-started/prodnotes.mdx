@@ -394,6 +394,29 @@ Run the command to ensure that your nodes are running:
 kubectl get nodes
 ```
 
+## Step 17: Spread the CoreDNS pods across nodes
+
+CoreDNS runs two replicas by default.
+Both are scheduled during the bootstrap, while only the first control plane node is available, so they can start on the same node and stay there: the deployment prefers to spread them but does not require it, and the placement is not revisited once the pods are running.
+
+Check where they are running:
+
+```bash
+kubectl get pods -n kube-system -l k8s-app=kube-dns -o wide
+```
+
+If both are on the same node, delete one of them.
+Replace `<pod-name>` with either pod name:
+
+```bash
+kubectl delete pod -n kube-system <pod-name>
+```
+
+The deployment creates a replacement, which the scheduler places on the node with no CoreDNS pod.
+The pod you kept serves DNS while it starts.
+
+Run the check again to confirm the pods are on different nodes.
+
 ## Next steps
 
 Congratulations!
