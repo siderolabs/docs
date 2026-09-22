@@ -40,6 +40,9 @@ type section struct {
 }
 
 var sections = []section{
+	// The homepage. A single page, not a tree; registered as a file path,
+	// which underPath treats as an exact match.
+	{dir: "public/index.mdx", fields: []string{"title", "description"}},
 	{dir: "public/talos", fields: []string{"title", "description", "canonical"}},
 	{dir: "public/omni", fields: []string{"title", "description"}},
 	{dir: "public/kubernetes-guides", fields: []string{"title", "description"}},
