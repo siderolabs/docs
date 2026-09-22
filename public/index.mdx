@@ -22,6 +22,19 @@ mode: "custom"
 */}
 
 <div id="docs-home">
+  {/* Custom mode strips the logo, tab bar, and CTA from the navbar (only
+      search, assistant, and the theme toggle survive), so the homepage
+      carries its own brand row. Same links as the navbar in docs.json. */}
+  <div className="home-topbar">
+    <a className="home-mark" href="/">
+      <img className="home-logo-light" src="/images/sidero-light.svg" alt="Sidero" />
+      <img className="home-logo-dark" src="/images/sidero-dark.svg" alt="Sidero" />
+    </a>
+    <span className="home-topbar-spacer" />
+    <a className="home-toplink" href="https://www.siderolabs.com/support/">Enterprise Support</a>
+    <a className="home-cta" href="https://www.siderolabs.com/omni-signup">Try Talos Omni</a>
+  </div>
+
   <section className="home-hero">
     <h1>Talos Documentation</h1>
     <p className="home-promise">
