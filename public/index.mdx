@@ -1,0 +1,165 @@
+---
+title: "Talos Documentation"
+description: "Documentation for Talos Linux, Talos Enterprise Linux, and Talos Omni: Kubernetes on an immutable operating system you manage through an API."
+mode: "custom"
+---
+
+{/*
+  The docs homepage. Styles live in home.css (scoped under #docs-home); the
+  hero search is wired to Mintlify's search modal by home.js.
+
+  Announcement gating: a product appears here only once its name is public.
+  The hypervisor, containers, and AI sections below are commented out until
+  their announcements. When flipping one on:
+
+    1. Uncomment the section.
+    2. Update the hero sentence to name the new domain (it lists what the
+       page shows, so the promise cannot outrun the page).
+    3. Give live cards a real href; coming-soon cards stay unlinked.
+
+  No ship dates on cards, ever. "Coming soon" is the only status an
+  unreleased product gets.
+*/}
+
+<div id="docs-home">
+  <section className="home-hero">
+    <h1>Talos Documentation</h1>
+    <p className="home-promise">
+      Kubernetes on an immutable operating system you manage through an API.
+    </p>
+    <button className="home-search" id="home-search" aria-label="Search the documentation">
+      <span className="home-search-icon" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <circle cx="7" cy="7" r="4.5" />
+          <path d="M10.5 10.5 14 14" strokeLinecap="round" />
+        </svg>
+      </span>
+      <span className="home-search-label">Search the documentation</span>
+      <span className="home-kbd">⌘K</span>
+    </button>
+  </section>
+
+  <div className="home-catalog">
+    <section className="home-domain">
+      <div className="home-domain-head">
+        <h2>Kubernetes</h2>
+        <p>Run Kubernetes on bare metal, in the cloud, on existing hypervisors, or at the edge.</p>
+      </div>
+      <div className="home-grid">
+        <a className="home-card home-card--live" href="/talos/v1.14/overview/what-is-talos">
+          <div className="home-eyebrow">Open source</div>
+          <h3>Talos Linux Kubernetes</h3>
+          <p>Bring up a Kubernetes cluster on Talos Linux and operate it day to day.</p>
+          <div className="home-meta">v1.14 · v1.13 · older</div>
+        </a>
+        <a className="home-card home-card--live" href="/talos-enterprise-linux/overview/introducing-talos-enterprise-linux">
+          <div className="home-eyebrow">Commercial</div>
+          <h3>Talos Enterprise Linux</h3>
+          <p>FIPS-enabled builds, SBOMs, VEX, and signed images from the Enterprise Image Factory.</p>
+          <div className="home-meta">tracks Talos 1.14</div>
+        </a>
+        <a className="home-card home-card--live" href="/omni/overview/what-is-omni">
+          <div className="home-eyebrow">Commercial</div>
+          <h3>Talos Omni</h3>
+          <p>Provision, upgrade and manage Talos clusters across sites from one place.</p>
+          <div className="home-meta">SaaS and self-hosted</div>
+        </a>
+      </div>
+    </section>
+
+    {/* HYPERVISOR — uncomment at the TalosCon announcement (or earlier press
+        release). Hero sentence gains "virtual machines".
+
+    <section className="home-domain">
+      <div className="home-domain-head">
+        <h2>Hypervisor</h2>
+        <p>Run and manage virtual machines directly on Talos hosts.</p>
+      </div>
+      <div className="home-grid">
+        <a className="home-card home-card--soon">
+          <div className="home-eyebrow">Open source <span className="home-pill">Coming soon</span></div>
+          <h3>Talos Linux Hypervisor</h3>
+          <p>Run virtual machines on a Talos host through native Talos APIs and talosctl.</p>
+        </a>
+        <a className="home-card home-card--soon">
+          <div className="home-eyebrow">Commercial <span className="home-pill">Coming soon</span></div>
+          <h3>Talos Director</h3>
+          <p>Manage hosts, clusters, VMs, storage and networking across a virtualization estate.</p>
+        </a>
+      </div>
+    </section>
+
+    */}
+
+    {/* CONTAINERS — uncomment when the containers mode is announced. Hero
+        sentence gains "containers".
+
+    <section className="home-domain">
+      <div className="home-domain-head">
+        <h2>Containers</h2>
+        <p>Run containers without Kubernetes, declared in machine config.</p>
+      </div>
+      <div className="home-grid">
+        <a className="home-card home-card--soon">
+          <div className="home-eyebrow">Open source <span className="home-pill">Coming soon</span></div>
+          <h3>Talos Linux Containers</h3>
+          <p>Run OCI containers directly on Talos at the edge, with no Kubernetes control plane to operate.</p>
+        </a>
+      </div>
+    </section>
+
+    */}
+
+    {/* AI — uncomment when Athena is announced. Hero sentence gains
+        "private AI".
+
+    <section className="home-domain">
+      <div className="home-domain-head">
+        <h2>AI</h2>
+        <p>Run private AI workloads on infrastructure you control.</p>
+      </div>
+      <div className="home-grid">
+        <a className="home-card home-card--soon">
+          <div className="home-eyebrow">Open source <span className="home-pill">Coming soon</span></div>
+          <h3>Talos Linux for AI</h3>
+          <p>Declare an AI stack in machine config and run it on your own hardware.</p>
+        </a>
+        <a className="home-card home-card--soon">
+          <div className="home-eyebrow">Commercial <span className="home-pill">Coming soon</span></div>
+          <h3>Talos Athena</h3>
+          <p>Deploy and operate private AI: models, vector storage, and the serving stack.</p>
+        </a>
+      </div>
+    </section>
+
+    */}
+
+    <section className="home-domain">
+      <div className="home-domain-head">
+        <h2>Tools</h2>
+        <p>Services and clients you use with every product above.</p>
+      </div>
+      <div className="home-grid home-grid--tools">
+        <a className="home-card home-card--live home-card--tool" href="/talos/v1.14/learn-more/image-factory">
+          <h3>Image Factory</h3>
+          <p>Build Talos boot images with the extensions and configuration you need. Hosted community and enterprise instances, or run your own.</p>
+        </a>
+        <a className="home-card home-card--live home-card--tool" href="/talos/v1.14/configure-your-talos-cluster/system-configuration/discovery">
+          <h3>Discovery Service</h3>
+          <p>How Talos nodes find each other across NATs and firewalls. Hosted by Sidero, or self-hosted with an enterprise entitlement.</p>
+        </a>
+        <a className="home-card home-card--live home-card--tool" href="/talos/v1.14/getting-started/talosctl">
+          <h3>talosctl</h3>
+          <p>The command-line client for the Talos API.</p>
+        </a>
+      </div>
+    </section>
+
+    <div className="home-aside">
+      <span className="home-lbl">Also</span>
+      <a href="/kubernetes-guides/overview/kubernetes-guides-overview">Kubernetes Guides</a>
+      <a href="/changelog">Release notes</a>
+      <a href="https://www.siderolabs.com/support/">Support</a>
+    </div>
+  </div>
+</div>
