@@ -15,47 +15,6 @@
   color: var(--talos-content-default);
 }
 
-/* ---------- topbar ---------- */
-
-#docs-home .home-topbar {
-  display: flex;
-  align-items: center;
-  gap: var(--talos-space-base);
-  padding: var(--talos-space-compact) 0;
-}
-#docs-home .home-mark img {
-  display: block;
-  height: 28px;
-  width: auto;
-}
-/* Mintlify's logo convention: the -light asset is for light mode. */
-#docs-home .home-logo-dark { display: none; }
-.dark #docs-home .home-logo-light { display: none; }
-.dark #docs-home .home-logo-dark { display: block; }
-#docs-home .home-topbar-spacer {
-  flex: 1;
-}
-#docs-home .home-toplink {
-  color: var(--talos-content-secondary);
-  font-size: var(--talos-text-base);
-  text-decoration: none;
-}
-#docs-home .home-toplink:hover {
-  color: var(--talos-content-emphasis);
-}
-#docs-home .home-cta {
-  background: var(--talos-accent-fill);
-  color: var(--talos-content-on-accent);
-  border-radius: var(--talos-radius-pill);
-  padding: var(--talos-space-tight) var(--talos-space-compact);
-  font-size: var(--talos-text-base);
-  font-weight: var(--talos-weight-semibold);
-  text-decoration: none;
-}
-#docs-home .home-cta:hover {
-  background: var(--talos-accent-fill-hover);
-}
-
 /* ---------- hero ---------- */
 
 #docs-home .home-hero {
