@@ -19,10 +19,14 @@
  * 2. One block in public/docs.json, because Mintlify reads the accent from
  *    configuration rather than from CSS:
  *
+ *    The slots are not light/dark variants of one colour. Per the Mintlify
+ *    schema: primary is emphasis text in light mode, light is emphasis text
+ *    in dark mode, dark is buttons and hover states in both modes.
+ *
  *      "colors": {
- *        "primary": "#C44740",
- *        "light": "#EB8A86",
- *        "dark": "#9D3530"
+ *        "primary": "#B93B46",
+ *        "light": "#E48E96",
+ *        "dark": "#CF4250"
  *      }
  *
  *    Mintlify's fonts setting is deliberately left alone. It has no slot for
@@ -99,13 +103,13 @@
   --talos-cream-8: #4F4F4D;
   --talos-cream-9: #3A3A38;
   --talos-cream-10: #1A1A18;
-  --talos-red-1: #EB8A86;
-  --talos-red-2: #E4615B;
-  --talos-red-3: #E04B45;
-  --talos-red-4: #C44740;
-  --talos-red-5: #AE3B36;
-  --talos-red-6: #9D3530;
-  --talos-red-7: #8E2A26;
+  --talos-red-1: #E48E96;
+  --talos-red-2: #DB6973;
+  --talos-red-3: #D24350;
+  --talos-red-4: #CF4250;
+  --talos-red-5: #B93B46;
+  --talos-red-6: #A83640;
+  --talos-red-7: #8F2D36;
   --talos-gradient-display-1: #E8312C;
   --talos-gradient-display-2: #E2335A;
   --talos-gradient-display-3: #F77216;
@@ -179,7 +183,7 @@
   --talos-border-accent: var(--talos-red-3);
   --talos-accent-default: var(--talos-red-3);
   --talos-accent-hover: var(--talos-red-4);
-  --talos-accent-text: var(--talos-red-6);
+  --talos-accent-text: var(--talos-red-5);
   --talos-accent-fill: var(--talos-red-4);
   --talos-accent-fill-hover: var(--talos-red-5);
   --talos-accent-fill-active: var(--talos-red-7);
@@ -276,9 +280,9 @@
    and will not follow a runtime theme switch. That is fine: Mintlify picks
    the light or dark member of each pair itself. */
 :root {
-  --primary: 196 71 64;         /* accent.fill. Reaches AA under a white label, which the brand red does not. */
-  --primary-light: 235 138 134;   /* Mintlify uses this on dark backgrounds */
-  --primary-dark: 157 53 48;    /* and this on light ones */
+  --primary: 185 59 70;         /* light-mode emphasis text: accent.text (light) */
+  --primary-light: 228 142 150;   /* dark-mode emphasis text: accent.text (dark) */
+  --primary-dark: 207 66 80;    /* buttons and hover states, both modes: accent.fill */
 
   /* surface.chrome rather than surface.page: Mintlify draws the sidebar, the
      topbar and the content on one plane, so the docs site is all chrome and
