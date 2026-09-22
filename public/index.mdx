@@ -32,8 +32,10 @@ mode: "custom"
     </p>
     <button className="home-search" id="home-search" aria-label="Search the documentation">
       <span className="home-search-icon" aria-hidden="true">
+        {/* The ring is a path, not a <circle>: Mintlify's MDX sanitizer
+            drops circle elements but keeps paths. */}
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
-          <circle cx="7" cy="7" r="4.5" />
+          <path d="M11.5 7a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
           <path d="M10.5 10.5 14 14" strokeLinecap="round" />
         </svg>
       </span>
