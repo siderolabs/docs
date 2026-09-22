@@ -1,6 +1,10 @@
 navigation:
-  tabs:
-    - tab: "Omni"
+  products:
+    - product: "Talos Omni"
+      family: "kubernetes"
+      tag: "Commercial"
+      description: "Provision, upgrade and manage Talos clusters across sites from one place."
+      meta: "SaaS and self-hosted"
       icon: "/images/omni.svg"
       groups:
         - group: "Overview"

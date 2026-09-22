@@ -20,12 +20,35 @@ type Config struct {
 }
 
 type Navigation struct {
-	Version string `yaml:"version"`
-	Tabs    []Tab  `yaml:"tabs"`
+	Version  string    `yaml:"version"`
+	Tabs     []Tab     `yaml:"tabs"`
+	Products []Product `yaml:"products"`
 }
 
 type Tab struct {
 	Groups []Group `yaml:"groups"`
+}
+
+// Product is the products-style navigation node. Mintlify treats the keys under
+// `navigation` as mutually exclusive, so a file uses tabs or products but never
+// both; for validation purposes only the groups they carry matter.
+type Product struct {
+	Product string  `yaml:"product"`
+	Name    string  `yaml:"name"`
+	Groups  []Group `yaml:"groups"`
+}
+
+// contentGroups returns every group in the file, whichever navigation style it
+// uses, so the checks below do not care which one a given config is written in.
+func (n Navigation) contentGroups() []Group {
+	var groups []Group
+	for _, tab := range n.Tabs {
+		groups = append(groups, tab.Groups...)
+	}
+	for _, product := range n.Products {
+		groups = append(groups, product.Groups...)
+	}
+	return groups
 }
 
 // Page can be either a plain string or a nested group.
@@ -156,11 +179,9 @@ func validateVersion(yamlFile string) ([]string, error) {
 	listedPages := make(map[string]bool)
 	walkDirs := make(map[string]bool)
 
-	for _, tab := range config.Navigation.Tabs {
-		for _, group := range tab.Groups {
-			collectPages(group.Folder, group.Pages, listedPages)
-			collectWalkDirs(group.Folder, group.Pages, walkDirs)
-		}
+	for _, group := range config.Navigation.contentGroups() {
+		collectPages(group.Folder, group.Pages, listedPages)
+		collectWalkDirs(group.Folder, group.Pages, walkDirs)
 	}
 
 	if len(listedPages) == 0 {
@@ -331,12 +352,10 @@ func fixVersion(yamlFile string) (int, error) {
 	var groups []navGroup
 	listedPages := make(map[string]bool)
 	walkDirs := make(map[string]bool)
-	for _, tab := range config.Navigation.Tabs {
-		for _, group := range tab.Groups {
-			collectGroups(group.Folder, group.Group, group.Pages, &groups)
-			collectPages(group.Folder, group.Pages, listedPages)
-			collectWalkDirs(group.Folder, group.Pages, walkDirs)
-		}
+	for _, group := range config.Navigation.contentGroups() {
+		collectGroups(group.Folder, group.Group, group.Pages, &groups)
+		collectPages(group.Folder, group.Pages, listedPages)
+		collectWalkDirs(group.Folder, group.Pages, walkDirs)
 	}
 	if len(listedPages) == 0 {
 		return 0, nil
@@ -712,3 +731,4 @@ func insertLines(lines []string, at int, add []string) []string {
 	out = append(out, lines[at:]...)
 	return out
 }
+

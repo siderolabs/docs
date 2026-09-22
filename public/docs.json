@@ -124,10 +124,11 @@
     }
   ],
   "navigation": {
-    "tabs": [
+    "products": [
       {
-        "tab": "Talos",
+        "product": "Talos Linux Kubernetes",
         "icon": "/images/talos.svg",
+        "description": "Bring up a Kubernetes cluster on Talos Linux and operate it day to day.",
         "versions": [
           {
             "version": "v1.14",
@@ -2894,8 +2895,9 @@
         ]
       },
       {
-        "tab": "Talos Enterprise Linux",
+        "product": "Talos Enterprise Linux",
         "icon": "/images/talos.svg",
+        "description": "FIPS-enabled builds, SBOMs, VEX, and signed images from the Enterprise Image Factory.",
         "groups": [
           {
             "group": "Overview",
@@ -2924,8 +2926,9 @@
         ]
       },
       {
-        "tab": "Omni",
+        "product": "Talos Omni",
         "icon": "/images/omni.svg",
+        "description": "Provision, upgrade and manage Talos clusters across sites from one place.",
         "groups": [
           {
             "group": "Overview",
@@ -3086,7 +3089,7 @@
         ]
       },
       {
-        "tab": "Kubernetes Guides",
+        "product": "Kubernetes Guides",
         "icon": "/images/kubernetes.svg",
         "groups": [
           {
@@ -3158,7 +3161,8 @@
         ]
       },
       {
-        "tab": "Changelog",
+        "product": "Changelog",
+        "hidden": true,
         "groups": [
           {
             "group": "Changelog",

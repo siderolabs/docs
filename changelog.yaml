@@ -1,6 +1,15 @@
 navigation:
-  tabs:
-    - tab: "Changelog"
+  products:
+    # Hidden keeps the changelog out of the product switcher -- it is reached
+    # from the homepage's Also row -- while still making it a known navigation
+    # node. Without that, it belongs to no product and Mintlify falls back to
+    # rendering the first product's sidebar beside the release notes.
+    - product: "Changelog"
+      hidden: true
+      # One page, so its sidebar would hold a single link to the page already
+      # being read. The rule that hides it is generated from this product's
+      # page paths, so it follows the page if it ever moves.
+      sidebar: false
       groups:
         - group: "Changelog"
           folder: "/"

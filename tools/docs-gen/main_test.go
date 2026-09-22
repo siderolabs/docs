@@ -805,3 +805,654 @@ func TestPageEntryUnmarshalYAML(t *testing.T) {
 		t.Errorf("Expected 2 subpages, got %d", len(groupPages[0].Pages))
 	}
 }
+// TestMergeConfigsProducts covers the products navigation style: products
+// declared across several files, versioned ones collapsing into a single
+// product with one entry per version, and declaration order being preserved.
+func TestMergeConfigsProducts(t *testing.T) {
+	tempDir := createTempDir(t)
+	defer os.RemoveAll(tempDir)
+
+	base := `
+schema: "https://leaves.mintlify.com/schema/docs.json"
+theme: "aspen"
+name: "Test Docs"
+colors:
+  primary: "#E02A5F"
+  light: "#FF5788"
+  dark: "#FB326E"
+favicon: "/favicon.svg"
+navigation:
+  products:
+    - product: "omni"
+      name: "Omni"
+      groups:
+        - group: "Overview"
+          folder: "omni/overview"
+          pages:
+            - "what-is-omni.mdx"
+`
+
+	versionA := `
+navigation:
+  version: "v1.1"
+  products:
+    - product: "talos"
+      name: "Talos"
+      icon: "/images/talos.svg"
+      groups:
+        - group: "Overview"
+          folder: "talos/overview"
+          pages:
+            - "what-is-talos.mdx"
+`
+
+	versionB := `
+navigation:
+  version: "v1.0"
+  products:
+    - product: "talos"
+      groups:
+        - group: "Overview"
+          folder: "talos/overview"
+          pages:
+            - "what-is-talos.mdx"
+`
+
+	hidden := `
+navigation:
+  products:
+    - product: "director"
+      name: "Talos Director"
+      hidden: true
+      groups:
+        - group: "Overview"
+          folder: "director/overview"
+          pages:
+            - "what-is-talos-director.mdx"
+`
+
+	paths := []string{
+		createTempFile(t, tempDir, "base.yaml", base),
+		createTempFile(t, tempDir, "version-a.yaml", versionA),
+		createTempFile(t, tempDir, "version-b.yaml", versionB),
+		createTempFile(t, tempDir, "hidden.yaml", hidden),
+	}
+
+	merged, err := mergeConfigs(paths)
+	if err != nil {
+		t.Fatalf("mergeConfigs returned an error: %v", err)
+	}
+
+	// Declaration order, not map order. Ranging ProductVersionsMap directly
+	// would make this non-deterministic and docs.json would churn between runs.
+	wantOrder := []string{"omni", "talos", "director"}
+	if !reflect.DeepEqual(merged.ProductOrder, wantOrder) {
+		t.Errorf("ProductOrder = %v, want %v", merged.ProductOrder, wantOrder)
+	}
+
+	// Both versioned files name the same product, so it collapses to one entry
+	// carrying two versions, newest first because that is the file order.
+	talosVersions := merged.ProductVersionsMap["talos"]
+	if len(talosVersions) != 2 {
+		t.Fatalf("talos has %d versions, want 2", len(talosVersions))
+	}
+	if talosVersions[0].Version != "v1.1" || talosVersions[1].Version != "v1.0" {
+		t.Errorf("talos versions = %q, %q; want v1.1, v1.0",
+			talosVersions[0].Version, talosVersions[1].Version)
+	}
+
+	// Unversioned products stay in Navigation.Products.
+	if len(merged.Navigation.Products) != 2 {
+		t.Fatalf("unversioned products = %d, want 2", len(merged.Navigation.Products))
+	}
+
+	var director *ProductConfig
+	for i := range merged.Navigation.Products {
+		if merged.Navigation.Products[i].Product == "director" {
+			director = &merged.Navigation.Products[i]
+		}
+	}
+	if director == nil {
+		t.Fatal("director product not found")
+	}
+	if !director.Hidden {
+		t.Error("director.Hidden = false, want true -- hidden is how an unreleased product is staged")
+	}
+}
+
+// TestMergeConfigsRejectsMixedNavigation checks the guard against combining the
+// two navigation styles. Mintlify's schema treats the keys under `navigation`
+// as mutually exclusive, so a mix could never validate.
+func TestMergeConfigsRejectsMixedNavigation(t *testing.T) {
+	tempDir := createTempDir(t)
+	defer os.RemoveAll(tempDir)
+
+	withProducts := `
+schema: "https://leaves.mintlify.com/schema/docs.json"
+theme: "aspen"
+name: "Test Docs"
+colors:
+  primary: "#E02A5F"
+  light: "#FF5788"
+  dark: "#FB326E"
+favicon: "/favicon.svg"
+navigation:
+  products:
+    - product: "omni"
+      groups:
+        - group: "Overview"
+          folder: "omni/overview"
+          pages:
+            - "what-is-omni.mdx"
+`
+
+	withTabs := `
+navigation:
+  tabs:
+    - tab: "Talos"
+      groups:
+        - group: "Overview"
+          folder: "talos/overview"
+          pages:
+            - "what-is-talos.mdx"
+`
+
+	t.Run("across files", func(t *testing.T) {
+		paths := []string{
+			createTempFile(t, tempDir, "a-products.yaml", withProducts),
+			createTempFile(t, tempDir, "a-tabs.yaml", withTabs),
+		}
+		if _, err := mergeConfigs(paths); err == nil {
+			t.Fatal("mergeConfigs accepted a mix of tabs and products across files, want an error")
+		}
+	})
+
+	t.Run("within one file", func(t *testing.T) {
+		both := withProducts + `
+  tabs:
+    - tab: "Talos"
+      groups:
+        - group: "Overview"
+          folder: "talos/overview"
+          pages:
+            - "what-is-talos.mdx"
+`
+		paths := []string{createTempFile(t, tempDir, "b-both.yaml", both)}
+		if _, err := mergeConfigs(paths); err == nil {
+			t.Fatal("mergeConfigs accepted tabs and products in one file, want an error")
+		}
+	})
+}
+
+// TestBuildGroups checks that a group with no explicitly listed pages is
+// dropped rather than emitted empty. Every page must be named in a nav file so
+// docs-validate can hold the yaml and the content directories to each other.
+func TestBuildGroups(t *testing.T) {
+	groups := buildGroups([]GroupConfig{
+		{Group: "Empty", Folder: "somewhere"},
+		{Group: "Listed", Folder: "omni/overview", Pages: []PageEntry{{Page: "what-is-omni.mdx"}}},
+	})
+
+	if len(groups) != 1 {
+		t.Fatalf("buildGroups returned %d groups, want 1 (the empty one should be dropped)", len(groups))
+	}
+	if groups[0].Group != "Listed" {
+		t.Errorf("kept group %q, want %q", groups[0].Group, "Listed")
+	}
+}
+
+// TestWriteHomepage covers the generated landing page: products land in the
+// family they declare as design-system cards, hidden and opted-out products
+// are left off, coming-soon cards are present but not links, the tools
+// variant renders the lighter treatment, versioned products derive their
+// meta line, and the Also row is emitted.
+func TestWriteHomepage(t *testing.T) {
+	tempDir := createTempDir(t)
+	defer os.RemoveAll(tempDir)
+
+	page := filepath.Join(tempDir, "index.mdx")
+	noCard := false
+
+	homepage := &HomepageConfig{
+		Path:  page,
+		Title: "Talos Documentation",
+		Lede:  "Kubernetes, on an immutable operating system you manage through an API.",
+		Families: []FamilyConfig{
+			{Family: "kubernetes", Title: "Kubernetes", Description: "Run Kubernetes anywhere."},
+			{
+				Family:      "hypervisor",
+				Title:       "Hypervisor",
+				Description: "Run and manage virtual machines directly on Talos hosts.",
+				Cards: []ExtraCard{{
+					Title: "Talos Linux Hypervisor", Tag: "Open source", Soon: true,
+					Description: "Run virtual machines on a Talos host.",
+				}},
+			},
+			{
+				Family:      "tools",
+				Title:       "Tools",
+				Description: "Services and clients.",
+				Variant:     "tools",
+				Cards: []ExtraCard{{
+					Title: "Image Factory", Href: "/talos/v1.14/learn-more/image-factory",
+					Description: "Build Talos boot images.",
+				}},
+			},
+		},
+		Also: []NavLink{
+			{Label: "Release notes", Href: "/changelog"},
+		},
+	}
+
+	products := []MintlifyProduct{
+		{
+			Product: "Talos Linux Kubernetes", Family: "kubernetes", Tag: "Open source",
+			Icon: "/images/talos.svg", Description: "The Kubernetes-optimized OS.",
+			Versions: []MintlifyVersion{{
+				Version: "v1.14",
+				Groups:  []MintlifyGroup{{Group: "Overview", Pages: []string{"talos/v1.14/overview/what-is-talos"}}},
+			}},
+		},
+		{
+			Product: "Talos Omni", Family: "kubernetes", Tag: "Commercial", Meta: "SaaS and self-hosted",
+			Icon: "/images/omni.svg", Description: "Manage Talos clusters.",
+			Groups: []MintlifyGroup{{Group: "Overview", Pages: []string{"omni/overview/what-is-omni"}}},
+		},
+		{
+			// Hidden products are staged, not shown.
+			Product: "Secret", Family: "kubernetes", Hidden: true,
+			Groups: []MintlifyGroup{{Group: "Overview", Pages: []string{"secret/overview/index"}}},
+		},
+		{
+			// In the switcher but not the catalog: the Also row reaches it.
+			Product: "Kubernetes Guides", Homepage: &noCard,
+			Groups: []MintlifyGroup{{Group: "Overview", Pages: []string{"kubernetes-guides/overview/index"}}},
+		},
+	}
+
+	if err := writeHomepage(homepage, products); err != nil {
+		t.Fatalf("writeHomepage returned an error: %v", err)
+	}
+
+	data, err := os.ReadFile(page)
+	if err != nil {
+		t.Fatalf("reading generated page: %v", err)
+	}
+	body := string(data)
+
+	mustContain := []string{
+		`mode: "custom"`,
+		"Do not edit by hand",
+		`<div id="docs-home">`,
+		// The hero search opens Mintlify's search modal (wired by home.js).
+		`<button className="home-search" id="home-search"`,
+		// Product cards in the design system's markup.
+		`<a className="home-card home-card--live" href="/talos/v1.14/overview/what-is-talos">`,
+		`<a className="home-card home-card--live" href="/omni/overview/what-is-omni">`,
+		`<div className="home-eyebrow">Open source</div>`,
+		// A versioned product derives its meta line from its newest version.
+		`<div className="home-meta">v1.14 current</div>`,
+		// An explicit meta line passes through.
+		`<div className="home-meta">SaaS and self-hosted</div>`,
+		// A coming-soon card is a div with the pill, never a link.
+		`<div className="home-card home-card--soon">`,
+		`<div className="home-eyebrow">Open source <span className="home-pill">Coming soon</span></div>`,
+		// The tools strip uses the lighter treatment.
+		`<div className="home-grid home-grid--tools">`,
+		`<a className="home-card home-card--live home-card--tool" href="/talos/v1.14/learn-more/image-factory">`,
+		// The Also row.
+		`<span className="home-lbl">Also</span>`,
+		`<a href="/changelog">Release notes</a>`,
+	}
+	for _, needle := range mustContain {
+		if !strings.Contains(body, needle) {
+			t.Errorf("generated page is missing %q", needle)
+		}
+	}
+
+	mustNotContain := []string{
+		"Secret",            // hidden
+		"Kubernetes Guides", // homepage: false
+		// A soon card must not be a link.
+		`home-card--soon" href=`,
+		// The tools variant carries no eyebrow or meta.
+		`home-card--tool">` + "\n          <div className=\"home-eyebrow\">",
+	}
+	for _, needle := range mustNotContain {
+		if strings.Contains(body, needle) {
+			t.Errorf("generated page unexpectedly contains %q", needle)
+		}
+	}
+}
+
+// TestProductHref checks the card destination, including a product whose first
+// group nests its pages in a sub-group.
+func TestProductHref(t *testing.T) {
+	cases := []struct {
+		name    string
+		product MintlifyProduct
+		want    string
+	}{
+		{
+			name: "versioned product uses its newest version",
+			product: MintlifyProduct{Versions: []MintlifyVersion{
+				{Version: "v2", Groups: []MintlifyGroup{{Pages: []string{"p/v2/start"}}}},
+				{Version: "v1", Groups: []MintlifyGroup{{Pages: []string{"p/v1/start"}}}},
+			}},
+			want: "/p/v2/start",
+		},
+		{
+			name:    "unversioned product uses its first group",
+			product: MintlifyProduct{Groups: []MintlifyGroup{{Pages: []string{"p/overview"}}}},
+			want:    "/p/overview",
+		},
+		{
+			// The shape processManualPages really produces: a MintlifyGroup, not
+			// a map. The original version of this test used a map and so passed
+			// against a path the generator never takes.
+			name: "nested sub-group is walked into",
+			product: MintlifyProduct{Groups: []MintlifyGroup{{Pages: []interface{}{
+				MintlifyGroup{Group: "Sub", Pages: []interface{}{"p/sub/page"}},
+			}}}},
+			want: "/p/sub/page",
+		},
+		{
+			name: "sub-group before a plain page",
+			product: MintlifyProduct{Groups: []MintlifyGroup{{Pages: []interface{}{
+				MintlifyGroup{Group: "Sub", Pages: []interface{}{"p/sub/first"}},
+				"p/second",
+			}}}},
+			want: "/p/sub/first",
+		},
+		{
+			name:    "no pages at all",
+			product: MintlifyProduct{},
+			want:    "",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := productHref(tc.product); got != tc.want {
+				t.Errorf("productHref() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// TestWriteProductNav checks the generated product map: every product appears
+// with its display name and whether it carries versions, CTAs only appear for
+// products that declare a complete one, and products are keyed by the url
+// segment their pages sit under.
+func TestWriteProductNav(t *testing.T) {
+	tempDir := createTempDir(t)
+	defer os.RemoveAll(tempDir)
+
+	out := filepath.Join(tempDir, "product-nav.js")
+
+	products := []MintlifyProduct{
+		{
+			Product: "Talos Omni",
+			CTA:     &ProductCTA{Label: "Try Talos Omni", Href: "https://example.com/omni"},
+			Groups:  []MintlifyGroup{{Pages: []string{"omni/overview/what-is-omni"}}},
+		},
+		{
+			// Versioned: the segment still comes from the pages, and the
+			// version switcher depends on this flag being right.
+			Product: "Talos Linux",
+			Versions: []MintlifyVersion{{
+				Version: "v1.14",
+				Groups:  []MintlifyGroup{{Pages: []string{"talos/v1.14/overview/what-is-talos"}}},
+			}},
+		},
+		{
+			// No cta block: appears, but with no button.
+			Product: "Talos Director",
+			Groups:  []MintlifyGroup{{Pages: []string{"director/overview/index"}}},
+		},
+		{
+			// Half-declared: a label with no destination is not a usable button.
+			Product: "Broken",
+			CTA:     &ProductCTA{Label: "Nowhere"},
+			Groups:  []MintlifyGroup{{Pages: []string{"broken/overview/index"}}},
+		},
+	}
+
+	if err := writeProductNav(out, products); err != nil {
+		t.Fatalf("writeProductNav returned an error: %v", err)
+	}
+
+	data, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatalf("reading generated file: %v", err)
+	}
+	body := string(data)
+
+	if !strings.Contains(body, "window.sideroProducts = ") {
+		t.Error("generated file does not assign the expected global")
+	}
+
+	start := strings.Index(body, "{")
+	end := strings.LastIndex(body, "}")
+	if start == -1 || end == -1 {
+		t.Fatal("no JSON object found in the generated file")
+	}
+
+	var got map[string]struct {
+		Name      string `json:"name"`
+		Versioned bool   `json:"versioned"`
+		CTA       *struct {
+			Label string `json:"label"`
+			Href  string `json:"href"`
+		} `json:"cta"`
+	}
+	if err := json.Unmarshal([]byte(body[start:end+1]), &got); err != nil {
+		t.Fatalf("generated payload is not valid JSON: %v", err)
+	}
+
+	if len(got) != 4 {
+		t.Fatalf("got %d entries, want 4 (every product appears): %v", len(got), got)
+	}
+	if got["omni"].Name != "Talos Omni" || got["omni"].CTA == nil || got["omni"].CTA.Href != "https://example.com/omni" {
+		t.Errorf("omni entry = %+v", got["omni"])
+	}
+	if !got["talos"].Versioned {
+		t.Error("talos is versioned but the flag is false -- its version switcher would be hidden")
+	}
+	if got["omni"].Versioned {
+		t.Error("omni has no versions but the flag is true")
+	}
+	if got["director"].CTA != nil {
+		t.Errorf("director declares no cta but got %+v", got["director"].CTA)
+	}
+	if got["broken"].CTA != nil {
+		t.Error("a cta with a label but no href should be omitted")
+	}
+	if got["broken"].Name != "Broken" {
+		t.Error("a product with an incomplete cta should still appear, just without a button")
+	}
+}
+
+// TestURLSegment checks how a product's url segment is derived from its pages.
+func TestURLSegment(t *testing.T) {
+	cases := []struct {
+		name    string
+		product MintlifyProduct
+		want    string
+	}{
+		{"unversioned", MintlifyProduct{Groups: []MintlifyGroup{{Pages: []string{"omni/overview/x"}}}}, "omni"},
+		{"versioned", MintlifyProduct{Versions: []MintlifyVersion{{Groups: []MintlifyGroup{{Pages: []string{"talos/v1.14/a/b"}}}}}}, "talos"},
+		{"single segment", MintlifyProduct{Groups: []MintlifyGroup{{Pages: []string{"changelog"}}}}, "changelog"},
+		{"no pages", MintlifyProduct{}, ""},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := urlSegment(tc.product); got != tc.want {
+				t.Errorf("urlSegment() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// TestWriteHomepageRejectsUnplaceableProduct covers the guard on `family`.
+//
+// A visible product with no family, or with one matching no declared section,
+// used to be skipped silently: it built, validated, passed every check, and
+// simply had no card. A typo was indistinguishable from intent.
+func TestWriteHomepageRejectsUnplaceableProduct(t *testing.T) {
+	tempDir := createTempDir(t)
+	defer os.RemoveAll(tempDir)
+
+	homepage := &HomepageConfig{
+		Path:     filepath.Join(tempDir, "index.mdx"),
+		Title:    "Docs",
+		Families: []FamilyConfig{{Family: "kubernetes", Title: "Kubernetes"}},
+	}
+
+	page := []MintlifyGroup{{Group: "Overview", Pages: []string{"p/overview/index"}}}
+
+	cases := []struct {
+		name    string
+		product MintlifyProduct
+		wantErr bool
+	}{
+		{"no family", MintlifyProduct{Product: "Orphan", Groups: page}, true},
+		{"unknown family", MintlifyProduct{Product: "Typo", Family: "kubernets", Groups: page}, true},
+		{"hidden needs no family", MintlifyProduct{Product: "Staged", Hidden: true, Groups: page}, false},
+		{"declared family", MintlifyProduct{Product: "Fine", Family: "kubernetes", Groups: page}, false},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := writeHomepage(homepage, []MintlifyProduct{tc.product})
+			if tc.wantErr && err == nil {
+				t.Fatalf("writeHomepage accepted %+v, want an error", tc.product)
+			}
+			if !tc.wantErr && err != nil {
+				t.Fatalf("writeHomepage rejected %+v: %v", tc.product, err)
+			}
+		})
+	}
+}
+
+// TestMergeConfigsRejectsProductDeclaredTwice covers a product appearing in
+// both a versioned and an unversioned file. The build path prefers the
+// versioned entry, so the unversioned groups used to vanish without a word.
+func TestMergeConfigsRejectsProductDeclaredTwice(t *testing.T) {
+	tempDir := createTempDir(t)
+	defer os.RemoveAll(tempDir)
+
+	base := `
+schema: "https://leaves.mintlify.com/schema/docs.json"
+theme: "aspen"
+name: "Test Docs"
+colors:
+  primary: "#E02A5F"
+  light: "#FF5788"
+  dark: "#FB326E"
+favicon: "/favicon.svg"
+navigation:
+  products:
+    - product: "Talos Hypervisor"
+      groups:
+        - group: "Overview"
+          folder: "hypervisor/overview"
+          pages:
+            - "what-is-talos-hypervisor.mdx"
+`
+
+	versioned := `
+navigation:
+  version: "v1.0"
+  products:
+    - product: "Talos Hypervisor"
+      groups:
+        - group: "Overview"
+          folder: "hypervisor/overview"
+          pages:
+            - "what-is-talos-hypervisor.mdx"
+`
+
+	paths := []string{
+		createTempFile(t, tempDir, "base.yaml", base),
+		createTempFile(t, tempDir, "versioned.yaml", versioned),
+	}
+
+	if _, err := mergeConfigs(paths); err == nil {
+		t.Fatal("mergeConfigs accepted a product declared both with and without a version, want an error")
+	}
+}
+
+// TestWriteProductChromeCSS covers the rules whose selectors depend on where a
+// product's pages live. Typing those paths into style.css by hand meant the
+// rule silently stopped matching if a page moved.
+func TestWriteProductChromeCSS(t *testing.T) {
+	tempDir := createTempDir(t)
+	defer os.RemoveAll(tempDir)
+
+	out := filepath.Join(tempDir, "product-chrome.css")
+	no, yes := false, true
+
+	products := []MintlifyProduct{
+		{
+			Product: "Changelog",
+			Sidebar: &no,
+			// A leading slash, as a group with `folder: "/"` produces.
+			Groups: []MintlifyGroup{{Pages: []string{"/changelog"}}},
+		},
+		{
+			// Default: keeps its sidebar, so no rules.
+			Product: "Talos Omni",
+			Groups:  []MintlifyGroup{{Pages: []string{"omni/overview/what-is-omni"}}},
+		},
+		{
+			// Explicitly true is the same as the default.
+			Product: "Talos Director",
+			Sidebar: &yes,
+			Groups:  []MintlifyGroup{{Pages: []string{"director/overview/index"}}},
+		},
+		{
+			// Every page of a multi-page product gets a rule, sub-groups included.
+			Product: "Notes",
+			Sidebar: &no,
+			Groups: []MintlifyGroup{{Pages: []interface{}{
+				"notes/one",
+				MintlifyGroup{Group: "Sub", Pages: []interface{}{"notes/sub/two"}},
+			}}},
+		},
+	}
+
+	if err := writeProductChromeCSS(out, products); err != nil {
+		t.Fatalf("writeProductChromeCSS returned an error: %v", err)
+	}
+
+	data, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatalf("reading generated file: %v", err)
+	}
+	body := string(data)
+
+	mustContain := []string{
+		`html[data-current-path="/changelog"] #sidebar-content`,
+		`html[data-current-path="/notes/one"] #sidebar-content`,
+		`html[data-current-path="/notes/sub/two"] #sidebar-content`,
+	}
+	for _, needle := range mustContain {
+		if !strings.Contains(body, needle) {
+			t.Errorf("generated css is missing %q", needle)
+		}
+	}
+
+	// A path that already begins with a slash must not become "//changelog".
+	if strings.Contains(body, `"//changelog"`) {
+		t.Error("generated a doubled slash in the selector")
+	}
+
+	mustNotContain := []string{"omni/overview", "director/overview"}
+	for _, needle := range mustNotContain {
+		if strings.Contains(body, needle) {
+			t.Errorf("a product keeping its sidebar produced a rule for %q", needle)
+		}
+	}
+}

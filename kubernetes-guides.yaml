@@ -1,6 +1,9 @@
 navigation:
-  tabs:
-    - tab: "Kubernetes Guides"
+  products:
+    # In the product switcher but not the homepage catalog: the homepage
+    # reaches it from the Also row.
+    - product: "Kubernetes Guides"
+      homepage: false
       icon: "/images/kubernetes.svg"
       groups:
         - group: "Overview"

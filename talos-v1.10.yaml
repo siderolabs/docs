@@ -1,7 +1,10 @@
 navigation:
   version: "v1.10"
-  tabs:
-    - tab: "Talos"
+  products:
+    - product: "Talos Linux Kubernetes"
+      family: "kubernetes"
+      tag: "Open source"
+      description: "Bring up a Kubernetes cluster on Talos Linux and operate it day to day."
       icon: "/images/talos.svg"
       groups:
         - group: "Overview"
