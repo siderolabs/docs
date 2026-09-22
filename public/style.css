@@ -1,3 +1,10 @@
+/*
+ * Hand-written rules for the docs site: layout fixes and site-specific
+ * styling. Colour, spacing, and typography values come from the design
+ * system tokens in talos-tokens.css (generated, vendored from
+ * github.com/siderolabs/talos-design-system — edit tokens there, not here).
+ */
+
 .nav-logo {
   height: auto !important;
   max-height: 40px !important;
@@ -12,20 +19,11 @@
 
 /* Table Styling */
 table {
-  --border-color: #e5e7eb;
-  --bg-color-even: #dedede;
-  --bg-color-hover: #f3f4f6;
-
-  &:is(.dark *) {
-    --border-color: #374151;
-    --bg-color-even: #1f2937;
-    --bg-color-hover: #374151;
-  }
-
+  border-color: var(--talos-border-default);
   table-layout: auto;
   border-collapse: collapse;
   width: 100%;
-  margin: 1rem 0;
+  margin: var(--talos-space-compact) 0;
 
   th,
   td {
@@ -33,19 +31,19 @@ table {
   }
 
   td {
-    border: 1px solid var(--border-color);
+    border: var(--talos-border-hairline) solid var(--talos-border-default);
   }
 
   tbody {
-    border: 1px solid var(--border-color);
+    border: var(--talos-border-hairline) solid var(--talos-border-default);
 
     tr {
       &:nth-child(even) {
-        background-color: var(--bg-color-even);
+        background-color: var(--talos-surface-subtle);
       }
 
       &:hover {
-        background-color: var(--bg-color-hover);
+        background-color: var(--talos-surface-hover);
       }
     }
   }
@@ -53,7 +51,7 @@ table {
 
 .prose table th,
 .prose table td {
-  padding: 0.5rem 1rem 0.5rem 1.5rem;
+  padding: var(--talos-space-tight) var(--talos-space-compact) var(--talos-space-tight) var(--talos-space-base);
 }
 
 /* Keep field names on one line. Class-less tables are the generated reference
@@ -79,4 +77,17 @@ table:not([class]) td:nth-child(1) code {
 
 .prose {
   max-width: none;
+}
+
+/* The announcement banner carries the brand gradient. Mintlify only lets
+   docs.json set a flat colour, so the treatment lives here. The fill variant
+   of the gradient is the one that keeps white text at AA; the brighter
+   display variant is for large decorative type only. */
+#banner {
+  background: var(--talos-accent-gradient-fill);
+}
+
+#banner,
+#banner a {
+  color: var(--talos-content-on-accent);
 }

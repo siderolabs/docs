@@ -3,13 +3,13 @@
   "theme": "aspen",
   "name": "Sidero Documentation",
   "colors": {
-    "primary": "#E02A5F",
-    "light": "#FF5788",
-    "dark": "#FB326E"
+    "primary": "#C44740",
+    "light": "#EB8A86",
+    "dark": "#9D3530"
   },
   "favicon": "/images/favicon.svg",
   "banner": {
-    "content": "Join us at [TalosCon](http://taloscon.com/) in Amsterdam, Oct 15–16. Tickets are free!",
+    "content": "Join us at [TalosCon](http://taloscon.com/) in Amsterdam, Oct 15-16. Tickets are free!",
     "dismissible": true
   },
   "contextual": {
