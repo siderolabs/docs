@@ -34,11 +34,19 @@
     }
   }
 
-  bind();
-  // Mintlify is a client-side app: the homepage can mount after this script
-  // runs, or on navigation back to it. Watch for the button (re)appearing.
-  new MutationObserver(bind).observe(document.body, {
-    childList: true,
-    subtree: true,
-  });
+  function start() {
+    bind();
+    // Mintlify is a client-side app: the homepage can mount after this script
+    // runs, or on navigation back to it. Watch for the button (re)appearing.
+    new MutationObserver(bind).observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
 })();

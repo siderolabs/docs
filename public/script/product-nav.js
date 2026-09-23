@@ -12,18 +12,39 @@ window.sideroProducts = {
   },
   "kubernetes-guides": {
     "name": "Kubernetes Guides",
-    "versioned": false
+    "versioned": false,
+    "cta": {
+      "label": "Try Talos Omni",
+      "href": "https://www.siderolabs.com/omni-signup"
+    }
   },
   "omni": {
     "name": "Talos Omni",
-    "versioned": false
+    "versioned": false,
+    "cta": {
+      "label": "Try Talos Omni",
+      "href": "https://www.siderolabs.com/omni-signup"
+    }
   },
   "talos": {
-    "name": "Talos Linux Kubernetes",
-    "versioned": true
+    "name": "Talos Linux",
+    "versioned": true,
+    "cta": {
+      "label": "Try Talos Omni",
+      "href": "https://www.siderolabs.com/omni-signup"
+    }
   },
   "talos-enterprise-linux": {
     "name": "Talos Enterprise Linux",
-    "versioned": false
+    "versioned": false,
+    "cta": {
+      "label": "Try Talos Omni",
+      "href": "https://www.siderolabs.com/omni-signup"
+    }
   }
+};
+
+window.sideroNavbarCTA = {
+  "label": "Try Talos Omni",
+  "href": "https://www.siderolabs.com/omni-signup"
 };

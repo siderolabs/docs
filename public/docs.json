@@ -126,7 +126,7 @@
   "navigation": {
     "products": [
       {
-        "product": "Talos Linux Kubernetes",
+        "product": "Talos Linux",
         "icon": "/images/talos.svg",
         "description": "Bring up a Kubernetes cluster on Talos Linux and operate it day to day.",
         "versions": [

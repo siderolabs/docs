@@ -109,7 +109,7 @@ func TestMergeConfigsError(t *testing.T) {
 	// Test with invalid YAML
 	tempDir := createTempDir(t)
 	defer os.RemoveAll(tempDir)
-	
+
 	invalidYAML := createTempFile(t, tempDir, "invalid.yaml", "invalid: yaml: content:")
 	_, err = mergeConfigs([]string{invalidYAML})
 	if err == nil {
@@ -150,7 +150,7 @@ func TestScanFolder(t *testing.T) {
 		filepath.Join("testfolder", "file1"),
 		filepath.Join("testfolder", "file2"),
 	}
-	
+
 	var actualFiles []string
 	for _, page := range pages {
 		if str, ok := page.(string); ok {
@@ -163,7 +163,7 @@ func TestScanFolder(t *testing.T) {
 			actualFiles = append(actualFiles, relPath)
 		}
 	}
-	
+
 	if !reflect.DeepEqual(actualFiles, expectedFiles) {
 		t.Errorf("Expected files %v, got %v", expectedFiles, actualFiles)
 	}
@@ -179,7 +179,7 @@ func TestScanFolder(t *testing.T) {
 						filepath.Join("testfolder", "subfolder", "subfile1"),
 						filepath.Join("testfolder", "subfolder", "subfile2"),
 					}
-					
+
 					// Normalize subPages to relative paths
 					var normalizedSubPages []string
 					for _, subPage := range subPages {
@@ -190,7 +190,7 @@ func TestScanFolder(t *testing.T) {
 						}
 						normalizedSubPages = append(normalizedSubPages, relPath)
 					}
-					
+
 					if !reflect.DeepEqual(normalizedSubPages, expectedSubPages) {
 						t.Errorf("Expected subpages %v, got %v", expectedSubPages, normalizedSubPages)
 					}
@@ -245,7 +245,7 @@ func TestScanFolderWithOrder(t *testing.T) {
 		filepath.Join("testfolder", "file1"),
 		filepath.Join("testfolder", "file2"),
 	}
-	
+
 	if !reflect.DeepEqual(files, expected) {
 		t.Errorf("Expected ordered files %v, got %v", expected, files)
 	}
@@ -291,14 +291,14 @@ func TestScanSubdirectory(t *testing.T) {
 func TestCheckMissingFiles(t *testing.T) {
 	tempDir := createTempDir(t)
 	defer os.RemoveAll(tempDir)
-	
+
 	// Change to temp directory for this test
 	oldWd, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("Failed to get working directory: %v", err)
 	}
 	defer os.Chdir(oldWd)
-	
+
 	if err := os.Chdir(tempDir); err != nil {
 		t.Fatalf("Failed to change directory: %v", err)
 	}
@@ -358,7 +358,7 @@ func TestCheckMissingFiles(t *testing.T) {
 		// This might happen if the missing folder is somehow being included
 		// Let's check what files were actually created and found
 		t.Logf("All files were found to be included. Output: %s", output)
-		
+
 		// Let's verify the files actually exist in the expected locations
 		if _, err := os.Stat("missing/orphan.mdx"); err != nil {
 			t.Logf("missing/orphan.mdx does not exist: %v", err)
@@ -452,7 +452,7 @@ navigation:
 `
 
 	configPath := createTempFile(t, tempDir, "config.yaml", configContent)
-	
+
 	// Create test documentation files
 	docsDir := filepath.Join(tempDir, "getting-started")
 	createTempFile(t, docsDir, "intro.mdx", "# Introduction")
@@ -500,7 +500,7 @@ navigation:
 				t.Fatalf("Failed to get working directory: %v", err)
 			}
 			defer os.Chdir(oldWd)
-			
+
 			if err := os.Chdir(tempDir); err != nil {
 				t.Fatalf("Failed to change directory: %v", err)
 			}
@@ -545,12 +545,12 @@ navigation:
 	if !ok {
 		t.Fatal("Navigation section missing or invalid")
 	}
-	
+
 	tabs, ok := nav["tabs"].([]interface{})
 	if !ok {
 		t.Fatal("Navigation tabs missing or invalid")
 	}
-	
+
 	if len(tabs) != 1 {
 		t.Errorf("Expected 1 tab, got %d", len(tabs))
 	}
@@ -786,7 +786,7 @@ func TestPageEntryUnmarshalYAML(t *testing.T) {
   pages:
     - "page1"
     - "page2"`
-	
+
 	var groupPages []PageEntry
 	err = yaml.Unmarshal([]byte(yamlGroup), &groupPages)
 	if err != nil {
@@ -805,6 +805,7 @@ func TestPageEntryUnmarshalYAML(t *testing.T) {
 		t.Errorf("Expected 2 subpages, got %d", len(groupPages[0].Pages))
 	}
 }
+
 // TestMergeConfigsProducts covers the products navigation style: products
 // declared across several files, versioned ones collapsing into a single
 // product with one entry per version, and declaration order being preserved.
@@ -1023,10 +1024,17 @@ func TestWriteHomepage(t *testing.T) {
 				Family:      "hypervisor",
 				Title:       "Hypervisor",
 				Description: "Run and manage virtual machines directly on Talos hosts.",
-				Cards: []ExtraCard{{
-					Title: "Talos Linux Hypervisor", Tag: "Open source", Soon: true,
-					Description: "Run virtual machines on a Talos host.",
-				}},
+				Cards: []ExtraCard{
+					{
+						Title: "Talos Hypervisor", Tag: "Open source", Soon: true,
+						Description: "Run virtual machines on a Talos host.",
+					},
+					{
+						// Licensing undecided: no tag, but still labelled.
+						Title: "Untagged", Soon: true,
+						Description: "Braces {like these} and <angle brackets> must not reach MDX raw.",
+					},
+				},
 			},
 			{
 				Family:      "tools",
@@ -1097,6 +1105,10 @@ func TestWriteHomepage(t *testing.T) {
 		// A coming-soon card is a div with the pill, never a link.
 		`<div className="home-card home-card--soon">`,
 		`<div className="home-eyebrow">Open source <span className="home-pill">Coming soon</span></div>`,
+		// A soon card with no tag still says it is coming soon.
+		`<div className="home-eyebrow"><span className="home-pill">Coming soon</span></div>`,
+		// Config text is escaped rather than parsed as JSX.
+		"Braces &#123;like these&#125; and &lt;angle brackets&gt; must not reach MDX raw.",
 		// The tools strip uses the lighter treatment.
 		`<div className="home-grid home-grid--tools">`,
 		`<a className="home-card home-card--live home-card--tool" href="/talos/v1.14/learn-more/image-factory">`,
@@ -1218,7 +1230,8 @@ func TestWriteProductNav(t *testing.T) {
 		},
 	}
 
-	if err := writeProductNav(out, products); err != nil {
+	primary := &NavPrimary{Type: "button", Label: "Try Talos Omni", Href: "https://example.com/omni"}
+	if err := writeProductNav(out, products, primary); err != nil {
 		t.Fatalf("writeProductNav returned an error: %v", err)
 	}
 
@@ -1231,6 +1244,16 @@ func TestWriteProductNav(t *testing.T) {
 	if !strings.Contains(body, "window.sideroProducts = ") {
 		t.Error("generated file does not assign the expected global")
 	}
+
+	// The site-wide button is emitted so the script can find it in the navbar.
+	defaultAt := strings.Index(body, "window.sideroNavbarCTA = ")
+	if defaultAt == -1 {
+		t.Fatal("generated file does not carry the navbar.primary default")
+	}
+	if !strings.Contains(body[defaultAt:], `"href": "https://example.com/omni"`) {
+		t.Error("navbar default does not carry the primary button's href")
+	}
+	body = body[:defaultAt]
 
 	start := strings.Index(body, "{")
 	end := strings.LastIndex(body, "}")

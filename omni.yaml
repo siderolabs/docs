@@ -6,6 +6,9 @@ navigation:
       description: "Provision, upgrade and manage Talos clusters across sites from one place."
       meta: "SaaS and self-hosted"
       icon: "/images/omni.svg"
+      cta:
+        label: "Try Talos Omni"
+        href: "https://www.siderolabs.com/omni-signup"
       groups:
         - group: "Overview"
           folder: "omni/overview"

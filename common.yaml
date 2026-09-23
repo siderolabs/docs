@@ -45,6 +45,11 @@ navbar:
   links:
     - label: "Enterprise Support"
       href: "https://www.siderolabs.com/support/"
+  # The button Mintlify renders. script/contextual-chrome.js shows it only on
+  # products that declare a `cta` in their nav file, relabelled to match, and
+  # hides it everywhere else (homepage, changelog, hypervisor). Keep a real
+  # button here: it is how the script finds the element, and what the site
+  # shows if the script fails.
   primary:
     type: "button"
     label: "Try Talos Omni"
@@ -132,7 +137,7 @@ homepage:
       title: "Hypervisor"
       description: "Run and manage virtual machines directly on Talos hosts."
       cards:
-        - title: "Talos Linux Hypervisor"
+        - title: "Talos Hypervisor"
           tag: "Open source"
           soon: true
           description: "Run virtual machines on a Talos host through native Talos APIs and talosctl."
@@ -142,7 +147,8 @@ homepage:
         #   tag: "Commercial"
         #   soon: true
         #   description: "Manage hosts, clusters, VMs, storage and networking across a virtualization estate."
-        # XENIA -- unannounced. Uncomment when it is.
+        # XENIA -- unannounced. Uncomment when it is. Its navbar button
+        # also goes on the Talos Hypervisor product, which has none until then.
         # - title: "Talos Xenia"
         #   tag: "Open source"
         #   soon: true

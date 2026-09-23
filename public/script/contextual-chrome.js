@@ -15,9 +15,12 @@
  *      landing page, where it falls back to the first product's versions and
  *      offers Talos releases to someone who is not reading Talos.
  *
- * The call to action stays global (navbar.primary in docs.json): one product
- * has one, so per-product insertion buys nothing yet. Revisit when a second
- * product gets its own.
+ *   4. The navbar button belongs to the product being read. Each product
+ *      declares its `cta` in its nav file; a product without one shows no
+ *      button. Rather than inserting a button of its own, this relabels or
+ *      hides the navbar.primary one Mintlify already renders, so it keeps
+ *      Mintlify's styling in both themes. If this script fails to load, the
+ *      site falls back to navbar.primary on every page.
  *
  * Mintlify sets data-current-path on <html> and keeps it up to date across
  * client-side navigation, which is what makes this possible without a reload.
@@ -142,6 +145,51 @@
     return segments.length ? segments[0] : null;
   }
 
+  // The navbar.primary button, desktop and mobile copies. Found by the
+  // default href on first sight, then marked, since a relabelled button may
+  // no longer carry that href. Scoped to #navbar because page content links
+  // the same signup URL.
+  function navbarCTAs() {
+    var fallback = window.sideroNavbarCTA;
+    var navbar = document.getElementById("navbar");
+    if (!navbar || !fallback) return [];
+
+    Array.prototype.forEach.call(navbar.querySelectorAll("a[href]"), function (link) {
+      if (link.getAttribute("href") === fallback.href) {
+        link.setAttribute("data-sidero-cta", "");
+      }
+    });
+    return Array.prototype.slice.call(navbar.querySelectorAll("a[data-sidero-cta]"));
+  }
+
+  // Replaces the deepest text in a link without touching the chevron icon.
+  function setLinkLabel(link, text) {
+    var walker = document.createTreeWalker(link, NodeFilter.SHOW_TEXT);
+    var node;
+    while ((node = walker.nextNode())) {
+      if (node.textContent.trim()) {
+        if (node.textContent !== text) node.textContent = text;
+        return;
+      }
+    }
+  }
+
+  function applyCTA(product) {
+    var info = productInfo(product);
+    var cta = info && info.cta;
+
+    navbarCTAs().forEach(function (link) {
+      var item = link.closest("li") || link;
+      if (!cta) {
+        item.style.display = "none";
+        return;
+      }
+      item.style.removeProperty("display");
+      if (link.getAttribute("href") !== cta.href) link.setAttribute("href", cta.href);
+      setLinkLabel(link, cta.label);
+    });
+  }
+
   function applySearchPlaceholder(product) {
     var entry = document.getElementById("search-bar-entry");
     if (!entry) return;
@@ -160,6 +208,7 @@
   function apply() {
     var path = document.documentElement.getAttribute("data-current-path") || window.location.pathname;
     var product = productFromPath(path);
+    applyCTA(product);
     applySearchPlaceholder(product);
     applyProductSwitcher(product);
     applyVersionSwitcher(product);

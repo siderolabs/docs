@@ -16,35 +16,35 @@ import (
 
 // Config represents the YAML configuration file structure
 type Config struct {
-	Schema       string              `yaml:"schema"`
-	Theme        string              `yaml:"theme"`
-	Name         string              `yaml:"name"`
-	Description  string              `yaml:"description,omitempty"`
-	Colors       Colors              `yaml:"colors"`
-	Favicon      string              `yaml:"favicon"`
-	Banner       *Banner             `yaml:"banner,omitempty"`
-	Contextual   *Contextual         `yaml:"contextual,omitempty"`
-	Logo         *Logo               `yaml:"logo,omitempty"`
-	Thumbnails   *Thumbnails         `yaml:"thumbnails,omitempty"`
-	Fonts        *Fonts              `yaml:"fonts,omitempty"`
-	SEO          *SEO                `yaml:"seo,omitempty"`
-	Search       *Search             `yaml:"search,omitempty"`
-	Errors       *Errors             `yaml:"errors,omitempty"`
-	Navbar       *Navbar             `yaml:"navbar,omitempty"`
-	Footer       *Footer             `yaml:"footer,omitempty"`
-	Integrations *Integrations       `yaml:"integrations,omitempty"`
-	Redirects    []Redirect          `yaml:"redirects,omitempty"`
-	Navigation   NavigationConfig    `yaml:"navigation"`
-	Homepage     *HomepageConfig     `yaml:"homepage,omitempty"`
+	Schema       string           `yaml:"schema"`
+	Theme        string           `yaml:"theme"`
+	Name         string           `yaml:"name"`
+	Description  string           `yaml:"description,omitempty"`
+	Colors       Colors           `yaml:"colors"`
+	Favicon      string           `yaml:"favicon"`
+	Banner       *Banner          `yaml:"banner,omitempty"`
+	Contextual   *Contextual      `yaml:"contextual,omitempty"`
+	Logo         *Logo            `yaml:"logo,omitempty"`
+	Thumbnails   *Thumbnails      `yaml:"thumbnails,omitempty"`
+	Fonts        *Fonts           `yaml:"fonts,omitempty"`
+	SEO          *SEO             `yaml:"seo,omitempty"`
+	Search       *Search          `yaml:"search,omitempty"`
+	Errors       *Errors          `yaml:"errors,omitempty"`
+	Navbar       *Navbar          `yaml:"navbar,omitempty"`
+	Footer       *Footer          `yaml:"footer,omitempty"`
+	Integrations *Integrations    `yaml:"integrations,omitempty"`
+	Redirects    []Redirect       `yaml:"redirects,omitempty"`
+	Navigation   NavigationConfig `yaml:"navigation"`
+	Homepage     *HomepageConfig  `yaml:"homepage,omitempty"`
 	// ProductNav is where to write the generated map describing each product
 	// to the browser: its display name, whether it carries versions, and its
 	// call to action. None of this fits docs.json -- Mintlify's schema has no
 	// such fields -- so it is handed over as a script instead.
-	ProductNav   string              `yaml:"productNav,omitempty"`
+	ProductNav string `yaml:"productNav,omitempty"`
 	// ProductChromeCSS is where to write rules that depend on a product's page
 	// paths, so those paths are never typed out by hand in a stylesheet.
-	ProductChromeCSS string          `yaml:"productChromeCss,omitempty"`
-	VersionsMap  map[string][]TabConfig `yaml:"-"` // Internal use only, not from YAML
+	ProductChromeCSS string                 `yaml:"productChromeCss,omitempty"`
+	VersionsMap      map[string][]TabConfig `yaml:"-"` // Internal use only, not from YAML
 	// ProductVersionsMap is the products equivalent of VersionsMap: product key ->
 	// one entry per versioned config file that declared it.
 	ProductVersionsMap map[string][]ProductConfig `yaml:"-"`
@@ -82,12 +82,12 @@ type Thumbnails struct {
 }
 
 type Fonts struct {
-	Family  string      `yaml:"family,omitempty" json:"family,omitempty"`
-	Weight  *int        `yaml:"weight,omitempty" json:"weight,omitempty"`
-	Source  string      `yaml:"source,omitempty" json:"source,omitempty"`
-	Format  string      `yaml:"format,omitempty" json:"format,omitempty"`
-	Heading *FontStyle  `yaml:"heading,omitempty" json:"heading,omitempty"`
-	Body    *FontStyle  `yaml:"body,omitempty" json:"body,omitempty"`
+	Family  string     `yaml:"family,omitempty" json:"family,omitempty"`
+	Weight  *int       `yaml:"weight,omitempty" json:"weight,omitempty"`
+	Source  string     `yaml:"source,omitempty" json:"source,omitempty"`
+	Format  string     `yaml:"format,omitempty" json:"format,omitempty"`
+	Heading *FontStyle `yaml:"heading,omitempty" json:"heading,omitempty"`
+	Body    *FontStyle `yaml:"body,omitempty" json:"body,omitempty"`
 }
 
 type FontStyle struct {
@@ -164,26 +164,26 @@ type NavigationConfig struct {
 // own version history (Talos, Talos Enterprise Linux, Talos Hypervisor) or a
 // plain set of groups (Omni, Talos Director) -- never both, matching Mintlify.
 type ProductConfig struct {
-	Product     string        `yaml:"product"`
-	Name        string        `yaml:"name,omitempty"`
-	Icon        string        `yaml:"icon,omitempty"`
-	Color       string        `yaml:"color,omitempty"`
-	Description string        `yaml:"description,omitempty"`
-	Hidden      bool          `yaml:"hidden,omitempty"`
+	Product     string `yaml:"product"`
+	Name        string `yaml:"name,omitempty"`
+	Icon        string `yaml:"icon,omitempty"`
+	Color       string `yaml:"color,omitempty"`
+	Description string `yaml:"description,omitempty"`
+	Hidden      bool   `yaml:"hidden,omitempty"`
 	// Family and Tag drive the generated homepage only. Mintlify's schema has
 	// no notion of a product family, so neither is emitted into docs.json.
-	Family  string        `yaml:"family,omitempty"`
-	Tag     string        `yaml:"tag,omitempty"`
+	Family string `yaml:"family,omitempty"`
+	Tag    string `yaml:"tag,omitempty"`
 	// Meta is the card's machine-set footer line ("SaaS and self-hosted").
 	// A versioned product left without one gets "<newest version> current".
-	Meta    string        `yaml:"meta,omitempty"`
+	Meta string `yaml:"meta,omitempty"`
 	// Homepage set to false keeps the product out of the homepage catalog
 	// while leaving it in the product switcher. Meant for products the
 	// homepage reaches another way, like Kubernetes Guides in the Also row.
-	Homepage *bool        `yaml:"homepage,omitempty"`
+	Homepage *bool `yaml:"homepage,omitempty"`
 	// CTA is the call to action shown while reading this product. A product
 	// without one gets no button, rather than inheriting another product's.
-	CTA     *ProductCTA   `yaml:"cta,omitempty"`
+	CTA *ProductCTA `yaml:"cta,omitempty"`
 	// Sidebar set to false hides the navigation sidebar on this product's
 	// pages. Meant for a single-page node like the changelog, whose sidebar
 	// would hold one link to the page already being read. Defaults to true.
@@ -195,10 +195,10 @@ type ProductConfig struct {
 // HomepageConfig describes the generated landing page. The copy lives here so
 // adding a product never means editing the page itself.
 type HomepageConfig struct {
-	Path     string         `yaml:"path"`
-	Eyebrow  string         `yaml:"eyebrow"`
-	Title    string         `yaml:"title"`
-	Lede     string         `yaml:"lede"`
+	Path    string `yaml:"path"`
+	Eyebrow string `yaml:"eyebrow"`
+	Title   string `yaml:"title"`
+	Lede    string `yaml:"lede"`
 	// Fonts is a stylesheet the landing page loads for itself, rather than
 	// putting the request in the global stylesheet where every page pays for it.
 	// Unset when the fonts are self-hosted via the design-system tokens.
@@ -210,9 +210,9 @@ type HomepageConfig struct {
 }
 
 type FamilyConfig struct {
-	Family      string      `yaml:"family"`
-	Title       string      `yaml:"title"`
-	Description string      `yaml:"description"`
+	Family      string `yaml:"family"`
+	Title       string `yaml:"title"`
+	Description string `yaml:"description"`
 	// Variant selects the card treatment. Empty is the standard product
 	// card; "tools" is the lighter strip used for cross-product services
 	// and clients (smaller cards, title and body only).
@@ -435,7 +435,7 @@ func main() {
 	// First, process versioned tabs
 	for tabName, versions := range mergedConfig.VersionsMap {
 		tab := MintlifyTab{
-			Tab:  tabName,
+			Tab: tabName,
 		}
 
 		// Get icon from first version
@@ -596,7 +596,11 @@ func main() {
 
 	if mergedConfig.ProductNav != "" {
 		path := filepath.Join(filepath.Dir(configPaths[0]), mergedConfig.ProductNav)
-		if err := writeProductNav(path, mintlifyConfig.Navigation.Products); err != nil {
+		var primary *NavPrimary
+		if mergedConfig.Navbar != nil {
+			primary = mergedConfig.Navbar.Primary
+		}
+		if err := writeProductNav(path, mintlifyConfig.Navigation.Products, primary); err != nil {
 			fmt.Fprintf(os.Stderr, "Error writing product nav: %v\n", err)
 			os.Exit(1)
 		}
@@ -653,7 +657,6 @@ func buildGroups(groupConfigs []GroupConfig) []MintlifyGroup {
 
 	return groups
 }
-
 
 // firstPagePath finds the first page a product links to, used as its card's
 // destination. Pages are an interface because a group can hold plain strings or
@@ -762,8 +765,8 @@ func writeHomepage(homepage *HomepageConfig, products []MintlifyProduct) error {
 	b.WriteString("<div id=\"docs-home\">\n")
 
 	b.WriteString("  <section className=\"home-hero\">\n")
-	fmt.Fprintf(&b, "    <h1>%s</h1>\n", homepage.Title)
-	fmt.Fprintf(&b, "    <p className=\"home-promise\">%s</p>\n", homepage.Lede)
+	fmt.Fprintf(&b, "    <h1>%s</h1>\n", mdxText(homepage.Title))
+	fmt.Fprintf(&b, "    <p className=\"home-promise\">%s</p>\n", mdxText(homepage.Lede))
 	b.WriteString("    <button className=\"home-search\" id=\"home-search\" aria-label=\"Search the documentation\">\n")
 	b.WriteString("      <span className=\"home-search-icon\" aria-hidden=\"true\">\n")
 	// The ring is a path, not a <circle>: Mintlify's MDX sanitizer drops
@@ -793,9 +796,9 @@ func writeHomepage(homepage *HomepageConfig, products []MintlifyProduct) error {
 
 		b.WriteString("    <section className=\"home-domain\">\n")
 		b.WriteString("      <div className=\"home-domain-head\">\n")
-		fmt.Fprintf(&b, "        <h2>%s</h2>\n", family.Title)
+		fmt.Fprintf(&b, "        <h2>%s</h2>\n", mdxText(family.Title))
 		if family.Description != "" {
-			fmt.Fprintf(&b, "        <p>%s</p>\n", family.Description)
+			fmt.Fprintf(&b, "        <p>%s</p>\n", mdxText(family.Description))
 		}
 		b.WriteString("      </div>\n")
 		fmt.Fprintf(&b, "      <div className=%q>\n", gridClass)
@@ -830,7 +833,7 @@ func writeHomepage(homepage *HomepageConfig, products []MintlifyProduct) error {
 		b.WriteString("    <div className=\"home-aside\">\n")
 		b.WriteString("      <span className=\"home-lbl\">Also</span>\n")
 		for _, link := range homepage.Also {
-			fmt.Fprintf(&b, "      <a href=%q>%s</a>\n", link.Href, link.Label)
+			fmt.Fprintf(&b, "      <a href=%q>%s</a>\n", link.Href, mdxText(link.Label))
 		}
 		b.WriteString("    </div>\n")
 	}
@@ -888,24 +891,42 @@ func writeCard(b *strings.Builder, card homeCard) {
 	b.WriteString(">\n")
 
 	// Tools cards carry only a title and body; the eyebrow and meta lines
-	// belong to the product cards.
-	if !card.Tool && card.Tag != "" {
-		fmt.Fprintf(b, "          <div className=\"home-eyebrow\">%s", card.Tag)
+	// belong to the product cards. A soon card always gets its eyebrow, since
+	// the pill lives there, even before its tag is decided.
+	if !card.Tool && (card.Tag != "" || card.Soon) {
+		b.WriteString("          <div className=\"home-eyebrow\">")
+		b.WriteString(mdxText(card.Tag))
 		if card.Soon {
-			b.WriteString(" <span className=\"home-pill\">Coming soon</span>")
+			if card.Tag != "" {
+				b.WriteString(" ")
+			}
+			b.WriteString("<span className=\"home-pill\">Coming soon</span>")
 		}
 		b.WriteString("</div>\n")
 	}
-	fmt.Fprintf(b, "          <h3>%s</h3>\n", card.Title)
+	fmt.Fprintf(b, "          <h3>%s</h3>\n", mdxText(card.Title))
 	if card.Description != "" {
-		fmt.Fprintf(b, "          <p>%s</p>\n", card.Description)
+		fmt.Fprintf(b, "          <p>%s</p>\n", mdxText(card.Description))
 	}
 	if !card.Tool && !card.Soon && card.Meta != "" {
-		fmt.Fprintf(b, "          <div className=\"home-meta\">%s</div>\n", card.Meta)
+		fmt.Fprintf(b, "          <div className=\"home-meta\">%s</div>\n", mdxText(card.Meta))
 	}
 	fmt.Fprintf(b, "        </%s>\n", element)
 }
 
+// mdxText makes config text safe to place between JSX tags. In MDX a brace
+// opens a JavaScript expression and an angle bracket opens a tag, so either
+// in a description would break the page build rather than render.
+var mdxTextReplacer = strings.NewReplacer(
+	"{", "&#123;",
+	"}", "&#125;",
+	"<", "&lt;",
+	">", "&gt;",
+)
+
+func mdxText(s string) string {
+	return mdxTextReplacer.Replace(s)
+}
 
 // urlSegment is the first path segment of a product's pages, which is how the
 // browser identifies which product is being read. It is derived from the pages
@@ -930,7 +951,7 @@ func urlSegment(product MintlifyProduct) string {
 // navigation means the script cannot fall out of step with the nav -- an
 // earlier version kept a hand-written product list here, and a product missing
 // from it silently lost its version switcher.
-func writeProductNav(path string, products []MintlifyProduct) error {
+func writeProductNav(path string, products []MintlifyProduct, primary *NavPrimary) error {
 	type cta struct {
 		Label string `json:"label"`
 		Href  string `json:"href"`
@@ -975,9 +996,20 @@ func writeProductNav(path string, products []MintlifyProduct) error {
 	b.Write(payload)
 	b.WriteString(";\n")
 
+	// The navbar.primary button Mintlify renders on every page. The script
+	// finds it by this href, then relabels or hides it per product.
+	if primary != nil && primary.Href != "" {
+		defaultCTA, err := json.MarshalIndent(cta{Label: primary.Label, Href: primary.Href}, "", "  ")
+		if err != nil {
+			return err
+		}
+		b.WriteString("\nwindow.sideroNavbarCTA = ")
+		b.Write(defaultCTA)
+		b.WriteString(";\n")
+	}
+
 	return os.WriteFile(path, []byte(b.String()), 0o644)
 }
-
 
 // allPagePaths collects every page under a set of groups, walking sub-groups.
 func allPagePaths(pages interface{}, out *[]string) {
@@ -1049,9 +1081,9 @@ func mergeConfigs(configPaths []string) (Config, error) {
 	var allTabs []TabConfig
 	var allProducts []ProductConfig
 	var productOrder []string
-	versionsMap := make(map[string][]TabConfig)                  // Map of tab name -> versions
-	productVersionsMap := make(map[string][]ProductConfig)       // Map of product key -> versions
-	seenProduct := make(map[string]bool)                         // First-seen tracking for productOrder
+	versionsMap := make(map[string][]TabConfig)            // Map of tab name -> versions
+	productVersionsMap := make(map[string][]ProductConfig) // Map of product key -> versions
+	seenProduct := make(map[string]bool)                   // First-seen tracking for productOrder
 
 	// noteProduct records a product key the first time it appears, so the
 	// generator can emit products in declaration order rather than map order.

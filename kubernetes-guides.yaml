@@ -5,6 +5,9 @@ navigation:
     - product: "Kubernetes Guides"
       homepage: false
       icon: "/images/kubernetes.svg"
+      cta:
+        label: "Try Talos Omni"
+        href: "https://www.siderolabs.com/omni-signup"
       groups:
         - group: "Overview"
           folder: "kubernetes-guides/overview"
