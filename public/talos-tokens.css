@@ -1,0 +1,309 @@
+/*
+ * Talos Design System tokens. GENERATED FILE, DO NOT EDIT.
+ *
+ * Source: tokens/ in @siderolabs/talos-design-system. Change a value there, run
+ * `npm run build`, and every product picks it up on its next version bump.
+ *
+ * Mintlify build, for the documentation site.
+ *
+ * Mintlify has no build step and cannot import from node_modules, so this
+ * is vendored rather than imported: copy it to public/talos-tokens.css in
+ * siderolabs/docs (alongside the hand-written style.css, which stays) and
+ * re-copy it on a version bump.
+ *
+ * Two things travel with it:
+ *
+ * 1. The fonts/ directory, copied to public/fonts/ in the docs repo. The
+ *    @font-face rules below expect them at /fonts/.
+ *
+ * 2. One block in public/docs.json, because Mintlify reads the accent from
+ *    configuration rather than from CSS:
+ *
+ *    The slots are not light/dark variants of one colour. Per the Mintlify
+ *    schema: primary is emphasis text in light mode, light is emphasis text
+ *    in dark mode, dark is buttons and hover states in both modes.
+ *
+ *      "colors": {
+ *        "primary": "#B93B46",
+ *        "light": "#E48E96",
+ *        "dark": "#CF4250"
+ *      }
+ *
+ *    Mintlify's fonts setting is deliberately left alone. It has no slot for
+ *    a code face, and the @font-face rules below plus the font variables at
+ *    the bottom of this file cover both faces without it.
+ */
+
+/* Self-hosted so the type survives an air-gapped install. A product that
+   loads these from Google falls back to a system font behind a customer
+   firewall and stops looking like itself, silently. Variable weight 400 to
+   700; the unicode ranges keep a browser from fetching a subset it will not
+   use. Both families are OFL 1.1, licences in fonts/. */
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/manrope-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/manrope-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ---------------------------------------------------------------- tokens */
+
+/* Light is the default here, unlike the other builds: the docs site is read
+   light far more often than dark, and Mintlify switches on `.dark`. */
+:root {
+  --talos-ink-0: #060606;
+  --talos-ink-1: #0B0B0B;
+  --talos-ink-2: #1A1A1E;
+  --talos-ink-3: #1E1E22;
+  --talos-ink-4: #26262B;
+  --talos-ink-5: #2E2E33;
+  --talos-ink-6: #5A5A58;
+  --talos-ink-7: #919190;
+  --talos-ink-8: #A8A8A6;
+  --talos-ink-9: #C8C8C6;
+  --talos-ink-10: #F5F5F4;
+  --talos-cream-0: #EDE9E4;
+  --talos-cream-1: #F5F0EB;
+  --talos-cream-2: #FFFFFF;
+  --talos-cream-3: #F0EBE5;
+  --talos-cream-4: #E6E1DC;
+  --talos-cream-5: #D8D2CB;
+  --talos-cream-6: #8A8A88;
+  --talos-cream-7: #636361;
+  --talos-cream-8: #4F4F4D;
+  --talos-cream-9: #3A3A38;
+  --talos-cream-10: #1A1A18;
+  --talos-red-1: #E48E96;
+  --talos-red-2: #DB6973;
+  --talos-red-3: #D24350;
+  --talos-red-4: #CF4250;
+  --talos-red-5: #B93B46;
+  --talos-red-6: #A83640;
+  --talos-red-7: #8F2D36;
+  --talos-gradient-display-1: #E8312C;
+  --talos-gradient-display-2: #E2335A;
+  --talos-gradient-display-3: #F77216;
+  --talos-gradient-fill-1: var(--talos-red-4);
+  --talos-gradient-fill-2: #B5305A;
+  --talos-gradient-fill-3: #C2560F;
+  --talos-green-1: #92D7B3;
+  --talos-green-2: #57C28A;
+  --talos-green-3: #3F8F66;
+  --talos-green-4: #2C6347;
+  --talos-amber-1: #F5D39C;
+  --talos-amber-2: #F0BB67;
+  --talos-amber-3: #C79A52;
+  --talos-amber-4: #7A5B26;
+  --talos-paper: #E2D2A8;
+  --talos-white: #FFFFFF;
+  --talos-black: #000000;
+  --talos-space-tight: 8px;
+  --talos-space-snug: 12px;
+  --talos-space-compact: 16px;
+  --talos-space-base: 24px;
+  --talos-space-section: 32px;
+  --talos-space-major: 64px;
+  --talos-radius-sm: 4px;
+  --talos-radius-base: 6px;
+  --talos-radius-lg: 8px;
+  --talos-radius-xl: 12px;
+  --talos-radius-pill: 9999px;
+  --talos-border-hairline: 1px;
+  --talos-font-sans: Manrope, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --talos-font-mono: 'JetBrains Mono', 'SF Mono', Consolas, 'Liberation Mono', monospace;
+  --talos-text-2xs: 10px;
+  --talos-text-xs: 11px;
+  --talos-text-sm: 12px;
+  --talos-text-base: 14px;
+  --talos-text-md: 16px;
+  --talos-text-lg: 20px;
+  --talos-text-xl: 24px;
+  --talos-text-2xl: 30px;
+  --talos-weight-regular: 400;
+  --talos-weight-medium: 500;
+  --talos-weight-semibold: 600;
+  --talos-weight-bold: 700;
+  --talos-leading-tight: 1.25;
+  --talos-leading-base: 1.5;
+  --talos-leading-relaxed: 1.65;
+  --talos-tracking-normal: 0;
+  --talos-tracking-eyebrow: 0.10em;
+  --talos-tracking-machine: 0.16em;
+
+  --talos-surface-page: var(--talos-cream-0);
+  --talos-surface-chrome: var(--talos-cream-1);
+  --talos-surface-card: var(--talos-cream-2);
+  --talos-surface-inset: var(--talos-cream-3);
+  --talos-surface-raised: var(--talos-cream-2);
+  --talos-surface-hover: var(--talos-cream-4);
+  --talos-surface-inert: var(--talos-cream-5);
+  --talos-surface-subtle: rgba(0, 0, 0, 0.04);
+  --talos-surface-inverse: var(--talos-cream-10);
+  --talos-surface-paper: var(--talos-paper);
+  --talos-content-emphasis: var(--talos-cream-10);
+  --talos-content-default: var(--talos-cream-9);
+  --talos-content-secondary: var(--talos-cream-8);
+  --talos-content-muted: var(--talos-cream-7);
+  --talos-content-disabled: var(--talos-cream-6);
+  --talos-content-inverse: var(--talos-cream-2);
+  --talos-content-on-accent: var(--talos-white);
+  --talos-border-subtle: rgba(0, 0, 0, 0.06);
+  --talos-border-default: rgba(0, 0, 0, 0.08);
+  --talos-border-strong: rgba(0, 0, 0, 0.16);
+  --talos-border-accent: var(--talos-red-3);
+  --talos-accent-default: var(--talos-red-3);
+  --talos-accent-hover: var(--talos-red-4);
+  --talos-accent-text: var(--talos-red-5);
+  --talos-accent-fill: var(--talos-red-4);
+  --talos-accent-fill-hover: var(--talos-red-5);
+  --talos-accent-fill-active: var(--talos-red-7);
+  --talos-accent-subtle: rgba(224, 75, 69, 0.08);
+  --talos-accent-gradient: linear-gradient(90deg, var(--talos-gradient-display-1) 0%, var(--talos-gradient-display-2) 51%, var(--talos-gradient-display-3) 100%);
+  --talos-accent-gradient-fill: linear-gradient(90deg, var(--talos-gradient-fill-1) 0%, var(--talos-gradient-fill-2) 51%, var(--talos-gradient-fill-3) 100%);
+  --talos-status-success-default: var(--talos-green-4);
+  --talos-status-success-text: var(--talos-green-4);
+  --talos-status-success-fill: var(--talos-green-2);
+  --talos-status-success-on-fill: var(--talos-ink-0);
+  --talos-status-success-subtle: rgba(87, 194, 138, 0.22);
+  --talos-status-warning-default: var(--talos-amber-4);
+  --talos-status-warning-text: var(--talos-amber-4);
+  --talos-status-warning-fill: var(--talos-amber-2);
+  --talos-status-warning-on-fill: var(--talos-ink-0);
+  --talos-status-warning-subtle: rgba(240, 187, 103, 0.28);
+  --talos-status-danger-default: var(--talos-red-6);
+  --talos-status-danger-text: var(--talos-red-6);
+  --talos-status-danger-fill: var(--talos-red-4);
+  --talos-status-danger-on-fill: var(--talos-white);
+  --talos-status-danger-subtle: rgba(224, 75, 69, 0.12);
+  --talos-status-info-default: var(--talos-cream-8);
+  --talos-status-info-text: var(--talos-cream-9);
+  --talos-status-info-fill: var(--talos-cream-8);
+  --talos-status-info-on-fill: var(--talos-cream-2);
+  --talos-status-info-subtle: rgba(79, 79, 77, 0.12);
+  --talos-shadow-card: 0 1px 3px rgba(26, 26, 24, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.02);
+  --talos-shadow-dropdown: 0 4px 16px rgba(26, 26, 24, 0.12);
+  --talos-shadow-modal: 0 8px 32px rgba(26, 26, 24, 0.16);
+  --talos-shadow-focus: 0 0 0 3px rgba(224, 75, 69, 0.30);
+}
+
+.dark {
+  --talos-surface-page: var(--talos-ink-0);
+  --talos-surface-chrome: var(--talos-ink-1);
+  --talos-surface-card: var(--talos-ink-2);
+  --talos-surface-inset: var(--talos-ink-3);
+  --talos-surface-raised: var(--talos-ink-3);
+  --talos-surface-hover: var(--talos-ink-4);
+  --talos-surface-inert: var(--talos-ink-5);
+  --talos-surface-subtle: rgba(255, 255, 255, 0.05);
+  --talos-surface-inverse: var(--talos-ink-10);
+  --talos-surface-paper: var(--talos-paper);
+  --talos-content-emphasis: var(--talos-ink-10);
+  --talos-content-default: var(--talos-ink-9);
+  --talos-content-secondary: var(--talos-ink-8);
+  --talos-content-muted: var(--talos-ink-7);
+  --talos-content-disabled: var(--talos-ink-6);
+  --talos-content-inverse: var(--talos-ink-1);
+  --talos-content-on-accent: var(--talos-white);
+  --talos-border-subtle: rgba(255, 255, 255, 0.06);
+  --talos-border-default: rgba(255, 255, 255, 0.08);
+  --talos-border-strong: rgba(255, 255, 255, 0.14);
+  --talos-border-accent: var(--talos-red-3);
+  --talos-accent-default: var(--talos-red-3);
+  --talos-accent-hover: var(--talos-red-2);
+  --talos-accent-text: var(--talos-red-1);
+  --talos-accent-fill: var(--talos-red-4);
+  --talos-accent-fill-hover: var(--talos-red-5);
+  --talos-accent-fill-active: var(--talos-red-7);
+  --talos-accent-subtle: rgba(224, 75, 69, 0.10);
+  --talos-accent-gradient: linear-gradient(90deg, var(--talos-gradient-display-1) 0%, var(--talos-gradient-display-2) 51%, var(--talos-gradient-display-3) 100%);
+  --talos-accent-gradient-fill: linear-gradient(90deg, var(--talos-gradient-fill-1) 0%, var(--talos-gradient-fill-2) 51%, var(--talos-gradient-fill-3) 100%);
+  --talos-status-success-default: var(--talos-green-2);
+  --talos-status-success-text: var(--talos-green-1);
+  --talos-status-success-fill: var(--talos-green-2);
+  --talos-status-success-on-fill: var(--talos-ink-0);
+  --talos-status-success-subtle: rgba(87, 194, 138, 0.18);
+  --talos-status-warning-default: var(--talos-amber-2);
+  --talos-status-warning-text: var(--talos-amber-1);
+  --talos-status-warning-fill: var(--talos-amber-2);
+  --talos-status-warning-on-fill: var(--talos-ink-0);
+  --talos-status-warning-subtle: rgba(240, 187, 103, 0.18);
+  --talos-status-danger-default: var(--talos-red-3);
+  --talos-status-danger-text: var(--talos-red-1);
+  --talos-status-danger-fill: var(--talos-red-4);
+  --talos-status-danger-on-fill: var(--talos-white);
+  --talos-status-danger-subtle: rgba(224, 75, 69, 0.18);
+  --talos-status-info-default: var(--talos-ink-8);
+  --talos-status-info-text: var(--talos-ink-9);
+  --talos-status-info-fill: var(--talos-ink-8);
+  --talos-status-info-on-fill: var(--talos-ink-0);
+  --talos-status-info-subtle: rgba(168, 168, 166, 0.16);
+  --talos-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --talos-shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --talos-shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --talos-shadow-focus: 0 0 0 3px rgba(224, 75, 69, 0.35);
+}
+
+/* ------------------------------------------------ Mintlify theme variables */
+
+/* Mintlify's own variables, re-pointed at the token values. These hold bare
+   RGB triplets, so they are resolved literals rather than var() references
+   and will not follow a runtime theme switch. That is fine: Mintlify picks
+   the light or dark member of each pair itself. */
+:root {
+  --primary: 185 59 70;         /* light-mode emphasis text: accent.text (light) */
+  --primary-light: 228 142 150;   /* dark-mode emphasis text: accent.text (dark) */
+  --primary-dark: 207 66 80;    /* buttons and hover states, both modes: accent.fill */
+
+  /* surface.chrome rather than surface.page: Mintlify draws the sidebar, the
+     topbar and the content on one plane, so the docs site is all chrome and
+     no well. Custom MDX should use surface-chrome to sit flush with it. */
+  --background-light: 245 240 235;
+  --background-dark: 11 11 11;
+
+  --gray-50: 245 240 235;
+  --gray-100: 240 235 229;
+  --gray-200: 230 225 220;
+  --gray-300: 216 210 203;
+  --gray-400: 138 138 136;
+  --gray-500: 99 99 97;
+  --gray-600: 79 79 77;
+  --gray-700: 58 58 56;
+  --gray-800: 46 46 51;
+  --gray-900: 26 26 30;
+  --gray-950: 11 11 11;
+
+  /* Mintlify names its faces after the fonts it ships with. Overriding the
+     variables re-types the site without touching component markup. */
+  --font-inter: var(--talos-font-sans);
+  --font-paper-mono: var(--talos-font-mono);
+}
