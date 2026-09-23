@@ -166,6 +166,10 @@ homepage:
           tag: "Open source"
           soon: true
           description: "Run virtual machines on a Talos host through native Talos APIs and talosctl."
+        - title: "Talos Enterprise Hypervisor"
+          tag: "Commercial"
+          soon: true
+          description: "The enterprise build of Talos Hypervisor: FIPS-enabled builds, SBOMs, VEX, signed images, and 24/7 support."
         # XENIA -- unannounced. Uncomment when it is. Its navbar button
         # also goes on the Talos Hypervisor product, which has none until then.
         # - title: "Talos Xenia"
