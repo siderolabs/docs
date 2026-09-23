@@ -141,6 +141,10 @@ homepage:
           tag: "Open source"
           soon: true
           description: "Run virtual machines on a Talos host through native Talos APIs and talosctl."
+        - title: "Talos Enterprise Hypervisor"
+          tag: "Commercial"
+          soon: true
+          description: "The enterprise build of Talos Hypervisor: FIPS-enabled builds, SBOMs, VEX, signed images, and 24/7 support."
         # TALOS DIRECTOR -- announced at TalosCon October 14 (or earlier by
         # press release). Uncomment on the announcement.
         # - title: "Talos Director"
