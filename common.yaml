@@ -67,6 +67,8 @@ integrations:
     apiKey: "phc_D44Y76lThvZBf8s7lpVpPjJm9fNLvCRMluHXtF7bQXT"
 
 redirects:
+  - source: "/talos/v1.14/build-and-extend-talos/custom-images-and-development/kernel-module"
+    destination: "/talos/v1.14/build-and-extend-talos/custom-images-and-development/building-a-system-extension"
   - source: "/talos/latest"
     destination: "/talos/v1.14"
   - source: "/talos/latest/:slug*"
