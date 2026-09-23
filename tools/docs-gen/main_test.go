@@ -1067,6 +1067,12 @@ func TestWriteHomepage(t *testing.T) {
 			Groups: []MintlifyGroup{{Group: "Overview", Pages: []string{"omni/overview/what-is-omni"}}},
 		},
 		{
+			// A documented product can still be announced as coming soon.
+			Product: "Talos Containers", Family: "kubernetes", Tag: "Open source", Soon: true,
+			Description: "Run OCI containers on Talos.",
+			Groups:      []MintlifyGroup{{Group: "Overview", Pages: []string{"containers/overview/index"}}},
+		},
+		{
 			// Hidden products are staged, not shown.
 			Product: "Secret", Family: "kubernetes", Hidden: true,
 			Groups: []MintlifyGroup{{Group: "Overview", Pages: []string{"secret/overview/index"}}},
@@ -1105,6 +1111,8 @@ func TestWriteHomepage(t *testing.T) {
 		// A coming-soon card is a div with the pill, never a link.
 		`<div className="home-card home-card--soon">`,
 		`<div className="home-eyebrow">Open source <span className="home-pill">Coming soon</span></div>`,
+		// A soon product renders as a soon card too, despite having pages.
+		"<div className=\"home-card home-card--soon\">\n          <div className=\"home-eyebrow\">Open source <span className=\"home-pill\">Coming soon</span></div>\n          <h3>Talos Containers</h3>",
 		// A soon card with no tag still says it is coming soon.
 		`<div className="home-eyebrow"><span className="home-pill">Coming soon</span></div>`,
 		// Config text is escaped rather than parsed as JSX.
@@ -1127,6 +1135,7 @@ func TestWriteHomepage(t *testing.T) {
 		"Kubernetes Guides", // homepage: false
 		// A soon card must not be a link.
 		`home-card--soon" href=`,
+		`href="/containers/overview/index"`,
 		// The tools variant carries no eyebrow or meta.
 		`home-card--tool">` + "\n          <div className=\"home-eyebrow\">",
 	}
@@ -1477,5 +1486,17 @@ func TestWriteProductChromeCSS(t *testing.T) {
 		if strings.Contains(body, needle) {
 			t.Errorf("a product keeping its sidebar produced a rule for %q", needle)
 		}
+	}
+}
+
+// TestSoonStaysOutOfDocsJSON checks that the homepage-only soon flag is not
+// emitted, since Mintlify's schema has no such field.
+func TestSoonStaysOutOfDocsJSON(t *testing.T) {
+	data, err := json.Marshal(MintlifyProduct{Product: "Talos Containers", Soon: true})
+	if err != nil {
+		t.Fatalf("marshaling product: %v", err)
+	}
+	if strings.Contains(strings.ToLower(string(data)), "soon") {
+		t.Errorf("docs.json output unexpectedly contains soon: %s", data)
 	}
 }

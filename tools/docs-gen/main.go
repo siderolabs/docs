@@ -177,6 +177,12 @@ type ProductConfig struct {
 	// Meta is the card's machine-set footer line ("SaaS and self-hosted").
 	// A versioned product left without one gets "<newest version> current".
 	Meta string `yaml:"meta,omitempty"`
+	// Soon gives the product's homepage card the announced-but-undocumented
+	// treatment -- dashed, a "Coming soon" pill, and not a link -- without
+	// taking the product out of the navigation. The alternative is declaring
+	// it as a manual card under homepage.families, which means maintaining
+	// the title and description in two places once the docs do exist.
+	Soon bool `yaml:"soon,omitempty"`
 	// Homepage set to false keeps the product out of the homepage catalog
 	// while leaving it in the product switcher. Meant for products the
 	// homepage reaches another way, like Kubernetes Guides in the Also row.
@@ -335,11 +341,12 @@ type MintlifyNavigation struct {
 }
 
 type MintlifyProduct struct {
-	// Family, Tag, Meta, Homepage and CTA are generator-only and never
+	// Family, Tag, Meta, Soon, Homepage and CTA are generator-only and never
 	// reach docs.json.
 	Family      string            `json:"-"`
 	Tag         string            `json:"-"`
 	Meta        string            `json:"-"`
+	Soon        bool              `json:"-"`
 	Homepage    *bool             `json:"-"`
 	CTA         *ProductCTA       `json:"-"`
 	Sidebar     *bool             `json:"-"`
@@ -527,6 +534,7 @@ func main() {
 				Family:      first.Family,
 				Tag:         first.Tag,
 				Meta:        first.Meta,
+				Soon:        first.Soon,
 				Homepage:    first.Homepage,
 				CTA:         first.CTA,
 				Sidebar:     first.Sidebar,
@@ -555,6 +563,7 @@ func main() {
 					Family:      candidate.Family,
 					Tag:         candidate.Tag,
 					Meta:        candidate.Meta,
+					Soon:        candidate.Soon,
 					Homepage:    candidate.Homepage,
 					CTA:         candidate.CTA,
 					Sidebar:     candidate.Sidebar,
@@ -810,6 +819,7 @@ func writeHomepage(homepage *HomepageConfig, products []MintlifyProduct) error {
 				Description: product.Description,
 				Tag:         product.Tag,
 				Meta:        productMeta(product),
+				Soon:        product.Soon,
 				Tool:        family.Variant == "tools",
 			})
 		}
