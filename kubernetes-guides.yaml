@@ -1,7 +1,13 @@
 navigation:
-  tabs:
-    - tab: "Kubernetes Guides"
+  products:
+    # In the product switcher but not the homepage catalog: the homepage
+    # reaches it from the Also row.
+    - product: "Kubernetes Guides"
+      homepage: false
       icon: "/images/kubernetes.svg"
+      cta:
+        label: "Try Talos Omni"
+        href: "https://www.siderolabs.com/omni-signup"
       groups:
         - group: "Overview"
           folder: "kubernetes-guides/overview"

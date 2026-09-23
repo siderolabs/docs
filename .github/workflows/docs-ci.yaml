@@ -10,6 +10,7 @@ on:
       - "**/*.mdx"
       - "**/*.yaml"
       - "Makefile"
+      - "tools/docs-gen/**"
       - "tools/docs-validate/**"
       - "tools/frontmatter-check/**"
 jobs:
@@ -53,8 +54,10 @@ jobs:
         continue-on-error: true
 
       - name: Generate docs.json (must be committed)
+        # Built from the in-tree source rather than the published container, so
+        # a PR that changes the generator is checked against its own version.
         run: |
-          make docs.json
+          make docs.json-local
 
           # Fail if running the generator changes tracked files
           git diff --exit-code

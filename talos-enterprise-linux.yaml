@@ -1,7 +1,14 @@
 navigation:
-  tabs:
-    - tab: "Talos Enterprise Linux"
+  products:
+    - product: "Talos Enterprise Linux"
+      family: "kubernetes"
+      tag: "Commercial"
+      description: "FIPS-enabled builds, SBOMs, VEX, and signed images from the Enterprise Image Factory."
+      meta: "tracks Talos 1.14"
       icon: "/images/talos.svg"
+      cta:
+        label: "Try Talos Omni"
+        href: "https://www.siderolabs.com/omni-signup"
       groups:
         - group: "Overview"
           folder: "talos-enterprise-linux/overview"

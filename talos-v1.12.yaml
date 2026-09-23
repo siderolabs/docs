@@ -1,8 +1,14 @@
 navigation:
   version: "v1.12"
-  tabs:
-    - tab: "Talos"
+  products:
+    - product: "Talos Linux"
+      family: "kubernetes"
+      tag: "Open source"
+      description: "Bring up a Kubernetes cluster on Talos Linux and operate it day to day."
       icon: "/images/talos.svg"
+      cta:
+        label: "Try Talos Omni"
+        href: "https://www.siderolabs.com/omni-signup"
       groups:
         - group: "Overview"
           folder: "talos/v1.12/overview"

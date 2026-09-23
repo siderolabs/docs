@@ -1,0 +1,238 @@
+/*
+ * Docs homepage (index.mdx, mode: custom). Mintlify loads every .css file on
+ * every page, so everything here is scoped under #docs-home. All values come
+ * from design-system tokens in talos-tokens.css; the .dark overrides there
+ * make this whole page theme-correct with no dark rules here.
+ */
+
+#docs-home {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 var(--talos-space-base) var(--talos-space-major);
+  font-family: var(--talos-font-sans);
+  font-size: 16px;
+  line-height: var(--talos-leading-base);
+  color: var(--talos-content-default);
+}
+
+/* ---------- hero ---------- */
+
+#docs-home .home-hero {
+  padding: var(--talos-space-major) 0 var(--talos-space-section);
+  text-align: center;
+}
+#docs-home .home-hero h1 {
+  margin: 0 0 var(--talos-space-snug);
+  font-size: var(--talos-text-2xl);
+  line-height: var(--talos-leading-tight);
+  font-weight: var(--talos-weight-bold);
+  color: var(--talos-content-emphasis);
+  letter-spacing: -0.01em;
+}
+#docs-home .home-promise {
+  margin: 0 auto var(--talos-space-section);
+  max-width: 34em;
+  color: var(--talos-content-secondary);
+}
+
+/* The search control is a button that opens Mintlify's own search modal
+   (wired in home.js). Deliberately not the AI assistant: the assistant is
+   credit-metered, and the homepage cannot have an intermittently broken
+   front door. The assistant stays in the navbar under Mintlify's rules. */
+#docs-home .home-search {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+  background: var(--talos-surface-card);
+  border: 1px solid var(--talos-border-default);
+  border-radius: var(--talos-radius-base);
+  box-shadow: var(--talos-shadow-card);
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+#docs-home .home-search:hover,
+#docs-home .home-search:focus-visible {
+  box-shadow: var(--talos-shadow-focus);
+  border-color: var(--talos-border-accent);
+  outline: none;
+}
+#docs-home .home-search-icon {
+  display: flex;
+  align-items: center;
+  padding-left: var(--talos-space-compact);
+  color: var(--talos-content-muted);
+}
+#docs-home .home-search-label {
+  flex: 1;
+  padding: var(--talos-space-snug);
+  font-size: var(--talos-text-base);
+  color: var(--talos-content-muted);
+}
+#docs-home .home-kbd {
+  display: flex;
+  align-items: center;
+  padding-right: var(--talos-space-snug);
+  font-family: var(--talos-font-mono);
+  font-size: var(--talos-text-xs);
+  color: var(--talos-content-muted);
+}
+
+/* ---------- catalog ---------- */
+
+#docs-home .home-domain {
+  margin-bottom: var(--talos-space-major);
+}
+#docs-home .home-domain-head {
+  margin-bottom: var(--talos-space-base);
+}
+#docs-home .home-domain-head h2 {
+  margin: 0 0 var(--talos-space-tight);
+  font-size: var(--talos-text-lg);
+  line-height: var(--talos-leading-tight);
+  font-weight: var(--talos-weight-semibold);
+  color: var(--talos-content-emphasis);
+  display: flex;
+  align-items: center;
+  gap: var(--talos-space-snug);
+}
+#docs-home .home-domain-head h2::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--talos-border-subtle);
+}
+#docs-home .home-domain-head p {
+  margin: 0;
+  color: var(--talos-content-secondary);
+  font-size: var(--talos-text-base);
+}
+
+#docs-home .home-grid {
+  display: grid;
+  gap: var(--talos-space-base);
+  /* auto-fill, not auto-fit: a domain with one card keeps a card-sized card
+     instead of stretching across the row. */
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+}
+
+#docs-home .home-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--talos-surface-card);
+  border: 1px solid var(--talos-border-default);
+  border-radius: var(--talos-radius-lg);
+  padding: var(--talos-space-base);
+  text-decoration: none;
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
+}
+#docs-home .home-card--live:hover {
+  border-color: var(--talos-border-strong);
+  box-shadow: var(--talos-shadow-card);
+  transform: translateY(-1px);
+}
+#docs-home .home-card--soon {
+  background: var(--talos-surface-subtle);
+  border-style: dashed;
+  cursor: default;
+}
+
+#docs-home .home-eyebrow {
+  font-size: var(--talos-text-2xs);
+  letter-spacing: var(--talos-tracking-eyebrow);
+  text-transform: uppercase;
+  font-weight: var(--talos-weight-semibold);
+  color: var(--talos-content-muted);
+  margin-bottom: var(--talos-space-snug);
+  display: flex;
+  align-items: center;
+  gap: var(--talos-space-tight);
+}
+#docs-home .home-card h3 {
+  margin: 0 0 var(--talos-space-tight);
+  font-size: var(--talos-text-md);
+  line-height: var(--talos-leading-tight);
+  font-weight: var(--talos-weight-semibold);
+  color: var(--talos-content-emphasis);
+}
+#docs-home .home-card--soon h3 {
+  color: var(--talos-content-secondary);
+}
+#docs-home .home-card p {
+  margin: 0 0 var(--talos-space-base);
+  font-size: var(--talos-text-base);
+  color: var(--talos-content-secondary);
+  flex: 1;
+}
+#docs-home .home-card--soon p {
+  color: var(--talos-content-muted);
+}
+
+#docs-home .home-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--talos-space-snug);
+  font-family: var(--talos-font-mono);
+  font-size: var(--talos-text-xs);
+  letter-spacing: var(--talos-tracking-machine);
+  color: var(--talos-content-muted);
+}
+
+#docs-home .home-pill {
+  border-radius: var(--talos-radius-pill);
+  padding: 2px var(--talos-space-tight);
+  font-size: var(--talos-text-2xs);
+  font-family: var(--talos-font-sans);
+  letter-spacing: var(--talos-tracking-normal);
+  font-weight: var(--talos-weight-medium);
+  text-transform: uppercase;
+  background: var(--talos-status-info-subtle);
+  color: var(--talos-status-info-text);
+}
+
+/* Tools: cross-domain services and clients. Visually lighter than the domain
+   rows on purpose: these are how you get to the products, not the products. */
+#docs-home .home-grid--tools {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+#docs-home .home-card--tool {
+  padding: var(--talos-space-compact) var(--talos-space-base);
+}
+#docs-home .home-card--tool h3 {
+  font-size: var(--talos-text-base);
+}
+#docs-home .home-card--tool p {
+  font-size: var(--talos-text-sm);
+  margin-bottom: 0;
+}
+
+/* ---------- secondary row ---------- */
+
+#docs-home .home-aside {
+  border-top: 1px solid var(--talos-border-subtle);
+  padding-top: var(--talos-space-base);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--talos-space-base);
+  align-items: baseline;
+}
+#docs-home .home-lbl {
+  font-size: var(--talos-text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--talos-tracking-eyebrow);
+  font-weight: var(--talos-weight-semibold);
+  color: var(--talos-content-muted);
+}
+#docs-home .home-aside a {
+  color: var(--talos-content-default);
+  font-size: var(--talos-text-base);
+  text-decoration: none;
+}
+#docs-home .home-aside a:hover {
+  color: var(--talos-accent-text);
+  text-decoration: underline;
+}
+
