@@ -158,7 +158,7 @@ homepage:
       title: "Containers"
       description: "Run containers without Kubernetes, declared in machine config."
       cards:
-        - title: "Talos Linux Containers"
+        - title: "Talos Containers"
           tag: "Open source"
           soon: true
           description: "Run OCI containers directly on Talos at the edge, with no Kubernetes control plane to operate."
