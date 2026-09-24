@@ -78,16 +78,3 @@ table:not([class]) td:nth-child(1) code {
 .prose {
   max-width: none;
 }
-
-/* The announcement banner carries the brand gradient. Mintlify only lets
-   docs.json set a flat colour, so the treatment lives here. The fill variant
-   of the gradient is the one that keeps white text at AA; the brighter
-   display variant is for large decorative type only. */
-#banner {
-  background: var(--talos-accent-gradient-fill);
-}
-
-#banner,
-#banner a {
-  color: var(--talos-content-on-accent);
-}
