@@ -1,0 +1,146 @@
+version: v1alpha1 # Indicates the schema used to decode the contents.
+debug: false # Enable verbose logging to the console.
+persist: true
+# Provides machine specific configuration options.
+machine:
+    type: worker # Defines the role of the machine within the cluster.
+    token: 82jkyk.shie55k1d811gz8u # The `token` is used by a machine to join the PKI of the cluster.
+    # The root certificate authority of the PKI.
+    ca:
+        crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJQakNCOGFBREFnRUNBaEJieVVjSlhXREJaamVnQjFrNmtrK0dNQVVHQXl0bGNEQVFNUTR3REFZRFZRUUsKRXdWMFlXeHZjekFlRncweU5qQTVNalF4TkRBd05EWmFGdzB6TmpBNU1qRXhOREF3TkRaYU1CQXhEakFNQmdOVgpCQW9UQlhSaGJHOXpNQ293QlFZREsyVndBeUVBNUdrSmVhcVh1OWgrRGhrRTRRNTh1SERvdm1lQ3Z6MWZsSXdqCm1lMjVIMWlqWVRCZk1BNEdBMVVkRHdFQi93UUVBd0lDaERBZEJnTlZIU1VFRmpBVUJnZ3JCZ0VGQlFjREFRWUkKS3dZQkJRVUhBd0l3RHdZRFZSMFRBUUgvQkFVd0F3RUIvekFkQmdOVkhRNEVGZ1FVYkZ1NVZSc0w3OXViNU96KwpRYmNxSU5oVTcyc3dCUVlESzJWd0EwRUFUMFJlaW9DeGRYUWE5TC82YXlhSXFnZXVmOGRaL2dEdXJvcWV0QkVBCnNoUEY2bmdzeGJXWFJPQmYvK09reVpHeW8rWkRtN0FqS1NTSkJCWVk1VzZxQWc9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+        key: ""
+    # Extra certificate subject alternative names for the machine's certificate.
+    certSANs: []
+    #   # Uncomment this to enable SANs.
+    #   - 10.0.0.10
+    #   - 172.16.0.10
+    #   - 192.168.0.10
+
+    kubelet:
+        image: ghcr.io/siderolabs/kubelet:v1.36.3
+        defaultRuntimeSeccompProfileEnabled: true
+        disableManifestsDirectory: true
+    install:
+        disk: /dev/vda
+        image: factory.talos.dev/metal-installer/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:v1.13.10
+        wipe: false
+        grubUseUKICmdline: true
+    files:
+        - content: created-in-var
+          permissions: 0o644
+          path: /var/mf/create.txt
+          op: create
+        - content: '# mf-test manifest'
+          permissions: 0o644
+          path: /etc/kubernetes/manifests/mf-test.yaml
+          op: create
+        - content: |
+            [metrics]
+              address = "0.0.0.0:11234"
+          permissions: 0o644
+          path: /etc/cri/conf.d/20-customization.part
+          op: create
+    sysctls:
+        kernel.kexec_load_disabled: "1"
+    # Features describe individual Talos features that can be switched on or off.
+    features:
+        diskQuotaSupport: true # Enable XFS project quota support for EPHEMERAL partition and user disks.
+        kubePrism:
+            enabled: true
+            port: 7445
+        hostDNS:
+            enabled: true
+            forwardKubeDNSToHost: true
+    
+    # # Configures the logging system.
+    # logging:
+    #     # Logging destination.
+    #     destinations:
+    #         - endpoint: tcp://1.2.3.4:12345 # Where to send logs. Supported protocols are "tcp" and "udp".
+    #           format: json_lines # Logs format.
+    # logging:
+    #     # Logging destination.
+    #     destinations:
+    #         - endpoint: udp://127.0.0.1:12345 # Where to send logs. Supported protocols are "tcp" and "udp".
+    #           format: json_lines # Logs format.
+    #           # Extra tags (key-value) pairs to attach to every log message sent.
+    #           extraTags:
+    #             machine: worker-1
+
+    # # Configures the seccomp profiles for the machine.
+    # seccompProfiles:
+    #     - name: audit.json # The `name` field is used to provide the file name of the seccomp profile.
+    #       # The `value` field is used to provide the seccomp profile.
+    #       value:
+    #         defaultAction: SCMP_ACT_LOG
+# Provides cluster specific configuration options.
+cluster:
+    id: Fm4vE1f21TxuMUdkzY4fyhe2WRH3wzm13xIYyHf5H2o=
+    secret: mHo0VWR2/oEcShN3zVAxJoPqTwlsTuQpGiqAThhq3o8=
+    controlPlane:
+        endpoint: https://10.77.0.1:6443 # Endpoint represents the endpoint URL parsed out of the machine config.
+    clusterName: mf-test
+    network:
+        dnsDomain: cluster.local
+        podSubnets:
+            - 10.244.0.0/16
+        serviceSubnets:
+            - 10.96.0.0/12
+    token: 8yi8tc.njcgcpk0exfjobba # The [bootstrap token](https://kubernetes.io/docs/reference/access-authn-authz/bootstrap-tokens/) used to join the cluster.
+    ca:
+        crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJpakNDQVMrZ0F3SUJBZ0lRVk5rOWlsVEpzdXVzbkdpSnVsemErVEFLQmdncWhrak9QUVFEQWpBVk1STXcKRVFZRFZRUUtFd3ByZFdKbGNtNWxkR1Z6TUI0WERUSTJNRGt5TkRFME1EQTBObG9YRFRNMk1Ea3lNVEUwTURBMApObG93RlRFVE1CRUdBMVVFQ2hNS2EzVmlaWEp1WlhSbGN6QlpNQk1HQnlxR1NNNDlBZ0VHQ0NxR1NNNDlBd0VICkEwSUFCSytYN3BKRmZmV3I2Sks4bmxid1A1bTdubHRaSzIvQ0JLb3hDRm1PWDg3QmhhMktLOUE0YWhlYzI0Y3AKRXM2SVRraEU0b0RtYngwYjZaeHJiRkNnQ1VHallUQmZNQTRHQTFVZER3RUIvd1FFQXdJQ2hEQWRCZ05WSFNVRQpGakFVQmdnckJnRUZCUWNEQVFZSUt3WUJCUVVIQXdJd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFCkZnUVU0bWoxTS9vaUpvdEZ5VU9yMFExNTVCQkZMNTR3Q2dZSUtvWkl6ajBFQXdJRFNRQXdSZ0loQU43NmZtRVQKL2s1cit2Qlo1bjZlVllsRWFKWm9PeEkwcnZ3WmNEL0lOOHhVQWlFQW41WkpVcGFPUUYxbEFWVzFQYTgzem5GNApJVVZxSnhrUjB4SEwvSTdSMWZjPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+        key: ""
+    discovery:
+        enabled: true
+        registries:
+            kubernetes:
+                disabled: true
+            service: {}
+    
+    # # Etcd specific configuration options.
+    # etcd:
+    #     image: registry.k8s.io/etcd:3.7.1 # The container image used to create the etcd service.
+    #     # The `ca` is the root certificate authority of the PKI.
+    #     ca:
+    #         crt: LS0tIEVYQU1QTEUgQ0VSVElGSUNBVEUgLS0t
+    #         key: LS0tIEVYQU1QTEUgS0VZIC0tLQ==
+    #     # Extra arguments to supply to etcd.
+    #     extraArgs:
+    #         election-timeout: "5000"
+    #     # The `advertisedSubnets` field configures the networks to pick etcd advertised IP from.
+    #     advertisedSubnets:
+    #         - 10.0.0.0/8
+
+    # # External cloud provider configuration.
+    # externalCloudProvider:
+    #     enabled: true # Enable external cloud provider.
+    #     # A list of urls that point to additional manifests for an external cloud provider.
+    #     manifests:
+    #         - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/v1.20.0-alpha.0/manifests/rbac.yaml
+    #         - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/v1.20.0-alpha.0/manifests/aws-cloud-controller-manager-daemonset.yaml
+
+    # # Settings for admin kubeconfig generation.
+    # adminKubeconfig:
+    #     certLifetime: 1h0m0s # Admin kubeconfig certificate lifetime (default is 1 year).
+---
+apiVersion: v1alpha1
+kind: HostnameConfig
+auto: stable # A method to automatically generate a hostname for the machine.
+
+# # A static hostname to set for the machine.
+# hostname: controlplane1
+# hostname: controlplane1.example.org
+---
+apiVersion: v1alpha1
+kind: LinkAliasConfig
+name: net0 # Alias for the link.
+# Selector to match the link to alias.
+selector:
+    match: link.driver == "virtio_net" # The Common Expression Language (CEL) expression to match the link.
+---
+apiVersion: v1alpha1
+kind: DHCPv4Config
+name: net0 # Name of the link (interface).
+
+# # Raw value of the DUID to use as client identifier.
+# duidRaw: 00:01:00:01:23:45:67:89:ab:cd:ef:01:23:45
