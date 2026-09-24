@@ -11,6 +11,7 @@ VERSION_UPGRADE_IMAGE := ghcr.io/siderolabs/version-upgrade-gen:latest
 TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.14.0
 OMNI_CLI_GEN_IMAGE := ghcr.io/siderolabs/omni-cli-gen:latest
 OMNI_CONFIG_GEN_IMAGE := ghcr.io/siderolabs/omni-config-gen:latest
+OMNI_HELM_CHART_GEN_IMAGE := ghcr.io/siderolabs/omni-helm-chart-gen:latest
 MDX_NORMALIZE_IMAGE := ghcr.io/siderolabs/mdx-normalize:latest
 CANONICAL_GEN_IMAGE := ghcr.io/siderolabs/canonical-gen:latest
 STYLE_CHECK_IMAGE := ghcr.io/siderolabs/style-guide-checker:latest
@@ -270,6 +271,10 @@ OMNI_CONFIG_SCHEMA_URL ?= https://raw.githubusercontent.com/siderolabs/omni/refs
 OMNI_CONFIG_REF_PATH := public/omni/reference/omni-configuration.mdx
 OMNI_CLI_REF_PATH := public/omni/reference/cli.mdx
 IMAGE_FACTORY_REF_PATH := public/omni/reference/image-factory-configuration.mdx
+OMNI_HELM_CHART_REF_PATH := public/omni/reference/helm-chart.mdx
+# Tag or branch of siderolabs/omni to take the chart README from. Empty means
+# the latest Omni release, so the page matches the chart published to ghcr.io.
+OMNI_HELM_CHART_REF ?=
 IMAGE_FACTORY_CONFIG_URL ?= https://raw.githubusercontent.com/siderolabs/image-factory/main/docs/configuration.md
 
 # Frontmatter for the generated pages. Defined here (not read from the existing
@@ -292,6 +297,10 @@ build-omni-cli-gen-container: ## Build the omni-cli-gen container locally
 .PHONY: build-omni-config-gen-container
 build-omni-config-gen-container: ## Build the omni-config-gen container locally
 	docker build -t $(OMNI_CONFIG_GEN_IMAGE) ./tools/omni-config-gen
+
+.PHONY: build-omni-helm-chart-gen-container
+build-omni-helm-chart-gen-container: ## Build the omni-helm-chart-gen container locally
+	docker build -t $(OMNI_HELM_CHART_GEN_IMAGE) ./tools/omni-helm-chart-gen
 
 .PHONY: build-mdx-normalize-container
 build-mdx-normalize-container: ## Build the mdx-normalize container locally
@@ -529,13 +538,28 @@ generate-omni-image-factory-reference-local: ## Generate the Image Factory confi
 	@$(MAKE) --no-print-directory normalize-doc-local NORMALIZE_PATHS="$(IMAGE_FACTORY_REF_PATH)"
 	@echo "Reference documentation generated at $(IMAGE_FACTORY_REF_PATH)"
 
+.PHONY: generate-omni-helm-chart-reference
+generate-omni-helm-chart-reference: ## Generate the Omni Helm chart reference from the chart README (container). Pin with OMNI_HELM_CHART_REF=<tag>
+	@echo "Generating Omni Helm chart reference..."
+	@$(call pull_if_missing,$(OMNI_HELM_CHART_GEN_IMAGE))
+	docker run --rm $(OMNI_HELM_CHART_GEN_IMAGE) $(OMNI_HELM_CHART_REF) > $(OMNI_HELM_CHART_REF_PATH).tmp && mv $(OMNI_HELM_CHART_REF_PATH).tmp $(OMNI_HELM_CHART_REF_PATH) || { rm -f $(OMNI_HELM_CHART_REF_PATH).tmp; exit 1; }
+	@$(MAKE) --no-print-directory normalize-doc NORMALIZE_PATHS="$(OMNI_HELM_CHART_REF_PATH)"
+	@echo "Reference documentation generated at $(OMNI_HELM_CHART_REF_PATH)"
+
+.PHONY: generate-omni-helm-chart-reference-local
+generate-omni-helm-chart-reference-local: ## Generate the Omni Helm chart reference using local Go build. Pin with OMNI_HELM_CHART_REF=<tag>
+	@echo "Generating Omni Helm chart reference..."
+	cd tools/omni-helm-chart-gen && go run . $(OMNI_HELM_CHART_REF) > ../../$(OMNI_HELM_CHART_REF_PATH).tmp && mv ../../$(OMNI_HELM_CHART_REF_PATH).tmp ../../$(OMNI_HELM_CHART_REF_PATH) || { rm -f ../../$(OMNI_HELM_CHART_REF_PATH).tmp; exit 1; }
+	@$(MAKE) --no-print-directory normalize-doc-local NORMALIZE_PATHS="$(OMNI_HELM_CHART_REF_PATH)"
+	@echo "Reference documentation generated at $(OMNI_HELM_CHART_REF_PATH)"
+
 # ---- Aggregate -------------------------------------------------------------
 
 .PHONY: generate-omni-reference
-generate-omni-reference: generate-omni-cli-reference generate-omni-config-reference generate-omni-image-factory-reference ## Regenerate all Omni reference pages (containers)
+generate-omni-reference: generate-omni-cli-reference generate-omni-config-reference generate-omni-image-factory-reference generate-omni-helm-chart-reference ## Regenerate all Omni reference pages (containers)
 
 .PHONY: generate-omni-reference-local
-generate-omni-reference-local: generate-omni-cli-reference-local generate-omni-config-reference-local generate-omni-image-factory-reference-local ## Regenerate all Omni reference pages using local tools
+generate-omni-reference-local: generate-omni-cli-reference-local generate-omni-config-reference-local generate-omni-image-factory-reference-local generate-omni-helm-chart-reference-local ## Regenerate all Omni reference pages using local tools
 
 .PHONY: changelog
 changelog: ## Generate the changelog from GitHub releases

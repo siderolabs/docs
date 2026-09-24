@@ -8,7 +8,7 @@ The workload proxy lets you expose HTTP services from managed clusters through O
 This guide assumes Omni is already running. If not, see [Run Omni On-Prem](./run-omni-on-prem).
 
 <Note>
-**Using the Helm chart?** The chart handles workload proxy configuration, TLS, and ingress routing all in one place. See the [Workload Proxy section](https://github.com/siderolabs/omni/tree/main/deploy/helm/omni#workload-proxy-optional) of the Helm chart README. You don't need the rest of this guide.
+**Using the Helm chart?** The chart handles workload proxy configuration, TLS, and ingress routing all in one place. See the [Workload Proxy section](../reference/helm-chart#workload-proxy-optional) of the Omni Helm Chart reference. You don't need the rest of this guide.
 </Note>
 
 ## Requirements
@@ -187,7 +187,7 @@ spec:
     secretName: omni-workload-proxy-wildcard-tls
 ```
 
-For a full example including the cert-manager `Certificate` resource for the wildcard cert, see the [Helm chart README](https://github.com/siderolabs/omni/tree/main/deploy/helm/omni#workload-proxy-optional).
+For a full example including the cert-manager `Certificate` resource for the wildcard cert, see the [Traefik example](../reference/helm-chart#traefik-example) in the Omni Helm Chart reference.
 
 ## Next steps
 

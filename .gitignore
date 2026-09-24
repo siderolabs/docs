@@ -16,6 +16,7 @@ tools/docs-convert/docs-convert
 tools/docs-validate/docs-validate
 tools/mdx-normalize/mdx-normalize
 tools/omni-config-gen/omni-config-gen
+tools/omni-helm-chart-gen/omni-helm-chart-gen
 tools/style-guide-checker/style-guide-checker
 tools/doc-accuracy/doc-accuracy
 tools/canonical-gen/canonical-gen
