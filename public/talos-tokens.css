@@ -202,7 +202,7 @@
   --talos-accent-hover: var(--talos-red-5);
   --talos-accent-text: var(--talos-red-4);
   --talos-accent-fill: var(--talos-red-3);
-  --talos-accent-fill-hover: var(--talos-red-5);
+  --talos-accent-fill-hover: rgba(225, 45, 70, 0.9);
   --talos-accent-fill-active: var(--talos-red-7);
   --talos-accent-subtle: rgba(212, 26, 59, 0.08);
   --talos-accent-gradient: linear-gradient(90deg, var(--talos-gradient-display-1) 0%, var(--talos-gradient-display-2) 51%, var(--talos-gradient-display-3) 100%);
@@ -271,7 +271,7 @@
   --talos-accent-hover: var(--talos-red-2);
   --talos-accent-text: var(--talos-red-1);
   --talos-accent-fill: var(--talos-red-3);
-  --talos-accent-fill-hover: var(--talos-red-5);
+  --talos-accent-fill-hover: rgba(225, 45, 70, 0.9);
   --talos-accent-fill-active: var(--talos-red-7);
   --talos-accent-subtle: rgba(228, 142, 150, 0.20);
   --talos-accent-gradient: linear-gradient(90deg, var(--talos-gradient-display-1) 0%, var(--talos-gradient-display-2) 51%, var(--talos-gradient-display-3) 100%);
