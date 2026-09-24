@@ -49,3 +49,7 @@ If proxy access is required before the machine configuration is applied (for exa
 ```text
 talos.environment=http_proxy=<http-proxy> talos.environment=https_proxy=<https-proxy>
 ```
+
+## Connecting to Omni through a proxy
+
+Machines managed by Omni have additional requirements behind a proxy: the SideroLink overlay prefix and `0.0.0.0` must be excluded from the proxy, and the SideroLink gRPC tunnel must be enabled where outbound UDP is blocked. See [Connect Machines to Omni Through a Corporate Proxy](../../../omni/omni-cluster-setup/connect-machines-to-omni-through-a-proxy).

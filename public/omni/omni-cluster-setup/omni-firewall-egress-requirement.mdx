@@ -63,11 +63,13 @@ When SideroLink is established, Talos communicates with Omni over a WireGuard tu
 
 Inside this tunnel, Omni is reachable at the fixed IPv6 address:
 
-```
-fd00:41e4:649b:9303::1
+```text
+fdae:41e4:649b:9303::1
 ```
 
-This address is internal to the tunnel and does not need to be exposed externally.
+Machine addresses come from the same `fdae:41e4:649b:9303::/64` prefix. This prefix is fixed across Omni deployments rather than allocated per tenant or per installation.
+
+This address is internal to the tunnel and does not need to be exposed externally. It does, however, have to bypass any HTTP proxy the machine is configured to use. See [Connect Machines to Omni Through a Corporate Proxy](./connect-machines-to-omni-through-a-proxy).
 
 ### Optional outbound access from Talos nodes
 
@@ -94,3 +96,22 @@ Required ports:
 | 51820 | UDP |
 
 The exact hostname and WireGuard endpoint are displayed in the Omni UI.
+
+## Access through an HTTP proxy
+
+Where the only egress is a corporate HTTP proxy, the proxy must permit the `CONNECT` method to port 443, and the SideroLink endpoint should be allowed by hostname rather than by address because it can resolve to more than one IP address.
+
+UDP cannot traverse an HTTP proxy, so the WireGuard port is unusable at such a site. The SideroLink gRPC tunnel moves the overlay onto TCP port 443 instead. Alongside the Omni API and SideroLink endpoints, machines have been observed reaching the following through the proxy:
+
+| Domain | Purpose |
+|--------|---------|
+| `factory.talos.dev` | Talos install media |
+| `cdn.factory.talos.dev` | Backing storage for install media |
+| `registry.k8s.io` | Kubernetes component images |
+| `cdn.registry.k8s.io` | Backing storage for Kubernetes images |
+| `ghcr.io` | Container images |
+| `pkg-containers.githubusercontent.com` | Backing blob storage for GHCR images |
+
+Add any registry you mirror or host yourself. For the full set of domains Talos may need, see the <a href={`../../talos/${version}/networking/egress-domains`}>Talos Egress Requirements documentation</a>.
+
+For the full set of Omni requirements behind a proxy, including the required `no_proxy` entries and how to enable the gRPC tunnel before a machine's first boot, see [Connect Machines to Omni Through a Corporate Proxy](./connect-machines-to-omni-through-a-proxy).
