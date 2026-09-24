@@ -24,9 +24,9 @@
  *    in dark mode, dark is buttons and hover states in both modes.
  *
  *      "colors": {
- *        "primary": "#B93B46",
+ *        "primary": "#D41A3B",
  *        "light": "#E48E96",
- *        "dark": "#CF4250"
+ *        "dark": "#E12D46"
  *      }
  *
  *    Mintlify's fonts setting is deliberately left alone. It has no slot for
@@ -88,42 +88,58 @@
   --talos-ink-4: #26262B;
   --talos-ink-5: #2E2E33;
   --talos-ink-6: #5A5A58;
-  --talos-ink-7: #919190;
+  --talos-ink-7: #8A8A88;
   --talos-ink-8: #A8A8A6;
   --talos-ink-9: #C8C8C6;
   --talos-ink-10: #F5F5F4;
-  --talos-cream-0: #EDE9E4;
+  --talos-cream-0: #F2EDE8;
   --talos-cream-1: #F5F0EB;
   --talos-cream-2: #FFFFFF;
   --talos-cream-3: #F0EBE5;
   --talos-cream-4: #E6E1DC;
   --talos-cream-5: #D8D2CB;
   --talos-cream-6: #8A8A88;
-  --talos-cream-7: #636361;
+  --talos-cream-7: #686866;
   --talos-cream-8: #4F4F4D;
   --talos-cream-9: #3A3A38;
   --talos-cream-10: #1A1A18;
   --talos-red-1: #E48E96;
   --talos-red-2: #DB6973;
-  --talos-red-3: #D24350;
-  --talos-red-4: #CF4250;
+  --talos-red-3: #E12D46;
+  --talos-red-4: #D41A3B;
   --talos-red-5: #B93B46;
   --talos-red-6: #A83640;
   --talos-red-7: #8F2D36;
   --talos-gradient-display-1: #E8312C;
   --talos-gradient-display-2: #E2335A;
   --talos-gradient-display-3: #F77216;
-  --talos-gradient-fill-1: var(--talos-red-4);
-  --talos-gradient-fill-2: #B5305A;
-  --talos-gradient-fill-3: #C2560F;
-  --talos-green-1: #92D7B3;
-  --talos-green-2: #57C28A;
-  --talos-green-3: #3F8F66;
-  --talos-green-4: #2C6347;
-  --talos-amber-1: #F5D39C;
-  --talos-amber-2: #F0BB67;
-  --talos-amber-3: #C79A52;
-  --talos-amber-4: #7A5B26;
+  --talos-green-1: #E6F0E7;
+  --talos-green-2: #C0DAC4;
+  --talos-green-3: #A0C8A7;
+  --talos-green-4: #6FD087;
+  --talos-green-5: #1B8641;
+  --talos-green-6: #046E31;
+  --talos-green-7: #23432E;
+  --talos-green-8: #213428;
+  --talos-amber-1: #FEEED9;
+  --talos-amber-2: #FDE8CB;
+  --talos-amber-3: #FCDCB0;
+  --talos-amber-4: #F5AE39;
+  --talos-amber-5: #E6AC3D;
+  --talos-amber-6: #7E5905;
+  --talos-amber-7: #695132;
+  --talos-amber-8: #403529;
+  --talos-scarlet-1: #FFECEA;
+  --talos-scarlet-2: #FDC7C0;
+  --talos-scarlet-3: #FAABA1;
+  --talos-scarlet-4: #FF5B5B;
+  --talos-scarlet-5: #DE2F2E;
+  --talos-scarlet-6: #BB081F;
+  --talos-scarlet-7: #642A29;
+  --talos-scarlet-8: #3E2324;
+  --talos-stone-1: #BAB7B3;
+  --talos-stone-2: #75726F;
+  --talos-stone-3: #5D5B58;
   --talos-paper: #E2D2A8;
   --talos-white: #FFFFFF;
   --talos-black: #000000;
@@ -139,6 +155,7 @@
   --talos-radius-xl: 12px;
   --talos-radius-pill: 9999px;
   --talos-border-hairline: 1px;
+  --talos-border-edge: 3px;
   --talos-font-sans: Manrope, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --talos-font-mono: 'JetBrains Mono', 'SF Mono', Consolas, 'Liberation Mono', monospace;
   --talos-text-2xs: 10px;
@@ -182,34 +199,46 @@
   --talos-border-strong: rgba(0, 0, 0, 0.16);
   --talos-border-accent: var(--talos-red-3);
   --talos-accent-default: var(--talos-red-3);
-  --talos-accent-hover: var(--talos-red-4);
-  --talos-accent-text: var(--talos-red-5);
-  --talos-accent-fill: var(--talos-red-4);
+  --talos-accent-hover: var(--talos-red-5);
+  --talos-accent-text: var(--talos-red-4);
+  --talos-accent-fill: var(--talos-red-3);
   --talos-accent-fill-hover: var(--talos-red-5);
   --talos-accent-fill-active: var(--talos-red-7);
-  --talos-accent-subtle: rgba(224, 75, 69, 0.08);
+  --talos-accent-subtle: rgba(212, 26, 59, 0.08);
   --talos-accent-gradient: linear-gradient(90deg, var(--talos-gradient-display-1) 0%, var(--talos-gradient-display-2) 51%, var(--talos-gradient-display-3) 100%);
-  --talos-accent-gradient-fill: linear-gradient(90deg, var(--talos-gradient-fill-1) 0%, var(--talos-gradient-fill-2) 51%, var(--talos-gradient-fill-3) 100%);
-  --talos-status-success-default: var(--talos-green-4);
-  --talos-status-success-text: var(--talos-green-4);
-  --talos-status-success-fill: var(--talos-green-2);
-  --talos-status-success-on-fill: var(--talos-ink-0);
-  --talos-status-success-subtle: rgba(87, 194, 138, 0.22);
-  --talos-status-warning-default: var(--talos-amber-4);
-  --talos-status-warning-text: var(--talos-amber-4);
-  --talos-status-warning-fill: var(--talos-amber-2);
-  --talos-status-warning-on-fill: var(--talos-ink-0);
-  --talos-status-warning-subtle: rgba(240, 187, 103, 0.28);
-  --talos-status-danger-default: var(--talos-red-6);
-  --talos-status-danger-text: var(--talos-red-6);
-  --talos-status-danger-fill: var(--talos-red-4);
+  --talos-accent-gradient-fill: linear-gradient(270deg, var(--talos-gradient-display-3) 0%, var(--talos-red-3) 30%, var(--talos-red-3) 70%, var(--talos-gradient-display-1) 100%);
+  --talos-status-success-default: var(--talos-green-6);
+  --talos-status-success-text: var(--talos-green-6);
+  --talos-status-success-fill: var(--talos-green-5);
+  --talos-status-success-on-fill: var(--talos-white);
+  --talos-status-success-subtle: var(--talos-green-1);
+  --talos-status-success-subtle-border: var(--talos-green-2);
+  --talos-status-success-surface: var(--talos-green-1);
+  --talos-status-success-border: var(--talos-green-3);
+  --talos-status-warning-default: var(--talos-amber-6);
+  --talos-status-warning-text: var(--talos-amber-6);
+  --talos-status-warning-fill: var(--talos-amber-4);
+  --talos-status-warning-on-fill: var(--talos-cream-10);
+  --talos-status-warning-subtle: var(--talos-amber-1);
+  --talos-status-warning-subtle-border: var(--talos-amber-2);
+  --talos-status-warning-surface: var(--talos-amber-1);
+  --talos-status-warning-border: var(--talos-amber-3);
+  --talos-status-danger-default: var(--talos-scarlet-6);
+  --talos-status-danger-text: var(--talos-scarlet-6);
+  --talos-status-danger-fill: var(--talos-scarlet-5);
   --talos-status-danger-on-fill: var(--talos-white);
-  --talos-status-danger-subtle: rgba(224, 75, 69, 0.12);
-  --talos-status-info-default: var(--talos-cream-8);
-  --talos-status-info-text: var(--talos-cream-9);
-  --talos-status-info-fill: var(--talos-cream-8);
-  --talos-status-info-on-fill: var(--talos-cream-2);
-  --talos-status-info-subtle: rgba(79, 79, 77, 0.12);
+  --talos-status-danger-subtle: var(--talos-scarlet-1);
+  --talos-status-danger-subtle-border: var(--talos-scarlet-2);
+  --talos-status-danger-surface: var(--talos-scarlet-1);
+  --talos-status-danger-border: var(--talos-scarlet-3);
+  --talos-status-info-default: var(--talos-stone-3);
+  --talos-status-info-text: var(--talos-stone-3);
+  --talos-status-info-fill: var(--talos-stone-2);
+  --talos-status-info-on-fill: var(--talos-white);
+  --talos-status-info-subtle: var(--talos-surface-hover);
+  --talos-status-info-subtle-border: rgba(0, 0, 0, 0);
+  --talos-status-info-surface: var(--talos-surface-card);
+  --talos-status-info-border: var(--talos-surface-inert);
   --talos-shadow-card: 0 1px 3px rgba(26, 26, 24, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.02);
   --talos-shadow-dropdown: 0 4px 16px rgba(26, 26, 24, 0.12);
   --talos-shadow-modal: 0 8px 32px rgba(26, 26, 24, 0.16);
@@ -241,32 +270,44 @@
   --talos-accent-default: var(--talos-red-3);
   --talos-accent-hover: var(--talos-red-2);
   --talos-accent-text: var(--talos-red-1);
-  --talos-accent-fill: var(--talos-red-4);
+  --talos-accent-fill: var(--talos-red-3);
   --talos-accent-fill-hover: var(--talos-red-5);
   --talos-accent-fill-active: var(--talos-red-7);
-  --talos-accent-subtle: rgba(224, 75, 69, 0.10);
+  --talos-accent-subtle: rgba(228, 142, 150, 0.20);
   --talos-accent-gradient: linear-gradient(90deg, var(--talos-gradient-display-1) 0%, var(--talos-gradient-display-2) 51%, var(--talos-gradient-display-3) 100%);
-  --talos-accent-gradient-fill: linear-gradient(90deg, var(--talos-gradient-fill-1) 0%, var(--talos-gradient-fill-2) 51%, var(--talos-gradient-fill-3) 100%);
-  --talos-status-success-default: var(--talos-green-2);
-  --talos-status-success-text: var(--talos-green-1);
-  --talos-status-success-fill: var(--talos-green-2);
-  --talos-status-success-on-fill: var(--talos-ink-0);
-  --talos-status-success-subtle: rgba(87, 194, 138, 0.18);
-  --talos-status-warning-default: var(--talos-amber-2);
-  --talos-status-warning-text: var(--talos-amber-1);
-  --talos-status-warning-fill: var(--talos-amber-2);
-  --talos-status-warning-on-fill: var(--talos-ink-0);
-  --talos-status-warning-subtle: rgba(240, 187, 103, 0.18);
-  --talos-status-danger-default: var(--talos-red-3);
-  --talos-status-danger-text: var(--talos-red-1);
-  --talos-status-danger-fill: var(--talos-red-4);
+  --talos-accent-gradient-fill: linear-gradient(270deg, var(--talos-gradient-display-3) 0%, var(--talos-red-3) 30%, var(--talos-red-3) 70%, var(--talos-gradient-display-1) 100%);
+  --talos-status-success-default: var(--talos-green-4);
+  --talos-status-success-text: var(--talos-green-4);
+  --talos-status-success-fill: var(--talos-green-5);
+  --talos-status-success-on-fill: var(--talos-white);
+  --talos-status-success-subtle: var(--talos-green-8);
+  --talos-status-success-subtle-border: var(--talos-green-7);
+  --talos-status-success-surface: var(--talos-surface-card);
+  --talos-status-success-border: var(--talos-surface-inert);
+  --talos-status-warning-default: var(--talos-amber-5);
+  --talos-status-warning-text: var(--talos-amber-5);
+  --talos-status-warning-fill: var(--talos-amber-4);
+  --talos-status-warning-on-fill: var(--talos-cream-10);
+  --talos-status-warning-subtle: var(--talos-amber-8);
+  --talos-status-warning-subtle-border: var(--talos-amber-7);
+  --talos-status-warning-surface: var(--talos-surface-card);
+  --talos-status-warning-border: var(--talos-surface-inert);
+  --talos-status-danger-default: var(--talos-scarlet-4);
+  --talos-status-danger-text: var(--talos-scarlet-4);
+  --talos-status-danger-fill: var(--talos-scarlet-5);
   --talos-status-danger-on-fill: var(--talos-white);
-  --talos-status-danger-subtle: rgba(224, 75, 69, 0.18);
-  --talos-status-info-default: var(--talos-ink-8);
-  --talos-status-info-text: var(--talos-ink-9);
-  --talos-status-info-fill: var(--talos-ink-8);
-  --talos-status-info-on-fill: var(--talos-ink-0);
-  --talos-status-info-subtle: rgba(168, 168, 166, 0.16);
+  --talos-status-danger-subtle: var(--talos-scarlet-8);
+  --talos-status-danger-subtle-border: var(--talos-scarlet-7);
+  --talos-status-danger-surface: var(--talos-surface-card);
+  --talos-status-danger-border: var(--talos-surface-inert);
+  --talos-status-info-default: var(--talos-stone-1);
+  --talos-status-info-text: var(--talos-stone-1);
+  --talos-status-info-fill: var(--talos-stone-2);
+  --talos-status-info-on-fill: var(--talos-white);
+  --talos-status-info-subtle: var(--talos-surface-hover);
+  --talos-status-info-subtle-border: rgba(0, 0, 0, 0);
+  --talos-status-info-surface: var(--talos-surface-card);
+  --talos-status-info-border: var(--talos-surface-inert);
   --talos-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
   --talos-shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.5);
   --talos-shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.6);
@@ -280,9 +321,9 @@
    and will not follow a runtime theme switch. That is fine: Mintlify picks
    the light or dark member of each pair itself. */
 :root {
-  --primary: 185 59 70;         /* light-mode emphasis text: accent.text (light) */
+  --primary: 212 26 59;         /* light-mode emphasis text: accent.text (light) */
   --primary-light: 228 142 150;   /* dark-mode emphasis text: accent.text (dark) */
-  --primary-dark: 207 66 80;    /* buttons and hover states, both modes: accent.fill */
+  --primary-dark: 225 45 70;    /* buttons and hover states, both modes: accent.fill */
 
   /* surface.chrome rather than surface.page: Mintlify draws the sidebar, the
      topbar and the content on one plane, so the docs site is all chrome and
@@ -295,7 +336,7 @@
   --gray-200: 230 225 220;
   --gray-300: 216 210 203;
   --gray-400: 138 138 136;
-  --gray-500: 99 99 97;
+  --gray-500: 104 104 102;
   --gray-600: 79 79 77;
   --gray-700: 58 58 56;
   --gray-800: 46 46 51;
@@ -307,3 +348,61 @@
   --font-inter: var(--talos-font-sans);
   --font-paper-mono: var(--talos-font-mono);
 }
+
+/* ------------------------------------------------ Mintlify component colours */
+
+/* Announcement banner. White text sits on the solid accent band in the middle
+   of the gradient. The link underline is the dark-theme accent text in both
+   themes, because the banner is the same colour in both. */
+html #banner { background: var(--talos-accent-gradient-fill); }
+html #banner, html #banner * { color: var(--talos-content-on-accent) !important; }
+html #banner a { text-decoration-color: var(--talos-red-1) !important; }
+
+/* Topbar call to action: the primary button. */
+html #topbar-cta-button a > span:first-child { background: var(--talos-accent-fill); }
+html #topbar-cta-button a:hover > span:first-child { opacity: 0.9; }
+html #topbar-cta-button a, html #topbar-cta-button a * { color: var(--talos-content-on-accent) !important; }
+
+/* Active sidebar item, marker style: emphasis text, an accent-tinted pill,
+   and a bar in accent text inset from the left. Mintlify marks the item
+   with a different utility class per theme. */
+html:not(.dark) a[aria-current="page"].bg-primary\/10 { background-color: var(--talos-accent-subtle) !important; color: var(--talos-content-emphasis) !important; position: relative; }
+html:not(.dark) a[aria-current="page"].bg-primary\/10::before { content: ""; position: absolute; left: 6px; top: 25%; bottom: 25%; width: var(--talos-border-edge); border-radius: 2px; background: var(--talos-accent-text); }
+html.dark a[aria-current="page"].dark\:bg-primary-light\/10 { background-color: var(--talos-accent-subtle) !important; color: var(--talos-content-emphasis) !important; position: relative; }
+html.dark a[aria-current="page"].dark\:bg-primary-light\/10::before { content: ""; position: absolute; left: 6px; top: 25%; bottom: 25%; width: var(--talos-border-edge); border-radius: 2px; background: var(--talos-accent-text); }
+
+/* Callouts. Body text stays content-default; only the icon and bold title
+   take the status colour. Light surfaces are a pastel of the fill; dark
+   surfaces are neutral with a colour edge on the left. */
+html:root [data-callout-type="danger"] { background-color: var(--talos-status-danger-surface); border-color: var(--talos-status-danger-border); }
+html:root [data-callout-type="danger"] svg { color: var(--talos-status-danger-text) !important; }
+html:root [data-callout-type="danger"] [class*="prose"] { color: var(--talos-content-default) !important; }
+html:root [data-callout-type="danger"] [class*="prose"] strong { color: var(--talos-status-danger-text) !important; }
+html.dark [data-callout-type="danger"] { border-left: var(--talos-border-edge) solid var(--talos-status-danger-fill); }
+html:root [data-callout-type="warning"] { background-color: var(--talos-status-warning-surface); border-color: var(--talos-status-warning-border); }
+html:root [data-callout-type="warning"] svg { color: var(--talos-status-warning-text) !important; }
+html:root [data-callout-type="warning"] [class*="prose"] { color: var(--talos-content-default) !important; }
+html:root [data-callout-type="warning"] [class*="prose"] strong { color: var(--talos-status-warning-text) !important; }
+html.dark [data-callout-type="warning"] { border-left: var(--talos-border-edge) solid var(--talos-status-warning-fill); }
+html:root [data-callout-type="tip"] { background-color: var(--talos-status-success-surface); border-color: var(--talos-status-success-border); }
+html:root [data-callout-type="tip"] svg { color: var(--talos-status-success-text) !important; }
+html:root [data-callout-type="tip"] [class*="prose"] { color: var(--talos-content-default) !important; }
+html:root [data-callout-type="tip"] [class*="prose"] strong { color: var(--talos-status-success-text) !important; }
+html.dark [data-callout-type="tip"] { border-left: var(--talos-border-edge) solid var(--talos-status-success-fill); }
+html:root [data-callout-type="check"] { background-color: var(--talos-status-success-surface); border-color: var(--talos-status-success-border); }
+html:root [data-callout-type="check"] svg { color: var(--talos-status-success-text) !important; }
+html:root [data-callout-type="check"] [class*="prose"] { color: var(--talos-content-default) !important; }
+html:root [data-callout-type="check"] [class*="prose"] strong { color: var(--talos-status-success-text) !important; }
+html.dark [data-callout-type="check"] { border-left: var(--talos-border-edge) solid var(--talos-status-success-fill); }
+html:root [data-callout-type="info"] { background-color: var(--talos-status-info-surface); border-color: var(--talos-status-info-border); }
+html:root [data-callout-type="info"] svg { color: var(--talos-status-info-text) !important; }
+html:root [data-callout-type="info"] [class*="prose"] { color: var(--talos-content-default) !important; }
+html:root [data-callout-type="info"] [class*="prose"] strong { color: var(--talos-content-emphasis) !important; }
+html:root [data-callout-type="note"] { background-color: var(--talos-status-info-surface); border-color: var(--talos-status-info-border); }
+html:root [data-callout-type="note"] svg { color: var(--talos-content-secondary) !important; }
+html:root [data-callout-type="note"] [class*="prose"] { color: var(--talos-content-default) !important; }
+html:root [data-callout-type="note"] [class*="prose"] strong { color: var(--talos-content-emphasis) !important; }
+
+/* Footer. The "Powered by" line is read, so it takes content-muted rather
+   than the disabled grey Mintlify gives it (3.05:1 light, 3.27:1 dark). */
+html #footer a[href*="mintlify.com"]:not(:hover) { color: var(--talos-content-muted) !important; }
