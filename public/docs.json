@@ -87,6 +87,10 @@
       "destination": "/omni/cluster-management/expose-a-workload-via-service-proxy"
     },
     {
+      "source": "/omni/how-to-guides/self-hosted/how-to-expose-http-service-from-a-cluster",
+      "destination": "/omni/cluster-management/expose-a-workload-via-service-proxy"
+    },
+    {
       "source": "/omni/cluster-management/omni-terraform",
       "destination": "/omni/cluster-management/terraform-and-omni"
     },
@@ -2840,7 +2844,8 @@
               "omni/reference/cluster-templates",
               "omni/reference/omni-configuration",
               "omni/reference/manage-omni-resources-with-omnictl",
-              "omni/reference/image-factory-configuration"
+              "omni/reference/image-factory-configuration",
+              "omni/reference/helm-chart"
             ]
           },
           {
