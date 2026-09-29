@@ -206,6 +206,7 @@
                     "group": "Local Platforms",
                     "pages": [
                       "talos/v1.14/platform-specific-installations/local-platforms/docker",
+                      "talos/v1.14/platform-specific-installations/local-platforms/github-actions",
                       "talos/v1.14/platform-specific-installations/local-platforms/qemu",
                       "talos/v1.14/platform-specific-installations/local-platforms/virtualbox"
                     ]
