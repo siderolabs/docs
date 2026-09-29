@@ -3,15 +3,15 @@ title: Access Policies (ACLs)
 description: Reference documentation for defining and validating Access Policies (ACLs) in Omni.
 ---
 
-ACLs are used to control fine-grained access policies of users to resources; and are validated, stored, and evaluated as an `AccessPolicy` resource in Omni.
+This page describes the fields of the `AccessPolicy` resource. For how Omni evaluates access policies, complete examples, and the Kubernetes RBAC setup that access policies depend on, see [Manage Access Policies (ACLs)](../security-and-authentication/how-to-manage-acls).
 
-At the moment, only Kubernetes cluster access (group impersonation) is supported.
+<Note>
+ACLs grant access but do not revoke it. Kubernetes groups other than `system:masters` have no permissions until they are bound to a `Role` or `ClusterRole` through Kubernetes RBAC.
+</Note>
 
-### Structure
+## `AccessPolicy`
 
-#### `AccessPolicy`
-
-The `AccessPolicy` is a single resource containing a set of user groups, a set of cluster groups, a list of matching rules and a list of tests.
+The `AccessPolicy` is a single resource containing a set of user groups, a set of cluster groups, a list of matching rules, and a list of tests.
 
 ```yaml
 metadata:
@@ -19,157 +19,23 @@ metadata:
   type: AccessPolicies.omni.sidero.dev
   id: access-policy
 spec:
-  usergroups:
-    # match level-1 users by fnmatch expression
-    level-1:
-      users:
-        - match: level-1*
-    # match level-2 users by label selectors
-    level-2:
-      users:
-        - labelselectors:
-            - level=2
-    # match level-3 users by explicit list
-    level-3:
-      users:
-        - name: admin1@example.com
-        - name: admin2@example.com
-  clustergroups:
-    dev:
-      clusters:
-        - match: dev-*
-    staging:
-      clusters:
-        - match: staging-*
-        - match: preprod-*
-    production:
-      clusters:
-        - match: prod-*
-  rules:
-    - users:
-        - group/level-1
-      clusters:
-        - group/dev
-      role: Operator
-    - users:
-        - group/level-1
-      clusters:
-        - group/staging
-      role: Reader
-      kubernetes:
-        impersonate:
-          groups:
-            - read-only
-    - users:
-        - group/level-2
-      clusters:
-        - group/dev
-        - group/staging
-      role: Operator
-    - users:
-        - group/level-2
-      clusters:
-        - group/production
-      role: Reader
-      kubernetes:
-        impersonate:
-          groups:
-            - read-only
-    - users:
-        - group/level-3
-      clusters:
-        - group/dev
-        - group/staging
-        - group/production
-      role: Admin
-    # simple rule - without links to user or cluster groups
-    - users:
-        - vault-admin@example.com
-      clusters:
-        - vault
-      role: Admin
-  tests:
-    # level-1 tests
-    - name: level-1 engineer has Operator access to dev cluster
-      user:
-        name: level-1-a@example.com
-      cluster:
-        name: dev-cluster-1
-      expected:
-        role: Operator
-    - name: level-1 engineer has read-only access to staging cluster
-      user:
-        name: level-1-b@example.com
-      cluster:
-        name: staging-cluster-1
-      expected:
-        role: Reader
-        kubernetes:
-          impersonate:
-            groups:
-              - read-only
-    - name: level-1 engineer has no access to production cluster
-      user:
-        name: level-1-c@example.com
-      cluster:
-        name: production-cluster-1
-      expected:
-        role: None
-        kubernetes:
-          impersonate:
-            groups: []
-    # level-2 tests
-    - name: level-2 engineer has Operator access to staging cluster
-      user:
-        name: something@example.com
-        labels:
-          level: "2"
-      cluster:
-        name: preprod-cluster-1
-      expected:
-        role: Operator
-    - name: level-2 engineer has read-only access to prod cluster
-      user:
-        name: something@example.com
-        labels:
-          level: "2"
-      cluster:
-        name: prod-cluster-1
-      expected:
-        role: Reader
-        kubernetes:
-          impersonate:
-            groups:
-              - read-only
-    # level-3 tests
-    - name: level-3 engineer has admin access to prod cluster
-      user:
-        name: admin1@example.com
-      cluster:
-        name: prod-cluster-1
-      expected:
-        role: Admin
-    # vault-admin tests
-    - name: vault-admin has admin access to vault
-      user:
-        name: vault-admin@example.com
-      cluster:
-        name: vault
-      expected:
-        role: Admin
+  usergroups: {}
+  clustergroups: {}
+  rules: []
+  tests: []
 ```
 
-| Field                | Type                                             | Description                                                                   |
-| -------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------- |
-| `metadata.namespace` | string                                           | Always set to `default`.                                                      |
-| `metadata.type`      | string                                           | `AccessPolicies.omni.sidero.dev`.                                             |
-| `metadata.id`        | string                                           | Always set to `access-policy`.                                                |
-| `spec.usergroups`    | map\[string][UserGroup](#usergroup)       | Map of user group names to user group definitions.                            |
-| `spec.clustergroups` | map\[string][ClusterGroup](#clustergroup) | Map of cluster group names to cluster group definitions.                      |
-| `spec.rules`         | array                                            | List of [rules](#rule) to match.                                       |
-| `spec.tests`         | array                                            | List of [tests](#test) to run when the resource is created or updated. |
+| Field                | Type                                      | Description                                                            |
+| -------------------- | ----------------------------------------- | ---------------------------------------------------------------------- |
+| `metadata.namespace` | string                                    | Always set to `default`.                                               |
+| `metadata.type`      | string                                    | `AccessPolicies.omni.sidero.dev`.                                      |
+| `metadata.id`        | string                                    | Always set to `access-policy`.                                         |
+| `spec.usergroups`    | map\[string][UserGroup](#usergroup)       | Map of user group names to user group definitions.                     |
+| `spec.clustergroups` | map\[string][ClusterGroup](#clustergroup) | Map of cluster group names to cluster group definitions.               |
+| `spec.rules`         | array                                     | List of [rules](#rule) to match.                                       |
+| `spec.tests`         | array                                     | List of [tests](#test) to run when the resource is created or updated. |
 
-#### `UserGroup`
+## `UserGroup`
 
 A `UserGroup` is a group of users.
 
@@ -179,11 +45,11 @@ users:
   - name: user2@example.com
 ```
 
-| Field   | Type  | Description                    |
-| ------- | ----- | ------------------------------ |
+| Field   | Type  | Description             |
+| ------- | ----- | ----------------------- |
 | `users` | array | List of [User](#user)s. |
 
-#### `User`
+## `User`
 
 A `User` is a single user.
 
@@ -197,12 +63,16 @@ labelselectors:
 | Field            | Type   | Description                                                                                          |
 | ---------------- | ------ | ---------------------------------------------------------------------------------------------------- |
 | `name`           | string | User identity used to authenticate to Omni.                                                          |
-| `match`          | string | [fnmatch](https://man7.org/linux/man-pages/man3/fnmatch.3.html) expression to match user identities. |
-| `labelselectors` | array  | List of label selector strings.                                                                      |
+| `match`          | string | Glob pattern to match user identities.                                                               |
+| `labelselectors` | array  | List of label selectors matched against the user's identity labels. All selectors must match.        |
 
-**Note:** `name`, `match` and `labelselectors` are mutually exclusive. Only one of them can be set to a non-zero value.
+<Note>
+`name`, `match`, and `labelselectors` are mutually exclusive. Set only one of them for each user.
 
-#### `ClusterGroup`
+Common label selector forms are `key=value` (the label has this value), `key` (the label exists), and `!key` (the label does not exist). Other operators, such as `!=`, `in`, and `notin`, are also supported.
+</Note>
+
+## `ClusterGroup`
 
 A `ClusterGroup` is a group of clusters.
 
@@ -212,11 +82,11 @@ clusters:
   - name: cluster-2
 ```
 
-| Field      | Type  | Description                          |
-| ---------- | ----- | ------------------------------------ |
+| Field      | Type  | Description                   |
+| ---------- | ----- | ----------------------------- |
 | `clusters` | array | List of [Cluster](#cluster)s. |
 
-#### `Cluster`
+## `Cluster`
 
 A `Cluster` is a single cluster.
 
@@ -225,18 +95,22 @@ name: cluster-1
 match: cluster-1*
 ```
 
-| Field   | Type                                                                                                     | Description        |
-| ------- | -------------------------------------------------------------------------------------------------------- | ------------------ |
-| `name`  | string                                                                                                   | Cluster name (ID). |
-| `match` | [fnmatch](https://man7.org/linux/man-pages/man3/fnmatch.3.html) expression to match cluster names (IDs). |                    |
+| Field   | Type   | Description                                                                                             |
+| ------- | ------ | ------------------------------------------------------------------------------------------------------- |
+| `name`  | string | Cluster name (ID).                                                                                      |
+| `match` | string | Glob pattern to match cluster names (IDs).                                                              |
 
-**Note:** `name` and `match` are mutually exclusive. Only one of them can be set to a non-zero value.
+<Note>
+`name` and `match` are mutually exclusive. Set only one of them for each cluster.
+</Note>
 
-#### `Rule`
+`match: "*"` matches all clusters. A rule whose cluster group uses `match: "*"` also applies its role to lists of resources across all clusters. Other patterns, such as `prod-*`, do not, even when they match every cluster.
 
-A `Rule` is a set of users, clusters and Kubernetes impersonation groups.
+## `Rule`
 
-The reserved prefix `group/` is used to reference a user group in `users` or a cluster group in `clusters`.
+A `Rule` is a set of users, clusters, an Omni role, and Kubernetes impersonation groups.
+
+The reserved prefix `group/` references a user group in `users` or a cluster group in `clusters`. Entries without the prefix must match a user identity or cluster name exactly.
 
 ```yaml
 users:
@@ -249,28 +123,31 @@ role: Operator
 kubernetes:
   impersonate:
     groups:
-      - system:masters
       - another-impersonation-group
 ```
 
-| Field                           | Type  | Description                                                                   |
-| ------------------------------- | ----- | ----------------------------------------------------------------------------- |
-| `users`                         | array | List of [Users](#user) or [UserGroups](#usergroup).             |
-| `clusters`                      | array | List of [Clusters](#cluster) or [ClusterGroups](#clustergroup). |
-| `role`                          | enum  | [Role](#role) to grant to the user.                                    |
-| `kubernetes.impersonate.groups` | array | List of `string`s representing Kubernetes impersonation groups.               |
+| Field                           | Type  | Description                                                              |
+| ------------------------------- | ----- | ------------------------------------------------------------------------ |
+| `users`                         | array | User identities, or `group/` references to [UserGroups](#usergroup).     |
+| `clusters`                      | array | Cluster names, or `group/` references to [ClusterGroups](#clustergroup). |
+| `role`                          | enum  | [Role](#role) to grant to the user on the matching clusters. Optional.   |
+| `kubernetes.impersonate.groups` | array | Kubernetes groups to assign to the user on the matching clusters.        |
 
-#### `Role`
+## `Role`
 
-A `Role` is the role to grant to the user.
+A `Role` is the Omni role to grant to the user on the matching clusters.
 
 Possible values: `None`, `Reader`, `Operator`, `Admin`. The `Auditor` role cannot be assigned by an ACL, because audit log access is account-wide rather than cluster-scoped.
 
-#### `Test`
+A rule that grants `Operator` or `Admin` also assigns the Kubernetes group `system:masters`. A rule without a `role` grants no role, but still assigns its Kubernetes groups.
+
+The user's effective role on a cluster is the higher of their Omni role and the role granted by the ACL. Downloading a `kubeconfig` requires at least `Reader` on the cluster.
+
+## `Test`
 
 A `Test` is a single test case.
 
-Test cases are run when the resource is created or updated, and if any of them fail, the operation is rejected.
+Omni runs the tests when the resource is created or updated, and rejects the change if any test fails.
 
 ```yaml
 name: support engineer has full access to staging cluster
@@ -280,20 +157,16 @@ cluster:
   name: staging-cluster-1
 expected:
   role: Operator
-  kubernetes:
-    impersonate:
-      groups:
-        - system:masters
 ```
 
-| Field      | Type                               | Description                       |
-| ---------- | ---------------------------------- | --------------------------------- |
-| `name`     | string                             | Human-friendly test case name.    |
+| Field      | Type                        | Description                       |
+| ---------- | --------------------------- | --------------------------------- |
+| `name`     | string                      | Name of the test case. Required.  |
 | `user`     | [TestUser](#testuser)       | User identity to use in the test. |
 | `cluster`  | [TestCluster](#testcluster) | Cluster to use in the test.       |
 | `expected` | [Expected](#expected)       | Expected result.                  |
 
-#### `TestUser`
+## `TestUser`
 
 A `TestUser` is the user identity to use in a test case.
 
@@ -303,12 +176,12 @@ labels:
   level: "1"
 ```
 
-| Field    | Type               | Description                         |
-| -------- | ------------------ | ----------------------------------- |
-| `name`   | string             | User identity to use in the test.   |
-| `labels` | map\[string]string | Map of label names to label values. |
+| Field    | Type               | Description                                 |
+| -------- | ------------------ | ------------------------------------------- |
+| `name`   | string             | User identity to use in the test. Required. |
+| `labels` | map\[string]string | Map of label names to label values.         |
 
-#### `TestCluster`
+## `TestCluster`
 
 A `TestCluster` is the cluster to use in a test case.
 
@@ -316,24 +189,23 @@ A `TestCluster` is the cluster to use in a test case.
 name: cluster-1
 ```
 
-| Field  | Type   | Description        |
-| ------ | ------ | ------------------ |
-| `name` | string | Cluster name (ID). |
+| Field  | Type   | Description                  |
+| ------ | ------ | ---------------------------- |
+| `name` | string | Cluster name (ID). Required. |
 
-#### `Expected`
+## `Expected`
 
-An `Expected` is the expected results of a test case.
+An `Expected` is the expected result of a test case.
 
 ```yaml
 role: Operator
 kubernetes:
   impersonate:
     groups:
-      - system:masters
       - another-impersonation-group
 ```
 
-| Field                           | Type  | Description                                                     |
-| ------------------------------- | ----- | --------------------------------------------------------------- |
-| `role`                          | enum  | [Role](#role) to grant to the user.                      |
-| `kubernetes.impersonate.groups` | array | List of `string`s representing Kubernetes impersonation groups. |
+| Field                           | Type  | Description                                                                                                                                          |
+| ------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `role`                          | enum  | Expected [Role](#role). If omitted, the test does not check the role.                                                                                |
+| `kubernetes.impersonate.groups` | array | Expected Kubernetes impersonation groups. The test compares only the groups listed in the matching rules, and omitting this field expects no groups. |
