@@ -3,9 +3,9 @@
   "theme": "aspen",
   "name": "Sidero Documentation",
   "colors": {
-    "primary": "#B93B46",
+    "primary": "#D41A3B",
     "light": "#E48E96",
-    "dark": "#CF4250"
+    "dark": "#E12D46"
   },
   "favicon": "/images/favicon.svg",
   "banner": {

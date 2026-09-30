@@ -11,9 +11,9 @@ colors:
   # emphasis text in light mode, light is emphasis text in dark mode, dark is
   # buttons and hover states in both modes. Values come from the design-system
   # red ramp (accent.text light, accent.text dark, accent.fill).
-  primary: "#B93B46"
+  primary: "#D41A3B"
   light: "#E48E96"
-  dark: "#CF4250"
+  dark: "#E12D46"
 
 errors:
   404:
