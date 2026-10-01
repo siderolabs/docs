@@ -151,7 +151,7 @@ productChromeCss: "public/product-chrome.css"
 homepage:
   path: "public/index.mdx"
   title: "Talos Documentation"
-  lede: "Kubernetes, virtual machines, and containers, on an immutable operating system you manage through an API."
+  lede: "Kubernetes, virtual machines, containers, and private AI, on an immutable operating system you manage through an API."
 
   families:
     - family: "kubernetes"
@@ -166,12 +166,10 @@ homepage:
           tag: "Open source"
           soon: true
           description: "Run virtual machines on a Talos host through native Talos APIs and talosctl."
-        # TALOS DIRECTOR -- announced at TalosCon October 14 (or earlier by
-        # press release). Uncomment on the announcement.
-        # - title: "Talos Director"
-        #   tag: "Commercial"
-        #   soon: true
-        #   description: "Manage hosts, clusters, VMs, storage and networking across a virtualization estate."
+        - title: "Talos Director"
+          tag: "Commercial"
+          soon: true
+          description: "Manage virtual machines, Kubernetes clusters, storage, and networking across the data center."
         # XENIA -- unannounced. Uncomment when it is. Its navbar button
         # also goes on the Talos Hypervisor product, which has none until then.
         # - title: "Talos Xenia"
@@ -188,20 +186,18 @@ homepage:
           soon: true
           description: "Run OCI containers directly on Talos at the edge, with no Kubernetes control plane to operate."
 
-    # AI -- unannounced. Uncomment when Athena is announced, and add
-    # "private AI" to the lede above.
-    # - family: "ai"
-    #   title: "AI"
-    #   description: "Run private AI workloads on infrastructure you control."
-    #   cards:
-    #     - title: "Talos Linux for AI"
-    #       tag: "Open source"
-    #       soon: true
-    #       description: "Declare an AI stack in machine config and run it on your own hardware."
-    #     - title: "Talos Athena"
-    #       tag: "Commercial"
-    #       soon: true
-    #       description: "Deploy and operate private AI: models, vector storage, and the serving stack."
+    - family: "ai"
+      title: "AI"
+      description: "Run private AI workloads on infrastructure you control."
+      cards:
+        - title: "Talos Linux for AI"
+          tag: "Open source"
+          soon: true
+          description: "An immutable operating system for AI workloads, with GPU support, model serving, fine-tuning, and RAG."
+        - title: "Talos Cupar"
+          tag: "Commercial"
+          soon: true
+          description: "Deploy and manage AI models, GPU capacity, and private data on infrastructure you own."
 
     - family: "tools"
       title: "Tools"
