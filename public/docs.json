@@ -67,6 +67,10 @@
     },
     "posthog": {
       "apiKey": "phc_D44Y76lThvZBf8s7lpVpPjJm9fNLvCRMluHXtF7bQXT"
+    },
+    "cookies": {
+      "key": "sidero-analytics-consent",
+      "value": "granted"
     }
   },
   "redirects": [

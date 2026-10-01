@@ -120,6 +120,14 @@ type Footer struct {
 type Integrations struct {
 	GA4     *GA4Integration     `yaml:"ga4,omitempty" json:"ga4,omitempty"`
 	Posthog *PosthogIntegration `yaml:"posthog,omitempty" json:"posthog,omitempty"`
+	Cookies *CookiesIntegration `yaml:"cookies,omitempty" json:"cookies,omitempty"`
+}
+
+// CookiesIntegration makes Mintlify enable analytics only when localStorage
+// holds Value under Key, i.e. after the visitor has consented.
+type CookiesIntegration struct {
+	Key   string `yaml:"key" json:"key"`
+	Value string `yaml:"value" json:"value"`
 }
 
 type GA4Integration struct {
@@ -1395,6 +1403,7 @@ func processIntegrations(integrations *Integrations) *Integrations {
 	processed := &Integrations{
 		GA4:     integrations.GA4,
 		Posthog: integrations.Posthog,
+		Cookies: integrations.Cookies,
 	}
 
 	return processed
