@@ -2867,6 +2867,7 @@
             "pages": [
               "director/compute/clusters",
               "director/compute/hosts",
+              "director/compute/virtual-machines",
               "director/compute/storage-pools"
             ]
           },
@@ -2874,6 +2875,18 @@
             "group": "Kubernetes",
             "pages": [
               "director/kubernetes/kubernetes-clusters"
+            ]
+          },
+          {
+            "group": "Networking",
+            "pages": [
+              "director/networking/virtual-networks"
+            ]
+          },
+          {
+            "group": "Security",
+            "pages": [
+              "director/security/security"
             ]
           }
         ]

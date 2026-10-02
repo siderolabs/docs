@@ -20,9 +20,20 @@ navigation:
           pages:
             - "clusters.mdx"
             - "hosts.mdx"
+            - "virtual-machines.mdx"
             - "storage-pools.mdx"
 
         - group: "Kubernetes"
           folder: "director/kubernetes"
           pages:
             - "kubernetes-clusters.mdx"
+
+        - group: "Networking"
+          folder: "director/networking"
+          pages:
+            - "virtual-networks.mdx"
+
+        - group: "Security"
+          folder: "director/security"
+          pages:
+            - "security.mdx"
