@@ -13,7 +13,7 @@ Storage Pools is part of the wider **Storage** area under **Compute**, alongside
 
 ## The Storage Pools view
 
-Navigate to **Compute** > **Storage Pools** (`/storage-pools`) to see every pool across all clusters in one table.
+Navigate to **Compute** > **Storage** > **Storage Pools** (`/storage-pools`) to see every pool across all clusters in one table.
 
 ### Columns
 
@@ -105,5 +105,5 @@ A file-level view of the pool's contents. Navigate folders, search files, and se
 - **Upload** — upload a file, for example an ISO image or a disk image being imported.
 
 <Warning>
-Pools contain system folders used by the platform itself, such as `.ha`, `.ha-heartbeat`, `.ha-leader`, and `.snapshot`. The `.ha*` folders back the cluster's High Availability heartbeat and coordination. Do not modify or delete them — treat anything you did not create through a VM or upload as platform-managed.
+Pools contain system folders used by the platform itself, such as `.ha`, `.ha-heartbeat`, and `.ha-leader`, and may contain folders created by the storage array, such as `.snapshot`. The `.ha*` folders back the cluster's High Availability heartbeat and coordination. Do not modify or delete them — treat anything you did not create through a VM or upload as platform-managed.
 </Warning>

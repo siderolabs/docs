@@ -127,9 +127,17 @@ The host's network configuration. Select **Columns** to show, reorder, or resize
 
 The folders and files stored on the host. Use the **Actions** column to rename, copy, move, or delete them.
 
+<Warning>
+Files here can include VM disk images and platform-managed data. Moving or deleting a file that a VM depends on breaks that VM. Treat anything you did not create yourself as platform-managed.
+</Warning>
+
 ### Updates
 
 The history of system updates run on the host. Select **Run Update** to update this host.
+
+<Warning>
+Updating a host reboots it, which stops every VM running on it. Put the host into maintenance mode and migrate its VMs first, and confirm the remaining hosts have capacity to take them.
+</Warning>
 
 To upgrade every host in a cluster without taking workloads down, use a rolling upgrade from the cluster's **Updates** tab instead. See [Clusters](/director/compute/clusters#updates).
 
