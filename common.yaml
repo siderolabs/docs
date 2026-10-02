@@ -166,10 +166,6 @@ homepage:
           tag: "Open source"
           soon: true
           description: "Run virtual machines on a Talos host through native Talos APIs and talosctl."
-        - title: "Talos Director"
-          tag: "Commercial"
-          soon: true
-          description: "Manage virtual machines, Kubernetes clusters, storage, and networking across the data center."
         # XENIA -- unannounced. Uncomment when it is. Its navbar button
         # also goes on the Talos Hypervisor product, which has none until then.
         # - title: "Talos Xenia"
