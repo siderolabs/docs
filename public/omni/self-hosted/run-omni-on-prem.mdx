@@ -44,10 +44,18 @@ newgrp docker
 CFSSL_VERSION=$(curl -sI https://github.com/cloudflare/cfssl/releases/latest \
   | grep -i location | awk -F '/' '{print $NF}' | tr -d '\r')
 
+if [ "$(uname -m)" = "x86_64" ]; then
+  CFSSL_ARCH=amd64
+elif [ "$(uname -m)" = "aarch64" ]; then
+  CFSSL_ARCH=arm64
+else
+  echo "Unknown system arch. Default to amd64"
+fi
+
 curl -L -o cfssl \
-  https://github.com/cloudflare/cfssl/releases/download/${CFSSL_VERSION}/cfssl_${CFSSL_VERSION#v}_linux_amd64
+  https://github.com/cloudflare/cfssl/releases/download/${CFSSL_VERSION}/cfssl_${CFSSL_VERSION#v}_linux_${CFSSL_ARCH-amd64}
 curl -L -o cfssljson \
-  https://github.com/cloudflare/cfssl/releases/download/${CFSSL_VERSION}/cfssljson_${CFSSL_VERSION#v}_linux_amd64
+  https://github.com/cloudflare/cfssl/releases/download/${CFSSL_VERSION}/cfssljson_${CFSSL_VERSION#v}_linux_${CFSSL_ARCH-amd64}
 
 chmod +x cfssl cfssljson
 sudo mv cfssl cfssljson /usr/local/bin/
