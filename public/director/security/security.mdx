@@ -3,6 +3,10 @@ title: Security
 description: Micro-segment VM traffic with security groups and firewall policies, test flows with the policy simulator, and review security posture, findings, and compliance across Kubernetes clusters.
 ---
 
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
+
+<DirectorLimitedAvailability />
+
 Talos Director handles security at two levels. For virtual machines, a distributed firewall enforces policy on every VM's network interface, wherever the VM runs. For Kubernetes clusters, the **Security** section brings runtime detection, admission policy, and compliance scanning from every cluster into one place.
 
 ## VM micro-segmentation

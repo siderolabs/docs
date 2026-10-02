@@ -3,6 +3,10 @@ title: Hosts
 description: Add hypervisor hosts, view their health and capacity in the Hosts view, inspect a host's hardware, workloads, services, and logs from the host detail screen, and reboot, power off, or put hosts into maintenance mode.
 ---
 
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
+
+<DirectorLimitedAvailability />
+
 A host is the physical server that runs virtual machines in Talos Director. It supplies the CPU, memory, storage, and network interfaces, and runs Talos Linux with the KVM hypervisor. Hosts are the execution layer underneath every VM and Kubernetes node, so the **Hosts** pages are where you confirm that layer is healthy before a problem surfaces as a VM or Kubernetes symptom.
 
 Hosts usually belong to a [cluster](/director/compute/clusters), which sets the boundary for VM placement, load balancing, and High Availability (HA).

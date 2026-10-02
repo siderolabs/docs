@@ -3,6 +3,10 @@ title: Virtual Networks
 description: Create and manage the VLAN-backed virtual networks that VM network interfaces attach to, and import networks from Cisco ACI.
 ---
 
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
+
+<DirectorLimitedAvailability />
+
 A virtual network in Talos Director is a VLAN carried on a bridge on every host. VM network interfaces attach to a virtual network, and because the network exists on all hosts, a VM keeps its connectivity when it migrates from one host to another, including between clusters.
 
 The **Network** section of the console also holds Talos Director's firewalling (security groups, policies, and the policy simulator). Those are covered in [Security](/director/security/security).

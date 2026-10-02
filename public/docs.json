@@ -2868,6 +2868,7 @@
               "director/compute/clusters",
               "director/compute/hosts",
               "director/compute/virtual-machines",
+              "director/compute/migrate-from-vmware",
               "director/compute/storage-pools"
             ]
           },

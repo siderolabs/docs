@@ -3,6 +3,10 @@ title: Clusters
 description: View compute cluster health and capacity in the All Clusters view, and manage hosts, virtual machines, storage, scheduling rules, and upgrades from the cluster detail screen.
 ---
 
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
+
+<DirectorLimitedAvailability />
+
 Clusters in Talos Director are logical groupings of KVM hosts. Each host remains a standalone system with access to shared storage; Talos Director uses the cluster boundary to make virtual machine placement decisions, balance load with the Resource Scheduler (RS), and restart workloads on surviving hosts through High Availability (HA).
 
 Use the **Clusters** page to answer fleet-level questions — is every cluster healthy, and how much capacity is committed? — before drilling into an individual cluster's hosts, VMs, storage, or upgrade state.

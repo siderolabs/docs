@@ -3,6 +3,10 @@ title: Virtual Machines
 description: Find and filter VMs in the Virtual Machines view, create a VM, and operate it from the VM detail screen, including power, console, disks, networking, firewall activity, snapshots, backups, and migration.
 ---
 
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
+
+<DirectorLimitedAvailability />
+
 A virtual machine (VM) in Talos Director runs on a [host](/director/compute/hosts), usually inside a [cluster](/director/compute/clusters) that decides where it is placed and moves it when a host fails or is put into maintenance. The **Virtual Machines** pages are where you create VMs, find them, and operate them day to day.
 
 ## The Virtual Machines view
@@ -146,4 +150,4 @@ Guest customization applied to the VM. Select **Apply customization…** to set 
 
 ## Import from VMware
 
-**Compute** > **Virtual Machines** > **Import** brings existing VMs over from VMware vCenter and converts them to run on Talos Director.
+**Compute** > **Virtual Machines** > **Import** brings existing VMs over from VMware vCenter and converts them to run on Talos Director. See [Migrate from VMware](/director/compute/migrate-from-vmware).
