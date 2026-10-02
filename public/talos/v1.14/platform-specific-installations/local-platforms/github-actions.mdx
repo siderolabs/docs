@@ -1,0 +1,132 @@
+---
+title: GitHub Actions
+description: "Creating an ephemeral Talos Kubernetes cluster on a GitHub Actions runner."
+canonical: https://docs.siderolabs.com/talos/v1.14/platform-specific-installations/local-platforms/github-actions
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+import { release_v1_14 } from '/snippets/custom-variables.mdx';
+
+
+This guide creates a short-lived Talos Kubernetes cluster on a GitHub Actions runner, for example to run end-to-end tests against real Talos nodes in CI.
+
+It uses [talosctl-cluster-action](https://github.com/home-operations/talosctl-cluster-action), a GitHub Action that wraps `talosctl cluster create`.
+The action creates the cluster from a declarative configuration file, exports `KUBECONFIG` and `TALOSCONFIG` to later steps in the job, and destroys the cluster when the job ends.
+
+<Note>
+talosctl-cluster-action is a community project maintained by home-operations, not by Sidero Labs.
+Report problems with the action in its [repository](https://github.com/home-operations/talosctl-cluster-action/issues).
+</Note>
+
+## Requirements
+
+The runner and the cluster must meet the following requirements:
+
+- An x86_64 Linux runner. GitHub-hosted `ubuntu-24.04` runners meet the requirements of both providers described below.
+- `talosctl` v1.14 or later on the runner's `PATH`.
+- Talos v1.14 or later on the cluster nodes.
+
+The action rejects earlier versions of both `talosctl` and Talos.
+
+## Create a cluster
+
+To create a cluster, choose a provider, then add a cluster configuration file and a workflow to the repository.
+
+The action supports two providers, which map to `talosctl cluster create docker` and the QEMU provisioner.
+The provider is set with `spec.provider` in the cluster configuration file, and the providers differ as follows:
+
+|                              | `docker`                                             | `qemu` (default)                                   |
+| ---------------------------- | ---------------------------------------------------- | -------------------------------------------------- |
+| Nodes run as                 | Containers on the runner's kernel                    | Virtual machines, each with its own kernel         |
+| Control plane nodes          | Exactly one                                          | Any number                                         |
+| Disks and `talosctl upgrade` | Not supported                                        | Supported                                          |
+| Runner needs                 | A Docker daemon and the `br_netfilter` kernel module | `/dev/kvm`, passwordless `sudo`, and QEMU packages |
+| Boot time                    | Seconds                                              | Minutes                                            |
+
+Use `docker` when a test only needs a Kubernetes API.
+Use `qemu` when a test needs real kernels, disks, or Talos upgrades.
+
+<Tabs>
+<Tab title="Docker">
+
+The Docker provider runs each node as a container on the runner, and the cluster boots in seconds.
+
+1. Save the cluster configuration to `.talos-cluster.yaml` in the repository:
+
+    <CodeBlock lang="yaml">{`apiVersion: v1alpha1\nkind: TalosCluster\nmetadata:\n  name: e2e\nspec:\n  provider: docker\n  workers:\n    count: 1\n  docker:\n    image: ghcr.io/siderolabs/talos:${release_v1_14}`}</CodeBlock>
+
+    The Docker provider always creates exactly one control plane node, so the configuration sets only the number of workers.
+
+2. Add a workflow, for example `.github/workflows/e2e.yaml`:
+
+    <CodeBlock lang="yaml">{`name: e2e\n\non:\n  pull_request:\n\njobs:\n  e2e:\n    runs-on: ubuntu-24.04\n    steps:\n      - uses: actions/checkout@v7\n\n      - name: Install talosctl\n        run: |\n          curl -sSfL -o "$RUNNER_TEMP/talosctl" https://github.com/siderolabs/talos/releases/download/${release_v1_14}/talosctl-linux-amd64\n          sudo install -m 0755 "$RUNNER_TEMP/talosctl" /usr/local/bin/talosctl\n\n      # The nodes are containers on the runner's kernel, and the pod network\n      # requires the br_netfilter module, which runners do not load by default.\n      - name: Load br_netfilter\n        run: sudo modprobe br_netfilter\n\n      - name: Create Talos cluster\n        uses: home-operations/talosctl-cluster-action@v0.2.2\n        with:\n          config: .talos-cluster.yaml\n\n      - name: Check the cluster\n        run: kubectl get nodes`}</CodeBlock>
+
+    Without the `br_netfilter` module, the pod network never becomes ready and cluster creation times out.
+
+3. Commit both files and open a pull request.
+
+</Tab>
+<Tab title="QEMU">
+
+The QEMU provider runs each node as a virtual machine with its own kernel, and supports disks and Talos upgrades.
+
+1. Save the cluster configuration to `.talos-cluster.yaml` in the repository:
+
+    <CodeBlock lang="yaml">{`apiVersion: v1alpha1\nkind: TalosCluster\nmetadata:\n  name: e2e\nspec:\n  controlplanes:\n    count: 1\n  workers:\n    count: 1\n  qemu:\n    talos-version: ${release_v1_14}`}</CodeBlock>
+
+2. Add a workflow, for example `.github/workflows/e2e.yaml`:
+
+    <CodeBlock lang="yaml">{`name: e2e\n\non:\n  pull_request:\n\njobs:\n  e2e:\n    runs-on: ubuntu-24.04\n    steps:\n      - uses: actions/checkout@v7\n\n      - name: Install talosctl\n        run: |\n          curl -sSfL -o "$RUNNER_TEMP/talosctl" https://github.com/siderolabs/talos/releases/download/${release_v1_14}/talosctl-linux-amd64\n          sudo install -m 0755 "$RUNNER_TEMP/talosctl" /usr/local/bin/talosctl\n\n      - name: Install QEMU\n        run: |\n          sudo apt-get update\n          sudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils ovmf\n\n      # Swap for the runner, not the cluster. When memory runs short, for example\n      # during an upgrade, the runner swaps out a node's QEMU process instead of\n      # killing it.\n      - name: Enable swap\n        run: |\n          sudo fallocate -l 8G /mnt/e2e-swapfile\n          sudo chmod 600 /mnt/e2e-swapfile\n          sudo mkswap /mnt/e2e-swapfile\n          sudo swapon /mnt/e2e-swapfile\n\n      - name: Create Talos cluster\n        uses: home-operations/talosctl-cluster-action@v0.2.2\n        with:\n          config: .talos-cluster.yaml\n\n      - name: Check the cluster\n        run: kubectl get nodes`}</CodeBlock>
+
+    The QEMU provisioner must run as root, so the action runs `talosctl cluster create` with `sudo`.
+    Each QEMU node uses 2 GiB of memory by default. Runners for public repositories have 16 GB, which fits about three nodes. Runners for private repositories have 8 GB, which fits two.
+
+3. Commit both files and open a pull request.
+
+</Tab>
+</Tabs>
+
+Both workflows create the cluster on every pull request and destroy it when the job ends, including when a step fails.
+
+## Use the cluster in later steps
+
+After the action runs, `kubectl` and `talosctl` in later steps use the new cluster, because the action exports `KUBECONFIG` and `TALOSCONFIG`.
+
+The action also sets outputs, such as the address of the first control plane node.
+To use an output, give the action step an `id`:
+
+```yaml
+      - name: Create Talos cluster
+        id: cluster
+        uses: home-operations/talosctl-cluster-action@v0.2.2
+        with:
+          config: .talos-cluster.yaml
+
+      - name: Check Talos
+        run: talosctl -n "$ENDPOINT" version
+        env:
+          ENDPOINT: ${{ steps.cluster.outputs.endpoint }}
+```
+
+The [action's README](https://github.com/home-operations/talosctl-cluster-action#outputs) lists every output, including the control plane and worker addresses.
+
+## Default settings for short-lived clusters
+
+By default, the action applies an `ephemeral` profile that tunes the cluster for a single CI run.
+For example, it disables etcd `fsync`, image garbage collection, pod eviction, and the public discovery service.
+These settings are not suitable for a long-lived cluster.
+
+To create the cluster without these settings, set `spec.profile: none` in the cluster configuration file.
+
+## More options
+
+The [talosctl-cluster-action README](https://github.com/home-operations/talosctl-cluster-action#readme) describes the rest of the configuration, including:
+
+- Every field of the cluster configuration file and the `talosctl` flag it maps to.
+- Image Factory schematics, extra disks, and configuration patches.
+- Caching boot assets between runs with the `cache` input.
+- Running several cluster shapes in a job matrix.
+- Booting nodes in maintenance mode without applying a machine configuration.
