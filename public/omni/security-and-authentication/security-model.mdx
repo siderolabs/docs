@@ -53,19 +53,19 @@ For details on supported authentication methods and how authentication works, se
 
 ## Access control lists (ACLs)
 
-While account roles apply globally, ACLs provide scoped, cluster-specific access control. They allow administrators to grant or restrict permissions for individual clusters without changing a user’s account role.
+While account roles apply globally, ACLs provide scoped, cluster-specific access control. They allow administrators to grant additional permissions on individual clusters without changing a user’s account role. ACLs grant access but do not revoke it: on each cluster, a user has the higher of their account role and the role granted by the ACL.
 
-ACLs are commonly used to grant elevated access to a staging or development cluster while keeping production access restricted. They can also be used to give users with the None role meaningful access to specific clusters.
+ACLs are commonly used to give users with a restricted account role, such as `Reader` or `None`, elevated access to a staging or development cluster, while their access to production remains limited by their account role. Users with the `None` account role cannot use the Omni web interface, even when an ACL grants them access; they access their clusters through `omnictl`, `kubectl`, and `talosctl`.
 
-Only users with the `Admin` role can create or modify ACLs.
+Only users with the `Admin` role can view, create, or modify ACLs.
 
 Configuration details and examples are covered in the [Manage Access Policies (ACLs) documentation](../security-and-authentication/how-to-manage-acls).
 
-### Default behavior without ACLs
+### Default Kubernetes access
 
-When ACLs are not configured, users with write permissions in Omni are granted Kubernetes admin-level access by default. This behavior is intentional and keeps the default experience simple, but it may not be appropriate for shared or multi-tenant environments.
+Users with the `Operator` or `Admin` account role are granted Kubernetes admin-level access to every cluster, whether or not ACLs are configured. This behavior is intentional and keeps the default experience simple, but it may not be appropriate for shared or multi-tenant environments.
 
-In those cases, ACLs combined with Kubernetes RBAC should be used to enforce tighter access boundaries.
+In those cases, assign users the `Reader` or `None` account role, and use ACLs combined with Kubernetes RBAC to grant access to specific clusters.
 
 ## Account roles
 
@@ -77,7 +77,7 @@ Omni provides the following account roles:
 
 The `None` role is the most restrictive. It is commonly used as a safe default, especially in SAML-based setups.
 
-Users with this role have no access to Omni-managed resources and can only see limited public information, such as the Omni version, account name, and authentication requirements.
+Users with this role have no access to Omni-managed resources unless an ACL grants them access to a cluster, and can only see limited public information, such as the Omni version, account name, and authentication requirements.
 
 ### Reader
 
@@ -109,9 +109,9 @@ Omni roles and ACLs control access to Omni-managed resources. Kubernetes RBAC co
 
 ACLs act as the bridge between these two systems. When a user accesses a cluster through Omni, Kubernetes group memberships defined in the ACL are applied through impersonation. Kubernetes RBAC then evaluates those group memberships to determine in-cluster permissions.
 
-Users who have the Omni role `Operator` or higher are automatically assigned the Kubernetes `system:masters` group in addition to any groups specified in ACLs. This effectively grants cluster-admin access unless additional restrictions are applied.
+Users who have the Omni role `Operator` or higher are automatically assigned the Kubernetes `system:masters` group in addition to any groups specified in ACLs. This grants cluster-admin access, and ACLs cannot remove it.
 
-Because of this behavior, ACLs should be used carefully in environments where strict least-privilege access is required.
+In environments that require strict least-privilege access, assign users the `Reader` or `None` account role, and use ACLs and Kubernetes RBAC to grant only the required permissions.
 
 ## Service accounts
 

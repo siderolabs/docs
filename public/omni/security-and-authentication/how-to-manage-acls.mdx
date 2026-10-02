@@ -3,21 +3,40 @@ title: Manage Access Policies (ACLs)
 description: Define and apply fine-grained cluster access rules using Omni Access Policies and Kubernetes RBAC.
 ---
 
-By default, any user with write permissions in Omni gets admin-level access to Kubernetes across all clusters.
+By default, any user with write permissions in Omni (the `Operator` or `Admin` role) gets admin-level access to Kubernetes across all clusters.
 
-[Access Policies (ACLs)](../reference/acls) let you override this behavior by defining rules that control what specific users can do on specific clusters. For example, you can give a user full access to a staging cluster while limiting them to read-only access in production.
-
-Only users with the Omni role `Admin` can create or modify ACLs.
+Access Policies (ACLs) let you grant users additional access on specific clusters, beyond their Omni role. For example, a user with the Omni role `Reader` can be given full access to a staging cluster while keeping read-only access in production.
 
 <Warning>
-Users with the Omni role `Operator` or above are automatically assigned the Kubernetes group `system:masters`, which grants cluster-admin access, in addition to any groups specified in an ACL. If you need strict least-privilege access inside the cluster, keep the user's Omni role at `Reader` or `None` and use ACL rules with Kubernetes group impersonation to grant specific permissions.
+ACLs grant access but do not revoke it. On each cluster, the user's effective role is the higher of their Omni role and the role granted by the ACL.
+
+To limit a user's access, assign the Omni role `Reader` or `None`, and use ACLs to grant access to specific clusters.
+
+Users with the Omni role `None` cannot use the Omni web interface, even when an ACL grants them access to a cluster. These users access their clusters through `omnictl`, `kubectl`, and `talosctl`. The `omniconfig` file and the `omnictl` binary can be downloaded from the Omni home page.
 </Warning>
 
-For the full `AccessPolicy` schema, including all user matching options, cluster matching options, available roles, and test structure, see the [Access Policies reference](../reference/acls).
+Only users with the Omni role `Admin` can view, create, or modify ACLs.
+
+## How Omni evaluates an access policy
+
+All ACL rules are stored in a single `AccessPolicy` resource with the ID `access-policy`. Applying a policy replaces the existing policy, so the applied file must include every rule.
+
+When a user accesses a cluster, Omni evaluates every rule that matches both the user and the cluster, and combines the results:
+
+- **Role**: The ACL grants the highest role among the matching rules. If no rule matches, the user's Omni role applies. The effective role applies to the cluster's resources in Omni, to `kubeconfig` and `talosconfig` downloads, and to Talos API access through Omni.
+- **Lists across all clusters**: For lists of resources across all clusters, such as `omnictl get clusters`, the role granted by the ACL applies when the rule's cluster group uses `match: "*"`. In other cases, the user's Omni role applies to these lists.
+- **Kubernetes groups**: The user is assigned every group listed in `kubernetes.impersonate.groups` across the matching rules.
+- **Cluster-admin access**: If the ACL grants the `Operator` or `Admin` role, Omni also assigns the `system:masters` group, which grants cluster-admin access. This group does not need to be listed in the rule.
+
+Kubernetes groups other than `system:masters` have no permissions until they are bound to a `Role` or `ClusterRole` through Kubernetes RBAC. If a user can connect to a cluster but receives `Forbidden` errors from `kubectl`, verify that an RBAC binding exists for the user's groups. See [Configure Kubernetes RBAC](#configure-kubernetes-rbac).
+
+For a description of every field in the `AccessPolicy` resource, see the [Access Policies reference](../reference/acls).
 
 ## Create an access policy
 
-The example below gives `support@example.com` full access to the `staging` cluster and read-only access to the `production` cluster.
+The following policy grants the user `support@example.com` the `Operator` role on the `staging` cluster, and read-only access to the `my-app` namespace on the `production` cluster. This example assumes that the user's Omni role is `Reader` or `None`.
+
+Save the policy to a file named `acl.yaml`:
 
 ```yaml
 metadata:
@@ -31,10 +50,6 @@ spec:
       clusters:
         - staging
       role: Operator
-      kubernetes:
-        impersonate:
-          groups:
-            - system:masters
     - users:
         - support@example.com
       clusters:
@@ -52,10 +67,6 @@ spec:
         name: staging
       expected:
         role: Operator
-        kubernetes:
-          impersonate:
-            groups:
-              - system:masters
     - name: support engineer has read-only access to my-app namespace in production cluster
       user:
         name: support@example.com
@@ -69,19 +80,193 @@ spec:
               - my-app-read-only
 ```
 
-Apply the policy as an Omni admin:
+In this policy:
+
+- The first rule grants the `Operator` role on `staging`. Omni also assigns the `system:masters` group, which grants cluster-admin access to that cluster.
+- The second rule grants the `Reader` role on `production` and assigns the `my-app-read-only` group. The permissions for this group are defined in [Configure Kubernetes RBAC](#configure-kubernetes-rbac).
+- The `tests` section defines the expected result for each user and cluster pair.
+
+Apply the policy as a user with the Omni role `Admin`:
 
 ```bash
 omnictl apply -f acl.yaml
 ```
 
-If any test assertion fails, `omnictl` rejects the apply and reports which test case did not match. Fix the rule and re-apply.
+Omni runs the tests each time the policy is created or updated. If a test fails, Omni rejects the policy and returns an error that identifies the failing test. Correct the rule or the test, then apply the policy again.
+
+<Note>
+Tests compare only the groups listed in the rules. The `system:masters` group that Omni assigns for the `Operator` and `Admin` roles is not included in the comparison. Do not list `system:masters` in a test's expected groups unless a matching rule lists it.
+</Note>
+
+## Group users and clusters
+
+User groups and cluster groups allow a single rule to apply to multiple users or clusters. User groups are defined under `usergroups`, and cluster groups are defined under `clustergroups`. A rule references a group by its name with the `group/` prefix, for example `group/level-1`. Entries in a rule without the `group/` prefix must match a user identity or cluster name exactly, so patterns and label selectors are only available through groups.
+
+Users in a user group can be matched in one of three ways:
+
+- **`name`**: Matches an exact user identity, such as `admin1@example.com`.
+- **`match`**: Matches user identities against a glob pattern, such as `level-1*`.
+- **`labelselectors`**: Matches users by the labels on their identity. A user matches only if all selectors in the list match. When SAML is enabled, Omni adds labels to each identity based on the user's SAML attributes, for example `saml.omni.sidero.dev/role/<role-name>`. See [Configure SAML and ACLs](../security-and-authentication/using-saml-with-omni/configure-saml-and-acls).
+
+Clusters in a cluster group can be matched by `name` or `match`. Label selectors are not supported for clusters.
+
+The following policy defines three user groups, one for each level of engineer, and three cluster groups, one for each environment:
+
+```yaml
+metadata:
+  namespace: default
+  type: AccessPolicies.omni.sidero.dev
+  id: access-policy
+spec:
+  usergroups:
+    # match level-1 users by glob pattern
+    level-1:
+      users:
+        - match: level-1*
+    # match level-2 users by label selectors
+    level-2:
+      users:
+        - labelselectors:
+            - level=2
+    # match level-3 users by name
+    level-3:
+      users:
+        - name: admin1@example.com
+        - name: admin2@example.com
+  clustergroups:
+    dev:
+      clusters:
+        - match: dev-*
+    staging:
+      clusters:
+        - match: staging-*
+        - match: preprod-*
+    production:
+      clusters:
+        - match: prod-*
+  rules:
+    - users:
+        - group/level-1
+      clusters:
+        - group/dev
+      role: Operator
+    - users:
+        - group/level-1
+      clusters:
+        - group/staging
+      role: Reader
+      kubernetes:
+        impersonate:
+          groups:
+            - read-only
+    - users:
+        - group/level-2
+      clusters:
+        - group/dev
+        - group/staging
+      role: Operator
+    - users:
+        - group/level-2
+      clusters:
+        - group/production
+      role: Reader
+      kubernetes:
+        impersonate:
+          groups:
+            - read-only
+    - users:
+        - group/level-3
+      clusters:
+        - group/dev
+        - group/staging
+        - group/production
+      role: Admin
+    # rule that references a user and a cluster directly, without groups
+    - users:
+        - vault-admin@example.com
+      clusters:
+        - vault
+      role: Admin
+  tests:
+    # level-1 tests
+    - name: level-1 engineer has Operator access to dev cluster
+      user:
+        name: level-1-a@example.com
+      cluster:
+        name: dev-cluster-1
+      expected:
+        role: Operator
+    - name: level-1 engineer has read-only access to staging cluster
+      user:
+        name: level-1-b@example.com
+      cluster:
+        name: staging-cluster-1
+      expected:
+        role: Reader
+        kubernetes:
+          impersonate:
+            groups:
+              - read-only
+    - name: level-1 engineer has no access to production cluster
+      user:
+        name: level-1-c@example.com
+      cluster:
+        name: production-cluster-1
+      expected:
+        role: None
+        kubernetes:
+          impersonate:
+            groups: []
+    # level-2 tests
+    - name: level-2 engineer has Operator access to staging cluster
+      user:
+        name: something@example.com
+        labels:
+          level: "2"
+      cluster:
+        name: preprod-cluster-1
+      expected:
+        role: Operator
+    - name: level-2 engineer has read-only access to prod cluster
+      user:
+        name: something@example.com
+        labels:
+          level: "2"
+      cluster:
+        name: prod-cluster-1
+      expected:
+        role: Reader
+        kubernetes:
+          impersonate:
+            groups:
+              - read-only
+    # level-3 tests
+    - name: level-3 engineer has admin access to prod cluster
+      user:
+        name: admin1@example.com
+      cluster:
+        name: prod-cluster-1
+      expected:
+        role: Admin
+    # vault-admin tests
+    - name: vault-admin has admin access to vault
+      user:
+        name: vault-admin@example.com
+      cluster:
+        name: vault
+      expected:
+        role: Admin
+```
+
+The `Reader` rules in this policy assign the `read-only` group. This group has no permissions until it is bound to a role through Kubernetes RBAC in each staging and production cluster. See [Configure Kubernetes RBAC](#configure-kubernetes-rbac).
 
 ## Configure Kubernetes RBAC
 
-Assigning an Omni role through an ACL rule controls what a user can do in Omni. To control what they can do inside the Kubernetes cluster, use the `kubernetes.impersonate.groups` field to assign the user to one or more Kubernetes groups, then bind those groups to a `Role` or `ClusterRole` using Kubernetes RBAC.
+The role in an ACL rule determines what a user can do in Omni. Permissions inside a Kubernetes cluster are determined by the groups in `kubernetes.impersonate.groups`. Each group must be bound to a `Role` or `ClusterRole` through Kubernetes RBAC.
 
-The example below creates a `read-only` role in the `my-app` namespace and binds it to the `my-app-read-only` group assigned in the ACL rule above.
+The following manifest binds the `my-app-read-only` group from [Create an access policy](#create-an-access-policy) to the built-in `view` cluster role in the `my-app` namespace. The `view` role grants read-only access to most resources in the namespace, excluding Secrets.
+
+Save the manifest to a file named `rbac.yaml`:
 
 ```yaml
 apiVersion: v1
@@ -90,55 +275,69 @@ metadata:
   name: my-app
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: read-only
-  namespace: my-app
-rules:
-  - apiGroups: ["", "extensions", "apps", "batch", "autoscaling"]
-    resources: ["*"]
-    verbs: ["get", "watch", "list"]
----
-apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: read-only
+  name: my-app-read-only
   namespace: my-app
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: read-only
+  kind: ClusterRole
+  name: view
 subjects:
   - kind: Group
     name: my-app-read-only
     apiGroup: rbac.authorization.k8s.io
 ```
 
-Apply these manifests to the relevant cluster as a Kubernetes cluster admin:
+Apply the manifest to the `production` cluster as a user with cluster-admin access:
 
 ```bash
 kubectl apply -f rbac.yaml
 ```
 
+To grant read-only access across all namespaces, use a `ClusterRoleBinding` instead. The following manifest grants this access to the `read-only` group from [Group users and clusters](#group-users-and-clusters):
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: read-only
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - kind: Group
+    name: read-only
+    apiGroup: rbac.authorization.k8s.io
+```
+
 ## Verify access
 
-Try to access the cluster with a `kubeconfig` generated by the user `support@example.com`:
+To verify the policy, download a `kubeconfig` for the `production` cluster as `support@example.com`. Downloading a `kubeconfig` requires at least the `Reader` role on the cluster.
+
+If the user's Omni role is `None`, download the `kubeconfig` with `omnictl` instead of the Omni web interface:
+
+```bash
+omnictl kubeconfig --cluster production
+```
+
+List the pods in the `my-app` namespace:
 
 ```bash
 kubectl get pods -n my-app
 ```
 
-The user should be able to list pods in the `my-app` namespace because of the `Role` and `RoleBinding` created above.
+The command succeeds, because the `my-app-read-only` group is bound to the `view` role in the `my-app` namespace.
 
-Try to list pods in another namespace:
+Next, list the pods in a different namespace:
 
 ```bash
-kubectl get pod -n <other-namespace>
+kubectl get pods -n <other-namespace>
 ```
 
-The action should be denied.
+The command fails with a `Forbidden` error, because the user has no permissions outside the `my-app` namespace.
 
-<Warning>
-If the user `support@example.com` has the Omni role `Operator` or above assigned, they will have `system:masters` role in Kubernetes as well as the `my-app-read-only` role.
-Therefore, they will still be able to list pods in all namespaces.
-</Warning>
+<Note>
+If `support@example.com` has the Omni role `Operator` or `Admin`, the user is also assigned the `system:masters` group and can list pods in every namespace.
+</Note>
