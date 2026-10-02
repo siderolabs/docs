@@ -2,6 +2,11 @@
 tools/docs-convert/docs/
 _out/
 
+# talosctl gen config output from local testing (contains cluster secrets)
+/controlplane.yaml
+/worker.yaml
+/talosconfig
+
 # Local Netlify folder
 .netlify
 
