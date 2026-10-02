@@ -15,7 +15,7 @@ Navigate to **Compute** > **Virtual Machines** > **Import** to start a conversio
 
 ### 1. Connect
 
-Enter your vCenter's hostname or IP address, a username, and a password. Clear **Verify SSL Certificate** if your vCenter uses a self-signed certificate.
+Enter your vCenter's hostname or IP address, a username, and a password. Clear **Verify SSL Certificate** only if your vCenter uses a self-signed certificate and you trust the network path to it.
 
 ### 2. Select VM
 
@@ -27,7 +27,7 @@ Talos Director checks that the VM is ready to convert:
 
 - **Guest credentials**: an account on the VM's operating system. Talos Director uses it to read the guest's network configuration and to remove VMware Tools during the conversion.
 - **No VMware snapshots**: the VM must not have snapshots in vCenter.
-- **VirtIO drivers and QEMU Guest Agent**: these must be installed in the guest before conversion, so it can boot and report back on KVM. For Windows, the step links to the VirtIO driver ISO.
+- **VirtIO drivers and QEMU Guest Agent**: these must be installed in the guest before conversion, whichever cutover mode you choose, so the converted VM can boot and report back on KVM. For Windows, the step links to the VirtIO driver ISO.
 
 ### 4. Configure
 
@@ -53,8 +53,6 @@ Start the conversion. Progress, transfer rate, and time remaining appear on the 
 | **Cold (offline)** | The source VM is powered off and copied whole. The simplest and most predictable mode, with downtime that lasts the entire copy. |
 | **Scheduled cutover** | The VM is copied while it stays online, then cut over at a time you set, or when you trigger it. Downtime is a brief final sync. |
 | **Automatic cutover** | The VM is copied online, and changed blocks are synced until the copies converge, then it cuts over automatically. The smallest downtime, with no one watching. |
-
-The two online modes need the VirtIO drivers and QEMU Guest Agent installed before you start, because the source VM keeps running throughout.
 
 ## Bring firewall rules across
 
