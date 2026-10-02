@@ -1,0 +1,45 @@
+---
+title: What Is Talos Director?
+description: An overview of Talos Director, the platform for running and managing virtual machines, Kubernetes clusters, storage, and networking on Talos Linux.
+---
+
+<Note>
+Talos Director is in Limited Availability. Limited Availability customers receive full production support and work directly with Sidero Labs engineering during onboarding. General availability is planned for January 2027.
+
+To request access, visit [siderolabs.com/getdirector](https://www.siderolabs.com/getdirector).
+</Note>
+
+Talos Director is a management platform for the data center. It runs virtual machines, Kubernetes clusters, storage, and networking on Talos Linux and the Talos hypervisor, and manages them from a single console.
+
+The immutable, declarative configuration that keeps Talos Kubernetes clusters from drifting applies to virtual machine workloads as well. Talos Director is built for organizations moving off VMware and similar platforms: its migration engine converts existing VMware virtual machines and Kubernetes clusters without application changes.
+
+## How the pieces fit together
+
+Talos Director is the management layer. The work itself happens on the hosts.
+
+| **Layer** | **Role** |
+| --- | --- |
+| **Physical host** | Supplies CPU, memory, disks, and network interfaces. |
+| **Talos Linux with the KVM hypervisor** | Runs on each host and executes the virtual machines placed on it. |
+| **Talos Director** | Groups hosts into clusters, places and moves virtual machines, attaches storage and networking, and runs Kubernetes clusters on top. |
+| **Virtual machine** | Runs its own guest operating system and applications. Kubernetes nodes created by Talos Director are virtual machines too. |
+
+Registering a host with Talos Director brings that machine under management, so Talos Director can see its capacity and place workloads on it. Registering a host does not create any virtual machines or Kubernetes nodes by itself.
+
+## What Talos Director does
+
+- **Compute clusters.** Hosts are grouped into clusters that share storage. A resource scheduler places virtual machines and rebalances load across hosts using performance metrics, within the overcommit limits you set.
+- **Live migration and High Availability.** Virtual machines move between hosts without downtime, and when a host fails, its virtual machines restart on the surviving hosts.
+- **Rolling host upgrades.** Hosts are upgraded one at a time while their workloads keep running.
+- **Kubernetes clusters.** Talos Director creates and operates Talos Kubernetes clusters on virtual machines, including node pools, autoscaling, backups, add-ons, and guarded upgrades.
+- **Networking.** Micro-segmentation and live traffic analysis for virtual machine networks.
+- **VMware migration.** Converts existing VMware virtual machines and Kubernetes clusters to run on Talos Director.
+
+## Documentation in this section
+
+This documentation covers the main areas of the Talos Director console and grows as the product approaches general availability.
+
+- [Clusters](/director/compute/clusters): compute cluster health and capacity, scheduling and HA settings, and rolling upgrades.
+- [Hosts](/director/compute/hosts): hypervisor host health, hardware, services, and maintenance.
+- [Storage Pools](/director/compute/storage-pools): shared datastores, host mounts, and the virtual machines that depend on them.
+- [Kubernetes Clusters](/director/kubernetes/kubernetes-clusters): the Kubernetes fleet dashboard, cluster creation, and day-to-day cluster operations.

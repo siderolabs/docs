@@ -1,0 +1,117 @@
+---
+title: Hosts
+description: View hypervisor host health and capacity in the Hosts view, inspect a host's hardware, workloads, services, and logs from the host detail screen, and reboot, power off, or put hosts into maintenance mode.
+---
+
+A host is the physical server that runs virtual machines in Talos Director. It supplies the CPU, memory, storage, and network interfaces, and runs Talos Linux with the KVM hypervisor. Hosts are the execution layer underneath every VM and Kubernetes node, so the **Hosts** pages are where you confirm that layer is healthy before a problem surfaces as a VM or Kubernetes symptom.
+
+Hosts usually belong to a [cluster](/director/compute/clusters), which sets the boundary for VM placement, load balancing, and High Availability (HA).
+
+## The Hosts view
+
+Navigate to **Compute** > **Hosts** > **All Hosts** to see every host in one table.
+
+### Columns
+
+The table shows the following columns.
+
+| **Column** | **Description** |
+| --- | --- |
+| **Hostname** | The host's DNS name or FQDN. Click it to open the host detail screen. |
+| **Cluster** | The cluster the host belongs to. The cluster is the placement, load-balancing, and HA boundary for the host's VMs. |
+| **Status** | The host's connection and health state, for example `Connected`. Hover over the status to see more detail. |
+| **Agent Version** | The version of the Talos Director agent running on the host. |
+| **CPU Usage** | Current CPU usage on the host, as a percentage. |
+| **Memory Usage** | Current memory usage on the host, as a percentage. |
+| **VMs** | The number of virtual machines on the host. |
+| **Uptime** | How long the host has been running since its last boot. |
+| **Actions** | The row-level menu for host operations. See [Row actions](#row-actions). |
+
+Select **Columns** to show additional columns, such as **Platform**, **OS Version**, and **BIOS Version**, and to reorder the columns.
+
+### Controls
+
+The controls above the table let you search, shape, and export the view:
+
+- **Filter hosts...**: filter the table with free text or query-style expressions, for example `status:connected`.
+- **Columns**: choose which columns are visible and in what order.
+- **Export CSV**: download the current view for reporting or offline analysis.
+- **Add Host**: register a new hypervisor host with Talos Director.
+
+### Row actions
+
+The **Actions** menu on each row offers the following:
+
+- **Edit**: opens the host detail screen. See [The host detail screen](#the-host-detail-screen).
+- **Move to Folder**: moves the host to a different folder in the inventory.
+- **Enter Maintenance Mode**: takes the host out of service. See [Manage hosts](#manage-hosts).
+
+## Manage hosts
+
+To act on one or more hosts at once, select their check boxes in the **Hosts** view. A bar appears above the table showing how many hosts are selected and how many VMs are running on them, with the following actions:
+
+- **Reboot**: reboots the selected hosts.
+- **Power Off**: powers down the selected hosts.
+- **Maintenance Mode**: puts the selected hosts into maintenance mode. The dialog that opens lets you live-migrate the hosts' VMs to other hosts in the cluster before maintenance mode begins.
+- **Clear**: clears the selection.
+
+<Warning>
+Rebooting or powering off a host stops every VM running on it. To keep workloads running, put the host into maintenance mode and migrate its VMs first, and confirm the remaining hosts in the cluster have the capacity to take them.
+</Warning>
+
+## The host detail screen
+
+Click a hostname to open its detail screen. Tabs separate each aspect of the host.
+
+### Overview
+
+High-level information about the host, including CPU and memory usage and system information.
+
+### Virtual Machines
+
+The virtual machines on the host, with each VM's power state, CPU count, and total capacity. From the **Actions** column you can power a VM on, shut it down, reboot it, or open its console.
+
+### Performance
+
+Performance metrics for the host over a selectable time range.
+
+### Profiles
+
+The configuration profile applied to the host. If no profile is shown, the host inherits its cluster's configuration profile. Select **Manage** to open the **Config Profiles** page, where you can choose a cluster or host profile.
+
+### Hardware
+
+The host's hardware: physical and virtual disks, hardware and disk health, and physical network interfaces.
+
+### Network
+
+The host's network configuration. Select **Columns** to show, reorder, or resize the columns.
+
+### Storage
+
+The folders and files stored on the host. Use the **Actions** column to rename, copy, move, or delete them.
+
+### Updates
+
+The history of system updates run on the host. Select **Run Update** to update this host.
+
+To upgrade every host in a cluster without taking workloads down, use a rolling upgrade from the cluster's **Updates** tab instead. See [Clusters](/director/compute/clusters#updates).
+
+### Services
+
+This tab has two sections:
+
+- **Container Status** lists the platform services running on the host, with each service's state, the reason for that state, and its restart count. Select **Logs** to view a service's logs.
+- **Host-level Overrides** lists the configuration overrides set on this host, whether each is active, and where it came from. Select **Preview** to view an override's details.
+
+### Alerts
+
+The host's alert history. Each alert shows its status (for example, `Resolved`), its severity (for example, `Warning` or `Critical`), and a message with more detail. Search alerts, filter them by status or severity, choose columns with **Columns**, and download them with **Export CSV**.
+
+### Events
+
+The host's event history. Each event shows its time, type, severity, source, and message. Search events, filter them by severity, choose columns with **Columns**, and download them with **Export CSV**.
+
+### Logs
+
+Logs from the Talos Director agents on the host. Select an agent log on the left to view it. Select **Following** to stream new entries as they arrive, and **Download** to save the selected log.

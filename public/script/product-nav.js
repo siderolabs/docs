@@ -10,6 +10,14 @@ window.sideroProducts = {
     "name": "Changelog",
     "versioned": false
   },
+  "director": {
+    "name": "Talos Director",
+    "versioned": false,
+    "cta": {
+      "label": "Get Talos Director",
+      "href": "https://www.siderolabs.com/getdirector"
+    }
+  },
   "kubernetes-guides": {
     "name": "Kubernetes Guides",
     "versioned": false,

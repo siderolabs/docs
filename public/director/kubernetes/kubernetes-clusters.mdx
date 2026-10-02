@@ -1,0 +1,239 @@
+---
+title: Kubernetes Clusters
+description: Monitor fleet health from the Kubernetes dashboard, manage workload clusters in the Kubernetes Clusters view, and operate an individual cluster's nodes, pools, backups, and upgrades from the cluster detail screen.
+---
+
+Talos Director runs Kubernetes workload clusters directly on the virtualization substrate. Because Kubernetes spans more than one VM — it depends on IP pools, zones, versions, providers, and management-cluster state — the **Kubernetes** section keeps those dependencies explicit and manages the full cluster lifecycle in one place.
+
+This page covers the three screens you'll use most: the fleet-level **Kubernetes** dashboard, the **Kubernetes Clusters** inventory, and the cluster detail screen.
+
+## The Kubernetes dashboard
+
+Navigate to **Kubernetes** (`/kubernetes`) for a fleet-level overview of every managed cluster. Use it to answer "is the fleet healthy, and where should I look next?" before opening any individual cluster.
+
+The dashboard presents:
+
+- **Fleet summary tiles** — total clusters with ready/failed counts, total nodes with how many are ready, healthy clusters with degraded and unhealthy counts, and whether the Kubernetes management service is online.
+- **Upgrades in Progress** — any cluster upgrades currently running, so rolling operations are never invisible.
+- **Needs Attention** — a triage list of clusters that are degraded, unhealthy, or failed, with the reason (for example, *etcd quorum unhealthy*). Each entry links to the affected cluster.
+- **Cluster table** — recent clusters with status, version, node readiness, health, and age.
+
+Two controls sit above the dashboard: **Refresh** reloads fleet state, and **Create Cluster** starts the cluster creation workflow.
+
+<Note>
+The dashboard distinguishes **Status** from **Health**. Status is the lifecycle state (a cluster can be `Ready`), while health reflects live component checks — a `Ready` cluster can still be `Degraded`. Treat the **Needs Attention** list as the source of truth for what requires action.
+</Note>
+
+## The Kubernetes Clusters view
+
+Navigate to **Kubernetes** > **Clusters** (`/kubernetes/clusters`) for the full cluster inventory.
+
+### Columns
+
+The table shows the following columns.
+
+| **Column** | **Description** |
+| --- | --- |
+| **Name** | The cluster name. Click it to open the cluster detail screen. |
+| **Description** | Optional operator-supplied description. |
+| **Status** | Lifecycle state, for example `Ready`. |
+| **K8s Version** | The Kubernetes version the cluster runs, for example `v1.36.0`. |
+| **OS** | Node operating system and version, for example `Talos (1.13.6)`. |
+| **Zones** | How many zones the cluster's nodes are placed across. |
+| **Nodes** | Node readiness, shown as ready/total. |
+| **Health** | Live health verdict: `Healthy`, `Degraded`, or `Unhealthy`. |
+| **Features** | Badges for enabled capabilities: **Storage**, **Autoscale**, **Backup**, **Monitoring**, and **Protected**. |
+| **Created** | When the cluster was created. |
+| **Actions** | The row-level menu for cluster operations. |
+
+### Controls
+
+The controls above the table let you search, shape, and export the view:
+
+- **Filter clusters...** — narrow the table with free text or query-style expressions, for example `status:ready`.
+- **Columns** — choose which columns are visible.
+- **Export CSV** — download the current view for reporting or offline analysis.
+- **Refresh** — reload cluster data on demand.
+- **Create Cluster** — provision a new workload cluster.
+- **Global search** — the top-bar search spans VMs, hosts, networks, and users, and supports scoped queries such as `vm:name`.
+
+### Create a cluster
+
+Select the **+ Create Cluster** button to provision a new Kubernetes cluster. The workflow has the following stages, followed by a final review.
+
+#### Cluster details
+
+Name the cluster and choose the operating system and Kubernetes versions.
+
+| **Field** | **Description** |
+| --- | --- |
+| **Cluster Name / Description** | The workload cluster's name as it appears in inventory, plus an optional description. |
+| **Operating System** | The node operating system. Clusters run Talos Linux, the immutable, API-managed OS. |
+| **OS Version** | The Talos Linux version to deploy on all nodes, for example 1.13.6. |
+| **Kubernetes Version** | The Kubernetes version the cluster runs, for example v1.36.0. Clusters can be upgraded in place later with the guided Upgrade action. |
+
+#### Infrastructure
+
+Choose where the cluster's nodes run.
+
+| **Field** | **Description** |
+| --- | --- |
+| **Zone Selection** | The zone or zones (compute clusters) the cluster's nodes are placed across. Spanning multiple zones spreads nodes over separate failure domains. |
+| **Preferred Host** | Optionally pins control-plane placement to a specific host. Any (automatic placement) leaves placement to the scheduler; changing it later migrates control-plane VMs one at a time. |
+
+#### Networking
+
+Configure how the cluster's nodes, pods, and services are addressed.
+
+| **Field** | **Description** |
+| --- | --- |
+| **Network** | The virtual network the cluster's node NICs attach to. |
+| **Node IP Pool** | The IP pool node addresses are allocated from on the selected network. |
+| **VIP IP Pool** | The IP pool used for virtual IPs, including the cluster's API-server endpoint and load-balancer service addresses. |
+| **CNI (Container Network Interface)** | The pod networking plugin deployed in the cluster, for example Flannel. |
+| **Pod CIDR** | The address range pods are assigned from. Must not overlap the node network or the service CIDR. |
+| **Load Balancer** | The in-cluster load balancer, for example MetalLB, which serves Service type LoadBalancer addresses from the VIP pool. |
+| **Service CIDR** | The address range Kubernetes services are assigned from. Must not overlap the pod CIDR or the node network. |
+
+#### Node configuration
+
+Size the control plane and define the worker node pools.
+
+##### Control plane nodes
+
+Control-plane nodes run the Kubernetes API server and etcd.
+
+| **Field** | **Description** |
+| --- | --- |
+| **Node Count** | The number of control-plane nodes. Use three for production so etcd keeps quorum through a node failure. |
+| **vCPUs** | vCPUs allocated to each control-plane node, for example 4. |
+| **Memory (GB)** | Memory allocated to each control-plane node, for example 8. |
+| **Disk (GB)** | Disk allocated to each control-plane node, for example 200. |
+| **Control Plane Anti-Affinity** | When on, control-plane VMs are kept on separate hosts so a single host failure cannot take out etcd quorum. |
+
+##### Worker node pools
+
+Worker nodes run your workloads, grouped into pools.
+
+| **Field** | **Description** |
+| --- | --- |
+| **Add Pool** | Adds a worker node pool to the cluster. Pools are declarative: you size and configure the pool, and the platform manages its member nodes. |
+| **Pool Name** | The pool's name, shown on the Node Pools tab and on each member node. |
+| **Node Count** | The number of worker nodes the pool starts with. With autoscaling enabled, this becomes the current count between the minimum and maximum. |
+| **vCPUs per Node** | vCPUs allocated to each node in the pool. |
+| **Memory per Node (GB)** | Memory allocated to each node in the pool. |
+| **Disk per Node (GB)** | Disk allocated to each node in the pool. |
+| **Enable Autoscaling** | When enabled, the cluster autoscaler adds and removes nodes in this pool based on CPU, memory, and pod-capacity signals. |
+| **Minimum Nodes** | The smallest size the autoscaler may shrink the pool to. |
+| **Maximum Nodes** | The largest size the autoscaler may grow the pool to. Equal minimum and maximum values make the pool effectively fixed-size. |
+
+#### Add-ons
+
+Select the add-ons to install with the cluster. You can also install add-ons later from the cluster's **Add-ons** tab.
+
+| **Field** | **Description** |
+| --- | --- |
+| **Metrics Server** | (REQUIRED) Kubernetes resource metrics API — enables kubectl top and HPA CPU/memory scaling |
+| **Spegel** | P2P container image distribution — nodes share image layers via containerd mirror API |
+| **CloudNativePG** | PostgreSQL operator for Kubernetes. Manages the lifecycle of PostgreSQL Cluster resources — provisioning, streaming-replication HA, in-place minor upgrades, and barman-cloud backups to S3. Installs the operator only; database instances are created separately. |
+| **Percona XtraDB Cluster (MySQL)** | MySQL operator for Kubernetes. Manages the lifecycle of PerconaXtraDBCluster resources — provisioning, Galera multi-primary HA, and xtrabackup backups to S3. Installs the operator only; database instances are created separately. |
+| **Apache APISIX** | Apache APISIX as Kubernetes Ingress Controller and API Gateway. Bundles the apisix data plane, the apisix-ingress-controller subchart (ApisixRoute / ApisixUpstream / ApisixPluginConfig CRDs plus the apisix IngressClass), and a bitnamilegacy/etcd subchart as the configuration backend. Built-in plugins cover rate limiting, JWT / key / OIDC auth, CORS, real-ip, traffic splitting, request rewriting, and Prometheus metrics. |
+| **ExternalDNS** | Synchronises exposed Kubernetes Services and Ingresses with DNS providers (Route 53, Cloudflare, Azure DNS, Google Cloud DNS, BIND, NetBox). |
+| **kube-prometheus-stack** | Prometheus Operator-based monitoring stack: Prometheus, Alertmanager, Grafana, node-exporter, kube-state-metrics, and a default rule set covering Kubernetes control plane and node health. |
+| **Loki** | Log aggregation stack. Ships a single-binary Loki install for log storage plus a Promtail DaemonSet that tails kubelet pod logs from every node and forwards them to Loki. Optional Grafana data-source ConfigMap auto-discovers Loki when kube-prometheus-stack is installed. |
+| **Flux Operator** | Managed Flux installation for GitOps. The operator reconciles Flux controllers (helm, kustomize, source, notification, image-reflector, image-automation, source-watcher) from a FluxInstance custom resource. Uninstall removes only the FluxInstance, preserving the operator and CRDs so a re-install does not have to re-reconcile the distribution artifact. |
+| **cert-manager** | TLS certificate management for Kubernetes. Issues, renews, and rotates certificates from ACME (Let's Encrypt), self-signed CAs, and configured external issuers. |
+| **Falco** | Runtime threat detection. A per-node DaemonSet that watches Linux system calls via the kernel eBPF driver and alerts on suspicious runtime activity. Pinned to the modern_ebpf driver for Talos Linux compatibility. Ships a curated 5-rule library covering shell-in-container, binary-dir writes, /etc writes, sensitive mounts, and privilege escalation. |
+| **kube-bench** | Scheduled CIS Kubernetes Benchmark scanner. Runs the Aqua kube-bench image as a CronJob (default: daily at 02:00) to audit the cluster against a configurable CIS profile and emit a compliance report. Schedule and benchmark target are configurable per-cluster. |
+| **Kyverno** | Kubernetes-native policy engine. Runs as an admission webhook that validates and mutates resources against ClusterPolicy rules before they are persisted. Ships a curated baseline policy library (Pod Security Standards + best-practice checks) in Audit mode. |
+| **Tetragon** | eBPF-based runtime observability and enforcement. Runs eBPF programs in the Linux kernel to observe and enforce policy on syscalls, network connections, and file access. In-kernel enforcement hooks cannot be bypassed from a compromised container userspace. Ships a baseline TracingPolicy library covering process exec, sensitive file access, outbound network connects, and capability use. |
+| **Trivy Operator** | Container image vulnerability scanner. Continuously scans workloads in target namespaces and produces VulnerabilityReport CRDs per pod. Supports air-gap deployments via a configurable CVE DB repository (Harbor mirror). Selectable security addon — opt in at cluster creation or via the addons API. |
+| **CSI Driver NFS** | Official kubernetes-csi org NFS CSI driver (csi-driver-nfs) for dynamic volume provisioning against an existing NFS export. Installs the controller + node DaemonSet into kube-system; the bundled snapshot-controller/CRDs are disabled since this catalog manages that as a separate standalone addon. |
+| **Harbor** | CNCF-graduated OCI image registry with vulnerability scanning (Trivy), project-scoped RBAC, robot accounts, and upstream proxy cache. Serves as the target for cluster registry-overrides in air-gapped deployments. |
+| **Local Path Provisioner** | Rancher local-path storage for development and testing |
+| **NetApp Trident CSI** | NetApp Trident CSI driver for dynamic NFS volume provisioning on ONTAP storage. Requires a linked StorageProvider record with ONTAP management LIF and vsadmin credentials. |
+| **Rook Ceph Operator** | The controller that reconciles CephCluster/CephBlockPool/CephFilesystem/CephObjectStore CRDs into a running Ceph cluster (RBD block, CephFS file, RGW object) on Kubernetes. Installs only the operator into the rook-ceph namespace (labeled PSA-privileged, since OSD/mon pods require host storage + raw block device access); creating a CephCluster CR to provision the actual storage cluster is a separate follow-on step. |
+| **Volume Snapshot Controller** | Kubernetes VolumeSnapshot support for CSI storage. |
+
+#### Cluster settings
+
+Set backup, protection, and registry behavior for the cluster.
+
+| **Field** | **Description** |
+| --- | --- |
+| **Automatic Backups** | Schedules recurring cluster backups from day one. Backup status, retention, and time since last success appear on the cluster's Backups tab. |
+| **Deletion Protection** | Prevents the cluster from being deleted until protection is explicitly removed. Protected clusters carry the Protected badge in the cluster list. |
+| **Registry Mirrors** | Configures the container registry mirrors nodes pull images through — useful for restricted or bandwidth-constrained environments. Mirrors can also be managed later from the cluster's Configuration tab. |
+
+#### Review and create
+
+Review the configuration of the Kubernetes cluster — select **Back** to return to a previous step if you need to adjust the configuration. Select **Create Cluster** to complete the setup.
+
+## The cluster detail screen
+
+Click a cluster name to open its detail screen. The header shows the cluster's status, Kubernetes version, and node OS version, plus two primary actions:
+
+- **Kubeconfig** — download the kubeconfig for CLI and CI access to the cluster.
+- **Upgrade** — start a guided cluster upgrade.
+
+A **kubectl Console** is also available from the detail screen, keeping command-line access one click away without leaving the browser. The tabs below the header cover the cluster's complete operational surface.
+
+### Overview
+
+The landing tab summarizes cluster configuration: API endpoint, Kubernetes and OS versions, pod CIDR, service CIDR, CNI (for example, Flannel), load balancer (for example, MetalLB), the zones the cluster spans, control-plane anti-affinity state, preferred host, and creation time.
+
+### Configuration
+
+Controls where the cluster's **control plane** runs. Node pools are placed independently from each pool's own settings. Saving a preferred host migrates the control-plane VMs that are not yet on it **one at a time**; setting the preference back to **Any** moves nothing and leaves future placement to the scheduler.
+
+### Nodes
+
+Per-node inventory headed by a health summary (nodes ready, cordoned, pressured, locked). Each row shows the node's health, role (control plane or worker), pool, Kubernetes and OS versions, IP address, the hypervisor host running it, age, CPU and memory resources with live utilization, pod count against capacity, and heartbeat freshness. Row actions cover node-level operations.
+
+### Node Pools
+
+Declarative groups of worker nodes. Each pool shows its status, node count against its minimum and maximum, per-node instance resources (CPU, memory, disk), and whether autoscaling is enabled. Click **Add Node Pool** to create one; scale a cluster by editing a pool rather than managing individual nodes.
+
+### Autoscaler
+
+Live autoscaling state per pool: current node count against min/max bounds, the scaling method (for example, pod requests utilization), and the signals driving decisions — average CPU against the scale-up and scale-down thresholds, average memory, and pod count against schedulable capacity — plus when the pool last scaled.
+
+<Note>
+A pool with equal minimum and maximum (for example, `min: 3, max: 3`) is effectively fixed-size even with autoscaling enabled. Widen the bounds to let the autoscaler act.
+</Note>
+
+### Backups
+
+Scheduled and on-demand cluster backups, headed by a **Backup Health** indicator showing time since the last success. Each backup lists its status, size, type (scheduled or manual), creation time, expiration, and restore history. Click **Create Backup** for an on-demand backup.
+
+### Monitoring
+
+Component-level **System Health** across the cluster's moving parts: certificates, CNI, control plane, CoreDNS, etcd, etcd backup freshness, kube-proxy, the Kubernetes API, metrics server, node conditions, pod scheduling, and workers. Use this tab to turn a `Degraded` verdict into a specific failing component.
+
+### Storage
+
+Persistent storage for the cluster through CSI integration. If no CSI add-on is installed, this tab reports **Storage Not Configured** and directs you to the **Add-ons** tab to install one.
+
+### Add-ons
+
+The installed add-on inventory and a catalog of curated add-ons (for example, Metrics Server for the resource metrics API, or Spegel for peer-to-peer image distribution). Each add-on shows its category, version, status, health, and install time. Click **Install Add-on** to add from the catalog.
+
+### Upgrade health checks
+
+The guardrails that protect cluster upgrades. Built-in checks always apply, with no configuration required:
+
+- All nodes must be **Ready** before an upgrade starts.
+- Nodes are replaced **one at a time** — the replacement node must join and become Ready before the old node is drained and removed.
+- Control-plane rollouts are gated so the control plane stays available throughout.
+
+### Security
+
+Security posture in one place, organized into **Policies**, **Findings**, **Runtime**, **Compliance**, **Risk**, **Namespace Security**, and **Control Plane PSA** views. Admission policy management requires the policy engine add-on (Kyverno); if it is not installed, this tab directs you to the **Add-ons** tab.
+
+### Diagnostics
+
+On-demand health checks. Click **Run All Checks** to execute predefined diagnostics across nodes, DNS, networking, etcd, storage, and more — a faster first step than assembling the same picture manually with kubectl.
+
+### Events
+
+The cluster's operational history, filterable by severity (Info, Warning, Error, Critical), type (Provisioning, Error, Scaling, Health, Lifecycle, Configuration), source (Controller, API, Autoscaler, User), and time range. Use it to reconstruct what happened and who or what triggered it.
