@@ -1,0 +1,28 @@
+navigation:
+  products:
+    - product: "Talos Director"
+      family: "hypervisor"
+      tag: "Commercial"
+      description: "Manage virtual machines, Kubernetes clusters, storage, and networking across the data center."
+      meta: "Limited Availability"
+      icon: "gauge"
+      cta:
+        label: "Get Talos Director"
+        href: "https://www.siderolabs.com/getdirector"
+      groups:
+        - group: "Overview"
+          folder: "director/overview"
+          pages:
+            - "what-is-talos-director.mdx"
+
+        - group: "Compute"
+          folder: "director/compute"
+          pages:
+            - "clusters.mdx"
+            - "hosts.mdx"
+            - "storage-pools.mdx"
+
+        - group: "Kubernetes"
+          folder: "director/kubernetes"
+          pages:
+            - "kubernetes-clusters.mdx"

@@ -2852,6 +2852,33 @@
         ]
       },
       {
+        "product": "Talos Director",
+        "icon": "gauge",
+        "description": "Manage virtual machines, Kubernetes clusters, storage, and networking across the data center.",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "director/overview/what-is-talos-director"
+            ]
+          },
+          {
+            "group": "Compute",
+            "pages": [
+              "director/compute/clusters",
+              "director/compute/hosts",
+              "director/compute/storage-pools"
+            ]
+          },
+          {
+            "group": "Kubernetes",
+            "pages": [
+              "director/kubernetes/kubernetes-clusters"
+            ]
+          }
+        ]
+      },
+      {
         "product": "Kubernetes Guides",
         "icon": "/images/kubernetes.svg",
         "groups": [

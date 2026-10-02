@@ -1,0 +1,109 @@
+---
+title: Storage Pools
+description: Inspect storage pool capacity and health in the Storage Pools view, and drill into a pool's mounts, dependent virtual machines, and contents from the pool detail screen.
+---
+
+Storage pools are the shared datastores that back virtual machine disks in Talos Director. Because storage is a shared dependency for VM runtime, live migration, High Availability (HA), and capacity planning, the **Storage Pools** pages make pool state visible directly — before a degraded or unmounted pool surfaces as a VM failure.
+
+Use the **Storage Pools** page to answer capacity and health questions across every cluster, then open an individual pool to inspect its host mounts, the virtual machines that depend on it, and its file-level contents.
+
+<Info>
+Storage Pools is part of the wider **Storage** area under **Compute**, alongside Storage Policies, Compliance, Recommendations, and Capabilities. This page covers pools; the related pages govern how disks are placed on them.
+</Info>
+
+## The Storage Pools view
+
+Navigate to **Compute** > **Storage** > **Storage Pools** (`/storage-pools`) to see every pool across all clusters in one table.
+
+### Columns
+
+The table shows the following columns.
+
+| **Column** | **Description** |
+| --- | --- |
+| **Name** | The pool name. Click it to open the pool detail screen. |
+| **Type** | The pool's backing type, for example `nfs`. Useful for filtering and triage. |
+| **Cluster** | The cluster the pool serves. |
+| **Capacity** | Total provisioned capacity of the pool. |
+| **Used** | Space currently consumed. |
+| **Available** | Space remaining. |
+| **Usage %** | Used space as a percentage of capacity. |
+| **State** | The pool's lifecycle state, for example `active`. |
+| **Actions** | The row-level menu for pool operations. |
+
+### Controls
+
+The controls above the table let you search, shape, and export the view:
+
+- **Filter storage pools…** — narrow the table with free text or query-style expressions, for example `type:nfs`.
+- **Columns** — choose which columns are visible.
+- **Export CSV** — download the current view for reporting or offline analysis.
+- **Refresh** — reload pool data on demand.
+- **Add Storage Pool** — register a new pool and make it available to a cluster.
+- **Global search** — the top-bar search spans VMs, hosts, networks, and users, and supports scoped queries such as `vm:name`.
+
+### Add a storage pool
+
+Select **Add Storage Pool** to register a new pool. Complete the following fields.
+
+| **Field** | **Description** |
+| --- | --- |
+| **Pool Name** | The name the pool appears under in inventory and as the libvirt pool name on hosts. |
+| **Type** | The pool's backing type. For an NFS pool, `nfs`. |
+| **Cluster** | The cluster whose hosts will mount and use the pool. |
+| **NFS Server** | Hostname or IP address of the NFS server exporting the share. |
+| **NFS Export Path** | The exported path on the server, for example `/vol/pool1`. |
+| **Mount Point** | The local path where each host mounts the export. |
+| **NFS Version** | The NFS protocol version used for the mount, for example `3`. Every host mounts the pool with the same version, which compliance checking enforces. |
+| **Protocol** | The transport protocol for NFS traffic, typically `tcp`. |
+| **rsize** | Maximum read request size in bytes negotiated with the server, for example `65536`. |
+| **wsize** | Maximum write request size in bytes, for example `65536`. |
+| **Timeout (s)** | How long the client waits for a server response before retrying a request. |
+| **Retrans** | How many times a request is retransmitted before the client reports an error, for example `5`. |
+| **Hard mount** | When enabled, hosts retry NFS operations indefinitely instead of returning I/O errors to guests — the safe choice for pools backing VM disks. |
+| **Enable FS locking (NLM)** | Whether mounts use the Network Lock Manager. When disabled, hosts mount with `nolock` and handle file locking locally on each host. |
+| **Export uses root_squash** | Declares that the server-side export maps root access to an unprivileged user. Set this to match the export so the platform configures permissions and ownership handling correctly. |
+| **Attribute cache** | Controls client-side caching of file attributes. Reducing or disabling it trades performance for attribute freshness across hosts. |
+| **Advanced: verbatim mount options override** | Supply an exact mount-options string to use instead of the individual settings above. The string is applied verbatim on every host and becomes the baseline that mount compliance checks against. |
+
+## The storage pool detail screen
+
+Click a pool name to open its detail screen. The header identifies the pool, its backing type (for example, *NFS storage pool*), and its current state, with a **Back to storage pools** link and an **Actions** menu for pool-level operations. Three tabs organize the pool's information.
+
+### Overview
+
+The landing tab summarizes the pool's identity, capacity, and mount health:
+
+| **Section** | **Contents** |
+| --- | --- |
+| **Capacity** | Total, used, and available space with a usage percentage. |
+| **Deduplication** | Whether deduplication is enabled on the pool. |
+| **Details** | Backing type, libvirt pool name, owning cluster, storage tier (for example, `SILVER`), and whether the pool is enabled. |
+| **Folder Usage** | File count and space consumed at the folder level, with the backing path. |
+| **Host Mounts** | A per-host table showing mount status, state, the exact mount options in effect, and a compliance verdict for each host in the cluster. |
+
+Check **Host Mounts** first when troubleshooting. Every host in the cluster should show the pool as `mounted` with compliant options — a host that has lost its mount, or mounts the pool with non-standard options, can strand or degrade the VMs placed on it. The compliance column surfaces this drift without requiring you to inspect each host individually.
+
+<Note>
+The storage tier shown under **Details** connects the pool to storage policies. Policies target tiers, so a disk governed by a given policy is only placed on pools of a matching tier.
+</Note>
+
+### Virtual Machines
+
+Lists every virtual machine with one or more disks on this pool — the immediate answer to "what is affected if this pool degrades?" Each row shows the VM's host, power state, guest status, CPU and memory allocation, allocated versus consumed space, guest hostname, IP address, and pool presence. Use the **Search VMs...** box to find a specific workload and the **Columns** selector to tailor the table.
+
+<Note>
+**Allocated Space** is what the VM's disks are provisioned to grow to; **Consumed Space** is what they occupy today. The gap between the two across all VMs on a pool is your thin-provisioning exposure — a pool can be overcommitted on allocation long before **Usage %** looks alarming.
+</Note>
+
+### Browse
+
+A file-level view of the pool's contents. Navigate folders, search files, and see each item's size, modification time, and — for disk images — the VM that uses it, which ties files on disk back to the workloads that own them. Toolbar controls:
+
+- **Refresh** — reload the current folder listing.
+- **New Folder** — create a folder in the current location.
+- **Upload** — upload a file, for example an ISO image or a disk image being imported.
+
+<Warning>
+Pools contain system folders used by the platform itself, such as `.ha`, `.ha-heartbeat`, and `.ha-leader`, and may contain folders created by the storage array, such as `.snapshot`. The `.ha*` folders back the cluster's High Availability heartbeat and coordination. Do not modify or delete them — treat anything you did not create through a VM or upload as platform-managed.
+</Warning>
