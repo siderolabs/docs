@@ -1,0 +1,59 @@
+---
+title: Migrate from VMware
+description: Convert VMware vCenter virtual machines to run on Talos Director, choose how much downtime the cutover takes, and bring NSX firewall rules across.
+---
+
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
+
+<DirectorLimitedAvailability />
+
+Talos Director converts virtual machines from VMware vCenter to run on its own hosts. The conversion copies each VM's disks into a Talos Director storage pool, recreates the VM, and carries its network configuration across, so applications move without changes.
+
+## Convert a VM
+
+Navigate to **Compute** > **Virtual Machines** > **Import** to start a conversion. The wizard has five steps.
+
+### 1. Connect
+
+Enter your vCenter's hostname or IP address, a username, and a password. Clear **Verify SSL Certificate** only if your vCenter uses a self-signed certificate and you trust the network path to it.
+
+### 2. Select VM
+
+Choose the VM to convert from the VMs vCenter reports.
+
+### 3. Requirements
+
+Talos Director checks that the VM is ready to convert:
+
+- **Guest credentials**: an account on the VM's operating system. Talos Director uses it to read the guest's network configuration and to remove VMware Tools during the conversion.
+- **No VMware snapshots**: the VM must not have snapshots in vCenter.
+- **VirtIO drivers and QEMU Guest Agent**: these must be installed in the guest before conversion, whichever cutover mode you choose, so the converted VM can boot and report back on KVM. For Windows, the step links to the VirtIO driver ISO.
+
+### 4. Configure
+
+| **Field** | **Description** |
+| --- | --- |
+| **VM Name** | The name of the converted VM in Talos Director. |
+| **Cluster** | The cluster the converted VM joins. |
+| **Storage Pool** | The [storage pool](/director/compute/storage-pools) that receives the converted disks. |
+| **Host** | The host that runs the conversion, with its free space shown. |
+| **Cutover Mode** | How much downtime the conversion takes. See [Cutover modes](#cutover-modes). |
+| **Conversion Method** | **Direct** (the default, and faster) or **virt-v2v** (legacy). |
+| **Disk Format** | **Raw** (the default: best performance and NFS reliability) or **QCOW2** (thin-provisioned, and required for incremental backup). |
+| **Network Configuration** | How the converted VM gets its addresses: through the guest agent, cloud-init (Linux), Sysprep (Windows), or **None** to use DHCP. |
+
+### 5. Convert
+
+Start the conversion. Progress, transfer rate, and time remaining appear on the **Conversion Jobs** page (`/conversion-jobs`), alongside every past conversion and its outcome.
+
+## Cutover modes
+
+| **Mode** | **What happens** |
+| --- | --- |
+| **Cold (offline)** | The source VM is powered off and copied whole. The simplest and most predictable mode, with downtime that lasts the entire copy. |
+| **Scheduled cutover** | The VM is copied while it stays online, then cut over at a time you set, or when you trigger it. Downtime is a brief final sync. |
+| **Automatic cutover** | The VM is copied online, and changed blocks are synced until the copies converge, then it cuts over automatically. The smallest downtime, with no one watching. |
+
+## Bring firewall rules across
+
+If you use VMware NSX, **Import from NSX** in **Network** > **Security Groups**, **Policies**, and **Services** brings your NSX groups, rules, and service definitions into Talos Director. See [Security](/director/security/security).

@@ -3,11 +3,9 @@ title: What Is Talos Director?
 description: An overview of Talos Director, the platform for running and managing virtual machines, Kubernetes clusters, storage, and networking on Talos Linux.
 ---
 
-<Note>
-Talos Director is in Limited Availability. Limited Availability customers receive full production support and work directly with Sidero Labs engineering during onboarding. General availability is planned for January 2027.
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
 
-To request access, visit [siderolabs.com/getdirector](https://www.siderolabs.com/getdirector).
-</Note>
+<DirectorLimitedAvailability />
 
 Talos Director is a management platform for the data center. It runs virtual machines, Kubernetes clusters, storage, and networking on Talos Linux and the Talos hypervisor, and manages them from a single console.
 
@@ -41,5 +39,9 @@ This documentation covers the main areas of the Talos Director console and grows
 
 - [Clusters](/director/compute/clusters): compute cluster health and capacity, scheduling and HA settings, and rolling upgrades.
 - [Hosts](/director/compute/hosts): adding hosts, and host health, hardware, services, and maintenance.
+- [Virtual Machines](/director/compute/virtual-machines): creating VMs, and power, console, disks, networking, snapshots, and backups.
+- [Migrate from VMware](/director/compute/migrate-from-vmware): converting vCenter VMs, cutover modes, and importing NSX firewall rules.
 - [Storage Pools](/director/compute/storage-pools): shared datastores, host mounts, and the virtual machines that depend on them.
 - [Kubernetes Clusters](/director/kubernetes/kubernetes-clusters): the Kubernetes fleet dashboard, cluster creation, and day-to-day cluster operations.
+- [Virtual Networks](/director/networking/virtual-networks): VLAN-backed networks for VMs, and importing networks from Cisco ACI.
+- [Security](/director/security/security): VM micro-segmentation, and security posture and compliance across Kubernetes clusters.

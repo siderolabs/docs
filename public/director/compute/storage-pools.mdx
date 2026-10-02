@@ -3,6 +3,10 @@ title: Storage Pools
 description: Inspect storage pool capacity and health in the Storage Pools view, and drill into a pool's mounts, dependent virtual machines, and contents from the pool detail screen.
 ---
 
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
+
+<DirectorLimitedAvailability />
+
 Storage pools are the shared datastores that back virtual machine disks in Talos Director. Because storage is a shared dependency for VM runtime, live migration, High Availability (HA), and capacity planning, the **Storage Pools** pages make pool state visible directly — before a degraded or unmounted pool surfaces as a VM failure.
 
 Use the **Storage Pools** page to answer capacity and health questions across every cluster, then open an individual pool to inspect its host mounts, the virtual machines that depend on it, and its file-level contents.
