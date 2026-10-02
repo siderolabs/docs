@@ -48,14 +48,18 @@ Note that `make check-missing` passing is not enough on its own. It only checks 
 
 ### Before you push
 
-CI (`.github/workflows/docs-ci.yaml`) runs exactly four checks. Run the same four locally and a red PR becomes rare:
+CI (`.github/workflows/docs-ci.yaml`) runs the checks below. Run the same ones locally and a red PR becomes rare:
 
 ```bash
 make broken-links                                    # every internal link resolves
 make validate-docs-nav                               # nav YAMLs match the content directories
+make canonical-links-check                           # every Talos page has the right canonical link
+make check-frontmatter-changed FRONTMATTER_CHECK_BASE=upstream/main   # required frontmatter, changed files only
 make style-check-changed STYLE_CHECK_BASE=upstream/main   # style guide, changed files only
 make docs.json && git diff --exit-code               # the committed docs.json is current
 ```
+
+If `canonical-links-check` fails after renaming or moving a Talos page, run `make canonical-links-local` to fix the canonical links on the older versions of that page.
 
 Only the style check reports at two levels. Warnings do not fail CI, errors do, and plenty of existing pages carry warnings, so check whether a warning is on a line you actually touched before chasing it.
 

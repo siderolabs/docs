@@ -93,8 +93,10 @@ like in the previous example, generate a custom `installer` and use it to upgrad
 
 ## Author system extensions
 
-A Talos system extension is a container image with the [specific folder structure](https://github.com/siderolabs/extensions?tab=readme-ov-file#building-extensions).
+A Talos system extension is a container image with a specific folder structure.
 System extensions can be built and managed using any tool that produces container images, e.g. `docker build`.
+
+See [Building a System Extension](./building-a-system-extension) for the extension structure, the `rootfs` path restrictions, and how to build and install one.
 
 Sidero Labs maintains a [repository of system extensions](https://github.com/siderolabs/extensions).
 
@@ -103,7 +105,10 @@ Sidero Labs maintains a [repository of system extensions](https://github.com/sid
 Use `talosctl get extensions` to get a list of system extensions:
 
 ```bash
-$ talosctl get extensions
+talosctl get extensions
+```
+
+```text
 NODE         NAMESPACE   TYPE              ID                                              VERSION   NAME          VERSION
 172.20.0.2   runtime     ExtensionStatus   000.ghcr.io-talos-systems-gvisor-54b831d        1         gvisor        20220117.0-v1.0.0
 172.20.0.2   runtime     ExtensionStatus   001.ghcr.io-talos-systems-intel-ucode-54b831d   1         intel-ucode   microcode-20210608-v1.0.0
@@ -112,7 +117,10 @@ NODE         NAMESPACE   TYPE              ID                                   
 Use YAML or JSON format to see additional details about the extension:
 
 ```bash
-$ talosctl -n 172.20.0.2 get extensions 001.ghcr.io-talos-systems-intel-ucode-54b831d -o yaml
+talosctl -n 172.20.0.2 get extensions 001.ghcr.io-talos-systems-intel-ucode-54b831d -o yaml
+```
+
+```yaml
 node: 172.20.0.2
 metadata:
     namespace: runtime
