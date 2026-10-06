@@ -1,0 +1,281 @@
+---
+title: Configure a Virtual Machine
+description: The settings in a VirtualMachineConfig document, including power state, processors, memory, firmware, disks, console, and network interfaces, how to check a virtual machine's status, and how to remove it.
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+{/* TODO: Talos main provisions only cdrom disks today. When writable disks in storage pools land (siderolabs/talos#14573), document type: disk with pool, size, format, bus, and blank or fromImage provisioning. */}
+{/* TODO: UEFI firmware and secure boot are rendered by the controllers but not covered by the hypervisor integration tests, which boot with BIOS. Verify both on the v1.15 alpha. */}
+{/* TODO: VNC is left out: the VNC console binds to 127.0.0.1 on the host and talosctl has no VNC command. Add it once there is a supported way to reach it. */}
+{/* TODO: The `guest` section (cloud-init seed and qemu-guest-agent channel) is in talos main but not documented here yet. Decide scope with Amarachi. */}
+
+Each virtual machine is described by a [`VirtualMachineConfig`](../../talos/v1.15/reference/configuration/hypervisor/virtualmachineconfig) document in the host's machine configuration. Talos creates the virtual machine from the document and keeps it matching the document.
+
+A document is added to the host with `talosctl patch machineconfig`. For a full walkthrough, see [Run your first virtual machine](../getting-started/run-your-first-virtual-machine).
+
+This page describes each setting in the document, how to check a virtual machine's status, and how to remove a virtual machine.
+
+## Example configuration
+
+The following document describes a virtual machine named `vm1`. It has two virtual CPUs and 2 GiB of memory, boots from an ISO in the content library `images`, has its serial console enabled, and connects to the host link `eth0`:
+
+```yaml
+apiVersion: v1alpha1
+kind: VirtualMachineConfig
+name: vm1
+powerState: running
+cpu:
+  count: 2
+memory:
+  size: 2GiB
+firmware:
+  type: bios
+disks:
+  - name: install
+    type: cdrom
+    bootOrder: 1
+    provision:
+      fromImage:
+        library: images
+        file: metal-amd64.iso
+console:
+  serial:
+    enabled: true
+networking:
+  interfaces:
+    - name: nic0
+      link: eth0
+```
+
+Every document needs `name`, `powerState`, `cpu`, `memory`, and `firmware`. The other sections are optional.
+
+The `name` identifies the virtual machine in Talos resources and `talosctl` commands. It can contain only ASCII letters, digits, and hyphens, and can be up to 63 characters long.
+
+## Virtual machine settings
+
+Each section below covers one part of the document.
+
+### Power state
+
+The `powerState` field sets the state Talos keeps the virtual machine in:
+
+- `running` starts the virtual machine and keeps it running.
+- `stopped` turns off the virtual machine immediately, without a clean shutdown of the guest, and removes it from libvirt. Setting `powerState` back to `running` starts it again.
+
+The field also accepts `suspended`, but Talos does not support it. A virtual machine set to `suspended` reports the `error` stage and stays as it is.
+
+### Processors
+
+The `cpu.count` field sets how many virtual CPUs the guest sees. The other processor settings are optional:
+
+```yaml
+cpu:
+  count: 4
+  limit: 2000m
+  topology:
+    sockets: 1
+    cores: 2
+    threads: 2
+    pinning:
+      vcpus:
+        - vcpu: 0
+          cpus: "8"
+        - vcpu: 1
+          cpus: "9-10"
+      emulator: "0-1"
+```
+
+- `limit` caps how much host CPU time the virtual machine can use, in millicores. `1000m` is one host core. For example, a guest with four virtual CPUs and a `2000m` limit sees four processors, but gets at most two cores of host time. Without a limit, the virtual machine is limited only by its number of virtual CPUs.
+- `topology` sets how the guest sees its virtual CPUs: as sockets, cores per socket, and threads per core. Set all three or none. Multiplied together, they must equal `count`.
+- `topology.pinning` ties virtual CPUs to specific host CPUs, given as Linux CPU lists such as `8` or `9-10`. Pinning works without `sockets`, `cores`, and `threads`.
+  - Each entry in `vcpus` pins one virtual CPU, counted from `0`. A virtual CPU without an entry can run on any host CPU.
+  - `emulator` pins the rest of the virtual machine's threads.
+
+### Memory
+
+The `memory.size` field sets how much memory the guest has when it boots, such as `2GiB`. The other memory settings are optional:
+
+```yaml
+memory:
+  size: 4GiB
+  ballooning:
+    enabled: true
+  numa:
+    mode: strict
+    nodes: "1"
+```
+
+- `ballooning.enabled` adds a virtio balloon device to the guest. Talos does not set a balloon target.
+- `numa` keeps the guest's memory on specific host NUMA nodes, given as a Linux node list such as `1` or `0-1`. The `mode` field sets how strict this is:
+  - `strict`, the default, fails memory requests that the listed nodes cannot serve.
+  - `preferred` falls back to other nodes.
+  - `interleave` spreads memory across the listed nodes.
+
+### Firmware
+
+The `firmware.type` field sets the firmware the guest boots with: `bios` or `uefi`. On arm64 hosts, only `uefi` works. Talos accepts `bios` on arm64, but the virtual machine then fails to start.
+
+A guest installed with one firmware type does not boot with the other. Keep `firmware.type` the same after a guest is installed.
+
+To boot the guest with secure boot, set `firmware.secureBoot.enabled` to `true`. Secure boot needs `uefi`.
+
+### Disks
+
+Each entry in `disks` attaches a disk to the virtual machine. Talos currently supports only CD-ROM disks, so set `type: cdrom` on every disk. The type defaults to `disk`, and a virtual machine with a disk of that type reports the `error` stage.
+
+A CD-ROM disk attaches an image from a content library, read-only:
+
+```yaml
+disks:
+  - name: install
+    type: cdrom
+    bootOrder: 1
+    provision:
+      fromImage:
+        library: images
+        file: metal-amd64.iso
+        digest: sha256:<checksum>
+```
+
+- `name` identifies the disk within the virtual machine. It can contain only ASCII letters, digits, and hyphens, and can be up to 63 characters long.
+- `bootOrder` sets the disk's place in the boot order, lowest first. Each value must be unique within the virtual machine. Set it on the disk the guest boots from.
+- `provision.fromImage` names the content library and the file in it. The optional `digest` pins the file to a checksum. See [Upload and manage images](../storage/upload-and-manage-images#pin-an-image-to-a-digest).
+- `bus` sets the controller the disk connects to. A CD-ROM uses `sata` by default, and can also use `scsi`. It cannot use `virtio` or `nvme`.
+
+The image is used in place in the library, not copied. A CD-ROM disk does not accept `pool`, `size`, `format`, or `provision.fromImage.mode`.
+
+{/* TODO: Remove or rewrite the next paragraph when writable disks in storage pools land (siderolabs/talos#14573). */}
+
+Because only CD-ROM disks are supported, a virtual machine has no writable disk, and the guest runs from the ISO itself. A live ISO works, but an installer has no disk to install to. Any ISO built for the host's processor architecture works, because a virtual machine runs on the same architecture as its host.
+
+### Serial console
+
+The serial console is turned off by default. To turn it on, add:
+
+```yaml
+console:
+  serial:
+    enabled: true
+```
+
+To attach to the console and read its output, see [Access the virtual machine console](./access-the-virtual-machine-console).
+
+### Network interfaces
+
+Each entry in `networking.interfaces` adds a network interface to the virtual machine. A virtual machine with no interfaces has no network connection.
+
+```yaml
+networking:
+  interfaces:
+    - name: nic0
+      link: eth0
+      hardwareAddr: "52:54:00:12:34:56"
+```
+
+- `name` identifies the interface within the virtual machine. It is not the device name inside the guest, which the guest operating system chooses.
+- `link` is the name or alias of an Ethernet link on the host, such as a physical interface, a bond, or a VLAN. It can be up to 15 characters long.
+- `hardwareAddr` sets the interface's MAC address. It must be a unicast address.
+
+The interface connects to the host link through macvtap, so the guest appears on that network as a separate machine. Virtual machines on the same link can reach each other, but the host cannot reach them through that link's address.
+
+By default, the MAC address is based on the virtual machine and interface names. It does not depend on the host, so virtual machines with the same names on different hosts get the same address. Set `hardwareAddr` when:
+
+- Hosts that run virtual machines with the same names share a network.
+- A DHCP server reserves an address for the guest.
+- The address must stay the same after a rename.
+
+### How changes are applied
+
+A change is applied with a patch that has the document's `apiVersion`, `kind`, and `name`, and the fields to change. The patch merges into the existing document:
+
+- Entries in `disks` are matched by name. An entry with an existing name updates that disk, and an entry with a new name adds a disk. A patch cannot remove a disk. To remove one, edit the machine configuration with `talosctl edit machineconfig`.
+- The `networking.interfaces` and `cpu.topology.pinning.vcpus` lists are replaced as a whole by the list in the patch.
+
+If a change alters a running virtual machine's definition, Talos replaces the virtual machine. This interrupts the guest, like turning it off and on again. A change that leaves the definition the same, such as setting a field to its default value, does not interrupt the guest.
+
+Talos stops a running virtual machine when it can no longer build its definition. For example, this happens when:
+
+- A disk's content library file is removed, or no longer matches its pinned digest.
+- The host link named in `link` no longer exists.
+
+## Check a virtual machine's status
+
+Talos reports what it sees about each virtual machine in three resources. Replace `<host-ip>` in the following commands with the host's IP address.
+
+### Virtual machine status
+
+The `VirtualMachineStatus` resource shows how far each virtual machine has progressed toward its declared state:
+
+```bash
+talosctl get virtualmachinestatuses --nodes <host-ip>
+```
+
+The `POWER` column shows the power state Talos observes: `running`, `stopped`, or `unknown`.
+
+The `STAGE` column shows the progress:
+
+- `unknown` means Talos has not seen the virtual machine in libvirt yet. A virtual machine set to `stopped` stays at `unknown`, because a stopped virtual machine is removed from libvirt.
+- `pending` means Talos is still starting the virtual machine, or is waiting for something on the host, such as a host link or a disk that is not ready.
+- `ready` means the virtual machine is in its declared state.
+- `error` means something stops the virtual machine from reaching its declared state. For example, a disk has an unsupported type, the host link is not an Ethernet link, the power state is not supported, or the name is already used by a libvirt domain that Talos did not create.
+
+When Talos knows what it is waiting for or what went wrong, the `ERROR` column says so.
+
+### Disk status
+
+The `VirtualMachineDiskStatus` resource shows each disk of each virtual machine:
+
+```bash
+talosctl get virtualmachinediskstatuses --nodes <host-ip>
+```
+
+The output has the following columns:
+
+- `MACHINE` and `DISK` name the virtual machine and the disk.
+- `READY` shows whether the disk can be attached.
+- `SOURCE` is the file on the host that the disk is attached from.
+- `ERROR` explains why a disk is not ready, for example because its content library file is missing or does not match its pinned digest.
+
+A virtual machine with a disk that is not ready does not start, and a running one is stopped.
+
+### libvirt domains
+
+libvirt calls each virtual machine a domain. The `VirtualMachineDomainStatus` resource shows every domain libvirt has on the host, including domains that Talos did not create:
+
+```bash
+talosctl get virtualmachinedomainstatuses --nodes <host-ip>
+```
+
+The output shows each domain's UUID, power state, libvirt state code, memory in KiB, and number of virtual CPUs.
+
+To see other options for these commands, such as following changes as they happen, run:
+
+```bash
+talosctl get --help
+```
+
+## Remove a virtual machine
+
+To remove a virtual machine, delete its document with a patch. Talos turns the virtual machine off immediately and removes it from libvirt. Its console output stays readable with `talosctl logs --kind=vm`.
+
+Run the following command to create `vm1-delete.yaml`, a patch that deletes the `vm1` document:
+
+```bash
+cat <<'EOF' > vm1-delete.yaml
+apiVersion: v1alpha1
+kind: VirtualMachineConfig
+name: vm1
+$patch: delete
+EOF
+```
+
+Apply it to the host, replacing `<host-ip>` with the host's IP address:
+
+```bash
+talosctl patch machineconfig --nodes <host-ip> --patch vm1-delete.yaml
+```
+
+## Next steps
+
+To attach to a virtual machine's serial console or read its output, see [Access the virtual machine console](./access-the-virtual-machine-console).
