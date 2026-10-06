@@ -1,0 +1,32 @@
+navigation:
+  products:
+    - product: "Talos Hypervisor"
+      family: "hypervisor"
+      tag: "Open source"
+      description: "Run virtual machines on a Talos host through native Talos APIs and talosctl."
+      meta: "Alpha · tracks Talos 1.15"
+      icon: "server"
+      groups:
+        - group: "Overview"
+          folder: "hypervisor/overview"
+          pages:
+            - "what-is-talos-hypervisor.mdx"
+
+        - group: "Getting Started"
+          folder: "hypervisor/getting-started"
+          pages:
+            - "requirements.mdx"
+            - "install-a-hypervisor-host.mdx"
+            - "run-your-first-virtual-machine.mdx"
+
+        - group: "Storage"
+          folder: "hypervisor/storage"
+          pages:
+            - "upload-and-manage-images.mdx"
+            - "create-a-storage-pool.mdx"
+
+        - group: "Virtual Machines"
+          folder: "hypervisor/virtual-machines"
+          pages:
+            - "create-and-configure-a-virtual-machine.mdx"
+            - "access-the-virtual-machine-console.mdx"

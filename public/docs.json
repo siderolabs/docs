@@ -2898,6 +2898,41 @@
         ]
       },
       {
+        "product": "Talos Hypervisor",
+        "icon": "server",
+        "description": "Run virtual machines on a Talos host through native Talos APIs and talosctl.",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "hypervisor/overview/what-is-talos-hypervisor"
+            ]
+          },
+          {
+            "group": "Getting Started",
+            "pages": [
+              "hypervisor/getting-started/requirements",
+              "hypervisor/getting-started/install-a-hypervisor-host",
+              "hypervisor/getting-started/run-your-first-virtual-machine"
+            ]
+          },
+          {
+            "group": "Storage",
+            "pages": [
+              "hypervisor/storage/upload-and-manage-images",
+              "hypervisor/storage/create-a-storage-pool"
+            ]
+          },
+          {
+            "group": "Virtual Machines",
+            "pages": [
+              "hypervisor/virtual-machines/create-and-configure-a-virtual-machine",
+              "hypervisor/virtual-machines/access-the-virtual-machine-console"
+            ]
+          }
+        ]
+      },
+      {
         "product": "Kubernetes Guides",
         "icon": "/images/kubernetes.svg",
         "groups": [

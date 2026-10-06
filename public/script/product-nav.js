@@ -18,6 +18,10 @@ window.sideroProducts = {
       "href": "https://www.siderolabs.com/getdirector"
     }
   },
+  "hypervisor": {
+    "name": "Talos Hypervisor",
+    "versioned": false
+  },
   "kubernetes-guides": {
     "name": "Kubernetes Guides",
     "versioned": false,
