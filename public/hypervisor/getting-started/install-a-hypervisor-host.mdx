@@ -1,0 +1,269 @@
+---
+title: Install a Hypervisor Host
+description: Install Talos Linux with the libvirtd system extension and prepare it to run virtual machines.
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+A hypervisor host is a Talos Linux machine that runs virtual machines. To set one up, this page builds a Talos Linux image with the `libvirtd` system extension, installs it on a server with the configuration files that the extension's services need, connects `kubectl` to the cluster, and checks that the host is ready.
+
+<Note>
+This page installs Talos Linux on a server from an ISO. To use a cloud instance or a virtual machine on another hypervisor as the host, install Talos Linux with that platform's guide, such as <a href={`../../talos/${version}/platform-specific-installations/cloud-platforms/aws`}>AWS</a>, <a href={`../../talos/${version}/platform-specific-installations/cloud-platforms/gcp`}>GCP</a>, or <a href={`../../talos/${version}/platform-specific-installations/virtualized-platforms/proxmox`}>Proxmox</a>, using a Talos Linux image that includes the `libvirtd` extension. Add the files from [Step 3](#step-3-create-the-configuration-files-the-extension-needs) to the machine configuration with `talosctl patch machineconfig --nodes <node-ip> --patch hypervisor-users.yaml`, then continue from [Step 7](#step-7-check-that-the-hosts-are-ready).
+</Note>
+
+## Before you begin
+
+The steps on this page require:
+
+- A server that meets the [requirements](./requirements).
+- `talosctl` v1.15 or later.
+- `kubectl`, to access the cluster in Step 6.
+
+
+## Step 1: Build an image with the `libvirtd` extension
+
+Create a Talos Linux ISO that includes the `libvirtd` extension.
+
+<Tabs>
+  <Tab title="CLI">
+
+<a href={`../../talos/${version}/learn-more/image-factory`}>Image Factory</a> builds Talos Linux images with system extensions and identifies each combination of extensions by a schematic ID. The following steps use the Image Factory API to create a schematic with the `libvirtd` extension and download its Talos Linux ISO.
+
+1. Create a file named `schematic.yaml` that lists the `libvirtd` extension:
+
+   ```yaml
+   customization:
+     systemExtensions:
+       officialExtensions:
+         - siderolabs/libvirtd
+   ```
+
+2. Submit the schematic to Image Factory:
+
+   ```bash
+   curl -X POST --data-binary @schematic.yaml https://factory.talos.dev/schematics
+   ```
+
+   Image Factory responds with the schematic ID in the `id` field:
+
+   ```json
+   {"id":"84feec1f502dbb1340c6a832821754ae5b4386d7349e86e8ae0b862bc9148197","schematic":"customization:\n    systemExtensions:\n        officialExtensions:\n            - siderolabs/libvirtd\n"}
+   ```
+
+   The schematic ID is derived from the schematic's contents, so this schematic always returns the same ID.
+
+3. Save the schematic ID, the Talos Linux version, and the server's architecture in variables. Replace `<schematic-id>` with the ID from the response, `<talos-version>` with v1.15.0 or later, and `<arch>` with `amd64` or `arm64`:
+
+   ```bash
+   export SCHEMATIC_ID=<schematic-id>
+   export TALOS_VERSION=<talos-version>
+   export ARCH=<arch>
+   ```
+
+4. Download the ISO that the server boots from:
+
+   ```bash
+   curl -LO https://factory.talos.dev/image/${SCHEMATIC_ID}/${TALOS_VERSION}/metal-${ARCH}.iso
+   ```
+
+  </Tab>
+  <Tab title="UI">
+
+The following steps use the Image Factory UI to create a schematic with the `libvirtd` extension and download its Talos Linux ISO.
+
+1. Open the [Image Factory UI](https://factory.talos.dev).
+2. On the **Hardware Type** screen, select **Bare-metal Machine**.
+3. On the **Choose Talos Linux Version** screen, select v1.15.0 or later.
+4. On the **Machine Architecture** screen, select the server's architecture, **amd64** or **arm64**.
+5. On the **System Extensions** screen, select **siderolabs/libvirtd**.
+6. On the **Customization** screen, leave the defaults.
+7. On the **Schematic Ready** screen, save the schematic ID and the Talos Linux version in variables. Replace `<schematic-id>` with the ID shown on the screen, and `<talos-version>` with the version you selected:
+
+   ```bash
+   export SCHEMATIC_ID=<schematic-id>
+   export TALOS_VERSION=<talos-version>
+   ```
+
+8. Download the ISO listed under **First Boot**. The server boots from it in Step 2.
+
+  </Tab>
+</Tabs>
+
+## Step 2: Boot the server from the ISO
+
+Boot the server from the ISO downloaded in Step 1. Talos Linux starts in maintenance mode, which means it runs from memory and waits for a machine configuration.
+
+1. Save the IP address shown on the server's console in a variable. If no display is connected, find the address in your DHCP server's leases:
+
+   ```bash
+   export NODE_IP=<node-ip>
+   ```
+
+2. Remove the installation media by unplugging the USB drive or unmounting the ISO, so that it cannot be selected as the install disk.
+
+## Step 3: Create the configuration files the extension needs
+
+{/* Confirmed required by Noel Georgi in #team-eng on 2026-10-06. Remove this step if Talos or the libvirtd extension starts providing /etc/passwd and /etc/group itself. */}
+
+Two of the `libvirtd` extension's services, `ext-virtqemud` and `ext-virtstoraged`, start only after the host has `/etc/passwd` and `/etc/group` files. Talos Linux does not create these files, so they are added through the machine configuration with <a href={`../../talos/${version}/reference/configuration/runtime/etcfileconfig`}>`EtcFileConfig`</a> documents. 
+
+Create a configuration patch that defines both files:
+
+```bash
+cat <<'EOF' > hypervisor-users.yaml
+apiVersion: v1alpha1
+kind: EtcFileConfig
+name: passwd
+mode: 0o644
+contents: |
+  root:x:0:0:root:/root:/bin/sh
+  qemu:x:107:107:qemu:/var/lib/libvirt:/bin/false
+  nobody:x:65534:65534:nobody:/:/bin/false
+---
+apiVersion: v1alpha1
+kind: EtcFileConfig
+name: group
+mode: 0o644
+contents: |
+  root:x:0:
+  kvm:x:36:qemu
+  qemu:x:107:
+  nobody:x:65534:
+EOF
+```
+
+For more about adding files under `/etc`, see <a href={`../../talos/${version}/configure-your-talos-cluster/system-configuration/managing-etc-files`}>Managing User-Owned Files</a>.
+
+The next step adds this file to the generated machine configuration, so every host installed from it includes the files.
+
+## Step 4: Install Talos Linux
+
+Applying a machine configuration to the server installs Talos Linux to its disk, and the configuration's installer image determines what is installed. The following steps generate a machine configuration that installs Talos Linux with the `libvirtd` extension and apply it to the server.
+
+1. List the disks available on a server by running the following command against its IP address:
+
+   ```bash
+   talosctl get disks --insecure --nodes $NODE_IP
+   ```
+
+   Save the ID of the disk to install to, such as `sda` or `nvme0n1`, and a name for the cluster in variables:
+
+   ```bash
+   export DISK_NAME=<disk-id>
+   export CLUSTER_NAME=<cluster-name>
+   ```
+
+2. Generate the machine configuration. The `--install-image` flag points to the installer image built from your schematic, so the installed system includes the `libvirtd` extension, and the `--config-patch` flag adds the files from Step 3:
+
+   ```bash
+   talosctl gen config $CLUSTER_NAME https://$NODE_IP:6443 \
+     --install-disk /dev/$DISK_NAME \
+     --install-image factory.talos.dev/metal-installer/${SCHEMATIC_ID}:${TALOS_VERSION} \
+     --config-patch hypervisor-users.yaml
+   ```
+
+   The command writes the machine configuration files `controlplane.yaml` and `worker.yaml`, and a `talosconfig` file for `talosctl`.
+
+3. Apply the control plane configuration to the server, which makes it the control plane node of the cluster. Talos Linux installs to the disk and reboots:
+
+   ```bash
+   talosctl apply-config --insecure --nodes $NODE_IP --file controlplane.yaml
+   ```
+
+4. Point `talosctl` at the generated `talosconfig` file, and set the server as its endpoint:
+
+   ```bash
+   export TALOSCONFIG=$(pwd)/talosconfig
+   talosctl config endpoints $NODE_IP
+   ```
+
+5. After the server finishes rebooting, bootstrap the cluster. Run this command once:
+
+   ```bash
+   talosctl bootstrap --nodes $NODE_IP
+   ```
+
+## Step 5: Add worker hosts (optional)
+
+To run virtual machines on more than one server, add servers to the cluster as worker nodes. Each worker node is a hypervisor host with its own virtual machines.
+
+1. Boot each server from the ISO downloaded in Step 1. After it boots, remove its installation media.
+
+2. Save the servers' IP addresses in a variable:
+
+   ```bash
+   WORKER_IP=("<worker-ip-1>" "<worker-ip-2>")
+   ```
+
+3. Check each server's disks. The worker configuration installs Talos Linux to `/dev/$DISK_NAME`, the same disk as on the first server:
+
+   ```bash
+   for ip in "${WORKER_IP[@]}"; do
+     talosctl get disks --insecure --nodes "$ip"
+   done
+   ```
+
+   If a server has no disk with that ID, create a patch that installs Talos Linux to a different disk. Replace `<disk-id>` with the ID of the disk to install to:
+
+   ```bash
+   cat <<'EOF' > worker-disk.yaml
+   apiVersion: v1alpha1
+   kind: UnattendedInstallConfig
+   provisioning:
+     diskSelector:
+       match: disk.dev_path == "/dev/<disk-id>"
+   EOF
+   ```
+
+4. Apply the worker configuration to each server that installs to the same disk as the first server:
+
+   ```bash
+   for ip in "${WORKER_IP[@]}"; do
+     talosctl apply-config --insecure --nodes "$ip" --file worker.yaml
+   done
+   ```
+
+   For a server that needs the patch from the previous step, apply the worker configuration with the patch instead:
+
+   ```bash
+   talosctl apply-config --insecure --nodes <worker-ip> --file worker.yaml --config-patch worker-disk.yaml
+   ```
+
+## Step 6: Access the cluster with kubectl
+
+After the cluster is bootstrapped, Kubernetes starts on the hosts. Download a `kubeconfig` file for the cluster and point `kubectl` at it:
+
+```bash
+talosctl kubeconfig ./kubeconfig --nodes $NODE_IP
+export KUBECONFIG=$(pwd)/kubeconfig
+```
+
+To list the cluster's nodes, run:
+
+```bash
+kubectl get nodes
+```
+
+The output lists each host as a node. Its `STATUS` column shows `Ready` once the node has finished starting, which can take a few minutes after bootstrap.
+
+## Step 7: Check that the hosts are ready
+
+To confirm that the `libvirtd` extension is installed, run:
+
+```bash
+talosctl get extensions --nodes $NODE_IP
+```
+
+The `NAME` column lists `libvirtd`.
+
+The extension runs the `ext-virtqemud` service, which Talos uses to start virtual machines. To confirm that the service is running, run:
+
+```bash
+talosctl services --nodes $NODE_IP
+```
+
+The output lists `ext-virtqemud` with the state `Running` when the host is ready to run virtual machines. To check a worker host, run the same commands with its IP address.
+
+## Next steps
+
+To create a virtual machine on the host, see [Run your first virtual machine](./run-your-first-virtual-machine).
