@@ -163,11 +163,8 @@ homepage:
     - family: "hypervisor"
       title: "Hypervisor"
       description: "Run and manage virtual machines directly on Talos hosts."
+      # Talos Hypervisor's card comes from hypervisor.yaml.
       cards:
-        - title: "Talos Hypervisor"
-          tag: "Open source"
-          soon: true
-          description: "Run virtual machines on a Talos host through native Talos APIs and talosctl."
         # XENIA -- unannounced. Uncomment when it is. Its navbar button
         # also goes on the Talos Hypervisor product, which has none until then.
         # - title: "Talos Xenia"
