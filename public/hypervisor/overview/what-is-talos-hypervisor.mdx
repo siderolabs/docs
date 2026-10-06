@@ -1,0 +1,28 @@
+---
+title: What Is Talos Hypervisor?
+description: An introduction to Talos Hypervisor, which runs virtual machines on a Talos host through machine configuration and talosctl.
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+Talos Hypervisor runs virtual machines on a Talos Linux host. Each virtual machine is declared in the machine configuration, the same way as volumes or network settings, and Talos creates it and keeps it in the declared state. Talos runs the virtual machines with libvirt and QEMU, which the `libvirtd` system extension adds to the host, and each one runs its own operating system built for the host's processor architecture.
+
+## Talos Hypervisor building blocks
+
+{/* TODO: Talos provisions only cdrom disks today. When writable disks in storage pools land (siderolabs/talos#14573), say that the pool stores virtual machine disks. */}
+
+Talos Hypervisor is configured through three machine configuration documents, each describing a different part of the system:
+
+- **[Content library](../storage/upload-and-manage-images)**: Stores the images that virtual machines boot from, such as installation ISOs. It is declared with a [`ContentLibraryConfig`](../../talos/v1.15/reference/configuration/hypervisor/contentlibraryconfig) document and stored on a Talos volume. Its files are uploaded and removed with `talosctl hypervisor content-library`, rather than through the machine configuration. Talos also stores the cloud-init seed images it generates for virtual machines in a content library.
+
+- **[Storage pool](../storage/create-a-storage-pool)**: Provides a location on the host for the writable disks of virtual machines. It is declared with a [`StoragePool`](../../talos/v1.15/reference/configuration/storage/storagepool) document and stored on a Talos volume.
+
+- **[Virtual machine](../virtual-machines/create-and-configure-a-virtual-machine)**: Defines a virtual machine using a [`VirtualMachineConfig`](../../talos/v1.15/reference/configuration/hypervisor/virtualmachineconfig) document. The configuration specifies its power state, processors, memory, firmware, disks, console, and network interfaces. Talos reports the virtual machine's observed state through a `VirtualMachineStatus` resource.
+
+## Comparison with KubeVirt
+
+Talos Linux can also run virtual machines through <a href={`../../talos/${version}/advanced-guides/install-kubevirt`}>KubeVirt</a>, which adds virtual machines to a Kubernetes cluster as Kubernetes resources. Both approaches run virtual machines with QEMU and KVM, but they are managed differently. KubeVirt requires a Kubernetes cluster and is operated with `kubectl` and `virtctl`. Talos Hypervisor is built into Talos and is operated through the machine configuration and `talosctl`, with libvirt and QEMU supplied by the `libvirtd` system extension.
+
+## Next steps
+
+See [Run your first virtual machine](../getting-started/run-your-first-virtual-machine) to get started with Talos Hypervisor.
