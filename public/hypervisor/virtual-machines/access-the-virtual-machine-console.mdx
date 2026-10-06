@@ -1,0 +1,132 @@
+---
+title: Access the Virtual Machine Console
+description: Attach to a virtual machine's serial console or VNC console with talosctl, and read the console output it has produced.
+---
+
+A virtual machine has two consoles. Neither depends on the guest's network, so both work when the guest has no IP address:
+
+- The serial console is a text connection to the guest. It shows output as the guest prints it and sends keyboard input to the guest. Talos also records the output, so it can be read later.
+- The VNC console shows the guest's screen.
+
+The console to use depends on where the guest writes its output: to a serial port, to a display, or to both. Both consoles can be turned on at the same time.
+
+In the commands on this page, replace `<vm-name>` with the name of the virtual machine and `<host-ip>` with the IP address of its host.
+
+## Before you begin
+
+Both consoles require:
+
+- The Admin role in your `talosconfig`.
+- A virtual machine. To create one, see [Run your first virtual machine](../getting-started/run-your-first-virtual-machine).
+
+## Use the serial console
+
+The serial console requires:
+
+- `talosctl` on macOS or Linux. The serial console does not work on Windows.
+- A guest that writes to a serial port. The Talos Linux `metal` ISO for arm64 does this by default. The amd64 ISO does this only with the `console=ttyS0` kernel argument, as shown in [Run your first virtual machine](../getting-started/run-your-first-virtual-machine#step-1-download-the-talos-linux-iso).
+
+### Step 1: Turn on the serial console
+
+The serial console is off by default. The following steps turn it on.
+
+1. Run the following command to create `console.yaml`, a patch that turns on the serial console. Replace `<vm-name>` in the file before applying it:
+
+   ```bash
+   cat <<'EOF' > console.yaml
+   apiVersion: v1alpha1
+   kind: VirtualMachineConfig
+   name: <vm-name>
+   console:
+     serial:
+       enabled: true
+   EOF
+   ```
+
+2. Apply the patch to the host:
+
+   ```bash
+   talosctl patch machineconfig --nodes <host-ip> --patch console.yaml
+   ```
+
+   If the virtual machine is running, the guest restarts, because Talos replaces the virtual machine to add the serial port.
+
+### Step 2: Attach to the live console
+
+The live console is available only while the virtual machine is running, and only one session can attach to it at a time.
+
+The following steps attach to the console and detach from it.
+
+1. Attach to the console:
+
+   ```bash
+   talosctl hypervisor console <vm-name> --nodes <host-ip>
+   ```
+
+   The console shows output from the moment it attaches and sends all keyboard input, including `Ctrl+C`, to the guest. If the guest has finished booting, the console can stay blank until the guest prints something new.
+
+2. To detach, press `Ctrl+]`. The virtual machine keeps running.
+
+### Step 3: Read past console output
+
+Talos keeps the most recent console output, up to 2 MiB, even after the virtual machine stops, restarts, or is removed.
+
+To read it, run:
+
+```bash
+talosctl logs --kind=vm <vm-name> --nodes <host-ip>
+```
+
+## Use the VNC console
+
+The VNC console requires:
+
+- A VNC viewer on your computer.
+- A guest that writes to a display, such as the Talos Linux ISO for amd64.
+
+### Step 1: Turn on the VNC console
+
+The VNC console is off by default. The following steps turn it on.
+
+1. Run the following command to create `vnc.yaml`, a patch that turns on the VNC console. Replace `<vm-name>` in the file before applying it:
+
+   ```bash
+   cat <<'EOF' > vnc.yaml
+   apiVersion: v1alpha1
+   kind: VirtualMachineConfig
+   name: <vm-name>
+   console:
+     vnc:
+       enabled: true
+   EOF
+   ```
+
+2. Apply the patch to the host:
+
+   ```bash
+   talosctl patch machineconfig --nodes <host-ip> --patch vnc.yaml
+   ```
+
+   If the virtual machine is running, the guest restarts, because Talos replaces the virtual machine to add the display.
+
+### Step 2: Connect a VNC viewer
+
+The following steps open a local endpoint for the VNC console and connect a viewer to it.
+
+1. Open the endpoint:
+
+   ```bash
+   talosctl hypervisor vnc <vm-name> --nodes <host-ip>
+   ```
+
+   The command prints a local address, such as `127.0.0.1:5900`, and keeps running. By default, it picks a free port. To choose the port, add `--port <port>`.
+
+2. Connect a VNC viewer to the printed address and port. Do not use a VNC display number. Only one viewer can connect at a time.
+
+3. To stop, press `Ctrl+C` in the terminal where `talosctl hypervisor vnc` runs.
+
+While the command runs, any program on your computer can connect to the printed port and use the guest's console.
+
+## Next steps
+
+To check the status that Talos reports for a virtual machine, see [Check a virtual machine's status](./create-and-configure-a-virtual-machine#check-a-virtual-machines-status).
