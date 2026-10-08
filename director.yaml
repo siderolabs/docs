@@ -22,6 +22,7 @@ navigation:
             - "hosts.mdx"
             - "virtual-machines.mdx"
             - "migrate-from-vmware.mdx"
+            - "what-happens-during-a-migration.mdx"
             - "storage-pools.mdx"
 
         - group: "Kubernetes"
