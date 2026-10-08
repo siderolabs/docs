@@ -30,14 +30,13 @@ Selecting VMs by tag is usually the simplest approach. Tag a VM when you create 
 
 Navigate to **Network** > **Policies** (`/policies`). Each policy has a priority, a scope (the security groups it applies to), and a set of rules that allow or deny traffic. Policies are evaluated highest priority first. Select **Add Policy** to create one.
 
-Both the Security Groups and Policies views offer **Import from NSX**, to bring existing VMware NSX groups and firewall rules across when you move VMs from VMware.
-
 A VM's **Network** tab lists every policy applied to it. See [The VM detail screen](/director/compute/virtual-machines#network).
 
 ### Test and observe traffic
 
 - **Network** > **Policy Simulator** answers "would this flow be allowed?" before you depend on it. Enter a source and destination (a VM or an IP address), a protocol, and a port, then select **Run connectivity test** to see the verdict and the rule responsible. The same test is on each VM's **Network** tab.
 - A VM's **Firewall Activity** tab captures the firewall's live verdicts on that VM's traffic for a fixed period, so you can see what is being dropped and why.
+- Firewall deny events can be exported to a SIEM in CEF, OCSF, or syslog format.
 
 ## Kubernetes cluster security
 
