@@ -14,6 +14,9 @@ navigation:
           folder: "director/overview"
           pages:
             - "what-is-talos-director.mdx"
+            - "coming-from-vmware.mdx"
+            - "requirements.mdx"
+            - "automation.mdx"
 
         - group: "Compute"
           folder: "director/compute"

@@ -1,0 +1,43 @@
+---
+title: Requirements and Supported Platforms
+description: The servers, storage, networking, guest operating systems, and migration sources Talos Director runs with, and how far each one has been validated.
+---
+
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
+
+<DirectorLimitedAvailability />
+
+Talos Director runs on standard x86-64 servers with hardware virtualization, with no hardware specific to Talos Director. The table below lists the platforms it runs with, in three columns:
+
+- **Validated** platforms are in production use today.
+- **Supported** platforms work and are covered by support, but have not yet carried production workloads.
+- **Roadmap** items are planned and not yet available.
+
+| **Area** | **Validated** | **Supported** | **Roadmap** |
+| --- | --- | --- | --- |
+| Deployment | Self-hosted, one control plane per data center | | Hosted by Sidero Labs |
+| Host operating system | Talos Linux 1.14 or later with the KVM hypervisor | | |
+| Servers | Dell PowerEdge; Cisco UCS | Any x86-64 server with Intel VT-x or AMD-V and an IOMMU | |
+| Out-of-band management | Dell iDRAC (Redfish) | Any Redfish-capable BMC for zero-touch onboarding; IPMI for fencing | |
+| Storage pools | NFS (NetApp) | iSCSI, Fibre Channel, Ceph (hyperconverged) | |
+| Networking | Active/backup or LACP bonding, 802.1Q VLANs; Cisco ACI integration | SR-IOV | |
+| Devices | | PCI passthrough (VFIO) | |
+| Migration sources | VMware vCenter | OVF packages; existing KVM disk images; other Talos Director deployments | |
+| Guest operating systems | Linux and Windows Server with VirtIO drivers and the QEMU guest agent | Windows 11 and Windows Server 2025 with a virtual TPM 2.0 | |
+| Kubernetes | Talos Linux clusters created through Talos Director | In-place adoption of existing Talos clusters | |
+| Identity | Microsoft Entra ID; LDAP | | |
+| Automation | REST API with OpenAPI specification | Go and Python SDKs; Ansible collection; MCP server; command-line tool | Terraform provider after general availability |
+
+## Hosts
+
+Each host needs hardware virtualization (Intel VT-x or AMD-V) and an IOMMU enabled in firmware. Zero-touch onboarding needs a Redfish-capable BMC that can boot the server once over UEFI HTTP. Servers without one can be onboarded by booting the Talos Linux image from an ISO or USB. See [How a server becomes a host](/director/overview/how-talos-director-works#how-a-server-becomes-a-host).
+
+Hosts in the same compute cluster share storage. Live migration and High Availability both depend on every host in the cluster being able to open a VM's disks. See [Storage Pools](/director/compute/storage-pools).
+
+## Migrating from VMware
+
+Converting a VM from vCenter needs guest credentials, a VM with no existing vCenter snapshots, and VirtIO drivers and the QEMU guest agent installed in the guest. Warm migrations use VMware's Virtual Disk Development Kit (VDDK) when you have uploaded it, and fall back to vCenter's standard export when you have not. See [What Happens During a Migration](/director/compute/what-happens-during-a-migration).
+
+## Availability
+
+Talos Director is in Limited Availability. Limited Availability customers receive full production support and direct engineering engagement during onboarding. General availability is planned for January 2027.
