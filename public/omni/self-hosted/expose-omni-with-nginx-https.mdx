@@ -157,12 +157,16 @@ http {
             grpc_read_timeout 1h;
             grpc_send_timeout 1h;
             grpc_pass grpc://127.0.0.1:8080;
+            # Overwrite any client-sent value
+            grpc_set_header X-Forwarded-For \$remote_addr;
         }
 
         location @http {
             proxy_pass http://127.0.0.1:8080;
             proxy_set_header Upgrade \$http_upgrade;
             proxy_set_header Connection \$connection_upgrade;
+            # Overwrite any client-sent value
+            proxy_set_header X-Forwarded-For \$remote_addr;
         }
     }
 
@@ -196,6 +200,8 @@ http {
             proxy_pass http://127.0.0.1:8100;
             proxy_set_header Upgrade \$http_upgrade;
             proxy_set_header Connection \$connection_upgrade;
+            # Overwrite any client-sent value
+            proxy_set_header X-Forwarded-For \$remote_addr;
         }
     }
 }
@@ -215,6 +221,8 @@ docker run -d \
 ```
 
 <Info>The `--net=host` flag is required so that Nginx can reach Omni over `127.0.0.1`. If Nginx and Omni run on separate machines, replace `127.0.0.1` in the config with the internal IP address of the Omni machine before starting the container.</Info>
+
+<Info>Omni reads the client address from the `X-Forwarded-For` header and uses it in the request logs and in the rate limit of public key registrations. The config above overwrites this header with the address Nginx sees (`$remote_addr`). Do not append to it instead (e.g., with `$proxy_add_x_forwarded_for`). A client on the same private network as Nginx could then put any address in front of its own and be taken for that address.</Info>
 
 If you update the Nginx configuration later and need to apply the changes without restarting the container, run:
 
