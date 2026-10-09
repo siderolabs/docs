@@ -1,0 +1,36 @@
+---
+title: Requirements for Talos Hypervisor
+description: The hardware, Talos Linux version, system extension, and client setup needed to run virtual machines with Talos Hypervisor.
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+Talos Hypervisor runs on a Talos Linux host, which can be a physical server or a virtual machine with nested virtualization enabled. This page lists the requirements for the host, the Talos Linux image, and the machine that runs `talosctl`.
+
+## Host hardware requirements
+
+{/* TODO: Confirm with engineering before the combined PR merges: is arm64 supported for the alpha (all hypervisor CI runs on amd64), and does the libvirtd extension ship UEFI firmware (the integration tests boot only with BIOS)? Update the Architecture item to match. */}
+
+The host must meet the following hardware requirements:
+
+- **Architecture**: Talos Hypervisor runs on both architectures that Talos Linux supports, x86-64 (amd64) and Arm (arm64). Each virtual machine runs on the same architecture as its host. Virtual machines on amd64 hosts can use BIOS or UEFI firmware, and virtual machines on arm64 hosts must use UEFI.
+- **Hardware virtualization**: Virtual machines run as KVM guests, so hardware virtualization must be available to the host. On a physical server, it is enabled in the firmware. This is Intel VT-x or AMD-V on x86-64 processors, and the virtualization extensions on arm64 processors.
+- **Nested virtualization**: A host that runs as a virtual machine, such as a cloud instance, needs nested virtualization enabled. Platforms that support it on specific instance types or configurations include [AWS](https://aws.amazon.com/about-aws/whats-new/2026/02/amazon-ec2-nested-virtualization-on-virtual), [Google Cloud](https://cloud.google.com/compute/docs/instances/nested-virtualization/overview), Azure, and [Proxmox](https://pve.proxmox.com/wiki/Nested_Virtualization). Many cloud networks also block traffic from the MAC addresses of the host's virtual machines.
+- **Disk space**: A Talos volume on the host must have enough space for the content library that stores virtual machine images.
+- **Network**: The host needs an Ethernet link, such as a physical interface, a bond, or a VLAN, for virtual machines to connect to.
+
+## Host software requirements
+
+The host must run Talos Linux v1.15 or later. The machine configuration documents that declare content libraries, storage pools, and virtual machines were introduced in Talos Linux v1.15.
+
+The Talos Linux image installed on the host must also include the `libvirtd` system extension, which provides libvirt and QEMU. Talos uses them to run the virtual machines. To learn how to add an extension to an image, see <a href={`../../talos/${version}/build-and-extend-talos/custom-images-and-development/system-extensions`}>System Extensions</a> and <a href={`../../talos/${version}/learn-more/image-factory`}>Image Factory</a>.
+
+## Client requirements
+
+The `talosctl` commands for content libraries, the virtual machine console, and console history were introduced in Talos Linux v1.15, so `talosctl` must be v1.15 or later. Using the same `talosctl` version as the Talos Linux version on the host is recommended.
+
+Attaching to a virtual machine's serial console requires the Admin role in your `talosconfig`. The console and the command that reads a virtual machine's console history each target one node at a time. The serial console command is available on macOS and Linux clients, but not on Windows.
+
+## Next steps
+
+To set up a host that meets these requirements, see [Install a hypervisor host](./install-a-hypervisor-host).

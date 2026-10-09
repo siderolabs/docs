@@ -1,0 +1,419 @@
+---
+title: Run Your First Virtual Machine
+description: Create a content library, upload a Talos Linux ISO, declare a virtual machine that boots from it, and connect to Talos Linux running inside the virtual machine, on a bare-metal or cloud host.
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+Talos Hypervisor manages virtual machines through the machine configuration. Each virtual machine is defined in a `VirtualMachineConfig` document. Talos uses libvirt and QEMU to create the virtual machine, maintain its desired state, and report its current state in a `VirtualMachineStatus` resource.
+
+This page runs Talos Linux as the guest. It downloads a Talos Linux ISO, creates a content library, uploads the ISO to it, declares a virtual machine that boots from the ISO, and connects to the guest with `talosctl`. Booted from the ISO, Talos Linux starts in maintenance mode and runs from memory, so the virtual machine needs no disk of its own.
+
+<Note>
+This page runs one virtual machine on one host. Each virtual machine is declared in the machine configuration of the host that runs it.
+
+To run more than one virtual machine:
+
+- On one host, declare more `VirtualMachineConfig` documents, each with its own name. See [Configure a virtual machine](../virtual-machines/create-and-configure-a-virtual-machine).
+- On more hosts, follow this page against each host, because each host has its own content library and images.
+
+The guest's MAC address is derived from the virtual machine and interface names only, not from the host. Virtual machines with the same name on different hosts on the same network get the same MAC address, so give each one a different name or set `hardwareAddr`.
+</Note>
+
+## Before you begin
+
+The steps on this page require:
+
+- A host set up as described in [Install a hypervisor host](./install-a-hypervisor-host), which meets the [requirements](./requirements).
+- `talosctl` configured with the Admin role for the host.
+- The host's IP address. The commands on this page use the `HOST_IP` variable, which holds the IP address of the host that runs the virtual machine.
+
+  To set the variable, replace `<host-ip>` with the host's IP address and run:
+
+  ```bash
+  export HOST_IP=<host-ip>
+  ```
+
+- `jq`, to build the ISO with the Image Factory API on an amd64 cloud host.
+- The name of the host Ethernet link that the virtual machine attaches to. To list the links on the host, run:
+
+  ```bash
+  talosctl get links --nodes $HOST_IP
+  ```
+
+  The output lists every link on the host. Choose the link that connects the host to the network the virtual machine should join.
+
+  The right link has:
+
+  - `OPER STATE` set to `up` and `LINK STATE` set to `true`.
+  - An empty `KIND` column, which marks a physical network port. A link of kind `bond` or `vlan` also works.
+
+  Do not choose a link of kind `macvtap`. Each `macvtap` link belongs to a virtual machine that is already running.
+
+  Save the link name from the `ID` column in a variable, replacing `<link-name>` with the name, such as `enp1s0`:
+
+  ```bash
+  export LINK=<link-name>
+  ```
+
+- A DHCP server on the network that link is connected to, so the virtual machine receives an IP address. A guest on a cloud host, which is checked through its serial console, does not need one.
+
+The `libvirtd` extension runs the `ext-virtqemud` service, which Talos uses to start virtual machines.
+
+To check that the service is running, run:
+
+```bash
+talosctl services --nodes $HOST_IP
+```
+
+The output lists `ext-virtqemud` with the state `Running`. If the service is missing or not running, see [Install a hypervisor host](./install-a-hypervisor-host).
+
+## Step 1: Download the Talos Linux ISO
+
+The guest boots from a Talos Linux `metal` ISO with no system extensions. The ISO must match the host's processor architecture.
+
+Save the Talos Linux version and the host's architecture in variables, replacing `<talos-version>` with the Talos Linux version and `<arch>` with `amd64` or `arm64`:
+
+```bash
+export TALOS_VERSION=<talos-version>
+export ARCH=<arch>
+```
+
+<Note>
+If the host is itself a virtual machine, for example on Proxmox, the choice depends on its hypervisor. If that hypervisor passes traffic from the guest's MAC address, use the **Bare Metal Host** tabs. Otherwise, use the **Cloud Host** tabs.
+</Note>
+
+<Tabs>
+  <Tab title="Bare Metal Host or arm64 Cloud Host">
+
+This ISO is for bare-metal hosts and arm64 cloud hosts. The arm64 ISO already writes to the serial console, so a cloud host needs no changes to it. It is built from the default Image Factory schematic, which has no customizations and the ID `376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba`.
+
+Download the ISO for the default schematic:
+
+```bash
+curl -L -o metal-${ARCH}.iso https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/${TALOS_VERSION}/metal-${ARCH}.iso
+```
+
+  </Tab>
+  <Tab title="amd64 Cloud Host">
+
+On a cloud host, the guest is checked through its serial console. The amd64 `metal` ISO writes only to the display, so the ISO needs the `console=ttyS0` kernel argument, which makes Talos Linux write its output to the serial console.
+
+The guest runs on the hypervisor host, not on the cloud platform, and has no access to the platform's metadata service, so it uses the bare-metal image even on a cloud host.
+
+<Tabs>
+  <Tab title="CLI">
+
+The following steps use the Image Factory API to create a schematic with the `console=ttyS0` kernel argument and download its Talos Linux ISO.
+
+1. Run the following command to create `schematic.yaml`, a schematic that adds the kernel argument:
+
+   ```bash
+   cat <<'EOF' > schematic.yaml
+   customization:
+     extraKernelArgs:
+       - console=ttyS0
+   EOF
+   ```
+
+2. Submit the schematic to Image Factory and save the schematic ID from its response in a variable, using `jq` to read the ID:
+
+   ```bash
+   export SCHEMATIC_ID=$(curl -s -X POST --data-binary @schematic.yaml https://factory.talos.dev/schematics | jq -r .id)
+   ```
+
+3. Download the ISO:
+
+   ```bash
+   curl -L -o metal-${ARCH}.iso https://factory.talos.dev/image/${SCHEMATIC_ID}/${TALOS_VERSION}/metal-${ARCH}.iso
+   ```
+
+  </Tab>
+  <Tab title="UI">
+
+The following steps use the Image Factory UI to create a schematic with the `console=ttyS0` kernel argument and download its Talos Linux ISO.
+
+1. Open the [Image Factory UI](https://factory.talos.dev).
+2. On the **Hardware Type** screen, select **Bare-metal Machine**.
+3. On the **Choose Talos Linux Version** screen, select the version in `TALOS_VERSION`.
+4. On the **Machine Architecture** screen, select **amd64**.
+5. On the **System Extensions** screen, leave the defaults. The guest does not need any system extensions.
+6. On the **Customization** screen, enter `console=ttyS0` in **Extra kernel command line arguments**.
+7. On the **Schematic Ready** screen, download the ISO listed under **First Boot** and save it as `metal-amd64.iso`.
+
+  </Tab>
+</Tabs>
+
+  </Tab>
+</Tabs>
+
+## Step 2: Create a content library
+
+A content library stores the images that virtual machines boot from and is kept on a Talos volume.
+
+The following steps declare a content library, apply it to the host, and check that it is ready.
+
+1. Run the following command to create `content-library.yaml`, which declares a directory volume and a content library backed by it:
+
+   ```bash
+   cat <<'EOF' > content-library.yaml
+   apiVersion: v1alpha1
+   kind: UserVolumeConfig
+   name: vm-images
+   volumeType: directory
+   ---
+   apiVersion: v1alpha1
+   kind: ContentLibraryConfig
+   name: images
+   backing:
+     volume: vm-images
+   EOF
+   ```
+
+   A <a href={`../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/disk-management/user`}>directory volume</a> is a directory on the host's `EPHEMERAL` volume, so it does not need a disk of its own. The `backing.volume` field names the volume by the name declared in its `UserVolumeConfig` document.
+
+2. Apply the documents to the host:
+
+   ```bash
+   talosctl patch machineconfig --nodes $HOST_IP --patch content-library.yaml
+   ```
+
+   Talos mounts the volume and reports the library's state in a `ContentLibraryStatus` resource.
+
+3. Confirm that the library is ready:
+
+   ```bash
+   talosctl get contentlibrarystatuses --nodes $HOST_IP
+   ```
+
+   The `READY` column shows `true` once the library can accept uploads.
+
+## Step 3: Upload the ISO
+
+Files are added to a content library over the Talos API.
+
+The following steps upload the ISO to the `images` library and check that it is there.
+
+1. Upload the Talos Linux ISO to the `images` library:
+
+   ```bash
+   talosctl hypervisor content-library upload images metal-${ARCH}.iso --nodes $HOST_IP
+   ```
+
+   The file keeps its own name in the library. To store it under a different name, add `--name <name>`. To have the host verify the upload, add `--digest sha256:<checksum>`; the host refuses the upload unless the contents match.
+
+2. Confirm that the file is in the library:
+
+   ```bash
+   talosctl hypervisor content-library list images --nodes $HOST_IP
+   ```
+
+## Step 4: Declare the virtual machine
+
+The virtual machine boots with BIOS firmware on amd64 and UEFI firmware on arm64. On a cloud host, it also needs its serial console enabled, because the guest is checked through the serial console instead of over the network.
+
+The following steps declare the virtual machine and apply it to the host.
+
+1. Save the firmware type in a variable, replacing `<firmware>` with `bios` on an amd64 host or `uefi` on an arm64 host:
+
+   ```bash
+   export FIRMWARE=<firmware>
+   ```
+
+2. Choose a MAC address for the virtual machine and save it in a variable. Replace `<mac-address>` with an address that no other device on the network uses, such as `52:54:00:00:00:01`:
+
+   ```bash
+   export MAC_ADDRESS=<mac-address>
+   ```
+
+   Talos does not show the virtual machine's IP address. A known MAC address makes the IP address easy to find in the DHCP server's leases in Step 6.
+
+3. Run the following command to create `vm.yaml`, which declares a virtual machine that boots from the ISO:
+
+   ```bash
+   cat <<EOF > vm.yaml
+   apiVersion: v1alpha1
+   kind: VirtualMachineConfig
+   name: talos-guest
+   powerState: running
+   cpu:
+     count: 2
+   memory:
+     size: 2GiB
+   firmware:
+     type: ${FIRMWARE}
+   disks:
+     - name: install
+       type: cdrom
+       bootOrder: 1
+       provision:
+         fromImage:
+           library: images
+           file: metal-${ARCH}.iso
+   networking:
+     interfaces:
+       - name: nic0
+         link: ${LINK}
+         hardwareAddr: "${MAC_ADDRESS}"
+   EOF
+   ```
+
+   This document gives the virtual machine two virtual CPUs and 2 GiB of memory, the <a href={`../../talos/${version}/getting-started/system-requirements`}>minimum for a Talos Linux control plane node</a>. The `disks` entry attaches the ISO from the `images` library as a read-only CD-ROM and boots from it first. The network interface attaches the guest to the host link named in `link`, where it appears as a separate machine on that network.
+
+   The `hardwareAddr` field gives the guest the MAC address from `MAC_ADDRESS`. Without it, Talos derives an address from the virtual machine and interface names.
+
+4. Apply the virtual machine to the host, following the tab for the host's environment:
+
+   <Tabs>
+     <Tab title="Bare Metal Host">
+
+     Apply `vm.yaml` to the host:
+
+     ```bash
+     talosctl patch machineconfig --nodes $HOST_IP --patch vm.yaml
+     ```
+
+     </Tab>
+     <Tab title="Cloud Host">
+
+     Run the following command to create `vm-serial.yaml`, a patch that enables the serial console on `talos-guest`:
+
+     ```bash
+     cat <<'EOF' > vm-serial.yaml
+     apiVersion: v1alpha1
+     kind: VirtualMachineConfig
+     name: talos-guest
+     console:
+       serial:
+         enabled: true
+     EOF
+     ```
+
+     Apply both files to the host:
+
+     ```bash
+     talosctl patch machineconfig --nodes $HOST_IP --patch vm.yaml --patch vm-serial.yaml
+     ```
+
+     </Tab>
+   </Tabs>
+
+## Step 5: Check the virtual machine's status
+
+Talos starts the virtual machine and reports what it observes in a `VirtualMachineStatus` resource.
+
+To see the virtual machine's status, run:
+
+```bash
+talosctl get virtualmachinestatuses --nodes $HOST_IP
+```
+
+The `STAGE` column shows how far the virtual machine has progressed toward its declared state:
+
+- `unknown` means Talos has not observed the virtual machine yet.
+- `pending` means Talos is still bringing the virtual machine up, or is waiting for something on the host, such as the link named in `link`.
+- `ready` means the observed power state matches the declared `running` state, which the `POWER` column also shows.
+- `error` means something prevents the declaration from being met.
+
+When Talos knows what it is waiting for or what went wrong, the `ERROR` column says so. For example, a link name that does not exist on the host keeps the virtual machine at `pending`, and the `ERROR` column names the missing link.
+
+## Step 6: Connect to Talos Linux in the virtual machine
+
+The guest boots Talos Linux into maintenance mode. On a bare-metal host, the guest is reached over the network. On a cloud host, it is checked through its serial console.
+
+<Tabs>
+  <Tab title="Bare Metal Host">
+
+{/* TODO: Talos does not report guest IP addresses yet. siderolabs/talos#14595 shows guest IPs, but only for guests running qemu-guest-agent, which the plain metal ISO does not include. When it merges, consider mentioning it here as an option. */}
+
+The guest gets its IP address from the DHCP server. Talos does not report this address.
+
+The following steps find the guest's IP address and connect to it.
+
+1. Find the guest's IP address by the MAC address in `MAC_ADDRESS`, in one of these places:
+
+   - **On the DHCP server**, usually the router, open its list of DHCP clients or connected devices and find the MAC address.
+   - **From another Linux machine on the same network**, run `ip neigh | grep -i "$MAC_ADDRESS"`. A machine lists only the devices it has recently exchanged traffic with, so if the guest does not appear, scan the network first, for example with `nmap -sn 192.168.1.0/24` using your network's address range.
+
+2. Save the guest's IP address in a variable, replacing `<vm-ip>` with the address:
+
+   ```bash
+   export VM_IP=<vm-ip>
+   ```
+
+3. From another machine on the network, confirm that Talos Linux is running in the virtual machine:
+
+   ```bash
+   talosctl get cpu --insecure --nodes $VM_IP
+   ```
+
+   The output lists the virtual machine's processors, with the manufacturer `QEMU`. The guest is now a Talos Linux machine waiting for a machine configuration, the same as a physical server booted from the ISO.
+
+   The command runs from another machine because the guest is attached to the host link through macvtap, so the host cannot reach the guest through its own address on that link. The `--insecure` flag works because in maintenance mode, the Talos API accepts unauthenticated requests.
+
+  </Tab>
+  <Tab title="Cloud Host">
+
+{/* TODO: Untested. Boot amd64 (console=ttyS0 ISO) and arm64 (default ISO) guests on a cloud hypervisor host and confirm that `talosctl logs --kind=vm` shows the boot log and maintenance mode messages. Then describe the output more specifically. */}
+
+The guest attaches to the host link with a MAC address of its own. Many cloud networks drop traffic from MAC addresses they did not assign, so a guest on a cloud host receives no IP address and is checked through its serial console instead.
+
+A guest booted from the ISO in [Step 1](#step-1-download-the-talos-linux-iso) writes its output to the serial console, which the host reads without a network connection to the guest.
+
+To read the console output, run:
+
+```bash
+talosctl logs --kind=vm talos-guest --nodes $HOST_IP
+```
+
+The output shows the Talos Linux boot log, followed by messages from maintenance mode. The guest is now a Talos Linux machine waiting for a machine configuration, the same as a physical server booted from the ISO. To print new output as it arrives, add `--follow`. For more about the console, see [Access the virtual machine console](../virtual-machines/access-the-virtual-machine-console).
+
+  </Tab>
+</Tabs>
+
+## Step 7: Clean up
+
+To remove the virtual machine, its document is deleted from the machine configuration. Talos then powers off the virtual machine and removes it from libvirt. The host refuses to delete a file that a virtual machine still uses, so the ISO is deleted only after the virtual machine is gone.
+
+The following steps remove the virtual machine and then the ISO.
+
+1. Run the following command to create `vm-delete.yaml`, a patch that deletes the `talos-guest` document:
+
+   ```bash
+   cat <<'EOF' > vm-delete.yaml
+   apiVersion: v1alpha1
+   kind: VirtualMachineConfig
+   name: talos-guest
+   $patch: delete
+   EOF
+   ```
+
+2. Apply it to the host:
+
+   ```bash
+   talosctl patch machineconfig --nodes $HOST_IP --patch vm-delete.yaml
+   ```
+
+3. Confirm that `talos-guest` no longer appears in the virtual machines that libvirt reports:
+
+   ```bash
+   talosctl get virtualmachinedomainstatuses --nodes $HOST_IP
+   ```
+
+4. Delete the ISO from the library:
+
+   ```bash
+   talosctl hypervisor content-library delete images metal-${ARCH}.iso --nodes $HOST_IP
+   ```
+
+   If the host still reports the file as in use, retry after a few seconds.
+
+To learn more about adding and removing machine configuration documents, see <a href={`../../talos/${version}/configure-your-talos-cluster/system-configuration/patching`}>Patching</a>.
+
+## Next steps
+
+The following pages cover the rest of working with virtual machines:
+
+- To configure a virtual machine's processors, memory, firmware, disks, console, and network interfaces, see [Configure a virtual machine](../virtual-machines/create-and-configure-a-virtual-machine).
+- To upload, list, replace, and delete images in a content library, see [Upload and manage images](../storage/upload-and-manage-images).
+- To attach to a virtual machine's serial console or read its output, see [Access the virtual machine console](../virtual-machines/access-the-virtual-machine-console).
