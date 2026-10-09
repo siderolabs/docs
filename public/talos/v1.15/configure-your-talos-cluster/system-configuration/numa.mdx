@@ -1,0 +1,124 @@
+---
+title: "NUMA Topology and VM Placement"
+description: "Inspect host NUMA topology and select host CPUs and memory nodes for virtual machines."
+canonical: https://docs.siderolabs.com/talos/v1.15/configure-your-talos-cluster/system-configuration/numa
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Non-uniform memory access (NUMA) groups host CPUs and memory into nodes.
+Talos reports this topology and checks explicit virtual machine (VM) placement against it before starting or replacing a guest.
+CPU affinity and memory placement are independent: a VM can intentionally run on CPUs from one node while using memory from another.
+
+## Inspect host topology
+
+Replace `NODE_IP` with the Talos machine's address.
+
+1. Read the host NUMA inventory:
+
+   ```bash
+   talosctl --nodes NODE_IP get numa -o yaml
+   ```
+
+   The `NUMATopology` resource has ID `numa` in the `hardware` namespace.
+   Its `nodes` list contains each node's `id`, logical `cpus` and `memoryTotalBytes`.
+   `presentCPUs` includes offline CPUs; `onlineCPUs` identifies CPUs currently available for placement.
+   Node IDs can have gaps, and a node can have CPUs but no memory, or memory but no CPUs.
+
+2. Inspect physical cores and simultaneous multithreading (SMT) relationships:
+
+   ```bash
+   talosctl --nodes NODE_IP get cpucores -o yaml
+   ```
+
+   Use this CPU inventory alongside NUMA membership when choosing logical CPU IDs.
+   Do not assume adjacent IDs represent separate physical cores.
+
+Talos refreshes the inventory after CPU, node or memory hotplug events.
+If discovery fails, Talos withdraws the NUMA resource rather than retaining a stale snapshot.
+The resource is not published when Talos runs in container mode.
+
+<Note>
+`memoryTotalBytes` is total node memory reported by the kernel, not free memory or capacity reserved for VMs.
+Topology discovery does not reserve CPUs or memory.
+</Note>
+
+## Configure VM placement
+
+VM execution requires the `libvirtd` [system extension](/talos/v1.15/build-and-extend-talos/custom-images-and-development/system-extensions).
+The following fragment shows placement fields to add to an existing `VirtualMachineConfig`, not a complete bootable guest configuration.
+It assumes host NUMA node `0` has online CPUs `0-3`; replace these IDs with values from your host's inventory.
+
+```yaml
+cpu:
+  count: 2
+  topology:
+    pinning:
+      vcpus:
+        - vcpu: 0
+          cpus: "0"
+        - vcpu: 1
+          cpus: "1"
+      emulator: "2-3"
+memory:
+  size: 2GiB
+  numa:
+    mode: strict
+    nodes: "0"
+```
+
+`vcpu` identifies a guest vCPU; `cpus` and `emulator` select logical **host** CPUs.
+These fields accept CPU lists such as `"0-3,8"`.
+Omitting a vCPU pin leaves that vCPU without an explicit affinity restriction.
+Pinning does not reserve exclusive use of a host CPU or change the VM's CPU quota.
+
+Guest `cpu.topology.sockets`, `cores` and `threads` describe the CPU geometry presented to the guest, not host NUMA membership.
+If set, all three must be positive and their product must equal `cpu.count`.
+
+`memory.numa.nodes` selects **host** memory nodes, using a list such as `"0"` or `"0-1"`.
+It does not define NUMA cells inside the guest.
+
+| Memory mode | Behavior |
+| --- | --- |
+| `strict` (default) | Allocations fail if the selected nodes cannot satisfy them; memory does not silently fall back to other nodes. |
+| `preferred` | Prefer the selected node, with fallback to other nodes. |
+| `interleave` | Spread memory pages across the selected nodes round-robin. |
+
+For intentional remote-memory placement, select memory nodes independently of the CPU pins.
+Talos does not require them to belong to the same NUMA node.
+
+## Placement validation and recovery
+
+Talos rejects starts or replacements that name absent or offline CPUs, absent NUMA nodes, or nodes without memory.
+Explicit placement waits while NUMA inventory is unavailable; definitions without explicit placement do not require that inventory.
+An invalid replacement is rejected before the existing guest is stopped.
+Topology changes do not stop unchanged running guests, and explicit stop requests remain possible.
+
+To inspect a placement rejection, replace `VM_NAME` with the VM configuration's name:
+
+```bash
+talosctl --nodes NODE_IP get virtualmachinestatuses.hypervisor.talos.dev VM_NAME -o yaml
+```
+
+Check the status `stage` and `error` fields.
+Correct the selected IDs or restore the missing topology; Talos reevaluates placement when configuration or inventory changes.
+
+These checks validate host IDs, not available memory capacity.
+A valid node selection can still fail to allocate memory at runtime.
+Host-ID validation does not establish containment within an applied CPU-partition allocation, automatically choose placement, or reserve NUMA memory.
+
+## Emulate NUMA for development
+
+With [Talos development boot artifacts](/talos/v1.15/build-and-extend-talos/custom-images-and-development/developing-talos), the QEMU provisioner can expose multiple NUMA nodes:
+
+```bash
+talosctl cluster create dev --numa-nodes=2 --cpus=4 --cpus-workers=4
+```
+
+The setting applies to each provisioned machine, splitting its CPUs and memory across the requested nodes.
+The first nodes receive any remainder.
+Each node must receive at least one vCPU and one MiB of memory; zero preserves the default topology.
+The option also works with remote provisioning and virtiofs-backed volumes.
+Emulation is useful for testing topology and placement behavior, not measuring physical NUMA latency.
