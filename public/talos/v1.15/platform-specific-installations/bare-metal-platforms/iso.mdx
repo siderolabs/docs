@@ -1,0 +1,24 @@
+---
+title: "ISO"
+description: "Booting Talos on bare-metal with ISO."
+canonical: https://docs.siderolabs.com/talos/v1.14/platform-specific-installations/bare-metal-platforms/iso
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos can be installed on bare-metal machines using an ISO image. ISO images for `amd64` and `arm64` architectures are available on the [Talos releases page](https://github.com/siderolabs/talos/releases/latest/).
+
+When booted from an ISO, Talos does not install itself to disk until a machine configuration is applied.
+
+For steps on how to install Talos, follow the [getting started guide](../../getting-started/getting-started).
+
+<Note>If a Talos installation already exists on the disk, the machine will boot into that installation even when booting from a Talos ISO. The boot order should prefer disk over ISO, or the ISO should be removed after installation to ensure Talos boots from disk.</Note>
+
+See the [kernel parameters reference](../../reference/kernel) for a list of kernel parameters supported by Talos.
+
+Two flavors of ISO image are available:
+
+* `metal-<arch>.iso` supports booting on BIOS and UEFI systems (UEFI only for arm64)
+* `metal-<arch>-secureboot.iso` supports booting on UEFI systems in SecureBoot mode only (via [Image Factory](../../learn-more/image-factory))

@@ -8,13 +8,13 @@ DOCS_GEN_IMAGE := ghcr.io/siderolabs/docs-gen:latest
 DOCS_CONVERT_IMAGE := ghcr.io/siderolabs/docs-convert:latest
 CHANGELOG_GEN_IMAGE := ghcr.io/siderolabs/changelog-gen:latest
 VERSION_UPGRADE_IMAGE := ghcr.io/siderolabs/version-upgrade-gen:latest
-TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.14.0
+TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.15.0-alpha.0
 OMNI_CLI_GEN_IMAGE := ghcr.io/siderolabs/omni-cli-gen:latest
 OMNI_CONFIG_GEN_IMAGE := ghcr.io/siderolabs/omni-config-gen:latest
 MDX_NORMALIZE_IMAGE := ghcr.io/siderolabs/mdx-normalize:latest
 CANONICAL_GEN_IMAGE := ghcr.io/siderolabs/canonical-gen:latest
 STYLE_CHECK_IMAGE := ghcr.io/siderolabs/style-guide-checker:latest
-TALOS_VERSION := v1.14
+TALOS_VERSION := v1.15
 # Base revision for the *-changed targets (canonical-changed, ...).
 CANONICAL_BASE ?= HEAD
 # Linter images are pinned to exact versions so `make code-review` (and CI) is

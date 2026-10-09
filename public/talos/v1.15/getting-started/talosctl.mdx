@@ -1,0 +1,43 @@
+---
+title: "talosctl"
+description: "Install Talos Linux CLI"
+canonical: https://docs.siderolabs.com/talos/v1.14/getting-started/talosctl
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Use `talosctl` to interact with the Talos API, manage nodes, and configure your Talos machines. Follow the instructions below to install it on your operating system.
+
+## Linux and macOS
+
+The recommended way to install `talosctl` on Linux and macOS is via the [Homebrew package manager](https://brew.sh/). This method automatically keeps `talosctl` up to date as new versions are released, without any manual intervention.
+
+```bash
+brew tap siderolabs/tap
+brew trust siderolabs/tap
+brew install siderolabs/tap/talosctl
+```
+
+The same Homebrew tap also includes a formula for `omnictl`.
+
+<Note>Your `talosctl` version should match the version of Talos Linux running on your host. To install a specific version of `talosctl` with Homebrew, refer to [this GitHub issue](https://github.com/siderolabs/homebrew-tap/issues/75) for guidance.</Note>
+
+## Alternative install
+
+If Homebrew is not available in your environment, you can use the installer script to automatically download the correct version of `talosctl` for your operating system and architecture:
+
+```bash
+curl -sL https://talos.dev/install | sh
+```
+
+This script supports macOS, Linux, and WSL on Windows, and works on both amd64 and arm64 architectures.
+
+Note that this method does not update automatically, you will need to re-run the script to install a newer version.
+
+## Windows
+
+For Windows, all `talosctl` releases can be downloaded manually from the [Talos releases page](https://github.com/siderolabs/talos/releases/), which includes binaries for Linux, macOS, and Windows.
+
+Once downloaded, add the binary to a folder on your `$PATH` so you can run it without specifying the full path to the executable. As with the alternative install method, updating `talosctl` on Windows is a manual process.

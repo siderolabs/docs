@@ -1,0 +1,90 @@
+---
+title: "SELinux"
+description: "SELinux security module support (experimental)."
+canonical: https://docs.siderolabs.com/talos/v1.14/security/selinux
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos Linux 1.10 introduces initial SELinux support.
+Talos currently contains a basic SELinux policy that is designed to protect the OS from workloads, including privileged pods.
+The policy denies access to machine configuration, prevents debuggers from attaching to system processes, however it is out of its scope to secure the Kubernetes components themselves.
+
+## Configuration
+
+SELinux is enabled by default in Talos 1.10 images.
+The default mode is permissive, as currently some CNI and CSI solutions as well as extensions are incompatible with it.
+For now, enforcing mode has only been tested with the Flannel CNI we ship by default.
+These missing parts are being worked on to make SELinux available for more use cases.
+
+### Disabling SELinux
+
+On some occasions, you may want to disable SELinux completely, mostly if even permissive mode
+is not compatible with some of your workloads or plugins.
+
+SELinux also needs to be disabled if you are enabling AppArmor, because both security modules cannot be enabled at the same time.
+
+To disable SELinux, add `-selinux selinux=0` to the kernel cmdline. This is done when creating the image through the Image Factory configuration. In your Image Factory schematic:
+
+```yaml
+customization:
+  extraKernelArgs:
+    - -selinux
+    - selinux=0
+```
+
+### Mode of operation
+
+You can query the SELinux state with:
+
+```shellsession
+$ talosctl --nodes <IP> get SecurityState
+NODE         NAMESPACE   TYPE            ID              VERSION   SECUREBOOT   UKISIGNINGKEYFINGERPRINT   PCRSIGNINGKEYFINGERPRINT   SELINUXSTATE
+172.20.0.2   runtime     SecurityState   securitystate   1         false                                                              enabled, permissive
+```
+
+> Please note that SELinux is still in an experimental state in Talos Linux.
+> Extensions currently do not support enforcing mode, which is a known missing feature being worked on.
+> Expect some CNI and CSI plugins to not work in enforcing mode.
+> Please report the issues you encounter with different configurations to help cover various usage scenarios.
+> Enforcing mode should only be enabled on new installs as of version 1.10, since the upgrade path for enabling SELinux is still being worked on.
+
+As for version 1.10, SELinux runs in permissive mode by default, which does not offer any extra protection, but allows to log denials.
+SELinux can be put in enforcing mode (to actually prevent access when it is not authorized by the policy) by adding `enforcing=1` to the kernel cmdline.
+This is most commonly done via the configuration in the Image Factory.
+
+### CSI volumes
+
+CSI drivers mount the volumes they provision, so Talos cannot apply the correct SELinux label to those volumes.
+Without the label, pods cannot access the volume contents.
+
+You can instead set the label in the StorageClass, which passes it to the driver as a mount option:
+
+```yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: my-storage
+provisioner: local.csi.openebs.io
+mountOptions:
+  - context=system_u:object_r:ephemeral_t:s0
+```
+
+`ephemeral_t` is the same label Talos uses for its own user volumes, and pods can read and write it.
+
+The label only applies if the driver passes mount options through to the filesystem it mounts.
+Drivers backed by a block device generally do, including local disks, LVM volumes, SAN and cloud disks.
+This has been tested with [OpenEBS LocalPV-LVM](https://github.com/openebs/lvm-localpv) and [OpenEBS Mayastor](https://github.com/openebs/mayastor).
+Volumes requested as `volumeMode: Block` contain no filesystem, so they need no label.
+
+## Obtaining and processing denial logs
+
+If SELinux has blocked some event from happening, it will log it to the audit log.
+If the mode is permissive, the only implication of that would be a denial message, so permissive mode is useful for prototyping the policy.
+You can check the logs with:
+
+`talosctl --nodes <IP> logs auditd > audit.log`
+
+You can get more insights on SELinux policy inner workings in the corresponding section of the [Developing Talos](../build-and-extend-talos/custom-images-and-development/developing-talos#selinux-policy-debugging-and-development) page.

@@ -1,0 +1,428 @@
+---
+title: "Building a System Extension"
+description: "Create, build, and install a custom Talos system extension, using a kernel module as the worked example."
+canonical: https://docs.siderolabs.com/talos/v1.14/build-and-extend-talos/custom-images-and-development/building-a-system-extension
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+import { release_v1_15 } from '/snippets/custom-variables.mdx';
+
+<VersionWarningBanner />
+
+[System extensions](./system-extensions) add files to the Talos Linux root filesystem and make it possible to run privileged containers as services.
+
+This guide builds a system extension, packages it into an installer image, and installs it on a machine.
+The worked example is a kernel module, which additionally requires a custom kernel build.
+An extension that ships no kernel modules does not need one: start at [Create an extension](#create-an-extension).
+
+<Note>
+    The public Image Factory at `factory.talos.dev` builds images only from the official Talos Linux system extension catalog.
+    A custom extension is not in that catalog, so this guide builds its images with the `imager` container instead.
+    See [Boot assets](../../platform-specific-installations/boot-assets) for the difference between the two.
+</Note>
+
+## Extension structure
+
+A system extension is a container image containing a `manifest.yaml` file at the root and a `rootfs` directory holding the files to install:
+
+```bash
+├── manifest.yaml
+└── rootfs
+    └── usr
+        └── local
+            └── bin
+                └── my-binary
+```
+
+Everything under `rootfs` is laid out as it should appear on the installed machine.
+
+The `manifest.yaml` file carries the extension's metadata; [Create an extension](#create-an-extension) below shows a complete one.
+
+### `rootfs` restrictions
+
+The contents of `rootfs` are restricted:
+
+- no special files (FIFOs, devices, and so on)
+- no world-writeable files or directories
+
+Paths must fall within one of the following:
+
+- `/etc/cri/conf.d`
+- `/usr/lib/firmware`
+- `/usr/lib/modules`
+- `/usr/lib/udev/rules.d`
+- `/usr/local`
+- `/usr/lib/ld-linux-x86-64.so.2` and `/usr/lib/ld-linux-aarch64.so.1`, the glibc loaders
+- `/usr/bin/ldconfig`, `/etc/ld.so.conf` and `/etc/ld.so.cache`, also glibc
+- `/usr/share/glvnd`, `/usr/share/egl` and `/etc/vulkan`, for OpenGL and Vulkan
+- `/usr/bin/nvidia-modprobe`, `/usr/bin/nvidia-pcc`, `/usr/bin/nvidia-smi`, `/usr/bin/nvidia-ctk` and `/usr/bin/nvidia-cdi-hook`
+- `/usr/bin/nvme`
+
+Add a `test` step to `pkg.yaml` to check the `rootfs` against these rules at build time:
+
+```yaml
+  - test:
+      - |
+        mkdir -p /extensions-validator-rootfs
+        cp -r /rootfs/ /extensions-validator-rootfs/rootfs
+        cp /pkg/manifest.yaml /extensions-validator-rootfs/manifest.yaml
+        /extensions-validator validate --rootfs=/extensions-validator-rootfs --pkg-name="${PKG_NAME}"
+```
+
+The build then fails with `path "..." is not allowed in extensions` for a file outside the permitted paths.
+Without this step nothing checks the layout: the extension builds, and `imager` packages it into an image without complaint.
+
+## Kernel module signing
+
+A kernel module has to be signed by the kernel it will run on, so an extension that ships one is built against a custom kernel.
+The next two sections build that kernel.
+
+Extensions that ship binaries, firmware, or configuration files do not need one, and can start at [Create an extension](#create-an-extension).
+
+## Create a package hello
+
+Talos is built from the [pkgs](https://github.com/siderolabs/pkgs/) repo and the first step will be to add your custom package to that repo to be built with Talos.
+You can look at other packages in that repository for examples of what should be included.
+
+The only file required to create a package is a `pkg.yaml` file in a folder.
+Let's create an example package to walk through each step.
+
+Clone the repo and create a folder.
+
+```bash
+git clone https://github.com/siderolabs/pkgs.git
+cd pkgs
+mkdir my-module
+```
+
+Now add the package to the `.kres.yaml` file in the root of the repository.
+We use this file for templating and generating Makefiles.
+Put your out-of-tree kernel module below the comment for dependent packages.
+
+```yaml
+ spec:
+   targets:
+     ...
+     # - kernel & dependent packages (out of tree kernel modules)
+     #   kernel first, then packages in alphabetical order
+     ...
+     - my-module-pkg
+     ...
+```
+
+Run the following command to generate a new Makefile.
+
+```bash
+make rekres
+```
+
+Now you have a `make` target to build your module and a directory to store your module configuration.
+The next step is to create a `pkg.yaml` file to tell [`bldr`](https://github.com/siderolabs/bldr) how to create a container with the files you need.
+The `bldr` tool has assumptions about directory structure and steps you can read about in the GitHub repo.
+
+This example does not build a kernel module, but it can be used as a basis for your own packages.
+Please also see existing `pkg.yaml` files in [the pkgs repo](https://github.com/siderolabs/pkgs)
+
+```bash
+name: my-module-pkg   # name of your package
+variant: scratch      # base container for environment (e.g. alpine, scratch)
+shell: /bin/sh        # shell to use to execute commands in steps
+dependencies:         # other steps required before building package
+  - stage: base
+steps:                # steps needed to build package container
+  - sources:          # download source files
+      - url: https://example.com/source.tar.gz
+        destination: my-module.tar.gz
+        sha256: 1234abcd...
+        sha521: abcd1234...
+    prepare:          # create directories and untar
+      - tar -xzf my-module.tar.gz --strip-components=1
+    build:            # compiling software
+      - make -j $(nproc)
+    install:          # move compiled software to correct directory
+      - make DESTDIR=/rootfs install
+    test:             # validate software
+      - fhs-validator /rootfs
+finalize:             # copy directory structure from source to destination
+  - from: /rootfs
+    to: /
+```
+
+## Build the package and kernel
+
+After you've created a `pkg.yaml` file you can test building your package with the make target you generated earlier.
+Because Talos requires kernel modules to be signed with a signing key only available during the Talos kernel build process we need to build the kernel and package at the same time.
+
+We also need a container registry available to store the built assets.
+Follow the steps in [developing Talos](./developing-talos#prepare) to create a docker builder and run a local container registry before running this command.
+
+```bash
+make kernel my-module-pkg REGISTRY=127.0.0.1:5005 \
+  PLATFORM=linux/amd64 \
+  PUSH=true
+```
+
+If this is successful it should output two pieces of information we need to collect for the next steps.
+We need to save the kernel and package images.
+The output will look something like this:
+
+```bash
+=> => pushing manifest for 127.0.0.1:5005/user/kernel:v1.11.0-alpha.0...
+...
+=> => pushing manifest for 127.0.0.1:5005/user/my-module-pkg:v1.11.0-alpha.0...
+```
+
+For easier reference in this guide I will save these images as `$KERNEL_IMAGE` and `$PKG_IMAGE` variables.
+
+## Create an extension
+
+System extensions are the way to add software and files to a Talos Linux root filesystem.
+Just like packages they are built as containers and then layered with Talos to create a bootable squashfs image.
+
+The process is very similar to creating a package.
+Start by cloning the extensions repo:
+
+```bash
+git clone https://github.com/siderolabs/extensions.git
+cd extensions
+mkdir my-module
+```
+
+Add your extension to the `.kres.yaml` file.
+
+```yaml
+---
+kind: pkgfile.Build
+spec:
+  targets:
+    ...
+    - my-module
+    ...
+```
+
+Then generate a new Makefile with additional target.
+
+```bash
+make rekres
+```
+
+Now create the `manifest.yaml` file for the metadata of your extension in the my-module folder.
+
+```yaml
+version: v1alpha1       # version of manifest.yaml
+metadata:
+  name: my-module
+  version: 0.1
+  author: me
+  description: |
+    An example system extension
+  compatibility:
+    talos:
+      version: ">= v1.10.0"  # what version of Talos is supported
+```
+
+The `pkg.yaml` file describes how the extension is built.
+An extension that ships files rather than kernel modules depends only on the base stage.
+Place the file you want to install in the my-module folder, next to `pkg.yaml`.
+The folder is mounted into the container at `/pkg`, so the file can be installed into `/rootfs` from there:
+
+```yaml
+name: my-module
+variant: scratch
+shell: /bin/sh
+dependencies:
+  - stage: base
+steps:
+  - install:
+      - mkdir -p /rootfs/usr/local/bin
+      - install -m 0755 /pkg/my-binary /rootfs/usr/local/bin/my-binary
+  - test:
+      - |
+        mkdir -p /extensions-validator-rootfs
+        cp -r /rootfs/ /extensions-validator-rootfs/rootfs
+        cp /pkg/manifest.yaml /extensions-validator-rootfs/manifest.yaml
+        /extensions-validator validate --rootfs=/extensions-validator-rootfs --pkg-name="${PKG_NAME}"
+finalize:
+  - from: /rootfs
+    to: /rootfs
+  - from: /pkg/manifest.yaml
+    to: /
+```
+
+An extension that ships a kernel module instead uses a `pkg.yaml` which works similarly to our `pkg.yaml` file for our package, but this time starts from the base image we built in the first step.
+
+```yaml
+name: my-module
+variant: scratch
+shell: /bin/sh
+dependencies:
+  - stage: base
+  - image: "${PKG_IMAGE}"     # the image we built in the first step
+steps:
+  - install:
+      - mkdir -p /rootfs/usr/lib/modules
+      - cp -R /usr/lib/modules/* /rootfs/usr/lib/modules/
+  - test:
+      - |
+        mkdir -p /extensions-validator-rootfs
+        cp -r /rootfs/ /extensions-validator-rootfs/rootfs
+        cp /pkg/manifest.yaml /extensions-validator-rootfs/manifest.yaml
+        /extensions-validator validate --rootfs=/extensions-validator-rootfs --pkg-name="${PKG_NAME}"
+finalize:
+  - from: /rootfs
+    to: /rootfs
+  - from: /pkg/manifest.yaml  # make sure you add the metadata file
+    to: /
+```
+
+Lastly create a `vars.yaml` file to store a version variable in the my-module folder.
+This isn't strictly required, but it is a convention used which will let the automated build work.
+
+```bash
+echo 'VERSION: "0.1"' > vars.yaml
+```
+
+## Build extension
+
+You now have a complete extension config and can build it.
+This needs the Docker builder and local registry from [Developing Talos](./developing-talos#prepare).
+
+```bash
+make my-module REGISTRY=127.0.0.1:5005 \
+  PLATFORM=linux/amd64 \
+  PUSH=true
+```
+
+This will create a system extension image and push it to your local registry.
+Copy the image that get's pushed and save it as `${EXTENSION_IMAGE}`.
+
+```bash
+ export EXTENSION_IMAGE='127.0.0.1:5005/jgarr/my-module:0.1@sha256:e8f3352...'
+```
+
+## Test the extension
+
+Now we need to create installation media to boot Talos.
+We will use [imager](../../platform-specific-installations/boot-assets) to include our extension.
+
+An extension that ships no kernel modules can use the released `imager` directly, with no Talos checkout and no custom kernel:
+
+<CodeBlock lang="bash">
+{`
+docker run --rm -t --network=host -v $PWD/_out:/out \\
+  ghcr.io/siderolabs/imager:${release_v1_15} installer \\
+  --arch amd64 \\
+  --system-extension-image \${EXTENSION_IMAGE}
+`}
+</CodeBlock>
+
+This writes the installer image to `_out/installer-amd64.tar`, and you can continue from the `crane push` step below.
+
+An extension that ships a kernel module needs an installer built against the kernel from the earlier steps.
+Clone the Talos repo.
+
+```bash
+git clone https://github.com/siderolabs/talos
+cd talos
+```
+
+Build the installer, and remember to use the kernel image from the first step.
+
+```bash
+make installer-base imager PLATFORM=linux/amd64 \
+  INSTALLER_ARCH=amd64 \
+  REGISTRY=127.0.0.1:5005 \
+  PKG_KERNEL=${KERNEL_IMAGE} \
+  PUSH=true
+```
+
+This will create two images - installer-base and imager and push them to your local registry.
+Export the installer-base image and save it as `$BASE_INSTALLER_IMAGE`.
+
+Create an installer image from your extension and the installer-base you just created with the following command.
+
+```bash
+make image-installer \
+  REGISTRY=127.0.0.1:5005 \
+  IMAGER_ARGS="--base-installer-image=${BASE_INSTALLER_IMAGE} \
+    --system-extension-image=${EXTENSION_IMAGE}"
+```
+
+We'll have a new container image tar file in the `_out/` folder of our repository.
+Load and push the container image to a registry with [crane](https://github.com/google/go-containerregistry/blob/main/cmd/crane/doc/crane.md).
+Make sure you replace `$REGISTRY`, `$USER`, and `$TAG` with the values you want.
+
+```bash
+crane push _out/installer-amd64.tar $REGISTRY/$USER/installer:$TAG
+```
+
+And if you don't have `crane`:
+
+```bash
+docker load -i _out/installer-amd64.tar
+# note down sha256 or the image tag output from above command
+
+docker tag $SHA256_OR_IMAGE_TAG $REGISTRY/$USER/installer:$TAG
+docker push $REGISTRY/$USER/installer:$TAG
+```
+
+## Test the installer with fresh install
+
+Now you can boot a machine from generic Talos installation media.
+This is only used to get access to the API so we can apply a configuration that will use our installer image.
+We'll assume this machine has an IP address of 192.168.100.100
+
+Generate a configuration that uses your installer image.
+
+```bash
+talosctl gen config --install-image $REGISTRY/$USER/installer:$TAG \
+    test https://192.168.100.100:6443     # cluster name and endpoint
+```
+
+If your extension ships a kernel module, create a configuration patch that loads it by name.
+This should be the name of the `.ko` file you built in the package and put in the `/modules` directory.
+An extension without kernel modules needs no patch: apply the configuration on its own, without `-p`.
+
+```yaml
+# my-module.yaml
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: my-module
+```
+
+Apply the machine config and patch to your test machine.
+
+```bash
+talosctl apply -f controlplane.yaml -i -p '@my-module.yaml' -n 192.168.100.100
+```
+
+The machine will reboot as Talos is installed.
+When the machine boots you should see logs that the module was loaded from dmesg.
+
+```bash
+192.168.100.100: kern: warning: my-module: loading out-of-tree module taints kernel.
+192.168.100.100: kern:    info: Loading my-module driver module v0.1
+```
+
+## Test installer with existing machine
+
+If you already have Talos running on a machine you can apply the installer during an upgrade to have the extension installed.
+
+```bash
+talosctl upgrade -i $REGISTRY/$USER/installer:$TAG
+```
+
+If your extension ships a kernel module, create a patch to load it and apply that to the machine as well.
+
+```yaml
+# my-module.yaml
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: my-module
+```
+
+Apply the machine config and patch to your test machine.
+
+```bash
+talosctl apply -f controlplane.yaml -p '@my-module.yaml'
+```

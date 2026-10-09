@@ -1,0 +1,108 @@
+---
+title: "System Volumes"
+description: "Configuring Talos Linux system volumes, for example `EPHEMERAL` volume."
+weight: 20
+canonical: https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/storage-and-disk-management/disk-management/system
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx";
+
+<VersionWarningBanner />
+
+Talos Linux has a set of system volumes that are used for various purposes, such as storing the system state, ephemeral data, and more.
+This guide provides an overview of the system volumes and how to configure them.
+
+The following system volumes are supported: `STATE`, `EPHEMERAL`, `IMAGECACHE`, `ETCD`, `CRI`, `KUBELET` and `LOG`.
+The `ETCD`, `CRI`, `KUBELET` and `LOG` volumes are backed by a directory under the `EPHEMERAL` volume by default, but they can be placed on a dedicated partition instead (see [Dedicated system volumes](#dedicated-system-volumes-etcd-cri-kubelet-log)).
+
+> Note: A volume's backing (directory vs. dedicated partition) is fixed when the volume is first provisioned and cannot be changed afterwards.
+> The configuration for these volumes is therefore only honored during node provisioning.
+
+## `EPHEMERAL` volume
+
+The `EPHEMERAL` volume is a system volume that is used for storing ephemeral data, such as container data, downloaded images, logs, and `etcd` data (for controlplane nodes). By default, this volume is provisioned on the system disk, which is the disk where Talos Linux is installed.
+It has a minimum size of 2 GiB and automatically grows to utilize the maximum available space on the disk.
+
+The `EPHEMERAL` (`/var`) volume can be configured through a matching [VolumeConfig](../../../reference/configuration/block/volumeconfig) document, within the machine configuration.
+
+If you would like to keep the `EPHEMERAL` volume on the system disk but limit its size to 40 GiB, you can set the `maxSize` field to `40GiB`:
+
+```yaml
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: EPHEMERAL
+provisioning:
+  maxSize: 40GiB
+```
+
+If you want to create a separate partition for `EPHEMERAL` on a different disk, you can set the `diskSelector` field to select the desired disk:
+
+```yaml
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: EPHEMERAL
+provisioning:
+  diskSelector:
+    match: disk.transport == 'nvme' && !system_disk
+```
+
+> Note: The volume configuration in the machine configuration is only applied when the volume has not been provisioned yet.
+> So applying changes after the initial provisioning will not have any effect.
+
+## Dedicated system volumes (`ETCD`, `CRI`, `KUBELET`, `LOG`)
+
+By default, the `ETCD`, `CRI`, `KUBELET` and `LOG` volumes are backed by a directory under the `EPHEMERAL` volume. Each of these volumes can instead be placed on a **dedicated partition** (optionally encrypted) by adding a `VolumeConfig` document with `provisioning` set.
+Moving a volume to its own partition is useful to:
+
+- isolate a component's data so that one volume cannot fill up the whole `EPHEMERAL` volume (`/var`),
+- apply independent size limits or quotas per component,
+- place a volume on a separate disk for better performance or durability.
+
+> Note: The backing type is permanent — it is chosen when the volume is first provisioned and cannot be changed later.
+> Custom `VolumeConfig`s for the `ETCD`, `CRI` and `KUBELET` volumes are therefore only honored during node provisioning.
+
+To provision, for example, the `KUBELET` volume on a dedicated partition, append the following [VolumeConfig](../../../reference/configuration/block/volumeconfig) document to the machine configuration used at node provisioning:
+
+```yaml
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: KUBELET
+provisioning:
+  minSize: 1GB
+  maxSize: 5GB
+```
+
+To place the volume on a separate disk, use the `diskSelector` field, just like for the `EPHEMERAL` volume:
+
+```yaml
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: ETCD
+provisioning:
+  diskSelector:
+    match: disk.transport == 'nvme' && !system_disk
+  minSize: 2GB
+```
+
+### Mount options
+
+The `EPHEMERAL` volume remains executable and uses `nosuid` and `nodev` by default.
+Volumes that remain directory-backed inherit these mount options.
+
+Each dedicated partition has its own mount, so the [`mount.secure`](../../../reference/configuration/block/volumeconfig#mount) option (`nosuid` and `nodev`, enabled by default) can be set independently per volume.
+For dedicated `ETCD` and `LOG` volumes, `mount.secure` also enables `noexec`; dedicated `CRI` and `KUBELET` volumes remain executable.
+Setting `mount.secure` to `false` clears `nosuid` and `nodev`, as well as `noexec` for `ETCD` and `LOG`:
+
+```yaml
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: LOG
+mount:
+  secure: false
+```
+
+## `IMAGECACHE` volume
+
+This system volume is not provisioned by default, and it only gets created if the [Image Cache](../../images-container-runtime/image-cache) feature is enabled.
+
+See [Image Cache configuration](../../images-container-runtime/image-cache#configuration) for more details.
