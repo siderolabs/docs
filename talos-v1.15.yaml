@@ -193,6 +193,7 @@ navigation:
                 - "system-configuration/patching"
                 - "system-configuration/editing-machine-configuration"
                 - "system-configuration/performance-tuning"
+                - "system-configuration/numa"
                 - "system-configuration/time-sync"
                 - "system-configuration/managing-etc-files"
                 - "system-configuration/discovery"
