@@ -1,6 +1,6 @@
 ---
 title: Migrate from VMware
-description: Convert VMware vCenter virtual machines to run on Talos Director, choose how much downtime the cutover takes, and bring NSX firewall rules across.
+description: Convert VMware vCenter virtual machines to run on Talos Director, and choose how much downtime the cutover takes.
 ---
 
 import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
@@ -29,6 +29,8 @@ Talos Director checks that the VM is ready to convert:
 - **No VMware snapshots**: the VM must not have snapshots in vCenter.
 - **VirtIO drivers and QEMU Guest Agent**: these must be installed in the guest before conversion, whichever cutover mode you choose, so the converted VM can boot and report back on KVM. For Windows, the step links to the VirtIO driver ISO.
 
+Scheduled and automatic cutover read changed blocks from the running VM with **VMware's Virtual Disk Development Kit (VDDK)** when it is available. VDDK is VMware software, so Talos Director does not bundle it: upload the VDDK archive from your VMware entitlement to the content library once, and Talos Director verifies it and distributes it to hosts. Without VDDK, a warm conversion falls back to vCenter's standard export. Cold conversions do not require it.
+
 ### 4. Configure
 
 | **Field** | **Description** |
@@ -53,7 +55,3 @@ Start the conversion. Progress, transfer rate, and time remaining appear on the 
 | **Cold (offline)** | The source VM is powered off and copied whole. The simplest and most predictable mode, with downtime that lasts the entire copy. |
 | **Scheduled cutover** | The VM is copied while it stays online, then cut over at a time you set, or when you trigger it. Downtime is a brief final sync. |
 | **Automatic cutover** | The VM is copied online, and changed blocks are synced until the copies converge, then it cuts over automatically. The smallest downtime, with no one watching. |
-
-## Bring firewall rules across
-
-If you use VMware NSX, **Import from NSX** in **Network** > **Security Groups**, **Policies**, and **Services** brings your NSX groups, rules, and service definitions into Talos Director. See [Security](/director/security/security).
