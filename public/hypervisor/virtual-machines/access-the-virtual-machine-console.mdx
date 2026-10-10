@@ -1,0 +1,74 @@
+---
+title: Access the Virtual Machine Console
+description: Attach to a virtual machine's serial console with talosctl, and read the console output it has produced.
+---
+
+{/* TODO: VNC is left out: the VNC console binds to 127.0.0.1 on the host and talosctl has no VNC command. Add a section once there is a supported way to reach it. */}
+{/* TODO: The talosctl help for `logs --kind=vm` says it requires Admin, but the server also allows Reader and Operator. Confirm the intended role with engineering before documenting it. */}
+
+A virtual machine's serial console is a text connection to its guest that does not depend on the guest's network. It shows boot output as it happens and accepts keyboard input, so it works even when the guest has no IP address. Talos also records everything the console prints, so earlier output can be read later.
+
+In the commands on this page, replace `<vm-name>` with the virtual machine's name, and `<host-ip>` with the IP address of its host.
+
+## Before you begin
+
+The console requires:
+
+- The Admin role in your `talosconfig`.
+- `talosctl` on macOS or Linux. The live console is not available on Windows.
+- A virtual machine whose guest writes to a serial port. A virtual machine booted from the Talos Linux `metal` ISO for arm64 does this by default. On amd64, the ISO needs the `console=ttyS0` kernel argument, as shown in [Run your first virtual machine](../getting-started/run-your-first-virtual-machine#step-1-download-the-talos-linux-iso), which also shows how to create a virtual machine.
+
+## Step 1: Turn on the serial console
+
+The serial console is off by default. The following steps turn it on.
+
+1. Run the following command to create a patch that turns on the serial console. Replace `<vm-name>` in the file before applying it:
+
+   ```bash
+   cat <<'EOF' > console.yaml
+   apiVersion: v1alpha1
+   kind: VirtualMachineConfig
+   name: <vm-name>
+   console:
+     serial:
+       enabled: true
+   EOF
+   ```
+
+2. Apply the patch to the host:
+
+   ```bash
+   talosctl patch machineconfig --nodes <host-ip> --patch console.yaml
+   ```
+
+   If the virtual machine is running, Talos replaces it to add the serial port, which restarts the guest.
+
+## Step 2: Attach to the live console
+
+The live console is available while the virtual machine is running. One session can be attached to a virtual machine at a time.
+
+The following steps attach to the console and detach from it.
+
+1. Attach to the console:
+
+   ```bash
+   talosctl hypervisor console <vm-name> --nodes <host-ip>
+   ```
+
+   The console shows output from the moment it attaches. All keyboard input, including Ctrl+C, goes to the guest. If the guest has finished booting, the console can stay blank until the guest prints something new.
+
+2. To detach, press `Ctrl+]`. The virtual machine keeps running.
+
+## Step 3: Read past console output
+
+Talos keeps the console output, including after the virtual machine stops, restarts, or is removed.
+
+To read it, run:
+
+```bash
+talosctl logs --kind=vm <vm-name> --nodes <host-ip>
+```
+
+## Next steps
+
+To check what Talos reports about a virtual machine, see [Check a virtual machine's status](./create-and-configure-a-virtual-machine#check-a-virtual-machines-status).
