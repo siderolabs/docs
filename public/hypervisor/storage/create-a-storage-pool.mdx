@@ -1,0 +1,147 @@
+---
+title: Create a Storage Pool
+description: Declare a storage pool on a Talos volume, check its status, and change or remove it.
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+{/* TODO: Talos main provisions only cdrom disks today ("only cdrom disks are provisioned today" in the VirtualMachineDiskController). When disks in storage pools land, add how a VirtualMachineConfig disk uses a pool (pool, size, format, blank or fromImage) and link to it from this page. */}
+
+A storage pool is where a host keeps the writable disks of its virtual machines. The pool is declared in the machine configuration with a [`StoragePool`](../../talos/v1.15/reference/configuration/storage/storagepool) document, and Talos creates it in libvirt as a directory on a Talos volume.
+
+This page shows how to create a storage pool, check its status, and change or remove it.
+
+The host needs the `libvirtd` system extension, whose `ext-virtstoraged` service manages storage pools. To install it, see [Install a hypervisor host](../getting-started/install-a-hypervisor-host).
+
+In the commands on this page, replace `<host-ip>` with the IP address of the host.
+
+## Create a storage pool
+
+A storage pool is stored on a Talos volume. The volume is declared in its own document, using one of these types:
+
+- A <a href={`../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/disk-management/user`}>`UserVolumeConfig`</a>, for a directory, partition, or disk on the host.
+- An <a href={`../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/disk-management/existing`}>`ExistingVolumeConfig`</a>, for a volume that already exists on the host.
+- An [`ExternalVolumeConfig`](../../talos/v1.15/reference/configuration/block/externalvolumeconfig), for a volume mounted from outside the host, such as an NFS export. NFS support was added in Talos Linux v1.15.
+
+The volume has two requirements:
+
+- It must be writable and have a filesystem.
+- It can back only one storage pool. Each storage pool and each content library needs its own volume.
+
+Talos stores the pool in a directory with the pool's name, inside the volume.
+
+The following steps create a storage pool on a directory volume and check that it is ready.
+
+1. Run the following command to create `storage-pool.yaml`, which declares a directory volume named `vm-disks` and a storage pool named `pool1` that uses it:
+
+   ```bash
+   cat <<'EOF' > storage-pool.yaml
+   apiVersion: v1alpha1
+   kind: UserVolumeConfig
+   name: vm-disks
+   volumeType: directory
+   ---
+   apiVersion: v1alpha1
+   kind: StoragePool
+   name: pool1
+   volume:
+     name: vm-disks
+   EOF
+   ```
+
+   The `volume.name` field names the volume the pool uses.
+
+   <Note>
+   The pool's `name` can be up to 63 characters long and must start with a letter or digit. Use only ASCII letters, digits, and hyphens. Underscores are also accepted, but a virtual machine disk cannot use a pool whose name contains one.
+   </Note>
+
+2. Apply the documents to the host:
+
+   ```bash
+   talosctl patch machineconfig --nodes <host-ip> --patch storage-pool.yaml
+   ```
+
+3. Check that the pool is ready:
+
+   ```bash
+   talosctl get storagepoolstatuses --nodes <host-ip>
+   ```
+
+   Talos reports each pool's state in a `StoragePoolStatus` resource, with the following columns:
+
+   - `READY` is `true` once the pool is defined and active in libvirt.
+   - `TARGET` is the pool's directory on the host.
+   - `ERROR` explains why a pool is not ready.
+   - `VOLUME` is the backing volume's ID, which Talos derives from its name. For example, a `UserVolumeConfig` named `vm-disks` has the ID `u-vm-disks`.
+
+## Change a storage pool's volume
+
+To move a pool to a different volume, change its `volume.name` and apply the change to the host. Talos then uses a directory on the new volume for the pool.
+
+Disk images in the old directory are not moved. They stay on the old volume.
+
+The following steps move `pool1` to a new directory volume named `vm-disks-2`.
+
+1. Run the following command to create `storage-pool-move.yaml`, which declares the new volume and points `pool1` at it:
+
+   ```bash
+   cat <<'EOF' > storage-pool-move.yaml
+   apiVersion: v1alpha1
+   kind: UserVolumeConfig
+   name: vm-disks-2
+   volumeType: directory
+   ---
+   apiVersion: v1alpha1
+   kind: StoragePool
+   name: pool1
+   volume:
+     name: vm-disks-2
+   EOF
+   ```
+
+2. Apply the documents to the host:
+
+   ```bash
+   talosctl patch machineconfig --nodes <host-ip> --patch storage-pool-move.yaml
+   ```
+
+3. Check that the pool uses the new volume:
+
+   ```bash
+   talosctl get storagepoolstatuses --nodes <host-ip>
+   ```
+
+   The `VOLUME` column shows `u-vm-disks-2`, and `READY` shows `true` once the pool is active on the new volume.
+
+## Remove a storage pool
+
+Removing a pool stops it and removes it from libvirt. The pool's files and its volume are not deleted, so its data stays on the volume.
+
+The following steps remove the `pool1` storage pool.
+
+1. Run the following command to create `storage-pool-delete.yaml`, a patch that deletes the `pool1` document:
+
+   ```bash
+   cat <<'EOF' > storage-pool-delete.yaml
+   apiVersion: v1alpha1
+   kind: StoragePool
+   name: pool1
+   $patch: delete
+   EOF
+   ```
+
+2. Apply it to the host:
+
+   ```bash
+   talosctl patch machineconfig --nodes <host-ip> --patch storage-pool-delete.yaml
+   ```
+
+3. Check that `pool1` no longer appears in the output:
+
+   ```bash
+   talosctl get storagepoolstatuses --nodes <host-ip>
+   ```
+
+## Next steps
+
+To store the images that virtual machines boot from, see [Upload and manage images](./upload-and-manage-images).

@@ -1,0 +1,170 @@
+---
+title: Upload and Manage Images
+description: Declare a content library, then upload, verify, list, replace, and delete the ISOs and disk images that virtual machines boot from.
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+A content library stores the images that virtual machines boot from, such as installation ISOs. The library is declared in the machine configuration with a [`ContentLibraryConfig`](../../talos/v1.15/reference/configuration/hypervisor/contentlibraryconfig) document. The files in it are managed over the Talos API with `talosctl hypervisor content-library`.
+
+This page shows how to create a library, and how to upload, verify, list, replace, and delete its files.
+
+In the commands on this page, replace `<host-ip>` with the IP address of the host that stores the library.
+
+## Create a content library
+
+A content library lives on a Talos volume, and its files are stored at the root of that volume. The volume is declared in its own document, which can be one of the following:
+
+- A <a href={`../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/disk-management/user`}>`UserVolumeConfig`</a>, for a directory, partition, or disk on the host.
+- An <a href={`../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/disk-management/existing`}>`ExistingVolumeConfig`</a>, for a volume that already exists on the host.
+- An [`ExternalVolumeConfig`](../../talos/v1.15/reference/configuration/block/externalvolumeconfig), for a volume mounted from outside the host, such as an NFS export. NFS support was added in Talos Linux v1.15.
+
+The following steps declare a content library on a directory volume and check that it is ready.
+
+1. Run the following command to create `content-library.yaml`, which declares a directory volume named `vm-images` and a content library named `images` that uses it:
+
+   ```bash
+   cat <<'EOF' > content-library.yaml
+   apiVersion: v1alpha1
+   kind: UserVolumeConfig
+   name: vm-images
+   volumeType: directory
+   ---
+   apiVersion: v1alpha1
+   kind: ContentLibraryConfig
+   name: images
+   backing:
+     volume: vm-images
+   EOF
+   ```
+
+   The `backing.volume` field names the volume the library uses. The volume must follow these rules:
+
+   - It backs only one content library. Use a separate volume for each content library and each storage pool.
+   - It is writable, because uploads write into it.
+
+   The library's `name` is its ID in the Talos API. It can contain only ASCII letters, digits, and hyphens, and can be up to 63 characters long.
+
+2. Apply the documents to the host:
+
+   ```bash
+   talosctl patch machineconfig --nodes <host-ip> --patch content-library.yaml
+   ```
+
+3. Check that the library is ready:
+
+   ```bash
+   talosctl get contentlibrarystatuses --nodes <host-ip>
+   ```
+
+   Talos reports the library's state in a `ContentLibraryStatus` resource, with the following columns:
+
+   - `READY` is `true` once the volume is mounted and the library accepts uploads.
+   - `PATH` is where the library's files are stored on the host.
+   - `ERROR` explains why a library is not ready.
+   - `VOLUME` is the volume's ID, which Talos derives from its name. For example, a `UserVolumeConfig` named `vm-images` has the ID `u-vm-images`.
+
+## Manage images
+
+The commands in this section use the `images` library from [Create a content library](#create-a-content-library).
+
+### Upload an image
+
+To upload a file into a content library, pass the library name and the path to the file:
+
+```bash
+talosctl hypervisor content-library upload images metal-amd64.iso --nodes <host-ip>
+```
+
+When the upload finishes, `talosctl` prints the SHA-256 and SHA-512 digests of the file the host received.
+
+The file keeps its own name in the library. To change the name or the source, add these options:
+
+- To store the file under a different name, add `--name <name>`.
+- To upload from standard input, pass `-` as the file and set its name with `--name`.
+
+A library has no folders, so a file name follows these rules:
+
+- It cannot contain a path separator.
+- It cannot start with a dot.
+- It can be up to 230 characters long.
+
+### Verify an upload
+
+To have the host check an upload, add `--digest` with the file's expected digest. The digest takes the form `<algorithm>:<hex>`, where the algorithm is `sha256` or `sha512`.
+
+The following example verifies a replacement of the file uploaded in the previous section, so it also includes `--overwrite`:
+
+```bash
+talosctl hypervisor content-library upload images metal-amd64.iso \
+  --overwrite \
+  --digest sha256:<checksum> \
+  --nodes <host-ip>
+```
+
+The host stores the file only if its contents match the digest. If they don't match, the host refuses the upload, and `talosctl` prints the digests of what the host received. Comparing those digests with the expected one shows whether the download was corrupted or the digest was mistyped.
+
+### Replace an image
+
+The host refuses an upload whose name already exists in the library.
+
+To replace the existing file, add `--overwrite`:
+
+```bash
+talosctl hypervisor content-library upload images metal-amd64.iso --overwrite --nodes <host-ip>
+```
+
+A file that a running virtual machine uses cannot be replaced. To learn how a file is released, see [Delete an image](#delete-an-image).
+
+### List images
+
+To list the files in a library, run:
+
+```bash
+talosctl hypervisor content-library list images --nodes <host-ip>
+```
+
+The output shows each file's name, size, and modification time.
+
+### Delete an image
+
+To delete a file from a library, run:
+
+```bash
+talosctl hypervisor content-library delete images metal-amd64.iso --nodes <host-ip>
+```
+
+A file that a running virtual machine uses cannot be deleted. Talos releases the file when the virtual machine stops using it, which happens in any of these cases:
+
+- The virtual machine is removed.
+- The virtual machine's `powerState` is set to `stopped`.
+- The disk that uses the file is removed, or changed to use a different file.
+
+The file is released only after Talos updates the virtual machine in libvirt. A delete that runs right after one of these changes can still be refused because the file is in use. If that happens, retry after a few seconds.
+
+## Pin an image to a digest
+
+A virtual machine refers to a library file by name, in the `provision.fromImage` section of a disk. A file can be replaced while no running virtual machine uses it, so a virtual machine can start with a different file under the same name.
+
+To make sure a virtual machine uses one exact file, add the file's digest to the disk:
+
+```yaml
+disks:
+  - name: install
+    type: cdrom
+    bootOrder: 1
+    provision:
+      fromImage:
+        library: images
+        file: metal-amd64.iso
+        digest: sha256:<checksum>
+```
+
+Talos checks the file against the digest before it starts the virtual machine, and again whenever it reconciles the disk. If the file does not match, the disk is not ready:
+
+- A virtual machine that is not running does not start.
+- A running virtual machine is stopped.
+
+## Next steps
+
+To boot a virtual machine from an uploaded image, see [Run your first virtual machine](../getting-started/run-your-first-virtual-machine).
