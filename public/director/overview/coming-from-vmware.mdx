@@ -1,0 +1,53 @@
+---
+title: Coming from VMware
+description: How vSphere concepts map to Talos Director, and the few places where the model is different.
+---
+
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
+
+<DirectorLimitedAvailability />
+
+If you run vSphere today, most of Talos Director will already be familiar. It has the clusters, shared storage, maintenance mode, resource scheduler, High Availability, live migration, and per-VM shares and limits that a vSphere administrator works with every day, and the console uses the same ideas. This page maps the vSphere terms you know to their Talos Director equivalents, then covers the places where the model is different.
+
+## Terms
+
+| **vSphere** | **Talos Director** | **Notes** |
+| --- | --- | --- |
+| vCenter Server | Talos Director control plane | The console, the API, the inventory, the scheduler, and High Availability decisions. One per data center. See [How Talos Director Works](/director/overview/how-talos-director-works). |
+| ESXi host | Talos Linux host | Talos Linux with the KVM hypervisor. Managed entirely through its API, with no shell or SSH. See [Hosts](/director/compute/hosts). |
+| vSphere cluster | Compute cluster | A group of hosts that share storage. See [Clusters](/director/compute/clusters). |
+| DRS | Resource scheduler | Automation levels from **Manual** to fully automated, with affinity and anti-affinity rules. |
+| vSphere HA | High Availability | Admission control, failover capacity, and VM restart priority, set per cluster. |
+| vMotion | Live migration | Moves a running VM between hosts in a compute cluster. |
+| Storage vMotion | Storage migration | Moves a VM's disks from one storage pool to another. |
+| Enhanced vMotion Compatibility (EVC) | CPU profile | Fixes the CPU model and feature set a VM sees, so it can move between hosts of different CPU generations. |
+| Maintenance mode | Maintenance mode | Live-migrates a host's VMs away before the host is taken out of service. |
+| Datastore | Storage pool | NFS, iSCSI, Fibre Channel, or Ceph built from the hosts' own drives. See [Storage Pools](/director/compute/storage-pools). |
+| Storage policies | Storage policies | Describe what a VM's disks need, matched against what each storage pool provides. |
+| Port group | Virtual network | A VLAN on the hosts' bonded uplinks. See [Virtual Networks](/director/networking/virtual-networks). |
+| NSX distributed firewall | Micro-segmentation | Security groups and policies, enforced in each host's kernel and following the VM when it moves. See [Security](/director/security/security). |
+| Content library and VM templates | Content library and templates | Create VMs from a template rather than from scratch. |
+| Customization specifications | Customization specifications | Set a guest's identity and first-boot configuration when it is deployed from a template. |
+| Host profiles | Host configuration profiles | Define what goes into a host's machine configuration, so hosts that share a profile are identical. |
+| vSphere Lifecycle Manager | Lifecycle Manager | Host operating system and server firmware updates, within maintenance windows. |
+| Shares, reservations, and limits | Shares, reservations, and limits | Per-VM CPU and memory shares, reservations, and limits, enforced on the host. |
+| VMware Tools | QEMU guest agent and VirtIO drivers | Installed in the guest. The migration engine removes VMware Tools during conversion. |
+| vSphere Kubernetes Service | Kubernetes clusters | Talos Linux clusters on VMs, created from the same console and managed through Omni. See [Kubernetes Clusters](/director/kubernetes/kubernetes-clusters). |
+
+## What is different
+
+A few things work differently from vSphere, and they are worth knowing before you start.
+
+**The hosts have no shell.** There is no equivalent of the ESXi shell or SSH on a Talos Linux host. Everything about a host is defined in its machine configuration, which Talos Director manages, and the host is operated through an authenticated API. Troubleshooting that would start with an SSH session on ESXi starts with the host's detail screen in the console instead. The virtual machines themselves are ordinary guests, with full access through the console, RDP, or SSH.
+
+**Hosts are upgraded by replacing the image.** A Talos Linux host is a read-only image. An upgrade swaps the whole image, one host at a time, with the host's VMs live-migrated away first. There are no patches or VIBs to apply, and no package transaction that can half-apply.
+
+**The hosts open the management connections.** vCenter connects in to each ESXi host. In Talos Director, each host opens an outbound connection to the control plane and keeps it open, so hosts need no inbound management port.
+
+**Kubernetes is part of the platform.** Kubernetes nodes are VMs on the same hosts, in the same inventory, under the same scheduler, High Availability, storage, and firewall policy as every other VM. There is no separate Kubernetes product to install and run beside it.
+
+**VMware software stays VMware's.** Warm migrations use VMware's Virtual Disk Development Kit (VDDK) when it is available. Talos Director does not bundle it, so you upload it from your own VMware entitlement. See [What Happens During a Migration](/director/compute/what-happens-during-a-migration).
+
+## Moving your VMs
+
+The migration engine converts vCenter VMs to run on Talos Director, while they keep running if you choose a warm cutover. To start, see [Migrate from VMware](/director/compute/migrate-from-vmware).
