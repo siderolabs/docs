@@ -2864,7 +2864,8 @@
           {
             "group": "Overview",
             "pages": [
-              "director/overview/what-is-talos-director"
+              "director/overview/what-is-talos-director",
+              "director/overview/how-talos-director-works"
             ]
           },
           {
