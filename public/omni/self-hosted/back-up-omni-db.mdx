@@ -7,19 +7,129 @@ Omni uses etcd as its database. Depending on how you deployed Omni, etcd runs in
 
 ## Back up an embedded etcd
 
-If you started Omni with the `--etcd-embedded=true` flag, Omni manages an internal etcd server that listens on the addresses specified by `--etcd-endpoints` (which defaults to `http://localhost:2379`).
+If you started Omni with the `--etcd-embedded=true` flag (the default), the etcd server runs inside the Omni process. Starting with Omni v1.13.0, the embedded etcd does not listen on any address by default, and Omni connects to it in-memory.
 
-To back up the database, run the following command on the same host where Omni is running. If Omni is running in Docker, make sure the container is started with `--network=host`.
+To take snapshots of the embedded etcd with `etcdctl`, enable its TLS listener first. The listener only accepts clients that present a certificate it trusts.
+
+<Note>The `--etcd-embedded-cert-path`, `--etcd-embedded-key-path` and `--etcd-embedded-ca-path` flags and their configuration fields are for the embedded etcd only. They have no effect when Omni uses an external etcd.</Note>
+
+### Enable the TLS listener
+
+The simplest setup uses a single self-signed certificate. Omni uses it as the server certificate and as the CA, so `etcdctl` connects with the same certificate and key.
+
+1. Generate the certificate and its key on the Omni host:
+
+    ```bash
+    openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -days 3650 \
+      -keyout etcd.key -out etcd.crt -subj /CN=omni-etcd \
+      -addext "subjectAltName=DNS:localhost,IP:127.0.0.1" \
+      -addext "extendedKeyUsage=serverAuth,clientAuth"
+    ```
+
+    This command requires OpenSSL 1.1.1 or later.
+
+2. Add the certificate and the key to the Omni start command. If Omni runs in Docker, mount both files into the container:
+
+    ```bash
+    -v $(pwd)/etcd.crt:/etcd.crt:ro,Z \
+    -v $(pwd)/etcd.key:/etcd.key:ro,Z \
+    ```
+
+    Then pass their paths inside the container to Omni:
+
+    ```bash
+    --etcd-embedded-cert-path=/etcd.crt \
+    --etcd-embedded-key-path=/etcd.key \
+    ```
+
+    The same settings in the Omni configuration file:
+
+    ```yaml
+    storage:
+      default:
+        etcd:
+          embeddedCertFile: /etcd.crt
+          embeddedKeyFile: /etcd.key
+    ```
+
+3. Restart Omni with the new settings. If Omni runs in Docker, recreate the container with the new mounts and flags, and keep its existing data directory mounts.
+
+The embedded etcd then listens on the addresses in `--etcd-endpoints` (`http://localhost:2379` by default). The scheme in these addresses is ignored. The listener always serves TLS.
+
+The certificate file must contain a single certificate. Omni refuses to start when it contains a chain, because every certificate in the chain would be trusted to issue client certificates.
+
+<Warning>Anyone who can read the key file can change or delete the Omni data in the embedded etcd. Protect it like the etcd data directory.</Warning>
+
+### Use your own CA
+
+To give `etcdctl` its own client certificate instead of sharing the server's key, use a CA. Omni then accepts every client certificate signed by that CA.
+
+1. Create a CA, a server certificate for Omni and a client certificate for `etcdctl`:
+
+    ```bash
+    openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -days 3650 \
+      -keyout ca.key -out ca.crt -subj /CN=omni-etcd-ca
+
+    openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -days 3650 \
+      -CA ca.crt -CAkey ca.key -keyout server.key -out server.crt -subj /CN=omni-etcd \
+      -addext "subjectAltName=DNS:localhost,IP:127.0.0.1" \
+      -addext "extendedKeyUsage=serverAuth" -addext "basicConstraints=critical,CA:FALSE"
+
+    openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -days 365 \
+      -CA ca.crt -CAkey ca.key -keyout client.key -out client.crt -subj /CN=backup \
+      -addext "extendedKeyUsage=clientAuth" -addext "basicConstraints=critical,CA:FALSE"
+    ```
+
+    These commands require OpenSSL 3.0 or later. The `openssl` that ships with macOS (LibreSSL) does not support them.
+
+    The client certificate expires after a year. Issue a new one from the same CA before then.
+
+2. Add the server certificate, its key and the CA certificate to the Omni start command. If Omni runs in Docker, mount the three files into the container:
+
+    ```bash
+    -v $(pwd)/server.crt:/server.crt:ro,Z \
+    -v $(pwd)/server.key:/server.key:ro,Z \
+    -v $(pwd)/ca.crt:/ca.crt:ro,Z \
+    ```
+
+    Then pass their paths inside the container to Omni:
+
+    ```bash
+    --etcd-embedded-cert-path=/server.crt \
+    --etcd-embedded-key-path=/server.key \
+    --etcd-embedded-ca-path=/ca.crt \
+    ```
+
+    The same settings in the Omni configuration file:
+
+    ```yaml
+    storage:
+      default:
+        etcd:
+          embeddedCertFile: /server.crt
+          embeddedKeyFile: /server.key
+          embeddedCaFile: /ca.crt
+    ```
+
+3. Restart Omni with the new settings, as described above.
+
+### Take a snapshot
+
+Run the following command on the same host where Omni is running. If Omni is running in Docker, make sure the container is started with `--net=host`.
 
 ```bash
-etcdctl --endpoints http://localhost:2379 snapshot save snapshot.db
+etcdctl --endpoints https://localhost:2379 \
+  --cacert etcd.crt --cert etcd.crt --key etcd.key \
+  snapshot save snapshot.db
 ```
+
+With your own CA, use `--cacert ca.crt --cert client.crt --key client.key` instead.
 
 This command saves a snapshot of the database to `snapshot.db` in your current directory.
 
 We recommend scheduling periodic snapshots, for example, using a cron job, and storing them in a secure location such as an S3 bucket.
 
-## Backup an external etcd
+## Back up an external etcd
 
 If you started Omni with `--etcd-embedded=false`, etcd is managed outside of Omni and is not backed up automatically. You are responsible for backing it up regularly.
 
