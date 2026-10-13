@@ -1,0 +1,22 @@
+---
+title: Automation
+description: Automating virtual machines, hosts, and Kubernetes clusters through the Talos Director API.
+---
+
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
+
+<DirectorLimitedAvailability />
+
+Every action in the Talos Director console is a call to the Talos Director API, so anything you can do by hand you can also automate. The console shows this directly: forms such as **Create Virtual Machine** include an **Equivalent CLI / API** panel with the same request in a form you can script.
+
+## The API
+
+The Talos Director API is a REST API described by an OpenAPI specification. It covers the same objects as the console: compute clusters, hosts, virtual machines, storage pools, virtual networks, security groups and policies, conversion jobs, and Kubernetes clusters. Access is governed by the same role-based access control as the console.
+
+## Terraform
+
+A Terraform provider is planned for after general availability.
+
+## Kubernetes clusters
+
+Kubernetes clusters created by Talos Director are standard Talos Linux clusters. Download a kubeconfig from the cluster's detail screen, or use the built-in **kubectl Console**, and use `kubectl` and your existing Kubernetes tooling as usual. See [Kubernetes Clusters](/director/kubernetes/kubernetes-clusters).
