@@ -21,7 +21,7 @@ Do not edit manually. For more information, see https://github.com/siderolabs/do
 ```yaml
 apiVersion: v1alpha1
 kind: KubeAPIServerConfig
-image: registry.k8s.io/kube-apiserver:v1.37.0 # The container image used to run the kube-apiserver component.
+image: registry.k8s.io/kube-apiserver:v1.38.0-alpha.2 # The container image used to run the kube-apiserver component.
 # Extra command line arguments to supply to the kube-apiserver.
 extraArgs:
     feature-gates: ServerSideApply=true
@@ -48,7 +48,7 @@ extraArgs:
     <tr>
       <td>`extraArgs`</td>
       <td>Args</td>
-      <td>Extra command line arguments to supply to the kube-apiserver.</td>
+      <td>Extra command line arguments to supply to the kube-apiserver.<br /><br />Arguments owned by other configuration documents are rejected:<br />`anonymous-auth`, `authentication-config` and `oidc-*` are set via `KubeAuthenticationConfig`, while<br />`authorization-config`, `authorization-mode` and `authorization-webhook-*` are set via `KubeAuthorizerConfig`.<br /><br />The single exception is `oidc-signing-algs`, which cannot be set at all: see `KubeAuthenticationConfig`.</td>
       <td></td>
     </tr>
     <tr>

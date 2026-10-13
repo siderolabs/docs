@@ -266,6 +266,7 @@ navigation:
               pages:
                 - group: "Block"
                   pages:
+                    - "configuration/block/disksmartconfig.mdx"
                     - "configuration/block/existingvolumeconfig.mdx"
                     - "configuration/block/externalvolumeconfig.mdx"
                     - "configuration/block/filesystemscrubconfig.mdx"
@@ -295,7 +296,12 @@ navigation:
                     - "configuration/extensions/extensionserviceconfig.mdx"
                 - group: "Hardware"
                   pages:
+                    - "configuration/hardware/cpuscalingconfig.mdx"
                     - "configuration/hardware/pcidriverrebindconfig.mdx"
+                - group: "Hypervisor"
+                  pages:
+                    - "configuration/hypervisor/contentlibraryconfig.mdx"
+                    - "configuration/hypervisor/virtualmachineconfig.mdx"
                 - group: "Kubernetes"
                   pages:
                     - "configuration/kubernetes/kubeadmissioncontrolconfig.mdx"
@@ -355,6 +361,7 @@ navigation:
                     - "configuration/network/wireguardconfig.mdx"
                 - group: "Runtime"
                   pages:
+                    - "configuration/runtime/cpupartitionconfig.mdx"
                     - "configuration/runtime/environmentconfig.mdx"
                     - "configuration/runtime/etcfileconfig.mdx"
                     - "configuration/runtime/eventsinkconfig.mdx"
@@ -367,6 +374,7 @@ navigation:
                     - "configuration/runtime/udevrulesconfig.mdx"
                     - "configuration/runtime/unattendedinstallconfig.mdx"
                     - "configuration/runtime/watchdogtimerconfig.mdx"
+                    - "configuration/runtime/workloadresourceconfig.mdx"
                 - group: "Security"
                   pages:
                     - "configuration/security/imageverificationconfig.mdx"
@@ -379,6 +387,7 @@ navigation:
                     - "configuration/storage/lvmlogicalvolumeconfig.mdx"
                     - "configuration/storage/lvmvolumegroupconfig.mdx"
                     - "configuration/storage/raidarrayconfig.mdx"
+                    - "configuration/storage/storagepool.mdx"
 
         - group: "Troubleshooting and support"
           folder: "talos/v1.15/troubleshooting"
