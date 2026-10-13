@@ -3,7 +3,7 @@ description: |
   ExternalVolumeConfig is an external disk mount configuration document.
   External volumes allow to mount volumes that were created outside of Talos,
   over the network or API. Volume will be mounted under `/var/mnt/<name>`.
-  The external volume config name should not conflict with user volume names.
+  The name must not be taken by a user or existing volume.
 title: ExternalVolumeConfig
 canonical: https://docs.siderolabs.com/talos/v1.14/reference/configuration/block/externalvolumeconfig
 ---
@@ -34,6 +34,20 @@ mount:
         tag: Data # Selector tag for the Virtiofs mount.
 ```
 
+```yaml
+apiVersion: v1alpha1
+kind: ExternalVolumeConfig
+name: mount2 # Name of the mount.
+filesystemType: nfs # Filesystem type.
+# The mount describes additional mount options.
+mount:
+    # NFS mount options.
+    nfs:
+        server: 10.0.0.10 # NFS server hostname or IP address.
+        path: /export # Absolute path of the NFS export.
+        version: "4.1" # NFS protocol version.
+```
+
 
 <table>
   <thead>
@@ -55,7 +69,7 @@ mount:
       <td>`filesystemType`</td>
       <td>FilesystemType</td>
       <td>Filesystem type.</td>
-      <td>`virtiofs`<br /></td>
+      <td>`virtiofs`<br />`nfs`<br /></td>
     </tr>
     <tr>
       <td>`mount`</td>
@@ -109,6 +123,12 @@ ExternalMountSpec describes how the external volume is mounted.
       <td>Virtiofs mount options.</td>
       <td></td>
     </tr>
+    <tr>
+      <td>`nfs`</td>
+      <td><a href="#nfs">NFSMountSpec</a></td>
+      <td>NFS mount options.</td>
+      <td></td>
+    </tr>
   </tbody>
 </table>
 
@@ -136,6 +156,126 @@ VirtiofsMountSpec describes Virtiofs mount options.
       <td>string</td>
       <td>Selector tag for the Virtiofs mount.</td>
       <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+### nfs
+
+NFSMountSpec describes NFS mount options.
+
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`server`</td>
+      <td>string</td>
+      <td>NFS server hostname or IP address.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`path`</td>
+      <td>string</td>
+      <td>Absolute path of the NFS export.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`version`</td>
+      <td>NFSVersion</td>
+      <td>NFS protocol version.</td>
+      <td>`3`<br />`4`<br />`4.1`<br />`4.2`<br /></td>
+    </tr>
+    <tr>
+      <td>`port`</td>
+      <td>uint16</td>
+      <td>NFS server port. If unset, the kernel default is used.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`transport`</td>
+      <td>NFSTransport</td>
+      <td>NFS transport protocol. If unset, the kernel default is used.</td>
+      <td>`tcp`<br />`tcp6`<br />`udp`<br />`udp6`<br /></td>
+    </tr>
+    <tr>
+      <td>`mountPort`</td>
+      <td>uint16</td>
+      <td>NFS mount protocol port. Only valid with NFSv3. If unset, rpcbind discovery is used.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`mountTransport`</td>
+      <td>NFSTransport</td>
+      <td>NFS mount transport protocol. Only valid with NFSv3. Must use the same address family as<br />`transport`. If unset, the kernel default is used.</td>
+      <td>`tcp`<br />`tcp6`<br />`udp`<br />`udp6`<br /></td>
+    </tr>
+    <tr>
+      <td>`locking`</td>
+      <td>NFSLocking</td>
+      <td>NFSv3 locking mode. Defaults to local because Talos does not run rpc.statd by default.</td>
+      <td>`local`<br />`remote`<br /></td>
+    </tr>
+    <tr>
+      <td>`recovery`</td>
+      <td>NFSRecovery</td>
+      <td>Recovery behavior after an NFS request times out. Soft modes can risk data corruption.</td>
+      <td>`hard`<br />`soft`<br />`soft-error`<br /></td>
+    </tr>
+    <tr>
+      <td>`timeout`</td>
+      <td>uint32</td>
+      <td>NFS request timeout in deciseconds.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`retransmissions`</td>
+      <td>uint32</td>
+      <td>Number of NFS request retransmissions before recovery action is taken.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`readSize`</td>
+      <td>uint32</td>
+      <td>Maximum NFS read request payload in bytes. Must be a multiple of 1024 between 1024 and 1048576.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`writeSize`</td>
+      <td>uint32</td>
+      <td>Maximum NFS write request payload in bytes. Must be a multiple of 1024 between 1024 and 1048576.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`connections`</td>
+      <td>uint8</td>
+      <td>Number of TCP connections to the NFS server. Must be between 1 and 16.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`reservedPort`</td>
+      <td>bool</td>
+      <td>Use a privileged source port. The kernel default is used when unset.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`security`</td>
+      <td>NFSSecurity</td>
+      <td>NFS RPC security flavor. Kerberos flavors are not supported because Talos does not run rpc.gssd.</td>
+      <td>`none`<br />`sys`<br /></td>
     </tr>
   </tbody>
 </table>

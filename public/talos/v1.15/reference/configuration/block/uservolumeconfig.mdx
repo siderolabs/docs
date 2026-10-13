@@ -4,6 +4,7 @@ description: |
   User volume is automatically allocated as a partition on the specified disk
   and mounted under `/var/mnt/<name>`.
   The partition label is automatically generated as `u-<name>`.
+  The name must not be taken by an existing or external volume.
 title: UserVolumeConfig
 canonical: https://docs.siderolabs.com/talos/v1.14/reference/configuration/block/uservolumeconfig
 ---
@@ -587,7 +588,7 @@ encryption:
     <tr>
       <td>`endpoint`</td>
       <td>string</td>
-      <td>KMS endpoint to Seal/Unseal the key.</td>
+      <td>KMS endpoint to Seal/Unseal the key.<br /><br />The endpoint should be specified as a URL with an explicit scheme, e.g. `https://kms.example.com:4443`.<br />With the `https://` scheme, the connection to the KMS server is established over TLS, and the server certificate<br />is verified against the trusted root CAs.<br /><br />WARNING: if the scheme is omitted (e.g. `kms.example.com:4443`) or set to `grpc://`, the connection<br />to the KMS server is established without TLS, and the disk encryption key material is transmitted in plaintext.<br />Use plaintext endpoints only on fully trusted networks.<br /><br />Note: when encrypting the `STATE` volume, custom trusted root CAs from the machine configuration<br />might not be available when unlocking the volume (as the machine configuration is stored on `STATE`),<br />so the KMS server certificate should be signed by a CA trusted by default.</td>
       <td></td>
     </tr>
   </tbody>
@@ -733,6 +734,24 @@ It overrides the global FilesystemTrimConfig for the volume.
       <td>`interval`</td>
       <td>Duration</td>
       <td>The interval at which the volume is trimmed, overriding the global trim interval.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`chunkSize`</td>
+      <td>ByteSize</td>
+      <td>The size of the filesystem range trimmed at once, overriding the global chunk size.<br /><br />Setting it explicitly to zero trims the whole filesystem at once.<br />When set to a non-zero value, the chunk size must be at least 1MiB.<br /><br />Size is specified in bytes, but can be expressed in human readable format, e.g. 1GiB.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`chunkDelay`</td>
+      <td>Duration</td>
+      <td>The delay between trimming consecutive chunks, overriding the global chunk delay.<br /><br />Setting it explicitly to zero trims the chunks back-to-back.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`minLength`</td>
+      <td>ByteSize</td>
+      <td>The minimum contiguous free range to discard, overriding the global minimum length.<br /><br />The value cannot exceed 128MiB, as ext4 rejects values larger than the block group size.<br /><br />Size is specified in bytes, but can be expressed in human readable format, e.g. 1MiB.</td>
       <td></td>
     </tr>
   </tbody>

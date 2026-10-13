@@ -4,6 +4,31 @@ description: "Product updates and announcements"
 rss: true
 ---
 
+<Update label="v1.1.3" tags={["Discovery Service"]}>
+  [Release notes →](https://github.com/siderolabs/discovery-service/releases/tag/v1.1.3)
+
+
+</Update>
+
+<Update label="v1.13.11" tags={["Talos"]}>
+  [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.13.11)
+
+  ### Time Check API
+
+  The `TimeService/TimeCheck` API (`talosctl time --check`) is no longer available to the `os:reader` role, as it allows querying
+  arbitrary time servers from the node. The `TimeService/Time` API (querying the configured time server) is still available to `os:reader`.
+
+  PTP device paths are now strictly validated both in the machine configuration and in the API: the path should be directly under `/dev`,
+  the name should start with `ptp` (e.g. `/dev/ptp0`, `/dev/ptp_kvm`), and the device should be a PTP character device.
+
+  ### Component Updates
+
+  Linux: 6.18.54
+  containerd: 2.2.9
+
+  Talos is built with Go 1.26.7
+</Update>
+
 <Update label="v1.14.2" tags={["Talos"]}>
   [Release notes →](https://github.com/siderolabs/talos/releases/tag/v1.14.2)
 

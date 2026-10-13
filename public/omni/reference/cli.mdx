@@ -2367,31 +2367,29 @@ the preset's platform, overlay, or bootloader: those define the preset itself.
 To use different settings, create a new preset.
 
 The format flag determines the output file type for metal presets:
-* iso   - ISO image (default)
-* raw   - Raw disk image (.raw.xz)
-* qcow2 - QEMU disk image (.qcow2)
-* pxe   - Print PXE boot URL (no file downloaded)
+    * iso   - ISO image (default)
+    * raw   - Raw disk image (.raw.xz)
+    * qcow2 - QEMU disk image (.qcow2)
+    * pxe   - Print PXE boot URL (no file downloaded)
 
 For cloud presets, the format is automatically determined by the platform.
 For SBC presets, a raw disk image is always produced.
 
 Examples:
-```
-# Download from a preset (format is auto-detected from the preset type)
-omnictl media download my-preset
+    # Download from a preset (format is auto-detected from the preset type)
+    omnictl media download my-preset
 
-# Force raw disk image for a metal preset
-omnictl media download my-preset --format raw
+    # Force raw disk image for a metal preset
+    omnictl media download my-preset --format raw
 
-# Get PXE boot URL for a metal preset
-omnictl media download my-preset --format pxe
+    # Get PXE boot URL for a metal preset
+    omnictl media download my-preset --format pxe
 
-# Override extensions for a one-off download
-omnictl media download my-preset --extensions qemu-guest-agent
+    # Override extensions for a one-off download
+    omnictl media download my-preset --extensions qemu-guest-agent
 
-# Download to a specific directory
-omnictl media download my-preset --output /tmp/images/
-```
+    # Download to a specific directory
+    omnictl media download my-preset --output /tmp/images/
 
 
 ```
@@ -2437,25 +2435,23 @@ Create an installation media preset.
 Create a new installation media preset that can be used for downloading installation media.
 
 Examples:
-```
-# Create a basic metal preset
-omnictl media preset create my-preset --arch amd64
+    # Create a basic metal preset
+    omnictl media preset create my-preset --arch amd64
 
-# Create a cloud preset for AWS
-omnictl media preset create aws-preset --arch amd64 --platform aws
+    # Create a cloud preset for AWS
+    omnictl media preset create aws-preset --arch amd64 --platform aws
 
-# Create an SBC preset for Raspberry Pi
-omnictl media preset create rpi-preset --arch arm64 --overlay rpi_generic
+    # Create an SBC preset for Raspberry Pi
+    omnictl media preset create rpi-preset --arch arm64 --overlay rpi_generic
 
-# Create a preset with extensions and labels
-omnictl media preset create full-preset --arch amd64 \
-    --extensions qemu-guest-agent --extensions intel-ucode \
-    --initial-labels env=production --initial-labels team=infra
+    # Create a preset with extensions and labels
+    omnictl media preset create full-preset --arch amd64 \
+        --extensions qemu-guest-agent --extensions intel-ucode \
+        --initial-labels env=production --initial-labels team=infra
 
-# Create a preset with an embedded machine config read from a file
-omnictl media preset create embedded-preset --arch amd64 \
-    --embedded-machine-config-file ./machine-config.yaml
-```
+    # Create a preset with an embedded machine config read from a file
+    omnictl media preset create embedded-preset --arch amd64 \
+        --embedded-machine-config-file ./machine-config.yaml
 
 
 ```
@@ -2619,13 +2615,11 @@ cluster's machines, including upgrade targets with --upgrade-paths. Always print
 \{schematicId, arch, version, sbom}, one entry per bundle fetched.
 
 Examples:
-```
-# Fetch the SBOM of a specific schematic build
-omnictl security sbom --schematic \<schematic-id> --talos-version 1.9.0 --arch amd64
+    # Fetch the SBOM of a specific schematic build
+    omnictl security sbom --schematic \<schematic-id> --talos-version 1.9.0 --arch amd64
 
-# Fetch the SBOM of every schematic a cluster's machines are running, including upgrade targets
-omnictl security sbom --cluster-id my-cluster --upgrade-paths
-```
+    # Fetch the SBOM of every schematic a cluster's machines are running, including upgrade targets
+    omnictl security sbom --cluster-id my-cluster --upgrade-paths
 
 
 ```
@@ -2679,19 +2673,17 @@ summary, and can't be embedded in -o json/yaml output. The default -o table only
 don't share - pass -o json/yaml to fetch a report in another format.
 
 Examples:
-```
-# Scan a specific schematic build
-omnictl security scan --schematic \<schematic-id> --talos-version 1.9.0 --arch amd64
+    # Scan a specific schematic build
+    omnictl security scan --schematic \<schematic-id> --talos-version 1.9.0 --arch amd64
 
-# Scan every schematic a cluster's machines are running, including upgrade targets
-omnictl security scan --cluster-id my-cluster --upgrade-paths
+    # Scan every schematic a cluster's machines are running, including upgrade targets
+    omnictl security scan --cluster-id my-cluster --upgrade-paths
 
-# Print the full reports as JSON instead of the severity table
-omnictl security scan --cluster-id my-cluster -o json
+    # Print the full reports as JSON instead of the severity table
+    omnictl security scan --cluster-id my-cluster -o json
 
-# Print SARIF reports instead of Grype's native JSON
-omnictl security scan --cluster-id my-cluster -o json --format sarif
-```
+    # Print SARIF reports instead of Grype's native JSON
+    omnictl security scan --cluster-id my-cluster -o json --format sarif
 
 
 ```
@@ -2736,13 +2728,11 @@ a specific schematic, so no --schematic/--arch is needed. Always prints a JSON a
 vex}, one entry per version fetched.
 
 Examples:
-```
-# Fetch the VEX document for a specific Talos version
-omnictl security vex --talos-version 1.9.0
+    # Fetch the VEX document for a specific Talos version
+    omnictl security vex --talos-version 1.9.0
 
-# Fetch the VEX documents for a cluster's current and upgrade-target versions
-omnictl security vex --cluster-id my-cluster --upgrade-paths
-```
+    # Fetch the VEX documents for a cluster's current and upgrade-target versions
+    omnictl security vex --cluster-id my-cluster --upgrade-paths
 
 
 ```

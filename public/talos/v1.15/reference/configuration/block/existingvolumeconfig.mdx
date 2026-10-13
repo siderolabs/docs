@@ -3,7 +3,7 @@ description: |
   ExistingVolumeConfig is an existing volume configuration document.
   Existing volumes allow to mount partitions (or whole disks) that were created
   outside of Talos. Volume will be mounted under `/var/mnt/<name>`.
-  The existing volume config name should not conflict with user volume names.
+  The name must not be taken by a user or external volume.
 title: ExistingVolumeConfig
 canonical: https://docs.siderolabs.com/talos/v1.14/reference/configuration/block/existingvolumeconfig
 ---
@@ -211,6 +211,24 @@ It overrides the global FilesystemTrimConfig for the volume.
       <td>`interval`</td>
       <td>Duration</td>
       <td>The interval at which the volume is trimmed, overriding the global trim interval.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`chunkSize`</td>
+      <td>ByteSize</td>
+      <td>The size of the filesystem range trimmed at once, overriding the global chunk size.<br /><br />Setting it explicitly to zero trims the whole filesystem at once.<br />When set to a non-zero value, the chunk size must be at least 1MiB.<br /><br />Size is specified in bytes, but can be expressed in human readable format, e.g. 1GiB.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`chunkDelay`</td>
+      <td>Duration</td>
+      <td>The delay between trimming consecutive chunks, overriding the global chunk delay.<br /><br />Setting it explicitly to zero trims the chunks back-to-back.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`minLength`</td>
+      <td>ByteSize</td>
+      <td>The minimum contiguous free range to discard, overriding the global minimum length.<br /><br />The value cannot exceed 128MiB, as ext4 rejects values larger than the block group size.<br /><br />Size is specified in bytes, but can be expressed in human readable format, e.g. 1MiB.</td>
       <td></td>
     </tr>
   </tbody>
