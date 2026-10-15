@@ -7,7 +7,7 @@ import DirectorLimitedAvailability from '/snippets/director-limited-availability
 
 <DirectorLimitedAvailability />
 
-Talos Director is a management platform for the data center. It runs virtual machines, Kubernetes clusters, storage, and networking on Talos Linux and the Talos hypervisor, and manages them from a single console.
+Talos Director is a management platform for the data center. It runs virtual machines, Kubernetes clusters, storage, and networking on Talos Linux and the Talos hypervisor, and you manage all of it through the Talos Director console and API.
 
 The immutable, declarative configuration that keeps Talos Kubernetes clusters from drifting applies to virtual machine workloads as well. Talos Director is built for organizations moving off VMware and similar platforms: its migration engine converts existing VMware virtual machines and Kubernetes clusters without application changes.
 
@@ -15,12 +15,47 @@ The immutable, declarative configuration that keeps Talos Kubernetes clusters fr
 
 Talos Director is the management layer. The work itself happens on the hosts.
 
-| **Layer** | **Role** |
-| --- | --- |
-| **Physical host** | Supplies CPU, memory, disks, and network interfaces. |
-| **Talos Linux with the KVM hypervisor** | Runs on each host and executes the virtual machines placed on it. |
-| **Talos Director** | Groups hosts into clusters, places and moves virtual machines, attaches storage and networking, and runs Kubernetes clusters on top. |
-| **Virtual machine** | Runs its own guest operating system and applications. Kubernetes nodes created by Talos Director are virtual machines too. |
+<div className="not-prose" style={{ background: "#FAF7F4", border: "1px solid #DDD9D4", borderRadius: 12, padding: 12, display: "grid", gap: 8, fontSize: 14, lineHeight: 1.4, textAlign: "center", color: "#131316", margin: "24px 0" }}>
+  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
+      <div style={{ background: "#FFFFFF", color: "#131316", border: "1px solid #DDD9D4", borderRadius: 6, padding: "10px 8px" }}>
+        <div style={{ fontWeight: 600 }}>Virtual machines</div>
+        <div style={{ opacity: 0.8 }}>Windows and Linux guests</div>
+      </div>
+      <div style={{ background: "#FFFFFF", color: "#131316", border: "1px solid #DDD9D4", borderRadius: 6, padding: "10px 8px" }}>
+        <div style={{ fontWeight: 600 }}>Kubernetes clusters</div>
+        <div style={{ opacity: 0.8 }}>Talos Linux nodes, managed through Omni</div>
+      </div>
+  </div>
+  <div style={{ background: "#131316", color: "#F5F5F4", borderRadius: 8, padding: 10 }}>
+    <div style={{ fontWeight: 600, marginBottom: 8 }}>Talos Director: console and API for everything above the hosts</div>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 8 }}>
+      <div style={{ background: "#2A2A2E", color: "#F5F5F4", border: "1px solid #3A3A3C", borderRadius: 6, padding: "10px 8px" }}>
+        <div style={{ fontWeight: 600 }}>Compute</div>
+        <div style={{ opacity: 0.8 }}>clusters, hosts, VMs, storage</div>
+      </div>
+      <div style={{ background: "#2A2A2E", color: "#F5F5F4", border: "1px solid #3A3A3C", borderRadius: 6, padding: "10px 8px" }}>
+        <div style={{ fontWeight: 600 }}>Kubernetes</div>
+        <div style={{ opacity: 0.8 }}>create, scale, upgrade</div>
+      </div>
+      <div style={{ background: "#2A2A2E", color: "#F5F5F4", border: "1px solid #3A3A3C", borderRadius: 6, padding: "10px 8px" }}>
+        <div style={{ fontWeight: 600 }}>Networking</div>
+        <div style={{ opacity: 0.8 }}>virtual networks</div>
+      </div>
+      <div style={{ background: "#2A2A2E", color: "#F5F5F4", border: "1px solid #3A3A3C", borderRadius: 6, padding: "10px 8px" }}>
+        <div style={{ fontWeight: 600 }}>Security</div>
+        <div style={{ opacity: 0.8 }}>micro-segmentation</div>
+      </div>
+    </div>
+  </div>
+  <div style={{ background: "#FBECEB", border: "1px solid #E04B45", borderRadius: 8, padding: 12 }}>
+    <span style={{ fontWeight: 600 }}>Talos Linux with the KVM hypervisor</span>, on every host: immutable, API-driven, no shell or SSH
+  </div>
+  <div style={{ background: "#FFFFFF", border: "1px solid #BFBFBF", borderRadius: 8, padding: 12 }}>
+    <span style={{ fontWeight: 600 }}>Servers, shared storage, and network</span> in your data center
+  </div>
+</div>
+
+Each server runs Talos Linux with the KVM hypervisor, which executes the virtual machines placed on it. Talos Director sits above the hosts: it groups them into clusters, places and moves virtual machines, attaches storage and networking, and creates Kubernetes clusters on top. Kubernetes nodes created by Talos Director are virtual machines too, running Talos Linux on the same hosts, and Talos Director manages their lifecycle through Omni, Sidero's Kubernetes management platform.
 
 Registering a host with Talos Director brings that machine under management, so Talos Director can see its capacity and place workloads on it. Registering a host does not create any virtual machines or Kubernetes nodes by itself.
 
@@ -29,7 +64,7 @@ Registering a host with Talos Director brings that machine under management, so 
 - **Compute clusters.** Hosts are grouped into clusters that share storage. A resource scheduler places virtual machines and rebalances load across hosts using performance metrics, within the overcommit limits you set.
 - **Live migration and High Availability.** Virtual machines move between hosts without downtime, and when a host fails, its virtual machines restart on the surviving hosts.
 - **Rolling host upgrades.** Hosts are upgraded one at a time while their workloads keep running.
-- **Kubernetes clusters.** Talos Director creates and operates Talos Kubernetes clusters on virtual machines, including node pools, autoscaling, backups, add-ons, and guarded upgrades.
+- **Kubernetes clusters.** Talos Director creates and operates Talos Kubernetes clusters on virtual machines through Omni, including node pools, autoscaling, backups, add-ons, and guarded upgrades.
 - **Networking.** Micro-segmentation and live traffic analysis for virtual machine networks.
 - **VMware migration.** Converts existing VMware virtual machines and Kubernetes clusters to run on Talos Director.
 
@@ -40,7 +75,7 @@ This documentation covers the main areas of the Talos Director console and grows
 - [Clusters](/director/compute/clusters): compute cluster health and capacity, scheduling and HA settings, and rolling upgrades.
 - [Hosts](/director/compute/hosts): adding hosts, and host health, hardware, services, and maintenance.
 - [Virtual Machines](/director/compute/virtual-machines): creating VMs, and power, console, disks, networking, snapshots, and backups.
-- [Migrate from VMware](/director/compute/migrate-from-vmware): converting vCenter VMs, cutover modes, and importing NSX firewall rules.
+- [Migrate from VMware](/director/compute/migrate-from-vmware): converting vCenter VMs and choosing a cutover mode.
 - [Storage Pools](/director/compute/storage-pools): shared datastores, host mounts, and the virtual machines that depend on them.
 - [Kubernetes Clusters](/director/kubernetes/kubernetes-clusters): the Kubernetes fleet dashboard, cluster creation, and day-to-day cluster operations.
 - [Virtual Networks](/director/networking/virtual-networks): VLAN-backed networks for VMs, and importing networks from Cisco ACI.
