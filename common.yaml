@@ -165,6 +165,10 @@ homepage:
       description: "Run and manage virtual machines directly on Talos hosts."
       # Talos Hypervisor's card comes from hypervisor.yaml.
       cards:
+        - title: "Talos Enterprise Hypervisor"
+          tag: "Commercial"
+          soon: true
+          description: "The enterprise build of Talos Hypervisor: FIPS-enabled builds, SBOMs, VEX, signed images, and 24/7 support."
         # XENIA -- unannounced. Uncomment when it is. Its navbar button
         # also goes on the Talos Hypervisor product, which has none until then.
         # - title: "Talos Xenia"
