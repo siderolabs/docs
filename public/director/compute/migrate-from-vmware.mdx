@@ -7,7 +7,7 @@ import DirectorLimitedAvailability from '/snippets/director-limited-availability
 
 <DirectorLimitedAvailability />
 
-Talos Director converts virtual machines from VMware vCenter to run on its own hosts. The conversion copies each VM's disks into a Talos Director storage pool, recreates the VM, and carries its network configuration across, so applications move without changes.
+Talos Director converts virtual machines from VMware vCenter to run on its own hosts. The conversion copies each VM's disks into a Talos Director storage pool, recreates the VM, and carries its network configuration across, so applications move without changes. For what the engine does at each stage, see [What Happens During a Migration](/director/compute/what-happens-during-a-migration).
 
 ## Convert a VM
 
@@ -29,7 +29,7 @@ Talos Director checks that the VM is ready to convert:
 - **No VMware snapshots**: the VM must not have snapshots in vCenter.
 - **VirtIO drivers and QEMU Guest Agent**: these must be installed in the guest before conversion, whichever cutover mode you choose, so the converted VM can boot and report back on KVM. For Windows, the step links to the VirtIO driver ISO.
 
-Scheduled and automatic cutover read changed blocks from the running VM with **VMware's Virtual Disk Development Kit (VDDK)** when it is available. VDDK is VMware software, so Talos Director does not bundle it: upload the VDDK archive from your VMware entitlement to the content library once, and Talos Director verifies it and distributes it to hosts. Without VDDK, a warm conversion falls back to vCenter's standard export. Cold conversions do not require it.
+Scheduled and automatic cutover require **VMware's Virtual Disk Development Kit (VDDK)**, which reads changed blocks from the running VM. VDDK is VMware software, so Talos Director does not bundle it: upload the VDDK archive from your VMware entitlement once, under **Settings** > **VM** > **Conversion**, and Talos Director verifies it and distributes it to hosts. Without VDDK, a scheduled or automatic conversion fails before copying anything. Cold conversions do not require it.
 
 ### 4. Configure
 
@@ -53,5 +53,5 @@ Start the conversion. Progress, transfer rate, and time remaining appear on the 
 | **Mode** | **What happens** |
 | --- | --- |
 | **Cold (offline)** | The source VM is powered off and copied whole. The simplest and most predictable mode, with downtime that lasts the entire copy. |
-| **Scheduled cutover** | The VM is copied while it stays online, then cut over at a time you set, or when you trigger it. Downtime is a brief final sync. |
+| **Scheduled cutover** | The VM is copied while it stays online, then cut over at a time you set, or when you trigger it. Downtime runs from the source's shutdown to the converted VM's first boot. |
 | **Automatic cutover** | The VM is copied online, and changed blocks are synced until the copies converge, then it cuts over automatically. The smallest downtime, with no one watching. |
