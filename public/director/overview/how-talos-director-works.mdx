@@ -48,7 +48,7 @@ flowchart BT
   style cluster fill:#F5F0EB,stroke:#DDD9D4,color:#131316
 ```
 
-Every management connection is opened by the host, outbound. The two paths work like this.
+Every management connection to a configured host is opened by the host, outbound. The one exception is a server's BMC: the control plane connects to it to boot new servers and to power off failed hosts. The two management paths work like this.
 
 **SideroLink** is a WireGuard overlay network for the machines Talos Director manages. A new server dials it before it has any configuration, which is how Talos Director configures a server it has never seen. Kubernetes node VMs use SideroLink to join Omni.
 
@@ -118,6 +118,8 @@ Only when the management channel is down, the datastore heartbeat is stale, and 
 **Isolated** means the host is alive but cut off from the control plane, for example because its host agent crashed or its management network is down. The fresh datastore heartbeat proves it is still running its VMs, so they are not restarted anywhere else. When any signal cannot be read at all, Talos Director alerts instead of restarting.
 
 The datastore heartbeat is optional. In a cluster without one, Talos Director cannot tell an isolated host from a failed one, so it acts on weaker evidence: it restarts a host's VMs when the management channel is down and the peers cannot confirm the host is alive. Configure a datastore heartbeat on every compute cluster that relies on High Availability.
+
+Fencing makes sure a host declared failed cannot keep writing to its VMs' disks. Every running VM holds a lock on its disks in shared storage, and the VM does not start on another host while a live host holds that lock. Each host also runs a hardware watchdog that resets the host if its own heartbeat stops, timed to fire before any other host could take over its disk locks. Where a host's BMC is registered, the control plane also powers the host off through the BMC and confirms it is off before another host takes over the disks. If many hosts appear to fail at the same moment, Talos Director treats it as a fault in the network, the storage, or the monitoring itself, and suppresses fences and restarts for that round.
 
 High Availability does not depend on the control plane being reachable. If the control plane goes offline, the hosts keep running their VMs and the compute cluster enters **local HA mode**: the hosts elect a cluster leader, and the leader decides whether a host has failed until the control plane returns.
 
