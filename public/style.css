@@ -17,6 +17,16 @@
   background-color: transparent !important;
 }
 
+/*
+ * Hides the search filter menu while script/contextual-chrome.js opens it to
+ * preselect the product being read, so it does not flash open or catch a
+ * stray click.
+ */
+html[data-sidero-search-filter] [data-component-part="search-filter-content"] {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* Table Styling */
 table {
   border-color: var(--talos-border-default);

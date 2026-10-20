@@ -22,6 +22,12 @@
  *      Mintlify's styling in both themes. If this script fails to load, the
  *      site falls back to navbar.primary on every page.
  *
+ *   5. Search opens filtered to the product being read. Mintlify's search
+ *      modal has a product filter but only preselects it on the changelog, so
+ *      the first time the modal opens on a page this picks the open product in
+ *      that filter. Reopening on the same page keeps whatever the reader chose
+ *      since, so clearing the filter to search every product sticks.
+ *
  * Mintlify sets data-current-path on <html> and keeps it up to date across
  * client-side navigation, which is what makes this possible without a reload.
  */
@@ -205,6 +211,107 @@
     }
   }
 
+  // The path the search filter was last preselected for. Mintlify keeps the
+  // modal mounted between opens and remembers its filter, so preselecting once
+  // per page is what leaves a reader's own choice alone on reopening.
+  var searchFilterPath = null;
+
+  // The modal whose data-open attribute is being watched, and the observer
+  // doing it. Opening the modal changes only that attribute, which the
+  // childList observer in start() does not see.
+  var watchedSearchModal = null;
+  var searchModalObserver = null;
+
+  function watchSearchModal(modal) {
+    if (modal === watchedSearchModal) return;
+    if (searchModalObserver) searchModalObserver.disconnect();
+    watchedSearchModal = modal;
+    searchModalObserver = new MutationObserver(scheduleApply);
+    searchModalObserver.observe(modal, { attributes: true, attributeFilter: ["data-open"] });
+  }
+
+  function searchFilterMenu() {
+    return document.querySelector('[data-component-part="search-filter-content"]');
+  }
+
+  // Polls until test() returns something truthy or timeoutMs passes, then
+  // calls done() with the last result.
+  function waitFor(test, done, timeoutMs) {
+    var started = Date.now();
+    (function poll() {
+      var result = test();
+      if (result || Date.now() - started >= timeoutMs) {
+        done(result);
+        return;
+      }
+      window.setTimeout(poll, 25);
+    })();
+  }
+
+  function applySearchFilter(product, path) {
+    var modal = document.querySelector('[data-component-part="search-modal"]');
+    if (!modal) return;
+    watchSearchModal(modal);
+    if (!modal.hasAttribute("data-open") || searchFilterPath === path) return;
+
+    var info = productInfo(product);
+    var trigger = modal.querySelector('[data-component-part="search-filter-trigger"]');
+    if (!info || !trigger) return;
+
+    searchFilterPath = path;
+    if (trigger.textContent.trim() === info.name) return;
+
+    // The filter is a Base UI menu, so choosing an option means opening it and
+    // clicking the item. The menu stays hidden and inert meanwhile (see
+    // style.css), including through its close animation, so the reader never
+    // sees it open.
+    var root = document.documentElement;
+    root.setAttribute("data-sidero-search-filter", "");
+    trigger.click();
+
+    waitFor(
+      function () {
+        var menu = searchFilterMenu();
+        if (!menu) return null;
+        return Array.prototype.find.call(menu.querySelectorAll('[role="menuitem"]'), function (option) {
+          return option.textContent.trim() === info.name;
+        });
+      },
+      function (item) {
+        if (item) {
+          item.click();
+        } else if (trigger.getAttribute("aria-expanded") === "true") {
+          // The product is missing from the filter: close the menu untouched.
+          trigger.click();
+        }
+
+        // Closing the menu hands focus back to its trigger. Return it to the
+        // search input so the reader can type straight away.
+        waitFor(
+          function () {
+            return trigger.getAttribute("aria-expanded") !== "true";
+          },
+          function () {
+            var input = document.getElementById("search-input");
+            if (input && modal.hasAttribute("data-open")) input.focus();
+          },
+          500
+        );
+
+        waitFor(
+          function () {
+            return !searchFilterMenu();
+          },
+          function () {
+            root.removeAttribute("data-sidero-search-filter");
+          },
+          2000
+        );
+      },
+      500
+    );
+  }
+
   function apply() {
     var path = document.documentElement.getAttribute("data-current-path") || window.location.pathname;
     var product = productFromPath(path);
@@ -212,6 +319,7 @@
     applySearchPlaceholder(product);
     applyProductSwitcher(product);
     applyVersionSwitcher(product);
+    applySearchFilter(product, path);
   }
 
   var pending = null;
