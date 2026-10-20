@@ -4,7 +4,7 @@ description: "Guide on how to configure Google Cloud Workload Identity Federatio
 ---
 
 This guide provides a step-by-step walkthrough for configuring Google Cloud Workload Identity Federation on a Talos Kubernetes cluster.
-It covers setting up the necessary GCP infrastructure (buckets, pools, providers), patching the Talos API server with the OIDC issuer, audience, and JWKS settings Google Cloud needs, and binding Kubernetes Service Accounts to Google Service Accounts for secure authentication.
+It covers setting up the necessary GCP infrastructure (buckets, pools, providers), patching the Talos API server with the OIDC issuer and JWKS settings Google Cloud needs, and binding Kubernetes Service Accounts to Google Service Accounts for secure authentication.
 
 ## Environment setup
 
@@ -67,7 +67,7 @@ With the GCP side in place, the next step is configuring Talos to issue and expo
 
 ### Retrieve OIDC provider URL
 
-First, retrieve the full resource name of the OIDC provider. This value will be used when configuring the API server audiences.
+First, retrieve the full resource name of the OIDC provider. This value is used to generate the credential configuration file and as the audience of the workload's projected service account token.
 
 ```bash
 OIDC_PROVIDER_URL=$(gcloud iam workload-identity-pools providers list --location="global" --workload-identity-pool="${POOL_NAME}" --filter="name:${PROVIDER_NAME}" --format json | jq -r '.[0].name')
@@ -87,8 +87,6 @@ kind: KubeAPIServerConfig
 extraArgs:
   # This must match the GCS bucket URL exactly
   service-account-issuer: "https://storage.googleapis.com/${BUCKET_NAME}"
-  # GCP WIF expects this audience; you can also add "sts.googleapis.com"
-  api-audiences: "iam.googleapis.com/${OIDC_PROVIDER_URL},https://storage.googleapis.com/${BUCKET_NAME},sts.googleapis.com,https://kubernetes.default.svc.cluster.local"
   # Where the public keys will be found (logically)
   service-account-jwks-uri: "https://storage.googleapis.com/${BUCKET_NAME}/keys.json"
   # How long tokens are valid (optional, but good for security)
@@ -106,8 +104,6 @@ cluster:
     extraArgs:
       # This must match the GCS bucket URL exactly
       service-account-issuer: "https://storage.googleapis.com/${BUCKET_NAME}"
-      # GCP WIF expects this audience; you can also add "sts.googleapis.com"
-      api-audiences: "iam.googleapis.com/${OIDC_PROVIDER_URL},https://storage.googleapis.com/${BUCKET_NAME},sts.googleapis.com,https://kubernetes.default.svc.cluster.local"
       # Where the public keys will be found (logically)
       service-account-jwks-uri: "https://storage.googleapis.com/${BUCKET_NAME}/keys.json"
       # How long tokens are valid (optional, but good for security)
@@ -248,6 +244,7 @@ kubectl --kubeconfig kubeconfig create serviceaccount workload-identity --namesp
 ### Deploy test pod
 
 Deploy a Pod that projects the Service Account token and credential configuration to verify the identity federation.
+Google Cloud checks the `audience` set on the projected `serviceAccountToken` volume, which must be the OIDC provider's resource name prefixed with `//iam.googleapis.com/`.
 
 ```bash
 kubectl --kubeconfig kubeconfig apply -f - <<EOF
