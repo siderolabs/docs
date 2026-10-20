@@ -71,7 +71,7 @@ The operating system is a read-only image. Everything about the host, from its n
 Talos Linux is operated through an authenticated API rather than a console session. Talos Director uses that API to configure a server it has never seen, to upgrade a host by replacing its operating system image once its virtual machines have moved to other hosts, and to rebuild a server by applying the same configuration again.
 
 <Note>
-Talos Director hosts run standard Talos Linux 1.14 or later. The KVM, VFIO, IOMMU, vhost, hugepages, and NUMA support the hypervisor relies on is part of the Talos Linux kernel. Talos Director runs virtual machines through its own host agent, not through the [Talos Hypervisor](/hypervisor/overview/what-is-talos-hypervisor) APIs introduced in Talos Linux 1.15.
+Talos Director hosts run Talos Linux 1.14 or later. The KVM, VFIO, IOMMU, vhost, hugepages, and NUMA support the hypervisor relies on is part of the Talos Linux kernel. QEMU and libvirt come with the Talos Director host image, not with the host agent. Talos Director runs virtual machines through its own host agent, not through the [Talos Hypervisor](/hypervisor/overview/what-is-talos-hypervisor) APIs introduced in Talos Linux 1.15.
 </Note>
 
 ## How a server becomes a host
@@ -87,11 +87,11 @@ Talos Director brings a bare-metal server under management without anyone touchi
 
 Servers without a Redfish-capable BMC boot the same image from an ISO or USB and receive their configuration directly. The result is the same managed host.
 
-Because a host's entire configuration is one document that Talos Director owns, two hosts in a cluster with the same profile are the same. There is no configuration drift to audit, and replacing a host means running the same six steps again.
+Because a host's entire configuration is one document that Talos Director owns, two hosts in a cluster with the same profile are configured identically. There is no configuration drift to audit, and replacing a host means running the same six steps again.
 
 ## Compute clusters and scheduling
 
-A **compute cluster** is a group of hosts that share storage. Shared storage is what makes a VM movable: any host in the cluster can open the VM's disks, so the scheduler is free to place and move VMs across the whole cluster.
+A **compute cluster** is a group of hosts attached to the same storage pools. Shared storage is what makes a VM movable: any host in the cluster can open the VM's disks, so the scheduler is free to place and move VMs across the whole cluster.
 
 The scheduler in the control plane places each VM using the metrics hosts report (CPU, memory, CPU ready time), within the overcommit limits set on the cluster. A second, host-local scheduler handles placement inside the host, pinning a VM's virtual CPUs and memory to one NUMA node so it does not pay for cross-socket memory access. Placing a host in **maintenance mode** in Talos Director live-migrates its VMs to the other hosts before the host is taken out of service.
 
@@ -115,7 +115,7 @@ Only when the management channel is down, the datastore heartbeat is stale, and 
 | Down | Stale | Host gone | Failed | Fence, then restart VMs elsewhere. |
 | Down | Stale | Host reachable | Ambiguous | Alert. Likely a network problem on the observer's side. |
 
-**Isolated** means the host is alive but cut off from the control plane, for example because its host agent crashed or its management network is down. The fresh datastore heartbeat proves it is still running its VMs, so they are not restarted anywhere else. When any signal cannot be read at all, Talos Director alerts instead of restarting.
+**Isolated** means the host is alive but cut off from the control plane, for example because its host agent crashed or its management network is down. The fresh datastore heartbeat proves it is still running its VMs, so they are not restarted anywhere else. When a signal that is configured cannot be read, Talos Director alerts instead of restarting.
 
 The datastore heartbeat is optional. In a cluster without one, Talos Director cannot tell an isolated host from a failed one, so it acts on weaker evidence: it restarts a host's VMs when the management channel is down and the peers cannot confirm the host is alive. Configure a datastore heartbeat on every compute cluster that relies on High Availability.
 
