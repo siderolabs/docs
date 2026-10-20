@@ -23,10 +23,10 @@
  *      site falls back to navbar.primary on every page.
  *
  *   5. Search opens filtered to the product being read. Mintlify's search
- *      modal has a product filter but only preselects it on the changelog, so
- *      the first time the modal opens on a page this picks the open product in
- *      that filter. Reopening on the same page keeps whatever the reader chose
- *      since, so clearing the filter to search every product sticks.
+ *      modal has a product filter but opens with it unset, so the first time
+ *      the modal opens on a page this picks the open product in that filter.
+ *      Reopening on the same page keeps whatever the reader chose since, so
+ *      clearing the filter to search every product sticks.
  *
  * Mintlify sets data-current-path on <html> and keeps it up to date across
  * client-side navigation, which is what makes this possible without a reload.
