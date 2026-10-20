@@ -11,6 +11,9 @@
 //   - converts bare autolinks (<https://...>, <user@example.com>) to Markdown
 //     links, since MDX parses a bare < as JSX
 //   - rewrites relative links (values.yaml) to the chart directory on GitHub
+//   - rewrites links to the retired Omni docs site (omni.siderolabs.com/docs),
+//     which now redirects every page to the Omni overview, to the page's
+//     current path on this site, and fails on any link it has no mapping for
 //   - pins the --version of helm install and helm upgrade commands to the chart
 //     version of the ref, since the README examples carry an old version
 //   - escapes any other "<" and "{" in prose (outside code), which MDX would
@@ -84,7 +87,14 @@ func run(ref, readmePath string, out io.Writer) error {
 		return fmt.Errorf("reading the chart README: %w", err)
 	}
 
-	_, err = io.WriteString(out, convert(string(readme), ref))
+	page := convert(string(readme), ref)
+
+	if m := legacyDocsRe.FindStringSubmatch(page); m != nil {
+		return fmt.Errorf("the README links to the retired Omni docs site (%s), which redirects to the Omni overview: "+
+			"add the page's current path to legacyDocLinks", m[1])
+	}
+
+	_, err = io.WriteString(out, page)
 
 	return err
 }
@@ -136,6 +146,14 @@ var (
 	mailLinkRe = regexp.MustCompile(`<([^\s<>@]+@[^\s<>]+)>`)
 	helmVerRe  = regexp.MustCompile(`(\bhelm\s+(?:install|upgrade)\b.*--version[\s=]+)(\S+)`)
 	releaseRe  = regexp.MustCompile(`^v1\.(\d+\.\d+\S*)$`)
+
+	legacyDocsRe = regexp.MustCompile(`\]\((https://omni\.siderolabs\.com/docs(/[^)\s]*?)/?)\)`)
+
+	// Pages on the retired Omni docs site, keyed by path without the trailing
+	// slash, and their current paths on this site.
+	legacyDocLinks = map[string]string{
+		"/how-to-guides/self-hosted/how-to-expose-http-service-from-a-cluster": "/omni/cluster-management/expose-a-workload-via-service-proxy",
+	}
 
 	// Mintlify has no Important or Caution callout; map them to the closest.
 	callouts = map[string]string{
@@ -246,6 +264,7 @@ func convert(readme, ref string) string {
 		line = urlLinkRe.ReplaceAllString(line, "[$1]($1)")
 		line = mailLinkRe.ReplaceAllString(line, "[$1](mailto:$1)")
 		line = strings.ReplaceAll(line, "](values.yaml)", "]("+valuesURL+")")
+		line = rewriteLegacyDocLinks(line)
 		line = escapeMDX(line)
 
 		emit(line)
@@ -254,6 +273,20 @@ func convert(readme, ref string) string {
 	closeCallout()
 
 	return strings.TrimRight(b.String(), "\n") + "\n"
+}
+
+// rewriteLegacyDocLinks points links to mapped pages on the retired Omni docs
+// site at their current paths. Unmapped links are left for run to reject.
+func rewriteLegacyDocLinks(line string) string {
+	return legacyDocsRe.ReplaceAllStringFunc(line, func(link string) string {
+		path := legacyDocsRe.FindStringSubmatch(link)[2]
+
+		if current, ok := legacyDocLinks[path]; ok {
+			return "](" + current + ")"
+		}
+
+		return link
+	})
 }
 
 // chartVersion returns the Helm chart version published for an Omni release

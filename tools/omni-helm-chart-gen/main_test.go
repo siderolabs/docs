@@ -1,6 +1,9 @@
 package main
 
 import (
+	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -145,6 +148,30 @@ func TestRelativeValuesLinkBecomesAbsolute(t *testing.T) {
 
 	if got := body(t, in); got != want {
 		t.Errorf("unexpected output:\n got: %q\nwant: %q", got, want)
+	}
+}
+
+func TestLegacyDocsLinksBecomeSitePaths(t *testing.T) {
+	in := "See [Expose](https://omni.siderolabs.com/docs/how-to-guides/self-hosted/how-to-expose-http-service-from-a-cluster/) " +
+		"or [this](https://omni.siderolabs.com/docs/how-to-guides/self-hosted/how-to-expose-http-service-from-a-cluster).\n"
+	want := "See [Expose](/omni/cluster-management/expose-a-workload-via-service-proxy) " +
+		"or [this](/omni/cluster-management/expose-a-workload-via-service-proxy).\n"
+
+	if got := body(t, in); got != want {
+		t.Errorf("unexpected output:\n got: %q\nwant: %q", got, want)
+	}
+}
+
+func TestUnmappedLegacyDocsLinkFails(t *testing.T) {
+	readme := filepath.Join(t.TempDir(), "README.md")
+
+	if err := os.WriteFile(readme, []byte("See [old](https://omni.siderolabs.com/docs/some/retired-page/).\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	err := run(testRef, readme, io.Discard)
+	if err == nil || !strings.Contains(err.Error(), "https://omni.siderolabs.com/docs/some/retired-page/") {
+		t.Errorf("expected an error naming the unmapped link, got %v", err)
 	}
 }
 
