@@ -2696,7 +2696,7 @@
       {
         "product": "Talos Omni",
         "icon": "/images/omni.svg",
-        "description": "Provision, upgrade and manage Talos clusters across sites from one place.",
+        "description": "Provision, upgrade, and manage Talos machines across sites from one place.",
         "groups": [
           {
             "group": "Overview",

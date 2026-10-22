@@ -27,86 +27,103 @@ mode: "custom"
   <div className="home-catalog">
     <section className="home-domain">
       <div className="home-domain-head">
-        <h2>Kubernetes</h2>
-        <p>Run Kubernetes on bare metal, in the cloud, on existing hypervisors, or at the edge.</p>
+        <h2>Management</h2>
+        <p>Operate fleets of Talos machines from one place, across every domain below.</p>
       </div>
       <div className="home-grid">
-        <a className="home-card home-card--live" href="/talos/v1.14/overview/what-is-talos">
-          <div className="home-eyebrow">Open source</div>
-          <h3>Talos Linux</h3>
-          <p>Bring up a Kubernetes cluster on Talos Linux and operate it day to day.</p>
-          <div className="home-meta">v1.14 current</div>
-        </a>
-        <a className="home-card home-card--live" href="/talos-enterprise-linux/overview/introducing-talos-enterprise-linux">
-          <div className="home-eyebrow">Commercial</div>
-          <h3>Talos Enterprise Linux</h3>
-          <p>FIPS-enabled builds, SBOMs, VEX, and signed images from the Enterprise Image Factory.</p>
-          <div className="home-meta">tracks Talos 1.14</div>
-        </a>
         <a className="home-card home-card--live" href="/omni/overview/what-is-omni">
-          <div className="home-eyebrow">Commercial</div>
+          <div className="home-eyebrow">Source available <span className="home-sep">·</span> Commercial</div>
           <h3>Talos Omni</h3>
-          <p>Provision, upgrade and manage Talos clusters across sites from one place.</p>
-          <div className="home-meta">SaaS and self-hosted</div>
+          <p>Provision, upgrade, and manage Talos machines across sites from one place.</p>
+          <div className="home-covers">
+            <span className="home-cover">Kubernetes</span>
+            <span className="home-cover home-cover--soon">Hypervisor<em>Coming soon</em></span>
+            <span className="home-cover home-cover--soon">Containers<em>Coming soon</em></span>
+          </div>
         </a>
-      </div>
-    </section>
-
-    <section className="home-domain">
-      <div className="home-domain-head">
-        <h2>Hypervisor</h2>
-        <p>Run and manage virtual machines directly on Talos hosts.</p>
-      </div>
-      <div className="home-grid">
         <a className="home-card home-card--live" href="/director/overview/what-is-talos-director">
           <div className="home-eyebrow">Commercial</div>
-          <h3>Talos Director</h3>
+          <h3>Talos Director <span className="home-pill">Limited availability</span></h3>
           <p>Manage virtual machines, Kubernetes clusters, storage, and networking across the data center.</p>
-          <div className="home-meta">Limited Availability</div>
-        </a>
-        <a className="home-card home-card--live" href="/hypervisor/overview/what-is-talos-hypervisor">
-          <div className="home-eyebrow">Open source</div>
-          <h3>Talos Hypervisor</h3>
-          <p>Run virtual machines on a Talos host through native Talos APIs and talosctl.</p>
-          <div className="home-meta">Alpha · tracks Talos 1.15</div>
+          <div className="home-covers">
+            <span className="home-cover">Kubernetes</span>
+            <span className="home-cover">Hypervisor</span>
+          </div>
         </a>
         <div className="home-card home-card--soon">
-          <div className="home-eyebrow">Commercial <span className="home-pill">Coming soon</span></div>
-          <h3>Talos Enterprise Hypervisor</h3>
-          <p>The enterprise build of Talos Hypervisor: FIPS-enabled builds, SBOMs, VEX, signed images, and 24/7 support.</p>
-        </div>
-      </div>
-    </section>
-
-    <section className="home-domain">
-      <div className="home-domain-head">
-        <h2>Containers</h2>
-        <p>Run containers without Kubernetes, declared in machine config.</p>
-      </div>
-      <div className="home-grid">
-        <div className="home-card home-card--soon">
-          <div className="home-eyebrow">Open source <span className="home-pill">Coming soon</span></div>
-          <h3>Talos Containers</h3>
-          <p>Run OCI containers directly on Talos at the edge, with no Kubernetes control plane to operate.</p>
-        </div>
-      </div>
-    </section>
-
-    <section className="home-domain">
-      <div className="home-domain-head">
-        <h2>AI</h2>
-        <p>Run private AI workloads on infrastructure you control.</p>
-      </div>
-      <div className="home-grid">
-        <div className="home-card home-card--soon">
-          <div className="home-eyebrow">Open source <span className="home-pill">Coming soon</span></div>
-          <h3>Talos Linux for AI</h3>
-          <p>An immutable operating system for AI workloads, with GPU support, model serving, fine-tuning, and RAG.</p>
-        </div>
-        <div className="home-card home-card--soon">
-          <div className="home-eyebrow">Commercial <span className="home-pill">Coming soon</span></div>
-          <h3>Talos Cupar</h3>
+          <div className="home-eyebrow">Commercial</div>
+          <h3>Talos Cupar <span className="home-pill">Limited availability</span></h3>
           <p>Deploy and manage AI models, GPU capacity, and private data on infrastructure you own.</p>
+          <div className="home-covers">
+            <span className="home-cover">AI</span>
+          </div>
+          <div className="home-meta">Docs coming soon</div>
+        </div>
+      </div>
+    </section>
+
+    <section className="home-domain">
+      <div className="home-domain-head">
+        <h2>Operating system</h2>
+        <p>Talos Linux for each kind of workload. Immutable, minimal, and managed entirely through an API.</p>
+      </div>
+      <div className="home-columns home-columns--rows-2">
+        <div className="home-column">
+          <div className="home-column-head">
+            <h3>Kubernetes</h3>
+            <p>On bare metal, in the cloud, on existing hypervisors, or at the edge.</p>
+          </div>
+          <a className="home-card home-card--live" href="/talos/v1.14/overview/what-is-talos">
+            <div className="home-eyebrow">Open source</div>
+            <h3>Talos Linux</h3>
+            <p>Bring up a Kubernetes cluster on Talos Linux and operate it day to day.</p>
+          </a>
+          <a className="home-card home-card--live" href="/talos-enterprise-linux/overview/introducing-talos-enterprise-linux">
+            <div className="home-eyebrow">Commercial</div>
+            <h3>Talos Enterprise Linux</h3>
+            <p>FIPS-enabled builds, SBOMs, VEX, and signed images from the Enterprise Image Factory.</p>
+          </a>
+        </div>
+        <div className="home-column">
+          <div className="home-column-head">
+            <h3>Hypervisor</h3>
+            <p>Virtual machines directly on Talos hosts.</p>
+          </div>
+          <a className="home-card home-card--live" href="/hypervisor/overview/what-is-talos-hypervisor">
+            <div className="home-eyebrow">Open source</div>
+            <h3>Talos Hypervisor <span className="home-pill">Alpha</span></h3>
+            <p>Run virtual machines on a Talos host through native Talos APIs and talosctl.</p>
+          </a>
+          <div className="home-card home-card--soon">
+            <div className="home-eyebrow">Commercial</div>
+            <h3>Talos Enterprise Hypervisor <span className="home-pill">Coming soon</span></h3>
+            <p>FIPS-enabled builds, SBOMs, VEX, signed images, and 24/7 support.</p>
+            <div className="home-meta">Docs coming soon</div>
+          </div>
+        </div>
+        <div className="home-column">
+          <div className="home-column-head">
+            <h3>Containers</h3>
+            <p>Containers without Kubernetes, declared in machine config.</p>
+          </div>
+          <div className="home-card home-card--soon">
+            <div className="home-eyebrow">Open source</div>
+            <h3>Talos Containers</h3>
+            <p>Run OCI containers directly on Talos at the edge, with no Kubernetes control plane to operate.</p>
+            <div className="home-meta">Docs coming soon</div>
+          </div>
+        </div>
+        <div className="home-column">
+          <div className="home-column-head">
+            <h3>AI</h3>
+            <p>Private AI workloads on infrastructure you control.</p>
+          </div>
+          <div className="home-card home-card--soon">
+            <div className="home-eyebrow">Open source</div>
+            <h3>Talos Linux for AI <span className="home-pill">Coming soon</span></h3>
+            <p>GPU support, model serving, fine-tuning, and RAG on an immutable operating system.</p>
+            <div className="home-meta">Docs coming soon</div>
+          </div>
         </div>
       </div>
     </section>

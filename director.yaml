@@ -1,10 +1,13 @@
 navigation:
   products:
     - product: "Talos Director"
-      family: "hypervisor"
+      family: "management"
       tag: "Commercial"
+      stage: "Limited availability"
       description: "Manage virtual machines, Kubernetes clusters, storage, and networking across the data center."
-      meta: "Limited Availability"
+      covers:
+        - family: "kubernetes"
+        - family: "hypervisor"
       icon: "gauge"
       cta:
         label: "Get Talos Director"
