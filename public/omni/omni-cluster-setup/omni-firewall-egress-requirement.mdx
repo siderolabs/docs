@@ -63,11 +63,13 @@ When SideroLink is established, Talos communicates with Omni over a WireGuard tu
 
 Inside this tunnel, Omni is reachable at the fixed IPv6 address:
 
-```
-fd00:41e4:649b:9303::1
+```text
+fdae:41e4:649b:9303::1
 ```
 
-This address is internal to the tunnel and does not need to be exposed externally.
+Machine addresses come from the same `fdae:41e4:649b:9303::/64` prefix. This prefix is fixed across Omni deployments rather than allocated per tenant or per installation.
+
+This address is internal to the tunnel and does not need to be exposed externally. It does, however, have to bypass any HTTP proxy the machine is configured to use. See [Connect Machines to Omni Through a Corporate Proxy](./connect-machines-to-omni-through-a-proxy).
 
 ### Optional outbound access from Talos nodes
 
@@ -94,3 +96,13 @@ Required ports:
 | 51820 | UDP |
 
 The exact hostname and WireGuard endpoint are displayed in the Omni UI.
+
+## Access through an HTTP proxy
+
+Where the only egress is a corporate HTTP proxy, UDP is unavailable and the WireGuard port cannot be used. The SideroLink gRPC tunnel carries the WireGuard traffic inside the connection to the SideroLink API endpoint instead.
+
+The proxy must permit the `CONNECT` method to the port of the SideroLink API endpoint, which is 443 on Omni SaaS. Allow both the hostname and the IP addresses it resolves to, because machines connect to the endpoint by both.
+
+Machines also pull installation media and container images through the proxy. See <a href={`../../talos/${version}/networking/egress-domains`}>Egress Domains</a> for the domains Talos needs, and add any registry you mirror or host yourself.
+
+For the remaining requirements, including the required `no_proxy` entries and enabling the gRPC tunnel before first boot, see [Connect Machines to Omni Through a Corporate Proxy](./connect-machines-to-omni-through-a-proxy).
