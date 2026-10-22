@@ -4,7 +4,7 @@ navigation:
       family: "hypervisor"
       tag: "Open source"
       description: "Run virtual machines on a Talos host through native Talos APIs and talosctl."
-      meta: "Alpha · tracks Talos 1.15"
+      stage: "Alpha"
       icon: "server"
       groups:
         - group: "Overview"

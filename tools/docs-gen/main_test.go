@@ -1003,10 +1003,11 @@ func TestBuildGroups(t *testing.T) {
 }
 
 // TestWriteHomepage covers the generated landing page: products land in the
-// family they declare as design-system cards, hidden and opted-out products
-// are left off, coming-soon cards are present but not links, the tools
-// variant renders the lighter treatment, versioned products derive their
-// meta line, and the Also row is emitted.
+// family they declare as design-system cards, a section with columns renders
+// one column per domain, hidden and opted-out products are left off,
+// undocumented cards are present but not links, the eyebrow, stage chip,
+// cover chips and docs footer each render in their own place, the tools
+// variant renders the lighter treatment, and the Also row is emitted.
 func TestWriteHomepage(t *testing.T) {
 	tempDir := createTempDir(t)
 	defer os.RemoveAll(tempDir)
@@ -1019,21 +1020,31 @@ func TestWriteHomepage(t *testing.T) {
 		Title: "Talos Documentation",
 		Lede:  "Kubernetes, on an immutable operating system you manage through an API.",
 		Families: []FamilyConfig{
-			{Family: "kubernetes", Title: "Kubernetes", Description: "Run Kubernetes anywhere."},
 			{
-				Family:      "hypervisor",
-				Title:       "Hypervisor",
-				Description: "Run and manage virtual machines directly on Talos hosts.",
-				Cards: []ExtraCard{
+				Family:      "management",
+				Title:       "Management",
+				Description: "Operate fleets of Talos machines.",
+				Cards: []ExtraCard{{
+					Title: "Talos Cupar", Tag: Tags{"Commercial"}, Stage: "Limited availability", DocsSoon: true,
+					Description: "Deploy and manage AI models.",
+					Covers:      []Coverage{{Family: "ai"}},
+				}},
+			},
+			{
+				Family:      "operating-system",
+				Title:       "Operating system",
+				Description: "Talos Linux for each kind of workload.",
+				Columns: []FamilyConfig{
+					{Family: "kubernetes", Title: "Kubernetes", Description: "Run Kubernetes anywhere."},
 					{
-						Title: "Talos Hypervisor", Tag: "Open source", Soon: true,
-						Description: "Run virtual machines on a Talos host.",
+						Family: "hypervisor", Title: "Hypervisor", Description: "Virtual machines on Talos hosts.",
+						Cards: []ExtraCard{{
+							// Licensing undecided: no tag, and still undocumented.
+							Title: "Untagged", DocsSoon: true,
+							Description: "Braces {like these} and <angle brackets> must not reach MDX raw.",
+						}},
 					},
-					{
-						// Licensing undecided: no tag, but still labelled.
-						Title: "Untagged", Soon: true,
-						Description: "Braces {like these} and <angle brackets> must not reach MDX raw.",
-					},
+					{Family: "ai", Title: "AI", Description: "Private AI."},
 				},
 			},
 			{
@@ -1054,7 +1065,7 @@ func TestWriteHomepage(t *testing.T) {
 
 	products := []MintlifyProduct{
 		{
-			Product: "Talos Linux Kubernetes", Family: "kubernetes", Tag: "Open source",
+			Product: "Talos Linux Kubernetes", Family: "kubernetes", Tag: Tags{"Open source"},
 			Icon: "/images/talos.svg", Description: "The Kubernetes-optimized OS.",
 			Versions: []MintlifyVersion{{
 				Version: "v1.14",
@@ -1062,13 +1073,19 @@ func TestWriteHomepage(t *testing.T) {
 			}},
 		},
 		{
-			Product: "Talos Omni", Family: "kubernetes", Tag: "Commercial", Meta: "SaaS and self-hosted",
-			Icon: "/images/omni.svg", Description: "Manage Talos clusters.",
+			Product: "Talos Omni", Family: "management", Tag: Tags{"Source available", "Commercial"},
+			Icon: "/images/omni.svg", Description: "Manage Talos machines.",
+			Covers: []Coverage{{Family: "kubernetes"}, {Family: "hypervisor", Soon: true}},
 			Groups: []MintlifyGroup{{Group: "Overview", Pages: []string{"omni/overview/what-is-omni"}}},
 		},
 		{
-			// A documented product can still be announced as coming soon.
-			Product: "Talos Containers", Family: "kubernetes", Tag: "Open source", Soon: true,
+			Product: "Talos Hypervisor", Family: "hypervisor", Tag: Tags{"Open source"}, Stage: "Alpha",
+			Description: "Run virtual machines on a Talos host.",
+			Groups:      []MintlifyGroup{{Group: "Overview", Pages: []string{"hypervisor/overview/index"}}},
+		},
+		{
+			// A product with pages can still be marked as undocumented.
+			Product: "Talos Containers", Family: "kubernetes", Tag: Tags{"Open source"}, DocsSoon: true,
 			Description: "Run OCI containers on Talos.",
 			Groups:      []MintlifyGroup{{Group: "Overview", Pages: []string{"containers/overview/index"}}},
 		},
@@ -1104,17 +1121,23 @@ func TestWriteHomepage(t *testing.T) {
 		`<a className="home-card home-card--live" href="/talos/v1.14/overview/what-is-talos">`,
 		`<a className="home-card home-card--live" href="/omni/overview/what-is-omni">`,
 		`<div className="home-eyebrow">Open source</div>`,
-		// A versioned product derives its meta line from its newest version.
-		`<div className="home-meta">v1.14 current</div>`,
-		// An explicit meta line passes through.
-		`<div className="home-meta">SaaS and self-hosted</div>`,
-		// A coming-soon card is a div with the pill, never a link.
-		`<div className="home-card home-card--soon">`,
-		`<div className="home-eyebrow">Open source <span className="home-pill">Coming soon</span></div>`,
-		// A soon product renders as a soon card too, despite having pages.
-		"<div className=\"home-card home-card--soon\">\n          <div className=\"home-eyebrow\">Open source <span className=\"home-pill\">Coming soon</span></div>\n          <h3>Talos Containers</h3>",
-		// A soon card with no tag still says it is coming soon.
-		`<div className="home-eyebrow"><span className="home-pill">Coming soon</span></div>`,
+		// Two tags share the eyebrow with a separator.
+		`<div className="home-eyebrow">Source available <span className="home-sep">·</span> Commercial</div>`,
+		// The stage chip rides on the name.
+		`<h3>Talos Hypervisor <span className="home-pill">Alpha</span></h3>`,
+		`<h3>Talos Cupar <span className="home-pill">Limited availability</span></h3>`,
+		// Cover chips take the family titles; uncovered domains say so.
+		`<span className="home-cover">Kubernetes</span>`,
+		`<span className="home-cover home-cover--soon">Hypervisor<em>Coming soon</em></span>`,
+		`<span className="home-cover">AI</span>`,
+		// The columns section: one column per domain, rows sized to the
+		// fullest column (Kubernetes holds two cards).
+		`<div className="home-columns home-columns--rows-2">`,
+		"<div className=\"home-column-head\">\n            <h3>Kubernetes</h3>\n            <p>Run Kubernetes anywhere.</p>",
+		// An undocumented card is a div with the docs footer, never a link,
+		// even for a product that has pages.
+		"<div className=\"home-card home-card--soon\">\n            <div className=\"home-eyebrow\">Open source</div>\n            <h3>Talos Containers</h3>",
+		`<div className="home-meta">Docs coming soon</div>`,
 		// Config text is escaped rather than parsed as JSX.
 		"Braces &#123;like these&#125; and &lt;angle brackets&gt; must not reach MDX raw.",
 		// The tools strip uses the lighter treatment.
@@ -1133,15 +1156,59 @@ func TestWriteHomepage(t *testing.T) {
 	mustNotContain := []string{
 		"Secret",            // hidden
 		"Kubernetes Guides", // homepage: false
-		// A soon card must not be a link.
+		// An undocumented card must not be a link.
 		`home-card--soon" href=`,
 		`href="/containers/overview/index"`,
-		// The tools variant carries no eyebrow or meta.
+		// A card with no tag gets no empty eyebrow.
+		`<div className="home-eyebrow"></div>`,
+		// The old version-derived footer is gone.
+		"v1.14 current",
+		// The tools variant carries no eyebrow.
 		`home-card--tool">` + "\n          <div className=\"home-eyebrow\">",
 	}
 	for _, needle := range mustNotContain {
 		if strings.Contains(body, needle) {
 			t.Errorf("generated page unexpectedly contains %q", needle)
+		}
+	}
+
+	// The columns section lists its domains in declared order, after the
+	// management row.
+	order := []string{"<h2>Management</h2>", "<h2>Operating system</h2>", "<h3>Kubernetes</h3>", "<h3>Hypervisor</h3>", "<h2>Tools</h2>"}
+
+	// A column with no cards is left out, though a cover chip can still
+	// name its domain.
+	if strings.Contains(body, "<h3>AI</h3>") {
+		t.Error("an empty column was rendered")
+	}
+	last := -1
+	for _, needle := range order {
+		at := strings.Index(body, needle)
+		if at <= last {
+			t.Errorf("%q is out of order in the generated page", needle)
+		}
+		last = at
+	}
+}
+
+// TestTagsAcceptStringOrList checks that `tag` takes a single label or a
+// list, so most nav files keep writing a plain string.
+func TestTagsAcceptStringOrList(t *testing.T) {
+	cases := []struct {
+		yaml string
+		want Tags
+	}{
+		{`tag: "Open source"`, Tags{"Open source"}},
+		{`tag: ["Source available", "Commercial"]`, Tags{"Source available", "Commercial"}},
+		{`tag: ""`, nil},
+	}
+	for _, tc := range cases {
+		var card ExtraCard
+		if err := yaml.Unmarshal([]byte(tc.yaml), &card); err != nil {
+			t.Fatalf("unmarshaling %s: %v", tc.yaml, err)
+		}
+		if strings.Join(card.Tag, "|") != strings.Join(tc.want, "|") || len(card.Tag) != len(tc.want) {
+			t.Errorf("%s gave %q, want %q", tc.yaml, card.Tag, tc.want)
 		}
 	}
 }
@@ -1337,9 +1404,14 @@ func TestWriteHomepageRejectsUnplaceableProduct(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	homepage := &HomepageConfig{
-		Path:     filepath.Join(tempDir, "index.mdx"),
-		Title:    "Docs",
-		Families: []FamilyConfig{{Family: "kubernetes", Title: "Kubernetes"}},
+		Path:  filepath.Join(tempDir, "index.mdx"),
+		Title: "Docs",
+		Families: []FamilyConfig{
+			{Family: "management", Title: "Management"},
+			{Family: "operating-system", Title: "Operating system", Columns: []FamilyConfig{
+				{Family: "kubernetes", Title: "Kubernetes"},
+			}},
+		},
 	}
 
 	page := []MintlifyGroup{{Group: "Overview", Pages: []string{"p/overview/index"}}}
@@ -1352,7 +1424,12 @@ func TestWriteHomepageRejectsUnplaceableProduct(t *testing.T) {
 		{"no family", MintlifyProduct{Product: "Orphan", Groups: page}, true},
 		{"unknown family", MintlifyProduct{Product: "Typo", Family: "kubernets", Groups: page}, true},
 		{"hidden needs no family", MintlifyProduct{Product: "Staged", Hidden: true, Groups: page}, false},
-		{"declared family", MintlifyProduct{Product: "Fine", Family: "kubernetes", Groups: page}, false},
+		{"declared family", MintlifyProduct{Product: "Fine", Family: "management", Groups: page}, false},
+		{"column family", MintlifyProduct{Product: "Fine", Family: "kubernetes", Groups: page}, false},
+		// A section split into columns has no place of its own for a card.
+		{"columned section", MintlifyProduct{Product: "Lost", Family: "operating-system", Groups: page}, true},
+		{"known cover", MintlifyProduct{Product: "Fine", Family: "management", Covers: []Coverage{{Family: "kubernetes"}}, Groups: page}, false},
+		{"unknown cover", MintlifyProduct{Product: "Typo", Family: "management", Covers: []Coverage{{Family: "kubernets"}}, Groups: page}, true},
 	}
 
 	for _, tc := range cases {
@@ -1489,14 +1566,20 @@ func TestWriteProductChromeCSS(t *testing.T) {
 	}
 }
 
-// TestSoonStaysOutOfDocsJSON checks that the homepage-only soon flag is not
-// emitted, since Mintlify's schema has no such field.
-func TestSoonStaysOutOfDocsJSON(t *testing.T) {
-	data, err := json.Marshal(MintlifyProduct{Product: "Talos Containers", Soon: true})
+// TestHomepageFieldsStayOutOfDocsJSON checks that the homepage-only card
+// fields are not emitted, since Mintlify's schema has no such fields.
+func TestHomepageFieldsStayOutOfDocsJSON(t *testing.T) {
+	data, err := json.Marshal(MintlifyProduct{
+		Product: "Talos Omni", Tag: Tags{"Commercial"}, Stage: "Alpha", DocsSoon: true,
+		Covers: []Coverage{{Family: "kubernetes", Soon: true}},
+	})
 	if err != nil {
 		t.Fatalf("marshaling product: %v", err)
 	}
-	if strings.Contains(strings.ToLower(string(data)), "soon") {
-		t.Errorf("docs.json output unexpectedly contains soon: %s", data)
+	out := strings.ToLower(string(data))
+	for _, field := range []string{"soon", "stage", "covers", "commercial", "kubernetes"} {
+		if strings.Contains(out, field) {
+			t.Errorf("docs.json output unexpectedly contains %s: %s", field, data)
+		}
 	}
 }

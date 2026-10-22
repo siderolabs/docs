@@ -178,19 +178,22 @@ type ProductConfig struct {
 	Color       string `yaml:"color,omitempty"`
 	Description string `yaml:"description,omitempty"`
 	Hidden      bool   `yaml:"hidden,omitempty"`
-	// Family and Tag drive the generated homepage only. Mintlify's schema has
-	// no notion of a product family, so neither is emitted into docs.json.
+	// Family, Tag, Stage, Covers and DocsSoon drive the generated homepage
+	// only. Mintlify's schema has none of them, so none is emitted into
+	// docs.json.
 	Family string `yaml:"family,omitempty"`
-	Tag    string `yaml:"tag,omitempty"`
-	// Meta is the card's machine-set footer line ("SaaS and self-hosted").
-	// A versioned product left without one gets "<newest version> current".
-	Meta string `yaml:"meta,omitempty"`
-	// Soon gives the product's homepage card the announced-but-undocumented
-	// treatment -- dashed, a "Coming soon" pill, and not a link -- without
-	// taking the product out of the navigation. The alternative is declaring
-	// it as a manual card under homepage.families, which means maintaining
-	// the title and description in two places once the docs do exist.
-	Soon bool `yaml:"soon,omitempty"`
+	Tag    Tags   `yaml:"tag,omitempty"`
+	// Stage is the product's lifecycle chip beside its name ("Alpha",
+	// "Limited availability"). A generally available product has none.
+	Stage string `yaml:"stage,omitempty"`
+	// Covers lists the domain families a management product operates.
+	Covers []Coverage `yaml:"covers,omitempty"`
+	// DocsSoon gives the product's homepage card the undocumented treatment
+	// -- dashed, not a link, "Docs coming soon" -- without taking the product
+	// out of the navigation. The alternative is declaring it as a manual card
+	// under homepage.families, which means maintaining the title and
+	// description in two places once the docs do exist.
+	DocsSoon bool `yaml:"docsSoon,omitempty"`
 	// Homepage set to false keeps the product out of the homepage catalog
 	// while leaving it in the product switcher. Meant for products the
 	// homepage reaches another way, like Kubernetes Guides in the Also row.
@@ -229,26 +232,57 @@ type FamilyConfig struct {
 	Description string `yaml:"description"`
 	// Variant selects the card treatment. Empty is the standard product
 	// card; "tools" is the lighter strip used for cross-product services
-	// and clients (smaller cards, title and body only).
+	// and clients (title and body only).
 	Variant string `yaml:"variant,omitempty"`
 	// Cards lists entries that are not products: tools, and announced
 	// products whose documentation does not exist yet.
 	Cards []ExtraCard `yaml:"cards,omitempty"`
+	// Columns turns the section into one column per domain family, each
+	// holding that family's cards. A section with columns holds no cards of
+	// its own.
+	Columns []FamilyConfig `yaml:"columns,omitempty"`
 }
 
 type ExtraCard struct {
-	Title       string `yaml:"title"`
-	Href        string `yaml:"href,omitempty"`
-	Description string `yaml:"description"`
-	Icon        string `yaml:"icon,omitempty"`
-	Tag         string `yaml:"tag,omitempty"`
-	// Meta is the card's machine-set footer line, matching the product cards.
-	Meta string `yaml:"meta,omitempty"`
-	// Soon renders the card as announced-but-undocumented: dashed, a
-	// "Coming soon" pill beside the tag, and not a link even if an href is
-	// set. The announcement gates presence on the page; documentation gates
-	// clickability.
-	Soon bool `yaml:"soon,omitempty"`
+	Title       string     `yaml:"title"`
+	Href        string     `yaml:"href,omitempty"`
+	Description string     `yaml:"description"`
+	Icon        string     `yaml:"icon,omitempty"`
+	Tag         Tags       `yaml:"tag,omitempty"`
+	Stage       string     `yaml:"stage,omitempty"`
+	Covers      []Coverage `yaml:"covers,omitempty"`
+	// DocsSoon renders the card as undocumented: dashed, "Docs coming soon",
+	// and not a link even if an href is set. The announcement gates presence
+	// on the page; documentation gates clickability.
+	DocsSoon bool `yaml:"docsSoon,omitempty"`
+}
+
+// Tags is a card's licensing label. It takes a single string, or a list for
+// a product that is more than one thing ("Source available", "Commercial").
+type Tags []string
+
+func (t *Tags) UnmarshalYAML(value *yaml.Node) error {
+	if value.Kind == yaml.ScalarNode {
+		*t = nil
+		if value.Value != "" {
+			*t = Tags{value.Value}
+		}
+		return nil
+	}
+	var list []string
+	if err := value.Decode(&list); err != nil {
+		return err
+	}
+	*t = list
+	return nil
+}
+
+// Coverage is one domain a management product operates. Family names a
+// declared homepage family; Soon marks a domain the product does not cover
+// yet.
+type Coverage struct {
+	Family string `yaml:"family"`
+	Soon   bool   `yaml:"soon,omitempty"`
 }
 
 // ProductCTA is a product's navbar call to action.
@@ -349,12 +383,13 @@ type MintlifyNavigation struct {
 }
 
 type MintlifyProduct struct {
-	// Family, Tag, Meta, Soon, Homepage and CTA are generator-only and never
-	// reach docs.json.
+	// Family, Tag, Stage, Covers, DocsSoon, Homepage and CTA are
+	// generator-only and never reach docs.json.
 	Family      string            `json:"-"`
-	Tag         string            `json:"-"`
-	Meta        string            `json:"-"`
-	Soon        bool              `json:"-"`
+	Tag         Tags              `json:"-"`
+	Stage       string            `json:"-"`
+	Covers      []Coverage        `json:"-"`
+	DocsSoon    bool              `json:"-"`
 	Homepage    *bool             `json:"-"`
 	CTA         *ProductCTA       `json:"-"`
 	Sidebar     *bool             `json:"-"`
@@ -541,8 +576,9 @@ func main() {
 			product = MintlifyProduct{
 				Family:      first.Family,
 				Tag:         first.Tag,
-				Meta:        first.Meta,
-				Soon:        first.Soon,
+				Stage:       first.Stage,
+				Covers:      first.Covers,
+				DocsSoon:    first.DocsSoon,
 				Homepage:    first.Homepage,
 				CTA:         first.CTA,
 				Sidebar:     first.Sidebar,
@@ -570,8 +606,9 @@ func main() {
 				product = MintlifyProduct{
 					Family:      candidate.Family,
 					Tag:         candidate.Tag,
-					Meta:        candidate.Meta,
-					Soon:        candidate.Soon,
+					Stage:       candidate.Stage,
+					Covers:      candidate.Covers,
+					DocsSoon:    candidate.DocsSoon,
 					Homepage:    candidate.Homepage,
 					CTA:         candidate.CTA,
 					Sidebar:     candidate.Sidebar,
@@ -727,11 +764,23 @@ func productHref(product MintlifyProduct) string {
 // adding, renaming or retiring a product updates the homepage on its own; CI
 // catches a stale copy because the committed file stops matching.
 func writeHomepage(homepage *HomepageConfig, products []MintlifyProduct) error {
-	// Families declared in the config, so an unknown one can be rejected rather
-	// than quietly dropping the product's card.
-	known := make(map[string]bool, len(homepage.Families))
+	// Families that can hold cards, so an unknown one can be rejected rather
+	// than quietly dropping the product's card. A section split into columns
+	// holds no cards itself; its columns do.
+	titles := make(map[string]string)
+	parents := make(map[string]bool)
 	for _, family := range homepage.Families {
-		known[family.Family] = true
+		if len(family.Columns) > 0 {
+			parents[family.Family] = true
+			if len(family.Cards) > 0 {
+				return fmt.Errorf("homepage family %q has columns, so its cards belong under a column", family.Family)
+			}
+			for _, column := range family.Columns {
+				titles[column.Family] = column.Title
+			}
+			continue
+		}
+		titles[family.Family] = family.Title
 	}
 
 	byFamily := make(map[string][]MintlifyProduct)
@@ -754,7 +803,10 @@ func writeHomepage(homepage *HomepageConfig, products []MintlifyProduct) error {
 		if product.Family == "" {
 			return fmt.Errorf("product %q has no `family`, so it would not appear on the homepage; set one or mark the product hidden", product.Product)
 		}
-		if !known[product.Family] {
+		if parents[product.Family] {
+			return fmt.Errorf("product %q has family %q, which is split into columns; use one of its column families", product.Product, product.Family)
+		}
+		if _, ok := titles[product.Family]; !ok {
 			return fmt.Errorf("product %q has family %q, which is not declared under homepage.families in the base config", product.Product, product.Family)
 		}
 
@@ -801,14 +853,30 @@ func writeHomepage(homepage *HomepageConfig, products []MintlifyProduct) error {
 	b.WriteString("  <div className=\"home-catalog\">\n")
 
 	for _, family := range homepage.Families {
-		cards := byFamily[family.Family]
-		if len(cards) == 0 && len(family.Cards) == 0 {
-			continue
+		var body strings.Builder
+		if len(family.Columns) > 0 {
+			if err := writeColumns(&body, family.Columns, byFamily, titles); err != nil {
+				return err
+			}
+		} else {
+			cards, err := familyCards(family, byFamily, titles)
+			if err != nil {
+				return err
+			}
+			if len(cards) > 0 {
+				gridClass := "home-grid"
+				if family.Variant == "tools" {
+					gridClass = "home-grid home-grid--tools"
+				}
+				fmt.Fprintf(&body, "      <div className=%q>\n", gridClass)
+				for _, card := range cards {
+					writeCard(&body, card, "        ")
+				}
+				body.WriteString("      </div>\n")
+			}
 		}
-
-		gridClass := "home-grid"
-		if family.Variant == "tools" {
-			gridClass = "home-grid home-grid--tools"
+		if body.Len() == 0 {
+			continue
 		}
 
 		b.WriteString("    <section className=\"home-domain\">\n")
@@ -818,32 +886,7 @@ func writeHomepage(homepage *HomepageConfig, products []MintlifyProduct) error {
 			fmt.Fprintf(&b, "        <p>%s</p>\n", mdxText(family.Description))
 		}
 		b.WriteString("      </div>\n")
-		fmt.Fprintf(&b, "      <div className=%q>\n", gridClass)
-
-		for _, product := range cards {
-			writeCard(&b, homeCard{
-				Title:       product.Product,
-				Href:        productHref(product),
-				Description: product.Description,
-				Tag:         product.Tag,
-				Meta:        productMeta(product),
-				Soon:        product.Soon,
-				Tool:        family.Variant == "tools",
-			})
-		}
-		for _, card := range family.Cards {
-			writeCard(&b, homeCard{
-				Title:       card.Title,
-				Href:        card.Href,
-				Description: card.Description,
-				Tag:         card.Tag,
-				Meta:        card.Meta,
-				Soon:        card.Soon,
-				Tool:        family.Variant == "tools",
-			})
-		}
-
-		b.WriteString("      </div>\n")
+		b.WriteString(body.String())
 		b.WriteString("    </section>\n\n")
 	}
 
@@ -862,17 +905,108 @@ func writeHomepage(homepage *HomepageConfig, products []MintlifyProduct) error {
 	return os.WriteFile(homepage.Path, []byte(b.String()), 0o644)
 }
 
-// productMeta is a product card's footer line. A versioned product left
-// without one states its newest version, so the line tracks releases without
-// anyone editing it.
-func productMeta(product MintlifyProduct) string {
-	if product.Meta != "" {
-		return product.Meta
+// maxColumnCards is the most cards one domain column can hold. home.css lines
+// the columns up with a subgrid whose row count comes from a class per size,
+// so a larger column needs a matching rule there first.
+const maxColumnCards = 4
+
+// writeColumns renders a section as one column per domain family, every
+// column spanning the same rows so headings and cards line up across them.
+func writeColumns(b *strings.Builder, columns []FamilyConfig, byFamily map[string][]MintlifyProduct, titles map[string]string) error {
+	type column struct {
+		family FamilyConfig
+		cards  []homeCard
 	}
-	if len(product.Versions) > 0 {
-		return product.Versions[0].Version + " current"
+	var filled []column
+	rows := 0
+	for _, family := range columns {
+		cards, err := familyCards(family, byFamily, titles)
+		if err != nil {
+			return err
+		}
+		if len(cards) == 0 {
+			continue
+		}
+		if len(cards) > maxColumnCards {
+			return fmt.Errorf("homepage column %q has %d cards; at most %d fit until home.css gains a rule for more", family.Family, len(cards), maxColumnCards)
+		}
+		filled = append(filled, column{family, cards})
+		rows = max(rows, len(cards))
 	}
-	return ""
+	if len(filled) == 0 {
+		return nil
+	}
+
+	fmt.Fprintf(b, "      <div className=\"home-columns home-columns--rows-%d\">\n", rows)
+	for _, col := range filled {
+		b.WriteString("        <div className=\"home-column\">\n")
+		b.WriteString("          <div className=\"home-column-head\">\n")
+		fmt.Fprintf(b, "            <h3>%s</h3>\n", mdxText(col.family.Title))
+		if col.family.Description != "" {
+			fmt.Fprintf(b, "            <p>%s</p>\n", mdxText(col.family.Description))
+		}
+		b.WriteString("          </div>\n")
+		for _, card := range col.cards {
+			writeCard(b, card, "          ")
+		}
+		b.WriteString("        </div>\n")
+	}
+	b.WriteString("      </div>\n")
+	return nil
+}
+
+// familyCards gathers a family's cards: its products in nav-file order, then
+// the cards declared directly in the homepage config.
+func familyCards(family FamilyConfig, byFamily map[string][]MintlifyProduct, titles map[string]string) ([]homeCard, error) {
+	tool := family.Variant == "tools"
+	var cards []homeCard
+	for _, product := range byFamily[family.Family] {
+		covers, err := coverLabels(product.Product, product.Covers, titles)
+		if err != nil {
+			return nil, err
+		}
+		cards = append(cards, homeCard{
+			Title:       product.Product,
+			Href:        productHref(product),
+			Description: product.Description,
+			Tags:        product.Tag,
+			Stage:       product.Stage,
+			Covers:      covers,
+			DocsSoon:    product.DocsSoon,
+			Tool:        tool,
+		})
+	}
+	for _, card := range family.Cards {
+		covers, err := coverLabels(card.Title, card.Covers, titles)
+		if err != nil {
+			return nil, err
+		}
+		cards = append(cards, homeCard{
+			Title:       card.Title,
+			Href:        card.Href,
+			Description: card.Description,
+			Tags:        card.Tag,
+			Stage:       card.Stage,
+			Covers:      covers,
+			DocsSoon:    card.DocsSoon,
+			Tool:        tool,
+		})
+	}
+	return cards, nil
+}
+
+// coverLabels resolves a card's covered domains to their family titles, so a
+// mistyped family fails the build instead of rendering a stray chip.
+func coverLabels(owner string, covers []Coverage, titles map[string]string) ([]coverLabel, error) {
+	var labels []coverLabel
+	for _, cover := range covers {
+		title, ok := titles[cover.Family]
+		if !ok {
+			return nil, fmt.Errorf("%q covers family %q, which is not declared under homepage.families in the base config", owner, cover.Family)
+		}
+		labels = append(labels, coverLabel{Title: title, Soon: cover.Soon})
+	}
+	return labels, nil
 }
 
 // homeCard is one rendered card on the homepage.
@@ -880,21 +1014,29 @@ type homeCard struct {
 	Title       string
 	Href        string
 	Description string
-	Tag         string
-	Meta        string
-	// Soon renders the announced-but-undocumented treatment: a div rather
-	// than a link, dashed border, "Coming soon" pill.
-	Soon bool
+	Tags        []string
+	Stage       string
+	Covers      []coverLabel
+	// DocsSoon renders the undocumented treatment: a div rather than a link,
+	// dashed border, "Docs coming soon" footer.
+	DocsSoon bool
 	// Tool renders the lighter tools-strip treatment: title and body only.
 	Tool bool
 }
 
+type coverLabel struct {
+	Title string
+	Soon  bool
+}
+
 // writeCard renders one homepage card in the design system's markup (see
-// home.css for the classes).
-func writeCard(b *strings.Builder, card homeCard) {
+// home.css for the classes). Each line says one thing: the eyebrow is the
+// license, the chip beside the name is the product's stage, the cover chips
+// are the domains it manages, and the footer is about the docs.
+func writeCard(b *strings.Builder, card homeCard, indent string) {
 	classes := "home-card home-card--live"
 	element := "a"
-	if card.Soon {
+	if card.DocsSoon {
 		classes = "home-card home-card--soon"
 		element = "div"
 	}
@@ -902,34 +1044,43 @@ func writeCard(b *strings.Builder, card homeCard) {
 		classes += " home-card--tool"
 	}
 
-	fmt.Fprintf(b, "        <%s className=%q", element, classes)
-	if !card.Soon && card.Href != "" {
+	fmt.Fprintf(b, "%s<%s className=%q", indent, element, classes)
+	if !card.DocsSoon && card.Href != "" {
 		fmt.Fprintf(b, " href=%q", card.Href)
 	}
 	b.WriteString(">\n")
 
-	// Tools cards carry only a title and body; the eyebrow and meta lines
-	// belong to the product cards. A soon card always gets its eyebrow, since
-	// the pill lives there, even before its tag is decided.
-	if !card.Tool && (card.Tag != "" || card.Soon) {
-		b.WriteString("          <div className=\"home-eyebrow\">")
-		b.WriteString(mdxText(card.Tag))
-		if card.Soon {
-			if card.Tag != "" {
-				b.WriteString(" ")
-			}
-			b.WriteString("<span className=\"home-pill\">Coming soon</span>")
+	inner := indent + "  "
+	if !card.Tool && len(card.Tags) > 0 {
+		tags := make([]string, len(card.Tags))
+		for i, tag := range card.Tags {
+			tags[i] = mdxText(tag)
 		}
-		b.WriteString("</div>\n")
+		fmt.Fprintf(b, "%s<div className=\"home-eyebrow\">%s</div>\n", inner, strings.Join(tags, " <span className=\"home-sep\">·</span> "))
 	}
-	fmt.Fprintf(b, "          <h3>%s</h3>\n", mdxText(card.Title))
+	b.WriteString(inner + "<h3>" + mdxText(card.Title))
+	if card.Stage != "" {
+		fmt.Fprintf(b, " <span className=\"home-pill\">%s</span>", mdxText(card.Stage))
+	}
+	b.WriteString("</h3>\n")
 	if card.Description != "" {
-		fmt.Fprintf(b, "          <p>%s</p>\n", mdxText(card.Description))
+		fmt.Fprintf(b, "%s<p>%s</p>\n", inner, mdxText(card.Description))
 	}
-	if !card.Tool && !card.Soon && card.Meta != "" {
-		fmt.Fprintf(b, "          <div className=\"home-meta\">%s</div>\n", mdxText(card.Meta))
+	if len(card.Covers) > 0 {
+		fmt.Fprintf(b, "%s<div className=\"home-covers\">\n", inner)
+		for _, cover := range card.Covers {
+			if cover.Soon {
+				fmt.Fprintf(b, "%s  <span className=\"home-cover home-cover--soon\">%s<em>Coming soon</em></span>\n", inner, mdxText(cover.Title))
+			} else {
+				fmt.Fprintf(b, "%s  <span className=\"home-cover\">%s</span>\n", inner, mdxText(cover.Title))
+			}
+		}
+		fmt.Fprintf(b, "%s</div>\n", inner)
 	}
-	fmt.Fprintf(b, "        </%s>\n", element)
+	if card.DocsSoon && !card.Tool {
+		fmt.Fprintf(b, "%s<div className=\"home-meta\">Docs coming soon</div>\n", inner)
+	}
+	fmt.Fprintf(b, "%s</%s>\n", indent, element)
 }
 
 // mdxText makes config text safe to place between JSX tags. In MDX a brace
