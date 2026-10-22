@@ -207,6 +207,22 @@ func TestHeadingAllowsExceptionsAcronymsAndCamelCase(t *testing.T) {
 	}
 }
 
+func TestHeadingAllowsPhraseException(t *testing.T) {
+	doc := "---\ntitle: Test\n---\n\n## How Talos Director differs from vSphere\n\nText.\n"
+	got := lint("t.mdx", doc)
+	if findRule(got, "headings/sentence-case") {
+		t.Fatalf("Talos Director is a phrase exception, got %+v", got)
+	}
+}
+
+func TestHeadingPhraseWordAloneIsFlagged(t *testing.T) {
+	doc := "---\ntitle: Test\n---\n\n## How Director differs from vSphere\n\nText.\n"
+	got := lint("t.mdx", doc)
+	if !findRule(got, "headings/sentence-case") {
+		t.Fatalf("Director without Talos should be flagged, got %+v", got)
+	}
+}
+
 func TestHeadingAllowsCapitalAfterColon(t *testing.T) {
 	doc := "---\ntitle: Test\n---\n\n## Note: This matters\n\nText.\n"
 	got := lint("t.mdx", doc)

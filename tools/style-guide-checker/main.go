@@ -34,19 +34,50 @@ import (
 //go:embed exceptions.txt
 var exceptionsRaw string
 
-// exceptionSet holds the lowercased words from exceptions.txt for fast lookup.
-var exceptionSet = buildExceptionSet(exceptionsRaw)
+// exceptionSet holds the lowercased single words from exceptions.txt for fast
+// lookup. exceptionPhrases holds the multi-word entries, each split into
+// lowercased words, for names whose words are proper nouns only together.
+var exceptionSet, exceptionPhrases = buildExceptions(exceptionsRaw)
 
-func buildExceptionSet(raw string) map[string]bool {
+func buildExceptions(raw string) (map[string]bool, [][]string) {
 	set := map[string]bool{}
+	var phrases [][]string
 	for _, line := range strings.Split(raw, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-		set[strings.ToLower(line)] = true
+		words := strings.Fields(strings.ToLower(line))
+		if len(words) > 1 {
+			phrases = append(phrases, words)
+			continue
+		}
+		set[words[0]] = true
 	}
-	return set
+	return set, phrases
+}
+
+// phraseCovered reports, for each word of a heading, whether it is part of a
+// multi-word exception such as "Talos Director".
+func phraseCovered(words []string) []bool {
+	covered := make([]bool, len(words))
+	for _, phrase := range exceptionPhrases {
+		for start := 0; start+len(phrase) <= len(words); start++ {
+			match := true
+			for j, pw := range phrase {
+				if strings.ToLower(coreWord(words[start+j])) != pw {
+					match = false
+					break
+				}
+			}
+			if match {
+				for j := range phrase {
+					covered[start+j] = true
+				}
+			}
+		}
+	}
+	return covered
 }
 
 // smallWords stay lowercase in title case unless they are the first word.
@@ -494,6 +525,7 @@ func endsSentence(w string) bool {
 // true if the heading is not sentence case.
 func sentenceCaseIssue(text string) (string, bool) {
 	words := strings.Fields(stripHeadingInline(text))
+	covered := phraseCovered(words)
 	for i, w := range words {
 		if i == 0 {
 			continue // the first word is expected to be capitalized
@@ -502,7 +534,7 @@ func sentenceCaseIssue(text string) (string, bool) {
 		if core == "" || !plainCapRe.MatchString(core) {
 			continue
 		}
-		if exceptionSet[strings.ToLower(core)] {
+		if exceptionSet[strings.ToLower(core)] || covered[i] {
 			continue
 		}
 		if endsSentence(words[i-1]) {
