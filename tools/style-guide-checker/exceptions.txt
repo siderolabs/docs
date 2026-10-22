@@ -8,10 +8,15 @@
 #
 # One word per line. Case-insensitive. Blank lines and #-comments are ignored.
 # Add a word here whenever the checker wrongly flags a real proper noun.
+#
+# A line with several words is a phrase: its words are allowed only together,
+# in that order. "Talos Director" allows "Director" after "Talos" and nowhere
+# else.
 
 # --- Sidero products & components ---
 Sidero
 Talos
+Talos Director
 Omni
 Siderolink
 Arges
