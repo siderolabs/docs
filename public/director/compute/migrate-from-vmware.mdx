@@ -25,7 +25,7 @@ Choose the VM to convert from the VMs vCenter reports.
 
 Talos Director checks that the VM is ready to convert:
 
-- **Guest credentials**: an account on the VM's operating system. Talos Director uses it to read the guest's network configuration, such as its gateway and DNS servers.
+- **Guest credentials**: an account on the VM's operating system. Talos Director uses it to read the guest's network configuration and to remove VMware Tools during the conversion.
 - **No VMware snapshots**: the VM must not have snapshots in vCenter.
 - **VirtIO drivers and QEMU Guest Agent**: these must be installed in the guest before conversion, whichever cutover mode you choose, so the converted VM can boot and report back on KVM. For Windows, the step links to the VirtIO driver ISO.
 

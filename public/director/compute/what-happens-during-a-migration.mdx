@@ -23,7 +23,7 @@ The conversion tools (the disk copier, `qemu-img`, the guest customization tooli
 
 The wizard's **Requirements** step checks the source VM before any data is copied. The conversion does not start until all three requirements are met.
 
-- **Guest credentials:** an account in the guest OS, used to read its network configuration, such as its gateway and DNS servers.
+- **Guest credentials:** an account in the guest OS, used to read its network configuration and to remove VMware Tools during the conversion.
 - **No existing vCenter snapshots:** the engine creates and removes its own snapshots during a warm conversion and needs a clean chain to do that safely.
 - **VirtIO drivers and the QEMU guest agent in the guest:** on KVM the VM's disks and network interfaces are VirtIO devices. For Linux the engine also rebuilds the initramfs with VirtIO drivers during customization; for Windows the drivers must be present before conversion, and the step links to the driver ISO.
 
@@ -67,7 +67,7 @@ The **Conversion Jobs** page shows one status per job. Each status corresponds t
 | **Converting** | The copied disks are converted to the format you chose. Raw needs no conversion, so this stage is immediate. QCOW2 needs a full `qemu-img` pass over every disk, which takes time in proportion to disk size. This is the default **Direct** conversion method. The legacy **virt-v2v** method, chosen under **Conversion Method** in the wizard, does this stage with virt-v2v instead. |
 | **Customizing** | The guest is prepared to boot on KVM without anyone logging in. The engine works on the converted disks, not the source VM. It rebuilds the Linux initramfs with VirtIO drivers, removes open-vm-tools from Linux guests, repairs the UEFI boot path (fresh firmware variables, and on Windows a rebuilt boot configuration), removes devices that only existed on VMware, and writes the network identity it read from the source using the method you chose: cloud-init for Linux, Sysprep for Windows, the guest agent for either, or none to use DHCP. If the source had a virtual TPM, the destination gets one too. |
 | **Creating VM** | A VM is defined on the destination host with the same CPU and memory, its converted disks, and network interfaces attached to the virtual networks you mapped. |
-| **Starting** | The VM boots. Once the guest agent reports in, the engine applies any remaining post-boot configuration, such as a network address it could not write to the disk. |
+| **Starting** | The VM boots. Once the guest agent reports in, the engine applies any remaining post-boot configuration, such as a network address it could not write to the disk, and removes VMware Tools from a Windows guest if it is still installed. |
 | **Completed** | The VM is running on Talos Director. The source VM remains in vCenter, powered off, with its disks unchanged. |
 
 ## Cutover modes
@@ -108,7 +108,7 @@ You can cancel a job at any stage before completion. Cancel stops the tool conta
 
 Progress is monitored for stalls, so a copy that stops making progress is reported as stalled rather than sitting at the same percentage indefinitely, while a job waiting for a scheduled cutover is reported as waiting. Slow vCenters are tolerated: the login and export lease have their own time budgets with retries, and a download stream that goes silent is closed and resumed from where it stopped.
 
-The source VM is never deleted, and its disks and guest operating system are never changed. Customization happens on the converted copy, so the source keeps its VMware Tools and its configuration. After cutover it remains in vCenter, powered off, so rolling back means powering it on again. Decommission it once the converted VM is confirmed working.
+The source VM is never deleted, and its disks and guest operating system are never changed. Customization happens on the converted copy. After cutover it remains in vCenter, powered off, so rolling back means powering it on again. Decommission it once the converted VM is confirmed working.
 
 ## Other migration methods
 
