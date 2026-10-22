@@ -92,8 +92,8 @@ docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multipl
 		talos-v1.8.yaml \
 		talos-enterprise-linux.yaml \
 		omni.yaml \
-		director.yaml \
 		hypervisor.yaml \
+		director.yaml \
 		kubernetes-guides.yaml \
 		changelog.yaml \
 		> public/docs.json
@@ -110,8 +110,8 @@ docs.json-local: common.yaml omni.yaml tools/docs-gen/main.go ## Generate docs.j
 		../../talos-v1.8.yaml \
 		../../talos-enterprise-linux.yaml \
 		../../omni.yaml \
-		../../director.yaml \
 		../../hypervisor.yaml \
+		../../director.yaml \
 		../../kubernetes-guides.yaml \
 		../../changelog.yaml \
 		> ../../public/docs.json
@@ -129,8 +129,8 @@ check-missing: ## Check for MDX files not included in config files
 		talos-v1.8.yaml \
 		talos-enterprise-linux.yaml \
 		omni.yaml \
-		director.yaml \
 		hypervisor.yaml \
+		director.yaml \
 		kubernetes-guides.yaml \
 		changelog.yaml
 
@@ -147,8 +147,8 @@ check-missing-local: ## Check for missing files using local Go build
 		../../talos-v1.8.yaml \
 		../../talos-enterprise-linux.yaml \
 		../../omni.yaml \
-		../../director.yaml \
 		../../hypervisor.yaml \
+		../../director.yaml \
 		../../kubernetes-guides.yaml \
 		../../changelog.yaml
 
