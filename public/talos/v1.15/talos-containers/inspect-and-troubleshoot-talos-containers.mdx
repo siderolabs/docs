@@ -1,0 +1,257 @@
+---
+title: "Inspect and Troubleshoot Talos Containers"
+description: "Check the status, logs, resource usage, and images of Talos Containers with talosctl, and fix containers that never start, fail to pull their image, or restart in a loop."
+canonical: https://docs.siderolabs.com/talos/v1.14/talos-containers/inspect-and-troubleshoot-talos-containers
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+This page explains how to inspect Talos Containers with `talosctl`, using commands such as `talosctl containers` and `talosctl logs`, and the status resources that Talos reports for each container.
+It then uses these checks to troubleshoot a container that never starts, an image that fails to pull, and a container that restarts in a loop.
+
+## Before you begin
+
+The steps on this page require:
+
+- A machine that runs Talos Linux v1.15 or later and meets the [requirements for Talos Containers](./requirements).
+- `talosctl` v1.15 or later, with at least the `os:reader` role. Restarting a container needs the `os:operator` role.
+
+## Inspect and restart containers
+
+Talos creates Talos Containers in the `taloscontainers` containerd namespace.
+Commands such as `talosctl containers` and `talosctl logs` use the `system` namespace by default, so each command in this section sets `--namespace taloscontainers`.
+
+<Note>
+`talosctl debug` does not support the `taloscontainers` namespace, and there is no way to open a shell in a Talos Container.
+</Note>
+
+### List containers
+
+Run the following command to list the containers in the namespace:
+
+```bash
+talosctl containers --nodes <node-ip> --namespace taloscontainers
+```
+
+The `ID` column in the output shows each container's ID, which is the container's name followed by a generation number, such as `my-app-0`.
+The generation increases each time Talos replaces the container.
+Some commands, such as `talosctl restart`, take the container ID rather than the name.
+
+### Read logs
+
+Run the following command to read a container's logs, replacing `<container-name>` with the container's name:
+
+```bash
+talosctl logs --nodes <node-ip> --namespace taloscontainers <container-name>
+```
+
+The output lists the logs of every generation of the container, because Talos keeps them in one stream.
+`talosctl logs` returns an error until the container has started for the first time.
+
+### Check resource usage
+
+Run the following command to show the memory and CPU usage of each container:
+
+```bash
+talosctl stats --nodes <node-ip> --namespace taloscontainers
+```
+
+The `MEMORY(MB)` column shows the container's current memory use.
+The `CPU` column shows the total CPU time the container has used since it started, in nanoseconds, so the number grows over time rather than showing a current rate.
+
+### Watch containers in the dashboard
+
+`talosctl dashboard` has a Containers screen that lists containers with their health and resource usage, and shows the logs of the selected container.
+The screen opens on the `taloscontainers` namespace and can switch to the `system` and `k8s.io` namespaces.
+
+Run the following command to open the dashboard:
+
+```bash
+talosctl dashboard --nodes <node-ip>
+```
+
+### List images
+
+Run the following command to list the images pulled for Talos Containers:
+
+```bash
+talosctl image list --nodes <node-ip> --namespace taloscontainers
+```
+
+Talos deletes an image 75 to 90 minutes after no Talos Container uses it.
+
+### Restart a container
+
+Run the following command to restart a container, replacing `<container-id>` with its ID from the `ID` column of `talosctl containers`:
+
+```bash
+talosctl restart --nodes <node-ip> --namespace taloscontainers <container-id>
+```
+
+`talosctl restart` sends `SIGTERM` to the container's process.
+When the process exits, Talos starts the next generation 5 seconds later.
+A process that ignores `SIGTERM` keeps running.
+
+## Check container status
+
+Talos tracks the overall state of each container in two resources:
+
+- **`ContainerStatus`**: The main status of a container. The `state` field is `pending`, `pulling`, `starting`, `running`, `exited`, `backoff`, or `stopping`, and the `health` field is a simpler `pending`, `pulling`, `healthy`, or `degraded`. The resource also shows the image, the process ID, the last exit code, the restart count, and the last `error`. Each resource is named after its container.
+
+  Run the following command to list the status of every container:
+
+  ```bash
+  talosctl get containerstatuses --nodes <node-ip>
+  ```
+
+- **`ContainerDependencyStatus`**: Lists, in its `waitingFor` field, everything a container is still waiting for before it can start. Each resource is named after its container.
+
+  Run the following command to list the dependency statuses:
+
+  ```bash
+  talosctl get containerdependencystatuses --nodes <node-ip>
+  ```
+
+Run the following command to see every field for one container, replacing `<container-name>` with the container's name:
+
+```bash
+talosctl get containerstatuses <container-name> --nodes <node-ip> --output yaml
+```
+
+Three lower-level resources track each step separately, for cases where the overall status is not enough:
+
+- **`ContainerImageStatus`**: Tracks the image pull. The `phase` field is `pending`, `pulling`, `ready`, or `failed`, and the `error` field explains a failed pull. Each resource is named after its container.
+
+  Run the following command to list the image statuses:
+
+  ```bash
+  talosctl get containerimagestatuses --nodes <node-ip>
+  ```
+
+- **`ContainerMountStatus`**: Tracks the container's mounts. The `ready` field is `true` when every mount is available, and the `error` field explains a mount that is not. Each resource is named after its container.
+
+  Run the following command to list the mount statuses:
+
+  ```bash
+  talosctl get containermountstatuses --nodes <node-ip>
+  ```
+
+- **`ContainerInstanceStatus`**: Tracks each run of the container. The `phase` field is `created`, `running`, `terminated`, or `failed`. The resource also shows the process ID and the exit code, and an `error` field explains a failed run. Each resource is named after the container ID, such as `my-app-0`.
+
+  Run the following command to list the instance statuses:
+
+  ```bash
+  talosctl get containerinstancestatuses --nodes <node-ip>
+  ```
+
+Talos keeps these resources in memory, so a reboot clears them and generation numbers start again from zero.
+
+## Read the controller runtime log
+
+The controllers that manage Talos Containers write to the controller runtime log.
+The log records when Talos creates or replaces a container.
+
+Run the following command to read the controller runtime log:
+
+```bash
+talosctl logs controller-runtime --nodes <node-ip>
+```
+
+## Troubleshoot common failures
+
+{/* TODO(Maja): issue #886 asks which failures you see most often. Confirm or replace the three below. */}
+
+The following sections cover the failures that stop a Talos Container from running.
+Each section describes the symptom, how to confirm the cause, the common causes, and the fix.
+
+### A container never starts
+
+A container that never starts has no entry in `talosctl containers`, and its `ContainerStatus` stays in the `pending` or `pulling` state, or moves to `backoff` when its image fails to pull.
+Talos only creates the container once its image is pulled, its mounts are ready, and every `dependsOn` condition is met.
+
+Run the following command to see what the container is waiting for, replacing `<container-name>` with the container's name:
+
+```bash
+talosctl get containerdependencystatuses <container-name> --nodes <node-ip> --output yaml
+```
+
+The `waitingFor` field lists every unmet condition.
+
+The following table explains each entry:
+
+| Entry | Meaning | Where to look |
+| --- | --- | --- |
+| `image` | The image is not pulled yet | `ContainerImageStatus`, and [An image fails to pull](#an-image-fails-to-pull) |
+| `mounts` | A declared mount is not available, such as a user volume that is not mounted | The `error` field of `ContainerMountStatus` |
+| `path: <path>` | A host path from `dependsOn` does not exist | `talosctl ls <path> --nodes <node-ip>`. Talos does not create the path, so it waits indefinitely until something else does |
+| `network: <condition>` | A network readiness condition from `dependsOn` is not met | `talosctl get networkstatus --nodes <node-ip>` |
+| `time` | The clock is not synchronized | `talosctl get timestatus --nodes <node-ip>` |
+
+A container that depends on another container through `dependsOn` also waits until that container is running, is healthy, and has been running for at least 5 seconds.
+
+### An image fails to pull
+
+While Talos retries a failing pull, the container's `ContainerImageStatus` stays in the `pulling` phase.
+Talos retries for up to 20 minutes, or for 5 attempts when the registry reports that the image does not exist.
+After that, or straight away for an image that the policy rejects, the phase becomes `failed`, the `error` field gives the reason, and Talos stops retrying.
+
+Run the following command to check the image status, replacing `<container-name>` with the container's name:
+
+```bash
+talosctl get containerimagestatuses <container-name> --nodes <node-ip> --output yaml
+```
+
+While the phase is still `pulling`, the reason for the failed attempts is in the `machined` log.
+
+Run the following command to find it:
+
+```bash
+talosctl logs machined --nodes <node-ip> | grep 'retrying error'
+```
+
+The following causes are the most common:
+
+- **Wrong image reference**: The tag or digest does not exist.
+- **Unreachable registry**: The machine cannot reach the registry. A registry mirror or the image cache serves images to machines without direct registry access, as described in the [requirements](./requirements#container-image-requirements).
+- **Missing credentials**: The registry needs credentials that the machine's registry configuration does not provide.
+- **Image verification policy**: The policy rejects the image, and the `error` field gives the policy's reason.
+
+Talos only tries a failed pull again when the image reference changes.
+After fixing the cause, change the `image` value and apply the document again.
+Changing a tag to the digest it points to changes the reference without changing the image.
+
+### A container restarts in a loop
+
+Talos restarts every container 5 seconds after it exits, so a container whose process keeps exiting restarts indefinitely.
+Its restart count keeps growing, but it rarely appears in `talosctl containers`, because each run ends quickly.
+
+Run the following command to read the container's logs, which include every generation:
+
+```bash
+talosctl logs --nodes <node-ip> --namespace taloscontainers <container-name>
+```
+
+Then run the following command to check the container's last exit code, error, and restart count:
+
+```bash
+talosctl get containerstatuses <container-name> --nodes <node-ip> --output yaml
+```
+
+A container in a restart loop has a growing `restartCount`, reports the `exited` state between runs, and reports `degraded` health.
+
+The following causes are the most common:
+
+- **The process runs once and exits**: Talos Containers have no restart policy, so a container meant to run once restarts every 5 seconds. Talos Containers are designed for long-running processes.
+- **The process went over its memory limit**: An exit code of `137` means the process received `SIGKILL`, which the kernel sends when a container goes over its memory limit. Raising the limit, or comparing it with the usage that `talosctl stats` reports, resolves this.
+- **The process lacks a permission**: The default `restricted` profile grants no capabilities and makes the root filesystem read-only. A process that binds a port below 1024, writes outside its mounts, or changes users fails. [Configure Security](./configure-security) covers adding individual capabilities, and a `tmpfs` mount gives a process somewhere to write.
+- **The image runs as the wrong user**: An image whose `USER` is a name rather than a number runs as root. An image built to run as root can fail when `runAs` sets another user.
+
+## Next steps
+
+The following pages cover the settings that most often cause these failures:
+
+- **[Configure Security](./configure-security)**: How to set security profiles, capabilities, and users.
+- **[Configure Resource Limits](./configure-resource-limits)**: How to set CPU and memory limits.
+- **[How Talos Containers Work](./how-talos-containers-work)**: The lifecycle that these status resources report on.
