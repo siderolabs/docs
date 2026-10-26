@@ -193,11 +193,7 @@ homepage:
         - family: "containers"
           title: "Containers"
           description: "Containers without Kubernetes, declared in machine config."
-          cards:
-            - title: "Talos Containers"
-              tag: "Open source"
-              docsSoon: true
-              description: "Run OCI containers directly on Talos at the edge, with no Kubernetes control plane to operate."
+          # Talos Containers' card comes from talos-containers.yaml.
 
         - family: "ai"
           title: "AI"

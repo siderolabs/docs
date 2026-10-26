@@ -474,6 +474,20 @@
                 ]
               },
               {
+                "group": "Talos Containers",
+                "pages": [
+                  "talos/v1.14/talos-containers/how-talos-containers-work",
+                  "talos/v1.14/talos-containers/requirements",
+                  "talos/v1.14/talos-containers/run-your-first-talos-container",
+                  "talos/v1.14/talos-containers/add-storage-and-configuration-files",
+                  "talos/v1.14/talos-containers/configure-startup-order",
+                  "talos/v1.14/talos-containers/configure-networking",
+                  "talos/v1.14/talos-containers/configure-security",
+                  "talos/v1.14/talos-containers/configure-resource-limits",
+                  "talos/v1.14/talos-containers/inspect-and-troubleshoot-talos-containers"
+                ]
+              },
+              {
                 "group": "Advanced guides",
                 "pages": [
                   "talos/v1.14/advanced-guides/install-kubevirt",
@@ -2934,6 +2948,12 @@
             ]
           }
         ]
+      },
+      {
+        "product": "Talos Containers",
+        "icon": "cube",
+        "description": "Run OCI containers directly on Talos at the edge, with no Kubernetes control plane to operate.",
+        "href": "/talos/v1.14/talos-containers/how-talos-containers-work"
       },
       {
         "product": "Kubernetes Guides",
