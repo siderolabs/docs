@@ -31,7 +31,9 @@ own, so `exceptions.txt` holds the words allowed to keep their capitalization
 (`Talos`, `Omni`, `Kubernetes`, CLI tool names, …). You only need to list plain
 `Capitalized` words — **ALL-CAPS acronyms** (`SAML`, `YAML`) and **CamelCase
 names** (`KubeSpan`, `SideroLabs`) are auto-allowed. Add a word whenever the
-checker wrongly flags a real proper noun, then rebuild the image.
+checker wrongly flags a real proper noun, then rebuild the image. A line with
+several words (`Talos Director`) is a phrase: its words keep their capitals only
+together, so `Director` passes after `Talos` and is flagged on its own.
 
 ### Not checked (on purpose)
 
