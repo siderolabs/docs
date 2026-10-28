@@ -37,6 +37,10 @@ logo:
 thumbnails:
   background: "/images/og-background.png"
 
+banner:
+  content: "Join us at [TalosCon](https://www.taloscon.com/) in Santa Barbara, Jan 26-27, 2027. Share the announcement and your ticket is free!"
+  dismissible: true
+
 navbar:
   links:
     - label: "Enterprise Support"
