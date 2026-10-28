@@ -1,10 +1,15 @@
 navigation:
   products:
     - product: "Talos Omni"
-      family: "kubernetes"
-      tag: "Commercial"
-      description: "Provision, upgrade and manage Talos clusters across sites from one place."
-      meta: "SaaS and self-hosted"
+      family: "management"
+      tag: ["Source available", "Commercial"]
+      description: "Provision, upgrade, and manage Talos machines across sites from one place."
+      covers:
+        - family: "kubernetes"
+        - family: "hypervisor"
+          soon: true
+        - family: "containers"
+          soon: true
       icon: "/images/omni.svg"
       cta:
         label: "Try Talos Omni"

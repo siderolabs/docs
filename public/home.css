@@ -161,17 +161,34 @@
 #docs-home .home-card--soon h3 {
   color: var(--talos-content-secondary);
 }
+/* A lifecycle chip rides on the name: it describes the product, while the
+   dashed card and the footer line describe the docs. */
+#docs-home .home-card h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--talos-space-tight);
+  row-gap: var(--talos-space-micro);
+}
 #docs-home .home-card p {
   margin: 0 0 var(--talos-space-base);
   font-size: var(--talos-text-base);
   color: var(--talos-content-secondary);
-  flex: 1;
 }
 #docs-home .home-card--soon p {
   color: var(--talos-content-muted);
 }
+#docs-home .home-card > :last-child {
+  margin-bottom: 0;
+}
+#docs-home .home-sep {
+  color: var(--talos-content-muted);
+}
 
+/* Only the docs line is pinned to the card's bottom edge; everything above it
+   flows from the top, so domain chips line up across a row. */
 #docs-home .home-meta {
+  margin-top: auto;
   display: flex;
   align-items: center;
   gap: var(--talos-space-snug);
@@ -193,6 +210,82 @@
   color: var(--talos-status-info-text);
 }
 
+/* Management cards say which domains they cover. Neutral, not status green:
+   these state scope, not health. A domain still to come is dashed, like a
+   coming-soon card. */
+#docs-home .home-covers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--talos-space-tight);
+  margin-bottom: var(--talos-space-base);
+}
+#docs-home .home-cover {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--talos-space-tight);
+  border: 1px solid var(--talos-border-default);
+  border-radius: var(--talos-radius-pill);
+  padding: 2px var(--talos-space-snug);
+  font-size: var(--talos-text-xs);
+  font-weight: var(--talos-weight-medium);
+  color: var(--talos-content-default);
+}
+#docs-home .home-cover--soon {
+  border-style: dashed;
+  color: var(--talos-content-muted);
+}
+#docs-home .home-cover em {
+  font-style: normal;
+  font-family: var(--talos-font-mono);
+  font-size: var(--talos-text-xs);
+  font-weight: var(--talos-weight-regular, 400);
+  letter-spacing: var(--talos-tracking-machine);
+}
+
+/* Operating system layer: one column per domain, so the management row
+   above reads as spanning them. */
+#docs-home .home-columns {
+  display: grid;
+  gap: var(--talos-space-base);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  row-gap: var(--talos-space-snug);
+}
+@media (max-width: 960px) {
+  #docs-home .home-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  #docs-home .home-columns { grid-template-columns: 1fr; }
+}
+/* Subgrid so column heads and cards line up across domains even when a
+   description wraps to a different length. Each column spans its head plus
+   one row per card in the fullest column; the generator names that count in
+   a rows-N class and refuses columns longer than the rules below cover. */
+#docs-home .home-column {
+  display: grid;
+  grid-template-rows: subgrid;
+  gap: var(--talos-space-snug);
+}
+#docs-home .home-columns--rows-1 .home-column { grid-row: span 2; }
+#docs-home .home-columns--rows-2 .home-column { grid-row: span 3; }
+#docs-home .home-columns--rows-3 .home-column { grid-row: span 4; }
+#docs-home .home-columns--rows-4 .home-column { grid-row: span 5; }
+#docs-home .home-column-head {
+  border-top: 2px solid var(--talos-border-strong);
+  padding-top: var(--talos-space-snug);
+  margin-bottom: var(--talos-space-tight);
+}
+#docs-home .home-column-head h3 {
+  margin: 0 0 var(--talos-space-tight);
+  font-size: var(--talos-text-base);
+  font-weight: var(--talos-weight-semibold);
+  color: var(--talos-content-emphasis);
+}
+#docs-home .home-column-head p {
+  margin: 0;
+  font-size: var(--talos-text-sm);
+  color: var(--talos-content-secondary);
+}
+
 /* Tools: cross-domain services and clients. Visually lighter than the domain
    rows on purpose: these are how you get to the products, not the products. */
 #docs-home .home-grid--tools {
@@ -201,11 +294,7 @@
 #docs-home .home-card--tool {
   padding: var(--talos-space-compact) var(--talos-space-base);
 }
-#docs-home .home-card--tool h3 {
-  font-size: var(--talos-text-base);
-}
 #docs-home .home-card--tool p {
-  font-size: var(--talos-text-sm);
   margin-bottom: 0;
 }
 
