@@ -2876,6 +2876,12 @@
             ]
           },
           {
+            "group": "Getting Started",
+            "pages": [
+              "director/getting-started/quickstart-zero-to-vm"
+            ]
+          },
+          {
             "group": "Compute",
             "pages": [
               "director/compute/clusters",
