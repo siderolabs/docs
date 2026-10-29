@@ -1,0 +1,134 @@
+---
+title: "Configure Security for a Talos Container"
+description: "Set the security profile, Linux capabilities, user, and Talos API access with machinedAccess for a Talos Container."
+canonical: https://docs.siderolabs.com/talos/v1.14/talos-containers/configure-security
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos Containers do not use user namespaces, so root inside a container is also root on the host.
+This page explains how to limit what a container can access on the host, through its security profile, the user it runs as, and its Linux capabilities, and how to give it access to the Talos API.
+For more information, see the [`ContainerConfig` reference](../reference/configuration/container/containerconfig).
+
+## Choose a security profile
+
+The `security.profile` field sets the starting permissions of a container.
+
+Talos has two security profiles, which give a container the following permissions:
+
+- **`restricted`**: The default. The container has no Linux capabilities and no access to host devices. Its root filesystem and sysfs are read-only.
+- **`privileged`**: The container has every capability except `SYS_BOOT` and `SYS_MODULE`, and can use any host device. Host device files are not added to the container's `/dev` automatically. Its root filesystem is writable, and sysfs stays read-only. These are the same permissions that extension services have.
+
+  **Example:** The following document uses the `privileged` profile:
+
+  ```yaml
+  apiVersion: v1alpha1
+  kind: ContainerConfig
+  name: storage-agent
+  image: registry.example.com/storage-agent@sha256:...
+  security:
+    profile: privileged
+  ```
+
+Both profiles also run the container with the `no_new_privs` flag and containerd's default seccomp profile.
+
+A container that needs only one or two capabilities can keep the `restricted` profile and add those capabilities instead, as described in [Add or drop Linux capabilities](#add-or-drop-linux-capabilities).
+
+## Run as a specific user
+
+The `runAs` field sets the uid and gid that the container's process runs as.
+It overrides the image's `USER`.
+
+**Example:** The following document runs a container as uid and gid 65534:
+
+```yaml
+apiVersion: v1alpha1
+kind: ContainerConfig
+name: web
+image: registry.example.com/web@sha256:...
+runAs:
+  uid: 65534
+  gid: 65534
+```
+
+Without `runAs`, the container runs as the image's `USER`, or as root if the image sets none.
+
+<Note>
+Talos only applies an image `USER` that is a number.
+An image that names its user, such as `USER nginx`, runs as root, and Talos logs a warning.
+</Note>
+
+## Add or drop Linux capabilities
+
+The `security.capabilities` field changes the Linux capabilities that the security profile grants.
+Capabilities are written without the `CAP_` prefix, so `CAP_NET_ADMIN` is `NET_ADMIN`.
+
+The field has two lists:
+
+- **`add`**: Grants capabilities on top of the security profile.
+- **`drop`**: Removes capabilities from the security profile. `ALL` removes every capability, so dropping `ALL` and adding one capability leaves only that capability.
+
+Added capabilities only work for a process that runs as root.
+Talos does not set ambient capabilities, so a process that runs as any other user loses them when it starts.
+The example below therefore assumes an image that runs as root.
+
+**Example:** The following document keeps the `restricted` profile and adds `NET_BIND_SERVICE`, which allows the container to listen on ports below 1024:
+
+```yaml
+apiVersion: v1alpha1
+kind: ContainerConfig
+name: web
+image: registry.example.com/web@sha256:...
+network:
+  mode: host
+security:
+  capabilities:
+    add:
+      - NET_BIND_SERVICE
+```
+
+## Give a container access to the Talos API
+
+Containers that call the Talos API on their own machine, such as infrastructure agents, get access to it through the `security.machinedAccess` field.
+
+<Warning>
+A container with access to the Talos API can request any role, including `os:admin`, and so can control the whole machine. `machinedAccess` is intended only for containers that manage the machine.
+</Warning>
+
+Setting `machinedAccess: true` does three things:
+
+- It mounts the Talos API socket, `/system/run/machined/machine.sock`, into the container as read-only.
+- It registers the container's process with the Talos API, which then accepts requests from the container with any role they ask for.
+- When SELinux is enabled, it runs the container in an SELinux domain that is allowed to use the socket.
+
+The socket belongs to uid and gid 50, the user that `apid` runs as.
+A container with only `machinedAccess` cannot open it, because the `restricted` profile grants no capability that bypasses file permissions.
+
+The container also needs one of the following:
+
+- **`runAs` with uid and gid 50**: The container's process owns the socket.
+- **The `DAC_OVERRIDE` capability**: The container runs as root and can bypass file permissions.
+- **The `privileged` profile**: The profile includes `DAC_OVERRIDE`.
+
+**Example:** The following document combines `machinedAccess` with `runAs`, so no extra capabilities are needed:
+
+```yaml
+apiVersion: v1alpha1
+kind: ContainerConfig
+name: infra-agent
+image: registry.example.com/infra-agent@sha256:...
+runAs:
+  uid: 50
+  gid: 50
+security:
+  machinedAccess: true
+```
+
+## Next steps
+
+The following pages cover related topics:
+
+- **[How Talos Containers Work](./how-talos-containers-work)**: The security model behind these settings.
+- **[Configure Resource Limits](./configure-resource-limits)**: How to limit the CPU and memory a container uses.
