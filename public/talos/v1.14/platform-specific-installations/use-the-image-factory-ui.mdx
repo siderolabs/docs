@@ -1,0 +1,110 @@
+---
+title: "Use the Image Factory UI"
+description: "Generate Talos Linux boot assets and installer images with the Image Factory web UI."
+canonical: https://docs.siderolabs.com/talos/v1.14/platform-specific-installations/use-the-image-factory-ui
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+The [Image Factory UI](https://factory.talos.dev) generates Talos Linux boot assets in a web browser.
+It walks through a series of screens that select the hardware, the Talos Linux version, system extensions, and customizations, then returns a schematic ID with the boot assets and installer images built from it.
+
+The UI creates the same schematics as the Image Factory API.
+For how schematics and schematic IDs work, see [Image Factory](../learn-more/image-factory).
+To create schematics from a file or a script instead, see [Boot Assets](./boot-assets#image-factory).
+
+## Screens in the UI
+
+The screens in the UI depend on the hardware type selected on the first screen:
+
+| Hardware type | Screens, in order |
+| --- | --- |
+| Bare-metal Machine | Hardware Type, Choose Talos Linux Version, Machine Architecture, System Extensions, Customization, Schematic Ready |
+| Cloud Server | Hardware Type, Choose Talos Linux Version, Cloud, Machine Architecture, System Extensions, Customization, Schematic Ready |
+| Single Board Computer | Hardware Type, Choose Talos Linux Version, Single Board Computer, System Extensions, Customization, Schematic Ready |
+
+Each screen has **Back** and **Next** buttons.
+The UI stores the selections in the page URL, so a bookmarked or shared URL returns to the same selections.
+
+### Hardware type
+
+The **Hardware Type** screen selects the kind of machine the image is for:
+
+* **Bare-metal Machine**: x86-64 and arm64 bare-metal machines and generic virtual machines. The UI recommends this option when unsure.
+* **Cloud Server**: cloud and virtualization platforms, such as AWS, GCP, Azure, VMware, and Proxmox.
+* **Single Board Computer**: boards such as Raspberry Pi, Pine64, and Jetson Nano.
+
+### Talos Linux version
+
+The **Choose Talos Linux Version** screen lists the Talos Linux releases that Image Factory can build, including pre-releases.
+The UI recommends the latest stable version, as pre-release versions are intended for testing only.
+Single board computers require Talos Linux 1.7 or later.
+
+### Cloud platform
+
+The **Cloud** screen appears only for **Cloud Server**.
+It lists the supported platforms, such as AWS, Google Cloud, Microsoft Azure, VMware, OpenStack, and Hetzner.
+**Nocloud** covers hypervisors that provide `nocloud` metadata, such as Proxmox.
+Each platform links to its installation guide.
+
+### Board
+
+The **Single Board Computer** screen appears only for **Single Board Computer**.
+It lists the supported boards, and the selected board adds its overlay to the schematic.
+Boards that have an installation guide link to it.
+
+### Machine architecture
+
+The **Machine Architecture** screen selects **amd64** or **arm64**.
+It does not appear for single board computers, which are always arm64.
+
+For **Bare-metal Machine**, the screen also offers **SecureBoot**, which creates an image signed with the official Sidero Labs signing key.
+SecureBoot images require UEFI boot and hardware prepared for SecureBoot.
+See [SecureBoot](./bare-metal-platforms/secureboot).
+
+### System extensions
+
+The **System Extensions** screen lists the official system extensions available for the selected Talos Linux version, with each extension's version and support tier.
+Use **Search** to filter the list.
+
+Image Factory selects the extension versions that match the Talos Linux version, so the schematic only records extension names.
+Selecting extensions is optional.
+For what extensions do and what each support tier means, see [System Extensions](../build-and-extend-talos/custom-images-and-development/system-extensions).
+
+### Customization
+
+The **Customization** screen sets optional changes to the image:
+
+* **Extra kernel command line arguments**: arguments to add to the kernel command line, in kernel command line syntax, such as `console=ttyS0,115200`. Prefix an argument with `-` to remove it from the default command line, such as `-console`. See [Kernel](../reference/kernel) for the arguments Talos Linux supports.
+* **Embedded machine configuration**: machine configuration documents to embed into the image. Talos Linux applies them on boot. See [Acquire](../configure-your-talos-cluster/system-configuration/acquire).
+* **Extra overlay options (advanced)**: options for the board overlay, in YAML. Shown only for single board computers. The available options depend on the overlay.
+* **Bootloader**: **auto**, **UEFI only** (systemd-boot), **BIOS only** (GRUB), or **Dual Boot**. **auto** selects the bootloader based on the image type and architecture, and is the recommended option. See [Bootloader](./bare-metal-platforms/bootloader).
+
+### Results
+
+The **Schematic Ready** screen shows the schematic ID, the schematic itself, and the assets built from it.
+The sections on the screen depend on the hardware type:
+
+* **Schematic ID**: identifies the selections. The same ID builds images for other Talos Linux versions, and the schematic shown below it can be uploaded with the Image Factory API.
+* **First Boot**: the image to boot the machine from for the first time. Bare-metal machines get an ISO, raw and qcow2 disk images, and a PXE boot script. Cloud servers get a disk image for the platform. Single board computers get a disk image to write to boot media.
+* **Initial Installation**: shown for bare-metal machines. The installer image to set in the machine configuration, which Talos Linux uses to install to disk after booting from the ISO or PXE.
+* **Upgrading Talos Linux**: the installer image to upgrade the machine with.
+* **Local Test Cluster**: a `talosctl cluster create qemu` command that creates a local test cluster from the schematic.
+* **PXE Boot with booter**: a command that runs booter to PXE boot bare-metal machines on the same subnet.
+* **Extra Assets**: shown for bare-metal machines. The kernel, kernel command line, initramfs, and UKI images, and `talosctl` binaries.
+
+Each download has links to its checksums and signature.
+Vulnerability scan reports, the SBOM, and the VEX document are only available from [Enterprise Image Factory](../learn-more/enterprise-image-factory).
+
+## Use the results
+
+The outputs on the **Schematic Ready** screen are used in the following order:
+
+1. Boot the machine from the **First Boot** asset. See [ISO](./bare-metal-platforms/iso), [PXE](./bare-metal-platforms/pxe), or the installation guide for the platform.
+2. On bare-metal machines, set the **Initial Installation** installer image in the machine configuration. See [Unattended Install](../configure-your-talos-cluster/lifecycle-management/unattended-install).
+3. Upgrade with the **Upgrading Talos Linux** installer image. See [Upgrading Talos Linux](../configure-your-talos-cluster/lifecycle-management/upgrading-talos). To change the extensions or customizations on a machine, generate a new schematic and upgrade the machine to its installer image.
+
+To find the schematic ID of a running machine, see [Find schematic ID from Talos installation](../learn-more/image-factory#find-schematic-id-from-talos-installation).
+To create schematics with the API, or to build images with custom system extensions, see [Boot Assets](./boot-assets).

@@ -283,6 +283,7 @@
                       "talos/v1.14/platform-specific-installations/single-board-computers/unofficial"
                     ]
                   },
+                  "talos/v1.14/platform-specific-installations/use-the-image-factory-ui",
                   "talos/v1.14/platform-specific-installations/boot-assets",
                   "talos/v1.14/platform-specific-installations/air-gapped",
                   "talos/v1.14/platform-specific-installations/omni"

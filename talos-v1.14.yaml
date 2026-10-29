@@ -93,6 +93,7 @@ navigation:
                 - "single-board-computers/rpi_generic"
                 - "single-board-computers/turing_rk1"
                 - "single-board-computers/unofficial"
+            - "use-the-image-factory-ui.mdx"
             - "boot-assets.mdx"
             - "air-gapped.mdx"
             - "omni.mdx"

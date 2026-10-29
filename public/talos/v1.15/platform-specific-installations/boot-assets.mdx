@@ -40,46 +40,64 @@ Once the schematic is configured, Image Factory can be used to pull various Talo
 versions of Talos and platforms.
 
 Sidero Labs maintains a public Image Factory instance at [https://factory.talos.dev](https://factory.talos.dev).
-Image Factory provides a simple [UI](https://factory.talos.dev) to prepare schematics and retrieve asset links.
+Image Factory provides a [UI](https://factory.talos.dev) to prepare schematics and retrieve asset links.
+For how to generate boot assets in the UI, including what each screen and option is for, see [Use the Image Factory UI](./use-the-image-factory-ui).
+Each example below shows how to create the schematic both in the UI and with commands.
 
 ### Example: Bare-metal with Image Factory
 
 Let's assume we want to boot Talos on a bare-metal machine with Intel CPU and add a `gvisor` container runtime to the image.
 Also we want to disable predictable network interface names with `net.ifnames=0` kernel argument.
 
-First, let's create the schematic file `bare-metal.yaml`:
-
-```yaml
-# bare-metal.yaml
-customization:
-  extraKernelArgs:
-    - net.ifnames=0
-  systemExtensions:
-    officialExtensions:
-      - siderolabs/gvisor
-      - siderolabs/intel-ucode
-```
-
-> The schematic doesn't contain system extension versions, Image Factory will pick the correct version matching Talos Linux release.
-
-And now we can upload the schematic to the Image Factory to retrieve its ID:
+Create the schematic in the Image Factory UI, or write it as a file and upload it with the Image Factory API:
 
 <Tabs>
-  <Tab title="Command">
+  <Tab title="Image Factory UI">
+
+    1. Open [Image Factory](https://factory.talos.dev).
+    2. On the **Hardware Type** screen, select **Bare-metal Machine**.
+    3. On the **Choose Talos Linux Version** screen, select the Talos Linux version.
+    4. On the **Machine Architecture** screen, select **amd64**.
+    5. On the **System Extensions** screen, select **siderolabs/gvisor** and **siderolabs/intel-ucode**.
+    6. On the **Customization** screen, enter `net.ifnames=0` in **Extra kernel command line arguments**.
+    7. On the **Schematic Ready** screen, copy the schematic ID. The screen also lists the ISO, PXE, and installer image links used in the rest of this example.
+
+  </Tab>
+  <Tab title="Commands">
+
+    Create the schematic file `bare-metal.yaml`:
+
+    ```yaml
+    # bare-metal.yaml
+    customization:
+      extraKernelArgs:
+        - net.ifnames=0
+      systemExtensions:
+        officialExtensions:
+          - siderolabs/gvisor
+          - siderolabs/intel-ucode
+    ```
+
+    > The schematic doesn't contain system extension versions, Image Factory will pick the correct version matching Talos Linux release.
+
+    Upload the schematic to Image Factory to retrieve its ID:
+
     ```sh
     curl -X POST \
       --data-binary @bare-metal.yaml \
       https://factory.talos.dev/schematics
     ```
-  </Tab>
-  <Tab title="Output">
+
+    The response contains the schematic ID and the schematic as Image Factory stores it:
+
     ```json
-      {"id":"b8e8fbbe1b520989e6c52c8dc8303070cb42095997e76e812fa8892393e1d176"}
+    {"id": "b8e8fbbe1b520989e6c52c8dc8303070cb42095997e76e812fa8892393e1d176", "schematic": "customization:\n    extraKernelArgs:\n        - net.ifnames=0\n    systemExtensions:\n        officialExtensions:\n            - siderolabs/gvisor\n            - siderolabs/intel-ucode\n"}
     ```
+
   </Tab>
 </Tabs>
 
-The returned schematic ID `b8e8fbbe1b520989e6c52c8dc8303070cb42095997e76e812fa8892393e1d176` we will use to generate the boot assets.
+Both return the schematic ID `b8e8fbbe1b520989e6c52c8dc8303070cb42095997e76e812fa8892393e1d176`, which the rest of this example uses to generate the boot assets.
 
 > The schematic ID is based on the schematic contents, so uploading the same schematic will return the same ID.
 
@@ -130,43 +148,59 @@ talosctl upgrade \\
 
 Let's assume we want to boot Talos on a Raspberry Pi with `iscsi-tools` system extension.
 
-First, let's create the schematic file `rpi_generic.yaml`:
-
-```yaml
-# rpi_generic.yaml
-overlay:
-  name: rpi_generic
-  image: siderolabs/sbc-raspberrypi
-customization:
-  systemExtensions:
-    officialExtensions:
-      - siderolabs/iscsi-tools
-```
-
-> The schematic doesn't contain any system extension or overlay versions, Image Factory will pick the correct version matching Talos Linux release.
-
-And now we can upload the schematic to the Image Factory to retrieve its ID:
+Create the schematic in the Image Factory UI, or write it as a file and upload it with the Image Factory API:
 
 <Tabs>
-  <Tab title="Command">
-  ```sh
-  curl -X POST \
-    --data-binary @rpi_generic.yaml \
-    https://factory.talos.dev/schematics
-  ```
+  <Tab title="Image Factory UI">
+
+    1. Open [Image Factory](https://factory.talos.dev).
+    2. On the **Hardware Type** screen, select **Single Board Computer**.
+    3. On the **Choose Talos Linux Version** screen, select the Talos Linux version.
+    4. On the **Single Board Computer** screen, select **Raspberry Pi Series**.
+    5. On the **System Extensions** screen, select **siderolabs/iscsi-tools**.
+    6. On the **Customization** screen, leave the defaults.
+    7. On the **Schematic Ready** screen, copy the schematic ID. The screen also lists the disk image and installer image links used in the rest of this example.
+
   </Tab>
-  <Tab title="Output">
-  ```json
-  {"id":"0db665edfda21c70194e7ca660955425d16cec2aa58ff031e2abf72b7c328585"}
-  ```
+  <Tab title="Commands">
+
+    Create the schematic file `rpi_generic.yaml`:
+
+    ```yaml
+    # rpi_generic.yaml
+    overlay:
+      name: rpi_generic
+      image: siderolabs/sbc-raspberrypi
+    customization:
+      systemExtensions:
+        officialExtensions:
+          - siderolabs/iscsi-tools
+    ```
+
+    > The schematic doesn't contain any system extension or overlay versions, Image Factory will pick the correct version matching Talos Linux release.
+
+    Upload the schematic to Image Factory to retrieve its ID:
+
+    ```sh
+    curl -X POST \
+      --data-binary @rpi_generic.yaml \
+      https://factory.talos.dev/schematics
+    ```
+
+    The response contains the schematic ID and the schematic as Image Factory stores it:
+
+    ```json
+    {"id": "f47e6cd2634c7a96988861031bcc4144468a1e3aef82cca4f5b5ca3fffef778a", "schematic": "overlay:\n    image: siderolabs/sbc-raspberrypi\n    name: rpi_generic\ncustomization:\n    systemExtensions:\n        officialExtensions:\n            - siderolabs/iscsi-tools\n"}
+    ```
+
   </Tab>
 </Tabs>
 
-The returned schematic ID `0db665edfda21c70194e7ca660955425d16cec2aa58ff031e2abf72b7c328585` we will use to generate the boot assets.
+Both return the schematic ID `f47e6cd2634c7a96988861031bcc4144468a1e3aef82cca4f5b5ca3fffef778a`, which the rest of this example uses to generate the boot assets.
 
 > The schematic ID is based on the schematic contents, so uploading the same schematic will return the same ID.
 
-Now we can [download the metal arm64 image](https://factory.talos.dev/image/0db665edfda21c70194e7ca660955425d16cec2aa58ff031e2abf72b7c328585/${release_v1_15}/metal-arm64.raw.xz) (download it and burn to a boot media)
+Now we can [download the metal arm64 image](https://factory.talos.dev/image/f47e6cd2634c7a96988861031bcc4144468a1e3aef82cca4f5b5ca3fffef778a/${release_v1_15}/metal-arm64.raw.xz) (download it and burn to a boot media)
 
 > The Image Factory URL contains both schematic ID and Talos version, and both can be changed to generate different boot assets.
 
@@ -175,7 +209,7 @@ Once installed, the machine can be upgraded to a new version of Talos by referen
 ```shell
 talosctl upgrade \
   --image \
-  factory.talos.dev/metal-installer/0db665edfda21c70194e7ca660955425d16cec2aa58ff031e2abf72b7c328585:<new_version>
+  factory.talos.dev/metal-installer/f47e6cd2634c7a96988861031bcc4144468a1e3aef82cca4f5b5ca3fffef778a:<new_version>
 ```
 
 Same way upgrade process can be used to transition to a new set of system extensions: generate new schematic with the new set of system extensions, and upgrade the machine to the new schematic ID:
@@ -193,34 +227,51 @@ talosctl upgrade \\
 Talos Linux is installed on AWS from a disk image (AWS AMI), so only a single boot asset is required.
 Let's assume we want to boot Talos on AWS with `gvisor` container runtime system extension.
 
-First, let's create the schematic file `aws.yaml`:
-
-```yaml
-# aws.yaml
-customization:
-  systemExtensions:
-    officialExtensions:
-      - siderolabs/gvisor
-```
-
-And now we can upload the schematic to the Image Factory to retrieve its ID:
+Create the schematic in the Image Factory UI, or write it as a file and upload it with the Image Factory API:
 
 <Tabs>
-  <Tab title="Command">
+  <Tab title="Image Factory UI">
+
+    1. Open [Image Factory](https://factory.talos.dev).
+    2. On the **Hardware Type** screen, select **Cloud Server**.
+    3. On the **Choose Talos Linux Version** screen, select the Talos Linux version.
+    4. On the **Cloud** screen, select **Amazon Web Services (AWS)**.
+    5. On the **Machine Architecture** screen, select **amd64**.
+    6. On the **System Extensions** screen, select **siderolabs/gvisor**.
+    7. On the **Customization** screen, leave the defaults.
+    8. On the **Schematic Ready** screen, copy the schematic ID. The screen also lists the disk image and installer image links used in the rest of this example.
+
+  </Tab>
+  <Tab title="Commands">
+
+    Create the schematic file `aws.yaml`:
+
+    ```yaml
+    # aws.yaml
+    customization:
+      systemExtensions:
+        officialExtensions:
+          - siderolabs/gvisor
+    ```
+
+    Upload the schematic to Image Factory to retrieve its ID:
+
     ```sh
     curl -X POST \
       --data-binary @aws.yaml \
       https://factory.talos.dev/schematics
     ```
-  </Tab>
-  <Tab title="Output">
+
+    The response contains the schematic ID and the schematic as Image Factory stores it:
+
     ```json
-    {"id":"d9ff89777e246792e7642abd3220a616afb4e49822382e4213a2e528ab826fe5"}
+    {"id": "d9ff89777e246792e7642abd3220a616afb4e49822382e4213a2e528ab826fe5", "schematic": "customization:\n    systemExtensions:\n        officialExtensions:\n            - siderolabs/gvisor\n"}
     ```
+
   </Tab>
 </Tabs>
 
-The returned schematic ID `d9ff89777e246792e7642abd3220a616afb4e49822382e4213a2e528ab826fe5` we will use to generate the boot assets.
+Both return the schematic ID `d9ff89777e246792e7642abd3220a616afb4e49822382e4213a2e528ab826fe5`, which the rest of this example uses to generate the boot assets.
 
 Now we can download the AWS disk image from the Image Factory:
 
