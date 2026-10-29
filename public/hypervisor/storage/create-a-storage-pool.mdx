@@ -5,7 +5,7 @@ description: Declare a storage pool on a Talos volume, check its status, and cha
 
 import { version } from '/snippets/custom-variables.mdx';
 
-A storage pool is where a host keeps the writable disks of its virtual machines. The pool is declared in the machine configuration with a [`StoragePool`](../../talos/v1.15/reference/configuration/storage/storagepool) document, and Talos creates it in libvirt as a directory on a Talos volume.
+A storage pool is where a host keeps the writable disks of its virtual machines. The pool is declared in the machine configuration with a [`StoragePoolConfig`](../../talos/v1.15/reference/configuration/storage/storagepoolconfig) document, and Talos creates it in libvirt as a directory on a Talos volume.
 
 This page shows how to create a storage pool, check its status, and change or remove it.
 
@@ -40,7 +40,7 @@ The following steps create a storage pool on a directory volume and check that i
    volumeType: directory
    ---
    apiVersion: v1alpha1
-   kind: StoragePool
+   kind: StoragePoolConfig
    name: pool1
    volume:
      name: vm-disks
@@ -92,7 +92,7 @@ The following steps point `pool1` at a new directory volume named `vm-disks-2`.
    volumeType: directory
    ---
    apiVersion: v1alpha1
-   kind: StoragePool
+   kind: StoragePoolConfig
    name: pool1
    volume:
      name: vm-disks-2
@@ -126,7 +126,7 @@ The following steps remove the `pool1` storage pool.
    ```bash
    cat <<'EOF' > storage-pool-delete.yaml
    apiVersion: v1alpha1
-   kind: StoragePool
+   kind: StoragePoolConfig
    name: pool1
    $patch: delete
    EOF

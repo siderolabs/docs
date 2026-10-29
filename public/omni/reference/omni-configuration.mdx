@@ -163,7 +163,7 @@ Metrics contains metrics service configuration.
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`endpoint`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
-      <td>Endpoint is the network endpoint the service listens on. It is in the form "host:port".<br />**CLI flag:** `--metrics-bind-addr`<br />**Default:** `0.0.0.0:2122`</td>
+      <td>Endpoint is the network endpoint the service listens on. It is in the form "host:port".<br />**CLI flag:** `--metrics-bind-addr`<br />**Default:** `127.0.0.1:2122`</td>
     </tr>
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`advertisedURL`</td>
@@ -524,7 +524,12 @@ Auth contains authentication-related configuration.
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`recoveryAdmin`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
-      <td>RecoveryAdmin is the email of a user raised to the Admin role on every Omni start. The user must already exist. Once configured, SAML label rules never lower its role. Intended as a break-glass path when a misconfigured SAML rule removes admin access from everyone.<br />**CLI flag:** `--recovery-admin`</td>
+      <td>RecoveryAdmin is the email of a user raised to the Admin role on every Omni start. The user must already exist. Once configured, SAML label rules never lower its role, for both SAML and OIDC logins. Intended as a break-glass path when a misconfigured rule removes admin access from everyone.<br />**CLI flag:** `--recovery-admin`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`requireReauthForNewKeys`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>boolean</td>
+      <td>RequireReauthForNewKeys makes every new public key (for the UI, the CLI or the workload proxy) require a fresh login at the identity provider. When it is off, the identity provider may reuse its existing session, so its own session policy applies. After an Omni logout, the next login from the same browser asks the identity provider for a fresh login, so that switching users keeps working.<br />**CLI flag:** `--auth-require-reauth-for-new-keys`<br />**Default:** `true`</td>
     </tr>
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`suspended`</td>
@@ -640,9 +645,24 @@ Saml contains SAML authentication provider configuration.
       <td>NameIDFormat is the SAML NameID format to be used.<br />**CLI flag:** `--auth-saml-name-id-format`</td>
     </tr>
     <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`allowIdpInitiated`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>boolean</td>
+      <td>AllowIDPInitiated accepts assertions the IdP sends without a matching AuthnRequest, as in logins started from an IdP app launcher. Turning it off makes Omni reject any response that does not answer a request it sent.<br />**CLI flag:** `--auth-saml-allow-idp-initiated`<br />**Default:** `true`</td>
+    </tr>
+    <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`enabled`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>boolean</td>
       <td>Enabled controls whether the SAML authentication provider is enabled.<br />**CLI flag:** `--auth-saml-enabled`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`certFile`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>CertFile is the path to the PEM certificate Omni uses to sign SAML requests. When it is set together with the key (.keyFile), Omni signs both the AuthnRequest and the LogoutRequest, and advertises the certificate in its metadata at /saml/metadata. The certificate has to be registered at the IdP before it is set, otherwise the IdP rejects the login. Some IdPs start encrypting assertions once the metadata carries the certificate. Omni decrypts them with the key. Must not be empty.<br />**CLI flag:** `--auth-saml-cert`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`keyFile`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>KeyFile is the path to the PEM private key of the SAML signing certificate (.certFile). Only RSA keys are supported. Must not be empty.<br />**CLI flag:** `--auth-saml-key`</td>
     </tr>
   </tbody>
 </table>
@@ -694,6 +714,11 @@ Oidc contains OIDC authentication provider configuration.
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`allowUnverifiedEmail`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>boolean</td>
       <td>AllowUnverifiedEmail controls whether users with unverified emails (without email_verified claim) are allowed to authenticate.<br />**CLI flag:** `--auth-oidc-allow-unverified-email`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`autoCreateUsers`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>boolean</td>
+      <td>AutoCreateUsers controls whether OIDC users are created on their first login. They get the role from the matching SAML label rules, or None. The very first user of an instance becomes Admin. Enable it only when every account of the OIDC provider belongs to your organization.<br />**CLI flag:** `--auth-oidc-auto-create-users`</td>
     </tr>
   </tbody>
 </table>
@@ -997,7 +1022,7 @@ Default contains the default storage backend configuration.
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`kind`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
-      <td>Kind is the kind of the default storage backend. Values: `etcd`, `boltdb`.<br />**CLI flag:** `--storage-kind`<br />**Default:** `etcd`</td>
+      <td>Kind is the kind of the default storage backend. The boltdb kind is deprecated and will be removed in a future release, use etcd. Values: `etcd`, `boltdb`.<br />**CLI flag:** `--storage-kind`<br />**Default:** `etcd`</td>
     </tr>
   </tbody>
 </table>
@@ -1005,6 +1030,8 @@ Default contains the default storage backend configuration.
 #### storage.default.boltdb
 
 Boltdb contains BoltDB storage backend configuration.
+
+Deprecated: the BoltDB storage backend will be removed in a future release, use etcd.
 
 <table>
   <thead>
@@ -1018,7 +1045,7 @@ Boltdb contains BoltDB storage backend configuration.
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`path`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
-      <td>Path is the path where the BoltDB database file is stored.<br />**Default:** `_out/omni.db`</td>
+      <td>**Deprecated.** Path is the path where the BoltDB database file is stored.  Deprecated: the BoltDB storage backend will be removed in a future release, use etcd.<br />**Default:** `_out/omni.db`</td>
     </tr>
   </tbody>
 </table>
@@ -1039,7 +1066,7 @@ Etcd contains etcd storage backend configuration.
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`endpoints`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string[]</td>
-      <td>Endpoints is the list of etcd endpoints. Only used when external etcd is used (i.e., embedded is false).<br />**CLI flag:** `--etcd-endpoints`<br />**Default:** `["http://localhost:2379"]`</td>
+      <td>Endpoints is the list of etcd endpoints. When embedded etcd is used, it is the list of addresses the embedded etcd server listens on, only if embeddedCertFile is set. The embedded etcd server always serves TLS.<br />**CLI flag:** `--etcd-endpoints`<br />**Default:** `["http://localhost:2379"]`</td>
     </tr>
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`dialKeepAliveTime`</td>
@@ -1080,6 +1107,21 @@ Etcd contains etcd storage backend configuration.
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`embeddedUnsafeFsync`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>boolean</td>
       <td>EmbeddedUnsafeFsync controls whether the embedded etcd server should skip fsync calls for improved performance at the cost of durability.<br />**CLI flag:** `--etcd-embedded-unsafe-fsync`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`embeddedCertFile`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>EmbeddedCertFile is the path to the TLS certificate file for the embedded etcd server. When it is not set, the embedded etcd server does not listen on any address, Omni connects to it in-memory. Must not be empty.<br />**CLI flag:** `--etcd-embedded-cert-path`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`embeddedKeyFile`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>EmbeddedKeyFile is the path to the TLS key file for the embedded etcd server. Must not be empty.<br />**CLI flag:** `--etcd-embedded-key-path`</td>
+    </tr>
+    <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`embeddedCaFile`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>EmbeddedCaFile is the path to the CA certificate file the embedded etcd server uses to verify client certificates. When it is not set, embeddedCertFile must contain a single certificate, which is then used as the CA, so clients can use the same certificate and key. Must not be empty.<br />**CLI flag:** `--etcd-embedded-ca-path`</td>
     </tr>
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`runElections`</td>
@@ -1370,7 +1412,7 @@ Registries contains container image registries configuration.
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`talos`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
-      <td>**Required.** Talos is the Talos installer registry configuration. Must not be empty.<br />**CLI flag:** `--talos-installer-registry`<br />**Default:** `ghcr.io/siderolabs/installer`</td>
+      <td>**Required.** **Deprecated.** Talos is the Talos installer registry configuration.  Deprecated: unused, Omni always installs from an image factory. Must not be empty.<br />**CLI flag:** `--talos-installer-registry`<br />**Default:** `ghcr.io/siderolabs/installer`</td>
     </tr>
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`kubernetes`</td>
@@ -1590,7 +1632,7 @@ Features contains feature flags to enable/disable various Omni features.
 
 ## eulaAccept
 
-EulaAccept contains the identity of the person accepting the EULA via CLI flags or config.
+EulaAccept is used to accept the End User License Agreement (https://siderolabs.com/eula/) on behalf of this Omni instance. Omni does not start until the agreement is accepted. Once accepted, it stays accepted, so these values are only needed on the first start.
 
 <table>
   <thead>
@@ -1604,12 +1646,12 @@ EulaAccept contains the identity of the person accepting the EULA via CLI flags 
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`name`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
-      <td>Name is the full name of the person accepting the EULA on behalf of this Omni instance.<br />**CLI flag:** `--eula-accept-name`</td>
+      <td>Name is the full name of the person accepting the End User License Agreement (https://siderolabs.com/eula/) on behalf of this Omni instance. Omni does not start until the agreement is accepted.<br />**CLI flag:** `--eula-accept-name`</td>
     </tr>
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`email`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
-      <td>Email is the email address of the person accepting the EULA on behalf of this Omni instance.<br />**CLI flag:** `--eula-accept-email`</td>
+      <td>Email is the email address of the person accepting the End User License Agreement (https://siderolabs.com/eula/) on behalf of this Omni instance. Omni does not start until the agreement is accepted.<br />**CLI flag:** `--eula-accept-email`</td>
     </tr>
   </tbody>
 </table>

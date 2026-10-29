@@ -79,6 +79,10 @@
       "destination": "/talos/v1.14/build-and-extend-talos/custom-images-and-development/building-a-system-extension"
     },
     {
+      "source": "/talos/v1.15/reference/configuration/storage/storagepool",
+      "destination": "/talos/v1.15/reference/configuration/storage/storagepoolconfig"
+    },
+    {
       "source": "/talos/latest",
       "destination": "/talos/v1.14"
     },

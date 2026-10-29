@@ -1,6 +1,6 @@
 ---
 description: |
-  StoragePool defines a directory storage pool on a configured filesystem volume.
+  StoragePoolConfig defines a directory storage pool on a configured filesystem volume.
   Defines a named storage pool backed by a UserVolumeConfig, ExistingVolumeConfig,
   or ExternalVolumeConfig. The backing volume must be writable and filesystem-backed.
   Only one pool may reference a backing volume. The pool directory is named after
@@ -8,8 +8,8 @@ description: |
   undefines the pool, but never deletes its files or backing volume.
   Requires the libvirtd system extension. Changing the backing volume changes
   the pool target; it does not migrate existing disk images.
-title: StoragePool
-canonical: https://docs.siderolabs.com/talos/v1.15/reference/configuration/storage/storagepool
+title: StoragePoolConfig
+canonical: https://docs.siderolabs.com/talos/v1.15/reference/configuration/storage/storagepoolconfig
 ---
 
 {/*
@@ -28,7 +28,7 @@ Do not edit manually. For more information, see https://github.com/siderolabs/do
 
 ```yaml
 apiVersion: v1alpha1
-kind: StoragePool
+kind: StoragePoolConfig
 name: vm-images # Pool name: 1-63 ASCII letters, digits, hyphens or underscores, starting with a letter or digit.
 # Reference to the writable filesystem volume backing this pool.
 volume:

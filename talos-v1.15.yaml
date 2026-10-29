@@ -303,6 +303,7 @@ navigation:
                   pages:
                     - "configuration/hypervisor/contentlibraryconfig.mdx"
                     - "configuration/hypervisor/virtualmachineconfig.mdx"
+                    - "configuration/hypervisor/virtualmachineprofileconfig.mdx"
                 - group: "Kubernetes"
                   pages:
                     - "configuration/kubernetes/kubeadmissioncontrolconfig.mdx"
@@ -388,7 +389,7 @@ navigation:
                     - "configuration/storage/lvmlogicalvolumeconfig.mdx"
                     - "configuration/storage/lvmvolumegroupconfig.mdx"
                     - "configuration/storage/raidarrayconfig.mdx"
-                    - "configuration/storage/storagepool.mdx"
+                    - "configuration/storage/storagepoolconfig.mdx"
 
         - group: "Troubleshooting and support"
           folder: "talos/v1.15/troubleshooting"

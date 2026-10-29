@@ -31,6 +31,10 @@ rings:
 # Configuration for Ethernet link channels.
 channels:
     rx: 4 # Number of RX channels.
+# Configuration for Ethernet link flow control (802.3x pause frames).
+flowControl:
+    rx: true # Whether to enable RX flow control (accepting pause frames from the link peer).
+    tx: false # Whether to enable TX flow control (sending pause frames to the link peer).
 
 # # Wake-on-LAN modes to enable.
 # wakeOnLan:
@@ -78,6 +82,12 @@ channels:
       <td>[]WOLMode</td>
       <td>Wake-on-LAN modes to enable.<br /><br />If this field is omitted, Wake-on-LAN configuration is not changed.<br />An empty list disables Wake-on-LAN.<br /><br />This is similar to `ethtool -s <link> wol <options>` command.</td>
       <td>`phy`<br />`unicast`<br />`multicast`<br />`broadcast`<br />`arp`<br />`magic`<br />`magicsecure`<br />`filter`<br /></td>
+    </tr>
+    <tr>
+      <td>`flowControl`</td>
+      <td><a href="#flowcontrol">EthernetFlowControlConfig</a></td>
+      <td>Configuration for Ethernet link flow control (802.3x pause frames).<br /><br />If this field is omitted, flow control configuration is not changed.<br /><br />This is similar to `ethtool -A <link>` command.</td>
+      <td></td>
     </tr>
   </tbody>
 </table>
@@ -207,6 +217,48 @@ EthernetChannelsConfig is a configuration for Ethernet link channels.
       <td>`combined`</td>
       <td>uint32</td>
       <td>Number of combined channels.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+## flowControl
+
+EthernetFlowControlConfig is a configuration for Ethernet link flow control.
+
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`rx`</td>
+      <td>bool</td>
+      <td>Whether to enable RX flow control (accepting pause frames from the link peer).</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`tx`</td>
+      <td>bool</td>
+      <td>Whether to enable TX flow control (sending pause frames to the link peer).</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`autoneg`</td>
+      <td>bool</td>
+      <td>Whether to enable flow control autonegotiation.</td>
       <td></td>
     </tr>
   </tbody>

@@ -54,7 +54,7 @@ Create a Talos Linux ISO that includes the `libvirtd` extension.
 
    The schematic ID is derived from the schematic's contents, so this schematic always returns the same ID.
 
-3. Save the schematic ID, the Talos Linux version, and the server's architecture in variables. Replace `<schematic-id>` with the ID from the response, `<talos-version>` with v1.15.0-alpha.1 or later, and `<arch>` with `amd64` or `arm64`:
+3. Save the schematic ID, the Talos Linux version, and the server's architecture in variables. Replace `<schematic-id>` with the ID from the response, `<talos-version>` with v1.15.0-alpha.2 or later, and `<arch>` with `amd64` or `arm64`:
 
    ```bash
    export SCHEMATIC_ID=<schematic-id>
@@ -75,7 +75,7 @@ The following steps use the Image Factory UI to create a schematic with the `lib
 
 1. Open the [Image Factory UI](https://factory.talos.dev).
 2. On the **Hardware Type** screen, select **Bare-metal Machine**.
-3. On the **Choose Talos Linux Version** screen, select v1.15.0-alpha.1 or later.
+3. On the **Choose Talos Linux Version** screen, select v1.15.0-alpha.2 or later.
 4. On the **Machine Architecture** screen, select the server's architecture, **amd64** or **arm64**.
 5. On the **System Extensions** screen, select **siderolabs/libvirtd**.
 6. On the **Customization** screen, leave the defaults.

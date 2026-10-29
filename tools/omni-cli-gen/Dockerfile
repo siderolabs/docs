@@ -2,7 +2,7 @@
 FROM alpine:3.21 AS downloader
 
 # omnictl is released from the siderolabs/omni repository.
-ARG OMNICTL_VERSION=v1.12.4
+ARG OMNICTL_VERSION=v1.13.0
 # Populated automatically by BuildKit/buildx (e.g. amd64, arm64).
 ARG TARGETARCH=amd64
 
