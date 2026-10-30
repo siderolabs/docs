@@ -35,7 +35,7 @@ Two "flavors" of these kernel modules are provided, and both are available for u
 
 The choice between Proprietary/OSS may be decided after referencing the Official [NVIDIA announcement](https://developer.nvidia.com/blog/nvidia-transitions-fully-towards-open-source-gpu-kernel-modules/).
 
-<Tip>Some hardware may require additional system configuration and will not work with OSS drivers. Grace Blackwell (GB10) devices running with arm64 CPUs like the Nvidia DGX Spark require [Nvidia proprietary drivers](./nvidia-gpu-proprietary).</Tip>
+<Tip>Some hardware needs additional configuration to work with the OSS drivers. Grace Blackwell (GB10) devices with arm64 CPUs, like the NVIDIA DGX Spark, need a `nvidia_uvm` module parameter. See [NVIDIA GB10 on arm64](#nvidia-gb10-on-arm64). The [NVIDIA proprietary drivers](./nvidia-gpu-proprietary) work on these devices without it.</Tip>
 
 ## Enabling the NVIDIA OSS modules
 
@@ -94,6 +94,34 @@ NODE           NAMESPACE   TYPE              ID                                 
 172.31.41.27   runtime     ExtensionStatus   000.ghcr.io-siderolabs-nvidia-container-toolkit-515.65.01-v1.10.0            1         nvidia-container-toolkit         515.65.01-v1.10.0
 172.31.41.27   runtime     ExtensionStatus   000.ghcr.io-siderolabs-nvidia-open-gpu-kernel-modules-515.65.01-v1.2.0       1         nvidia-open-gpu-kernel-modules   515.65.01-v1.2.0
 ```
+
+### NVIDIA GB10 on arm64
+
+On arm64 systems with a Grace Blackwell (GB10) GPU, such as the NVIDIA DGX Spark, CUDA workloads hang with the OSS kernel modules unless heterogeneous memory management (HMM) is disabled in the `nvidia_uvm` module.
+The modules load and `nvidia-smi` works, but some CUDA kernel launches never return.
+The process spins at 100% CPU, and the kernel log shows no error.
+
+To disable HMM, add the `uvm_disable_hmm=1` parameter to the `nvidia_uvm` document in `gpu-worker-patch.yaml`:
+
+```yaml
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: nvidia_uvm
+parameters:
+  - uvm_disable_hmm=1
+```
+
+Module parameters take effect after a reboot.
+Apply the patch, reboot the node, and confirm that the parameter is set:
+
+```bash
+talosctl read /sys/module/nvidia_uvm/parameters/uvm_disable_hmm
+```
+
+The output should be `Y`.
+
+With HMM disabled, GPU code can't read ordinary pageable host memory (memory allocated with `malloc` instead of a CUDA allocator) directly.
+The NVIDIA proprietary drivers have the same limitation, and inference servers such as vLLM don't depend on it.
 
 ## Deploying NVIDIA GPU Operator
 

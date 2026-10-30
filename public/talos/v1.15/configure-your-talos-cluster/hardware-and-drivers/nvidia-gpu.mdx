@@ -35,7 +35,7 @@ Two "flavors" of these kernel modules are provided, and both are available for u
 
 The choice between Proprietary/OSS may be decided after referencing the Official [NVIDIA announcement](https://developer.nvidia.com/blog/nvidia-transitions-fully-towards-open-source-gpu-kernel-modules/).
 
-<Tip>Some hardware may require additional system configuration and will not work with OSS drivers. Grace Blackwell (GB10) devices running with arm64 CPUs like the Nvidia DGX Spark require [Nvidia proprietary drivers](./nvidia-gpu-proprietary).</Tip>
+<Tip>Some hardware needs additional configuration to work with the OSS drivers. Grace Blackwell (GB10) devices with arm64 CPUs, like the NVIDIA DGX Spark, need a `nvidia_uvm` module parameter. See [NVIDIA GB10 on arm64](#nvidia-gb10-on-arm64). The [NVIDIA proprietary drivers](./nvidia-gpu-proprietary) work on these devices without it.</Tip>
 
 ## Enabling the NVIDIA OSS modules
 
@@ -95,11 +95,41 @@ NODE           NAMESPACE   TYPE              ID                                 
 172.31.41.27   runtime     ExtensionStatus   000.ghcr.io-siderolabs-nvidia-open-gpu-kernel-modules-515.65.01-v1.2.0       1         nvidia-open-gpu-kernel-modules   515.65.01-v1.2.0
 ```
 
+### NVIDIA GB10 on arm64
+
+On arm64 systems with a Grace Blackwell (GB10) GPU, such as the NVIDIA DGX Spark, CUDA workloads hang with the OSS kernel modules unless heterogeneous memory management (HMM) is disabled in the `nvidia_uvm` module.
+The modules load and `nvidia-smi` works, but some CUDA kernel launches never return.
+The process spins at 100% CPU, and the kernel log shows no error.
+
+To disable HMM, add the `uvm_disable_hmm=1` parameter to the `nvidia_uvm` document in `gpu-worker-patch.yaml`:
+
+```yaml
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: nvidia_uvm
+parameters:
+  - uvm_disable_hmm=1
+```
+
+Module parameters take effect after a reboot.
+Apply the patch, reboot the node, and confirm that the parameter is set:
+
+```bash
+talosctl read /sys/module/nvidia_uvm/parameters/uvm_disable_hmm
+```
+
+The output should be `Y`.
+
+With HMM disabled, GPU code can't read ordinary pageable host memory (memory allocated with `malloc` instead of a CUDA allocator) directly.
+The NVIDIA proprietary drivers have the same limitation, and inference servers such as vLLM don't depend on it.
+
 ## Deploying NVIDIA GPU Operator
 
 Follow the [upstream instructions](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html) with only passing Helm chart values specific to Talos.
 
-Disable the driver and toolkit components of the GPU operator since we have already enabled them as system extensions on Talos.
+Disable the driver component of the GPU operator, because the driver is already installed as a system extension on Talos.
+Enable the toolkit component: the GPU operator installs the NVIDIA Container Toolkit under `/var/lib/nvidia` and registers it with containerd through [NRI](https://github.com/containerd/nri).
+Pods get the GPU through [CDI](https://github.com/cncf-tags/container-device-interface), which is enabled in the Talos containerd configuration, so no `nvidia` `RuntimeClass` is needed.
 
 Further custom values may be needed to be passed to the helm chart depending on the cluster configuration.
 
@@ -113,15 +143,37 @@ kubectl label --overwrite ns gpu-operator pod-security.kubernetes.io/enforce=pri
 ```bash
 helm repo add nvidia https://helm.ngc.nvidia.com/nvidia
 helm repo update
-helm upgrade --wait  --install -n gpu-operator gpu-operator nvidia/gpu-operator \
+helm upgrade --wait --install -n gpu-operator gpu-operator nvidia/gpu-operator \
   --set driver.enabled=false \
-  --set toolkit.enabled=false \
+  --set toolkit.enabled=true \
+  --set toolkit.installDir=/var/lib/nvidia \
+  --set cdi.enabled=true \
+  --set cdi.nriPluginEnabled=true \
   --set hostPaths.driverInstallDir=/usr/local
 ```
 
 ### Verification
 
 Follow the [upstream instructions](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html#verification-running-sample-gpu-applications) to verify the GPU operator installation.
+
+GPU workloads request the `nvidia.com/gpu` resource and don't set `runtimeClassName`:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cuda-test
+spec:
+  restartPolicy: OnFailure
+  containers:
+    - name: cuda-test
+      image: nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda12.5.0
+      resources:
+        limits:
+          nvidia.com/gpu: 1
+```
+
+A successful run ends with `Test PASSED` in the pod logs.
 
 ## Collecting NVIDIA GPU debug data
 
@@ -138,7 +190,6 @@ Talos does not allow direct shell access on the nodes, but you can still generat
     --image=ubuntu \
     --overrides='{
       "spec": {
-        "runtimeClassName": "nvidia",
         "hostPID": true,
         "hostNetwork": true,
         "containers": [{

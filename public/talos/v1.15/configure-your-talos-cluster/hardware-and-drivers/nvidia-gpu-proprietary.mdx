@@ -108,7 +108,9 @@ GCC version:  gcc version 11.2.0 (GCC)
 
 Follow the [upstream instructions](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html) with only passing Helm chart values specific to Talos.
 
-Disable the driver and toolkit components of the GPU operator since we have already enabled them as system extensions on Talos.
+Disable the driver component of the GPU operator, because the driver is already installed as a system extension on Talos.
+Enable the toolkit component: the GPU operator installs the NVIDIA Container Toolkit under `/var/lib/nvidia` and registers it with containerd through [NRI](https://github.com/containerd/nri).
+Pods get the GPU through [CDI](https://github.com/cncf-tags/container-device-interface), which is enabled in the Talos containerd configuration, so no `nvidia` `RuntimeClass` is needed.
 
 Further custom values may be needed to be passed to the helm chart depending on the cluster configuration.
 
@@ -124,13 +126,35 @@ helm repo add nvidia https://helm.ngc.nvidia.com/nvidia
 helm repo update
 helm upgrade --wait --install -n gpu-operator gpu-operator nvidia/gpu-operator \
   --set driver.enabled=false \
-  --set toolkit.enabled=false \
+  --set toolkit.enabled=true \
+  --set toolkit.installDir=/var/lib/nvidia \
+  --set cdi.enabled=true \
+  --set cdi.nriPluginEnabled=true \
   --set hostPaths.driverInstallDir=/usr/local
 ```
 
 ### Verification
 
 Follow the [upstream instructions](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html#verification-running-sample-gpu-applications) to verify the GPU operator installation.
+
+GPU workloads request the `nvidia.com/gpu` resource and don't set `runtimeClassName`:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cuda-test
+spec:
+  restartPolicy: OnFailure
+  containers:
+    - name: cuda-test
+      image: nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda12.5.0
+      resources:
+        limits:
+          nvidia.com/gpu: 1
+```
+
+A successful run ends with `Test PASSED` in the pod logs.
 
 ## Collecting NVIDIA GPU debug data
 
@@ -147,7 +171,6 @@ Talos does not allow direct shell access on the nodes, but you can still generat
     --image=ubuntu \
     --overrides='{
       "spec": {
-        "runtimeClassName": "nvidia",
         "hostPID": true,
         "hostNetwork": true,
         "containers": [{
