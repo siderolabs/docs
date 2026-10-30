@@ -1,0 +1,149 @@
+---
+title: "Quickstart: Zero to Running VM"
+description: Go from your first login to a running, reachable virtual machine — verifying the substrate, importing an image, and creating and connecting to a VM along the way.
+---
+
+This guide walks you from a fresh login to a running virtual machine you can open a console to. It assumes you know virtualization concepts — hypervisors, datastores, VLANs, cloud-init — but have never touched Talos Director. By the end you'll also know where everything lives, which is most of the battle with a new platform.
+
+**What you'll do:**
+
+1. Sign in and orient yourself in the console
+2. Verify the substrate: a healthy cluster, storage, and a network
+3. Get a VM image into a content library
+4. Create the VM
+5. Power it on, watch it come up, and connect
+
+<Info>
+In shared environments, Steps 2 through 5 are typically complete; but it's recommended to review them anyway. Verifying prerequisites first prevents failures during VM creation.
+</Info>
+
+## Before you start
+
+You need a Talos Director login with permission to create VMs in at least one project, and the console URL for your environment. Everything in this guide happens in the browser — no CLI required.
+
+This guide assumes your hosts are already onboarded into Talos Director.
+
+<Note>
+Starting from bare hardware? Onboard and provision your hosts first under **Compute** → **Hosts** (**Host Onboarding** and **Host Provisioning**), then return here at Step 1.
+</Note>
+
+<Steps>
+
+<Step title="Sign in and orient yourself">
+
+Sign in and land on the **Dashboard**. The left navigation is organized by concern, and four areas matter for this guide:
+
+| Area | What lives there |
+| --- | --- |
+| **Compute** | Clusters, hosts, virtual machines, storage pools — the substrate and the workloads on it. |
+| **Network** | Virtual networks, security groups, and network policies. |
+| **Templates** | Content libraries: the reusable images and templates VMs are created from. |
+| **Administration** | Settings such as instance sizes, plus users, API keys, and the approval queue. |
+
+Two console-wide tools are worth knowing immediately:
+
+- **Global search** (top bar) — spans VMs, hosts, networks, and users, and takes scoped queries like `vm:name`. It's the fastest way to get anywhere once resources exist.
+- **Projects** (top bar) — resources are scoped to projects. If you don't see what you expect anywhere in this guide, check which project you're in first.
+
+</Step>
+
+<Step title="Verify the cluster">
+
+A VM needs somewhere to run. Go to **Compute** → **Clusters** and confirm your target cluster is healthy, with hosts available and capacity to spare.
+
+The columns tell you everything you need before creating a workload:
+
+- **Hosts** and **VMs** — available hosts versus total, running VMs versus total.
+- **CPU %** and **Mem %** — *allocated* resources against physical capacity. Over 100% means the cluster is overcommitted, which is normal and by design; it is not a stop sign.
+- **RS** and **HA** — with the Resource Scheduler enabled you won't pick a host at all; the platform places the VM. With High Availability enabled, your VM restarts on a surviving host if its host fails.
+
+If no cluster exists yet, click **Create Cluster** to define one. The dialog sets overcommit ratios, Resource Scheduler automation, and High Availability in one place. See [Clusters](/director/compute/clusters) for every setting.
+
+<Note>
+Coming from other virtualization platforms? A Talos Director cluster is a *logical* grouping. Each host stays a standalone Talos/KVM system with access to shared storage; the cluster boundary is what placement, HA, and the Resource Scheduler operate within.
+</Note>
+
+</Step>
+
+<Step title="Verify storage">
+
+Your VM's disks need a datastore. Go to **Compute** → **Storage Pools** and confirm at least one pool on your target cluster is `active` with available capacity.
+
+Note the pool's **storage tier** (open the pool and check **Details** on the Overview tab). Disks are governed by storage policies, and policies target tiers — so when the Create VM flow asks for a storage policy, the tier determines which pools your disk can land on.
+
+If no pool exists on your cluster, click **Add Storage Pool** to register one, for example an NFS export with its server, path, and mount options. See [Storage Pools](/director/compute/storage-pools) for every field.
+
+</Step>
+
+<Step title="Verify a network">
+
+Your VM needs a network for its NIC. Go to **Network** → **Networks** and find a network with the right **VLAN**, **Subnet**, and **Gateway** for your use. The list shows all of it, plus how many VMs are already attached.
+
+If nothing fits, there are two paths:
+
+- **Import from ACI** — if your data center fabric is Cisco ACI, import the network definitions directly rather than re-entering them.
+- **Create Network** — define one natively: VLAN, subnet, gateway, MTU.
+
+</Step>
+
+<Step title="Get an image into a content library">
+
+VMs are created from reusable content — images and templates that live in **content libraries**. Go to **Templates** → **Content Libraries**.
+
+In a prepared environment you'll find a library already populated. Libraries can be backed by object storage such as S3, and can be subscriptions to a published library elsewhere. If you're starting truly from zero:
+
+1. Click **+ New Library** to create a library, or **Subscribe to Library** to pull from a published one.
+2. To bring in an existing VMware template, use **Import OVF** (`/content-libraries/import-ovf`). The importer converts OVF/OVA templates to KVM format:
+   - **Upload from browser** for files under 5 GB.
+   - **Use pre-staged files on NFS** for anything larger — recommended for real-world images.
+   - For an OVA, select just the `.ova`; for an OVF, select the `.ovf` plus its `.vmdk`, `.nvram`, and `.mf` files.
+3. Click **Parse & Preview** to validate before the import runs, and track progress under **Recent Import Jobs**.
+
+<Note>
+Two optional preparations pay off if you'll create more than one VM. **Instance Sizes** (**Administration** → **Settings** → **Instance Sizes**) are named CPU/memory presets — vCPUs, sockets, cores per socket, threads per core, memory — so sizing is a one-click choice. **Customization Specs** (**Compute** → **Customization Specs**) are reusable guest-customization templates, using cloud-init for Linux and cloudbase-init for Windows, so hostname, users, and network identity are applied automatically at first boot.
+</Note>
+
+</Step>
+
+<Step title="Create the VM">
+
+Go to **Compute** → **Virtual Machines** and click **Create VM**. The creation flow collects the decisions you've just verified the inputs for:
+
+- **Name and project** — how the VM appears in inventory, and who can see it.
+- **Placement** — the target cluster. With the Resource Scheduler enabled, leave host selection to the platform; it places the VM and keeps placement balanced over time.
+- **Size** — pick an instance size preset, or set vCPUs and memory directly.
+- **Image** — the content library item to create the VM from.
+- **Disks** — size and the **storage policy** governing where they land. This is where the tier from Step 3 matters.
+- **Network** — a NIC attached to the virtual network from Step 4.
+- **Customization** — optionally apply a customization spec so the guest boots configured.
+
+Create the VM. It appears in the Virtual Machines list immediately.
+
+</Step>
+
+<Step title="Power on, verify, connect">
+
+The Virtual Machines list is your verification surface. Watch your VM's row:
+
+1. **Power State** goes to `PoweredOn`. Power it on from the row's **Actions** menu if it didn't start automatically.
+2. **Guest Status** goes to `Running` once the guest OS is up and the guest agent reports in.
+3. **Hostname** and **IP Address** populate from the guest. The moment an IP appears, the VM is reachable on its network.
+
+Then connect: select the VM and use **Open Console in New Window** for direct console access, or SSH/RDP to the reported IP like any other machine.
+
+For a closer look, click the VM's name to open its detail screen. **Overview** shows placement and resources, **Metrics** shows live performance, and **Network** shows the NIC with its MAC, IP, and firewall status.
+
+</Step>
+
+</Steps>
+
+## You're running — what's next
+
+You now have the full loop: substrate → image → VM → console. A few directions worth exploring from here:
+
+- **Snapshots before risky changes** — the VM's **Snapshots** tab takes layered point-in-time snapshots you can revert to.
+- **Protection** — the **Backups** tab schedules and restores VM backups.
+- **Day-two visibility** — **Metrics**, **Events**, and **Firewall Activity** on the VM keep performance and policy evidence attached to the workload.
+- **Scale the pattern** — turn your working configuration into instance sizes, customization specs, and library templates so the next VM is a two-minute task.
+- **Automate it** — generate an API key under **Administration** → **API Keys** to script what you just did by hand.
+- **Kubernetes** — when single VMs stop being enough, the **Kubernetes** section provisions full workload clusters on the same substrate you just used. See [Kubernetes Clusters](/director/kubernetes/kubernetes-clusters).
