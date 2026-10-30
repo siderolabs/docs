@@ -1,0 +1,208 @@
+---
+title: "Run Your First Talos Container"
+description: "Declare a container in a ContainerConfig document, apply it to a Talos Linux machine without a reboot, check that it runs, update its image, and remove it."
+canonical: https://docs.siderolabs.com/talos/v1.14/talos-containers/run-your-first-talos-container
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos Linux runs Talos Containers from the machine configuration.
+Each container is declared in a [`ContainerConfig`](../reference/configuration/container/containerconfig) document.
+Talos pulls the container's image, starts the container, and restarts it whenever it exits.
+
+This page declares a container named `web-server`, verifies that it runs, shows how to update its image, and removes it.
+
+## Before you begin
+
+The steps on this page require:
+
+- A Talos Linux v1.14 machine that meets the [requirements for Talos Containers](./requirements). A machine in a local [Docker](../platform-specific-installations/local-platforms/docker) or [QEMU](../platform-specific-installations/local-platforms/qemu) cluster works.
+- `talosctl` v1.14 or later, configured with the `os:admin` role for the machine.
+
+## Step 1: Set the variables
+
+The commands on this page read their values from variables.
+
+Set each variable, replacing the placeholder with your own value:
+
+```bash
+export NODE=<node-ip>      # e.g. 192.168.1.10
+export IMAGE=<image>       # e.g. docker.io/traefik/whoami:v1.11.0
+```
+
+The variables hold the following values:
+
+- **`NODE`**: The IP address of the Talos Linux machine.
+- **`IMAGE`**: The image the container runs.
+
+## Step 2: Declare and apply the container
+
+A `ContainerConfig` document is added to the machine configuration as a patch.
+Talos applies it without a reboot.
+
+The following steps declare the container and apply it to the machine.
+
+1. Run the following command to create `container.yaml`, which declares the container:
+
+   ```bash
+   cat <<EOF > container.yaml
+   apiVersion: v1alpha1
+   kind: ContainerConfig
+   name: web-server
+   image: ${IMAGE}
+   runAs:
+     uid: 65534
+     gid: 65534
+   network:
+     mode: host
+   EOF
+   ```
+
+   The document sets up the container as follows:
+
+   - **`runAs`**: Runs the container as uid and gid 65534. Without `runAs`, a container whose image does not set a numeric user runs as root on the host.
+   - **`network.mode: host`**: Puts the container on the machine's network, so it is reachable on the machine's IP address.
+   - **Security profile**: The document does not set one, so the container uses the default `restricted` profile. This profile grants no capabilities and makes the root filesystem read-only. For more information on changing a container's security profile, see [Configure Security](./configure-security).
+   - **Image tag**: A tag can point to a different image over time, but a digest always points to the same image. For this reason, a digest such as `registry.example.com/web-server@sha256:...` is recommended for production.
+
+   For more fields and their definitions, see the [`ContainerConfig` reference](../reference/configuration/container/containerconfig).
+
+   <Note>
+   The document sets no environment variables.
+   An image that needs them, such as a setting for its port, takes them in an `environment` field.
+   For example, the `docker.io/traefik/whoami` image listens on port 80 unless `WHOAMI_PORT_NUMBER` sets another port.
+   Port 80 needs a capability that the default security profile does not grant, so this image needs an `environment` field in `container.yaml`, at the same level as `image`:
+
+   ```yaml
+   environment:
+     - WHOAMI_PORT_NUMBER=8080
+   ```
+   </Note>
+
+2. Apply `container.yaml` to the machine:
+
+   ```bash
+   talosctl patch machineconfig --nodes $NODE --patch container.yaml
+   ```
+
+   If the image is referenced by a tag, `talosctl` prints a warning that the image is not digest-pinned.
+   Talos then pulls the image and starts the container.
+
+To learn more about adding and removing machine configuration documents, see [Patching](../configure-your-talos-cluster/system-configuration/patching).
+
+## Step 3: Verify that the container is running
+
+Talos creates Talos Containers in the `taloscontainers` containerd namespace, so the commands in this step use the `--namespace taloscontainers` flag to work with them.
+
+The following steps list the container and read its logs.
+
+1. List the containers in the namespace:
+
+   ```bash
+   talosctl containers --nodes $NODE --namespace taloscontainers
+   ```
+
+   The output lists a container with the ID `web-server-0`.
+   The number after the name is a generation.
+   It increases each time Talos replaces the container.
+
+2. Read the container's logs:
+
+   ```bash
+   talosctl logs --nodes $NODE --namespace taloscontainers web-server
+   ```
+
+## Step 4 (optional): Update the container's image
+
+To update a container's image, change the `image` value in its `ContainerConfig` document and apply the document again.
+Talos stops the running container and starts a new one from the new image.
+
+<Note>
+Applying a patch merges it into the existing document.
+A single value, such as `image`, is replaced.
+A list, such as `entrypoint` or `args`, is extended instead, with the new items added to the end.
+To replace a list, delete the document with a `$patch: delete` patch first, then apply the new version.
+</Note>
+
+The following example assumes that the container runs `docker.io/traefik/whoami:v1.11.0` on port 8080, and updates it to `docker.io/traefik/whoami:v1.12.0`.
+
+1. Run the following command to recreate `container.yaml` with the new image:
+
+   ```bash
+   cat <<'EOF' > container.yaml
+   apiVersion: v1alpha1
+   kind: ContainerConfig
+   name: web-server
+   image: docker.io/traefik/whoami:v1.12.0
+   environment:
+     - WHOAMI_PORT_NUMBER=8080
+   runAs:
+     uid: 65534
+     gid: 65534
+   network:
+     mode: host
+   EOF
+   ```
+
+2. Apply the updated document:
+
+   ```bash
+   talosctl patch machineconfig --nodes $NODE --patch container.yaml
+   ```
+
+3. Confirm that Talos replaced the container:
+
+   ```bash
+   talosctl containers --nodes $NODE --namespace taloscontainers
+   ```
+
+## Step 5: Remove the container
+
+A container runs for as long as its document is in the machine configuration.
+Removing the document stops the container and deletes it.
+
+The following steps remove the container and confirm that it is deleted.
+
+1. Run the following command to create `container-delete.yaml`, a patch that deletes the `web-server` document:
+
+   ```bash
+   cat <<'EOF' > container-delete.yaml
+   apiVersion: v1alpha1
+   kind: ContainerConfig
+   name: web-server
+   $patch: delete
+   EOF
+   ```
+
+   The `$patch: delete` line tells Talos to remove the `ContainerConfig` document named `web-server` from the machine configuration.
+
+2. Apply the patch to the machine:
+
+   ```bash
+   talosctl patch machineconfig --nodes $NODE --patch container-delete.yaml
+   ```
+
+3. Confirm that `web-server` no longer appears in the list of containers:
+
+   ```bash
+   talosctl containers --nodes $NODE --namespace taloscontainers
+   ```
+
+Talos deletes an image 75 to 90 minutes after no Talos Container uses it.
+
+To list the images that are still on the machine, run:
+
+```bash
+talosctl image list --nodes $NODE --namespace taloscontainers
+```
+
+## Next steps
+
+The following pages build on this tutorial:
+
+- **[How Talos Containers Work](./how-talos-containers-work)**: The lifecycle and security model behind the steps on this page.
+- **[Configure Security](./configure-security)**: How to set security profiles, capabilities, users, and Talos API access.
+- **[Configure Resource Limits](./configure-resource-limits)**: How to limit the CPU and memory a container uses.
+- **[Inspect and Troubleshoot Talos Containers](./inspect-and-troubleshoot-talos-containers)**: How to check status and logs, and fix common failures.

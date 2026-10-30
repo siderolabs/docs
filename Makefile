@@ -94,6 +94,7 @@ docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multipl
 		omni.yaml \
 		director.yaml \
 		hypervisor.yaml \
+		talos-containers.yaml \
 		kubernetes-guides.yaml \
 		changelog.yaml \
 		> public/docs.json
@@ -112,6 +113,7 @@ docs.json-local: common.yaml omni.yaml tools/docs-gen/main.go ## Generate docs.j
 		../../omni.yaml \
 		../../director.yaml \
 		../../hypervisor.yaml \
+		../../talos-containers.yaml \
 		../../kubernetes-guides.yaml \
 		../../changelog.yaml \
 		> ../../public/docs.json
@@ -131,6 +133,7 @@ check-missing: ## Check for MDX files not included in config files
 		omni.yaml \
 		director.yaml \
 		hypervisor.yaml \
+		talos-containers.yaml \
 		kubernetes-guides.yaml \
 		changelog.yaml
 
@@ -149,6 +152,7 @@ check-missing-local: ## Check for missing files using local Go build
 		../../omni.yaml \
 		../../director.yaml \
 		../../hypervisor.yaml \
+		../../talos-containers.yaml \
 		../../kubernetes-guides.yaml \
 		../../changelog.yaml
 
