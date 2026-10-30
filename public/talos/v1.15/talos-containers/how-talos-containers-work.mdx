@@ -1,0 +1,192 @@
+---
+title: "How Talos Containers Work"
+description: "How Talos Containers run OCI containers from a ContainerConfig document alongside Kubernetes, how their security model works, and when to use them instead of extension services, static pods, or Kubernetes workloads."
+canonical: https://docs.siderolabs.com/talos/v1.14/talos-containers/how-talos-containers-work
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos Containers are OCI containers that Talos Linux runs and manages itself, without Kubernetes.
+Each container is declared in a `ContainerConfig` document in the machine configuration.
+Talos starts the container when the document is applied, without an image rebuild or a reboot.
+The container keeps running for as long as the document exists.
+
+Talos Containers suit a small number of long-running services that belong to the machine rather than to the cluster.
+Examples include infrastructure agents, infrastructure providers, and storage daemons.
+Talos Containers run on machines that are part of a Kubernetes cluster.
+
+## Choosing how to run a service
+
+Talos Linux offers four ways to run a long-running process on a machine.
+They differ in where the process is declared, how changes reach the machine, and what must run first.
+
+The following table compares them:
+
+| | Talos Containers | Extension services | Static pods | Kubernetes workloads |
+| --- | --- | --- | --- | --- |
+| Declared in | A `ContainerConfig` document | A system extension in the Talos image | A `KubeStaticPodConfig` document | The Kubernetes API |
+| Image source | Pulled from a registry | Built into the Talos image | Pulled by the kubelet | Pulled by the kubelet |
+| To change it | Apply the document | Build a new Talos image and upgrade | Apply the document | Roll out a Kubernetes update |
+| Can start | Once CRI containerd is running | Early in boot | Once the kubelet is running | Once the cluster is running |
+| Checked with | `talosctl containers --namespace taloscontainers` | `talosctl services` | `kubectl get pods` | `kubectl get pods` |
+
+{/* TODO(Maja): issue #882 asks for your view on where these boundaries sit. Confirm the guidance below before merge. */}
+
+Each option fits a different kind of workload:
+
+- **Talos Containers**: Services that belong to one machine and run independently of Kubernetes. They are a good choice for software that changes often, because updating it does not require a new Talos image. Examples include infrastructure agents, Omni infrastructure providers, and storage daemons.
+- **[Extension services](../build-and-extend-talos/custom-images-and-development/extension-services)**: Software that must start early in boot, before the network and the container runtime are ready, or that must ship inside a signed Talos image.
+- **[Static pods](../configure-your-talos-cluster/images-container-runtime/static-pods)**: Pods that must run before the Kubernetes API server is available but should still appear in Kubernetes.
+- **Kubernetes workloads**: Anything that benefits from scheduling, replicas, rolling updates, and the rest of the Kubernetes API.
+
+## How Talos runs a container
+
+Each `ContainerConfig` document declares one container, and the document's `name` identifies it.
+A machine runs several containers by having several documents.
+
+The following document runs a small web server on port 8080 of the host network, as an unprivileged user:
+
+```yaml
+apiVersion: v1alpha1
+kind: ContainerConfig
+name: whoami
+image: docker.io/traefik/whoami:v1.11.0
+environment:
+  - WHOAMI_PORT_NUMBER=8080
+runAs:
+  uid: 65534
+  gid: 65534
+network:
+  mode: host
+```
+
+If the document does not set the entrypoint, arguments, working directory, or user, Talos uses the values from the image.
+For environment variables, Talos uses the image's variables plus the document's.
+When both set the same variable, the value in the document wins.
+The [`ContainerConfig` reference](../reference/configuration/container/containerconfig) lists every field.
+
+Talos Containers run on CRI containerd, the same container runtime that Kubernetes uses.
+They live in their own containerd namespace, called `taloscontainers`.
+Talos pulls each container's image from a registry when the document is applied, unless the image is already on the machine.
+
+## Container lifecycle
+
+Talos keeps each running container matched to its `ContainerConfig` document.
+When the document changes, the container changes with it.
+
+A container starts once CRI containerd is running and the container's start conditions are met.
+The `dependsOn` field sets those conditions.
+A container can wait for a host path to exist, for the network to be ready, for the clock to be synchronized, or for another container to run.
+
+Talos applies changes to a `ContainerConfig` document without a reboot.
+Each kind of change affects the container differently:
+
+- **Applying a new document** pulls the image and starts the container.
+- **Changing a document** stops the container and starts a new one with the new settings.
+- **Removing a document** stops the container and deletes it.
+
+<Note>
+Applying a patch merges it into the existing document.
+A single value, such as `image`, is replaced.
+A list, such as `entrypoint` or `args`, is extended instead, with the new items added to the end.
+To replace a list, delete the document with a `$patch: delete` patch first, then apply the new version.
+</Note>
+
+To stop a container, Talos sends `SIGTERM` to every process in it, which gives them a chance to shut down cleanly.
+If the container is still running 10 seconds later, Talos sends `SIGKILL`, which ends the processes immediately.
+Software that runs in a Talos Container therefore needs to finish its shutdown within 10 seconds of receiving `SIGTERM`.
+
+When a container exits, Talos starts it again 5 seconds later.
+This happens whether the container crashed or finished its work.
+Long-running services recover from crashes on their own, but a container that is meant to run once and exit runs again every 5 seconds.
+Talos Containers have no restart policy to change this yet.
+
+<Note>
+Talos Containers are not Talos services.
+They do not appear in `talosctl services`, and `talosctl service <name> start`, `stop`, and `restart` do not work on them.
+The `ContainerConfig` document is the only way to control a container, so stopping a container means removing its document.
+[Inspect and Troubleshoot Talos Containers](./inspect-and-troubleshoot-talos-containers) covers the `talosctl` commands that work on Talos Containers.
+</Note>
+
+## Security model
+
+A Talos Container shares the host kernel and runs with the permissions that its document grants.
+This section covers the user a container runs as, its security profile, its mounts, how Talos isolates it, and how secrets in its document are protected.
+
+### Users and root
+
+Talos Containers do not use user namespaces.
+A process that runs as uid 0 inside a container is root on the host.
+The security profile, the mounts, and the isolation described below are what limit that process.
+
+The `runAs` field sets the user.
+When `runAs` is not set, the container uses the image's `USER`.
+Talos only applies an image `USER` that is a number.
+An image that names its user, such as `USER nginx`, runs as root unless the document sets `runAs`.
+
+### Security profiles
+
+The `security.profile` field sets the starting permissions for a container.
+
+Talos has two security profiles:
+
+| Profile | Capabilities | Devices | Root filesystem |
+| --- | --- | --- | --- |
+| `restricted` (default) | None | No host devices | Read-only |
+| `privileged` | All except `SYS_BOOT` and `SYS_MODULE` | All devices | Writable |
+
+`privileged` grants the same permissions that extension services have.
+Both profiles mount sysfs read-only.
+Individual capabilities can be added to or removed from either profile, as described in [Configure Security](./configure-security).
+
+### Mounts
+
+A container's filesystem holds only its image and the host paths that its document mounts.
+
+Talos supports three mount sources:
+
+- **`userVolume`** mounts a volume declared by a [`UserVolumeConfig`](../reference/configuration/block/uservolumeconfig) document. The container waits for the volume before it starts. This is the mount source for data that must persist.
+- **`tmpfs`** mounts an in-memory filesystem for temporary files. Its contents are lost when the container stops.
+- **`hostPath`** mounts an existing path from the host. It gives the widest access of the three, because it can expose any part of the host.
+
+Mounts are writable unless their options include `ro`.
+
+### Isolation
+
+Each container runs in its own cgroup.
+When SELinux is enabled, each container also runs in its own SELinux domain.
+Every container also runs with the `no_new_privs` flag and containerd's default seccomp profile, whatever its security profile.
+[Configure Security](./configure-security) covers adjusting capabilities and the user.
+
+### Secrets
+
+Environment variables in a `ContainerConfig` document, and files delivered with an `EtcFileConfig` document, are part of the machine configuration.
+They have the same protection as the rest of the machine configuration.
+Through the Talos API, only the `os:admin` role can read it.
+
+Copies of the machine configuration kept outside the machine, such as in version control, carry these values too and need the same protection.
+
+## Current limitations
+
+Some container features are not available yet.
+
+The following are not supported:
+
+- **Open-file limit**: Containers can have at most 1024 open files, and the limit cannot be changed.
+- **ConfigMap-style volumes**: There is no dedicated way to pass a file to a container. A file written with an `EtcFileConfig` document and mounted with `hostPath` works instead, as shown in [Add Storage and Configuration Files](./add-storage-and-configuration-files).
+- **Custom seccomp profiles**: Every container uses containerd's default seccomp profile.
+- **Restart policies**: Every container restarts when it exits, so one-time jobs are not supported.
+- **Shell access**: There is no way to open a shell in a container, and `talosctl debug` does not support the `taloscontainers` namespace.
+- **Omni**: Omni does not manage Talos Containers yet.
+
+## Next steps
+
+The following pages build on this one:
+
+- **[Requirements](./requirements)**: What a machine needs to run Talos Containers.
+- **[Run Your First Talos Container](./run-your-first-talos-container)**: A walkthrough that declares, updates, and removes a container.
+- **[Configure Security](./configure-security)**: How to set security profiles, capabilities, users, and Talos API access.
+- **[Configure Resource Limits](./configure-resource-limits)**: How to limit the CPU and memory a container uses.
+- **[Inspect and Troubleshoot Talos Containers](./inspect-and-troubleshoot-talos-containers)**: How to check status and logs, and fix common failures.
