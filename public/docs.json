@@ -2872,7 +2872,10 @@
             "group": "Overview",
             "pages": [
               "director/overview/what-is-talos-director",
-              "director/overview/how-talos-director-works"
+              "director/overview/how-talos-director-works",
+              "director/overview/vsphere-concepts",
+              "director/overview/requirements",
+              "director/overview/api-and-automation"
             ]
           },
           {
