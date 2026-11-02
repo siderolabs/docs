@@ -11,6 +11,8 @@ The Image Factory is a critical component of Omni to generate installation media
 
 ## Prerequisites
 
+Running the Image Factory requires a container registry and an image cache signing key, which the sections below set up, and optionally an image cache storage location. It also requires the following tools on the host:
+
 * [`talosctl`](../../talos/latest/getting-started/talosctl)
 * [`crane`](https://github.com/google/go-containerregistry/blob/main/cmd/crane/README.md)
 * `docker` or `podman`
@@ -253,7 +255,7 @@ Generate a cosign key.
 
 ```bash
 docker run --rm -it \
-  -v $PWD:/keys:ro,Z -w /keys \
+  -v $PWD:/keys:Z -w /keys \
   -e COSIGN_PASSWORD="" \
   --user $(id -u):$(id -g) \
   ghcr.io/sigstore/cosign/cosign:v2.6.1 \
@@ -318,7 +320,6 @@ artifacts:
       registry: $REGISTRY_ENDPOINT
     external:
       registry: $REGISTRY_ENDPOINT
-      repository: "talos"
       namespace: "siderolabs"
 containerSignature:
   publicKeyFile: /cosign.pub
