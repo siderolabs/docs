@@ -116,8 +116,8 @@ sudo firewall-cmd --permanent --add-port=5000/tcp
 sudo firewall-cmd --permanent --add-port=8080/tcp
 sudo firewall-cmd --permanent --add-port=5556/tcp
 sudo firewall-cmd --permanent --add-port=443/tcp
-sudo firewall-cmd --permanent --add-port=8090/udp
-sudo firewall-cmd --permanent --add-port=8091/tcp
+sudo firewall-cmd --permanent --add-port=8090/tcp
+sudo firewall-cmd --permanent --add-port=50180/udp
   ```
 
   </Tab>
@@ -130,8 +130,8 @@ sudo ufw allow 5000/tcp
 sudo ufw allow 8080/tcp
 sudo ufw allow 5556/tcp
 sudo ufw allow 443/tcp
-sudo ufw allow 8090/udp
-sudo ufw allow 8091/tcp
+sudo ufw allow 8090/tcp
+sudo ufw allow 50180/udp
   ```
   </Tab>
 </Tabs>
@@ -442,6 +442,19 @@ On the remote machine load the archive into the local image storage and then pus
 {`docker load -i omni.tar\ndocker push \${REGISTRY_ENDPOINT}/siderolabs/omni:${omni_release}`}
 </CodeBlock>
 
+### Accept the EULA
+
+Omni requires acceptance of the [End User License Agreement](https://siderolabs.com/eula/) (EULA) to start. Acceptance is recorded the first time Omni starts with a name and email address, and starting Omni with a different name or email updates the record.
+
+The command in [Start Omni container](#start-omni-container) sets the `--eula-accept-name` and `--eula-accept-email` flags from the `EULA_NAME` and `EULA_EMAIL` environment variables. Set them to your own values:
+
+```bash
+export EULA_NAME="Your Name"
+export EULA_EMAIL="your@email.com"
+```
+
+To accept the EULA in an Omni configuration file instead, see [`eulaAccept`](../reference/omni-configuration#eulaaccept) in the Omni configuration reference.
+
 ### Start Omni container
 
 This will run Omni with an embedded etcd database mounted to the host. It is not recommended for production use cases. The command assumes the certificates generated earlier are available in the local directory where you run this command.
@@ -449,12 +462,16 @@ This will run Omni with an embedded etcd database mounted to the host. It is not
 <Info>If running Omni with podman you'll need to use `sudo` so the wireguard endpoints and low level ports can be mapped</Info>
 
 <CodeBlock lang="sh">
-{`docker run \\\n  --name omni \\\n  -d --net=host \\\n  --cap-add=NET_ADMIN \\\n  --device /dev/net/tun:/dev/net/tun \\\n  -v "\${PWD}/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro,Z" \\\n  -v "\${PWD}/etcd:/_out/etcd:rw,Z" \\\n  -v "\${PWD}/sqlite:/_out/sqlite:rw,Z" \\\n  -v "\${PWD}/server-key.pem:/server-key.pem:ro,Z" \\\n  -v "\${PWD}/server-chain.pem:/server-chain.pem:ro,Z" \\\n  -v "\${PWD}/omni.asc:/omni.asc:ro,Z" \\\n  \${REGISTRY_ENDPOINT}/siderolabs/omni:${omni_release} \\\n    --name=air-gap-omni \\\n    --cert=/server-chain.pem \\\n    --key=/server-key.pem \\\n    --siderolink-api-cert=/server-chain.pem \\\n    --siderolink-api-key=/server-key.pem \\\n    --private-key-source=file:///omni.asc \\\n    --event-sink-port=8091 \\\n    --bind-addr=0.0.0.0:443 \\\n    --siderolink-api-bind-addr=0.0.0.0:8090 \\\n    --k8s-proxy-bind-addr=0.0.0.0:8100 \\\n    --advertised-api-url=https://omni.internal \\\n    --siderolink-api-advertised-url=https://omni.internal:8090 \\\n    --siderolink-wireguard-advertised-addr=\$(hostname -I | awk '{print \$1}'):50180 \\\n    --advertised-kubernetes-proxy-url=https://omni.internal:8100 \\\n    --auth-auth0-enabled=false \\\n    --auth-oidc-enabled=true \\\n    --auth-oidc-client-secret=aW50ZXJuYWwtc2lkZXJvLXN0YWNrCg== \\\n    --auth-oidc-provider-url=https://\${AUTH_ENDPOINT} \\\n    --auth-oidc-client-id=omni \\\n    --auth-oidc-scopes=openid,profile,email \\\n    --image-factory-address=https://\${FACTORY_ENDPOINT} \\\n    --initial-users=admin@omni.internal \\\n    --kubernetes-registry=\${REGISTRY_ENDPOINT}/siderolabs/kubelet \\\n    --sqlite-storage-path=/_out/sqlite/omni.db \\\n    --talos-installer-registry=\${REGISTRY_ENDPOINT}/siderolabs/installer \\\n    --workload-proxying-enabled=false \\\n    --metrics-bind-addr=0.0.0.0:2123`}
+{`docker run \\\n  --name omni \\\n  -d --net=host \\\n  --cap-add=NET_ADMIN \\\n  --device /dev/net/tun:/dev/net/tun \\\n  -v "\${PWD}/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro,Z" \\\n  -v "\${PWD}/etcd:/_out/etcd:rw,Z" \\\n  -v "\${PWD}/sqlite:/_out/sqlite:rw,Z" \\\n  -v "\${PWD}/server-key.pem:/server-key.pem:ro,Z" \\\n  -v "\${PWD}/server-chain.pem:/server-chain.pem:ro,Z" \\\n  -v "\${PWD}/omni.asc:/omni.asc:ro,Z" \\\n  -e OMNI_AUTH_OIDC_CLIENT_SECRET=aW50ZXJuYWwtc2lkZXJvLXN0YWNrCg== \\\n  \${REGISTRY_ENDPOINT}/siderolabs/omni:${omni_release} \\\n    --name=air-gap-omni \\\n    --cert=/server-chain.pem \\\n    --key=/server-key.pem \\\n    --machine-api-cert=/server-chain.pem \\\n    --machine-api-key=/server-key.pem \\\n    --private-key-source=file:///omni.asc \\\n    --event-sink-port=8091 \\\n    --bind-addr=0.0.0.0:443 \\\n    --machine-api-bind-addr=0.0.0.0:8090 \\\n    --k8s-proxy-bind-addr=0.0.0.0:8100 \\\n    --advertised-api-url=https://omni.internal \\\n    --machine-api-advertised-url=https://omni.internal:8090 \\\n    --siderolink-wireguard-advertised-addr=\$(hostname -I | awk '{print \$1}'):50180 \\\n    --advertised-kubernetes-proxy-url=https://omni.internal:8100 \\\n    --auth-auth0-enabled=false \\\n    --auth-oidc-enabled=true \\\n    --auth-oidc-provider-url=https://\${AUTH_ENDPOINT} \\\n    --auth-oidc-client-id=omni \\\n    --auth-oidc-scopes=openid,profile,email \\\n    --primary-factory-url=https://\${FACTORY_ENDPOINT} \\\n    --initial-users=admin@omni.internal \\\n    --kubernetes-registry=\${REGISTRY_ENDPOINT}/siderolabs/kubelet \\\n    --sqlite-storage-path=/_out/sqlite/omni.db \\\n    --workload-proxying-enabled=false \\\n    --metrics-bind-addr=0.0.0.0:2123 \\\n    --eula-accept-name="\${EULA_NAME}" \\\n    --eula-accept-email="\${EULA_EMAIL}"`}
 </CodeBlock>
 
 >We changed the `--metrics-bind-addr` to use port `:2123` to avoid port conflicts with Image Factory (if it's running on the same host).
 
 These flags mount the files and directories needed by Omni (e.g. certificates, etcd storage) and set flags to connect Omni to the upstream services (e.g. factory, authentication).
+
+The OIDC client secret from the Dex configuration is set with the `OMNI_AUTH_OIDC_CLIENT_SECRET` environment variable.
+
+Omni installs Talos Linux from the Image Factory set with `--primary-factory-url`, and does not use a separate installer registry. Each machine's install image comes from that Image Factory, for example `factory.internal:8080/metal-installer/<schematic-id>:<talos-version>`, so machines need to reach the Image Factory and trust its certificate.
 
 <Info>If you are running with SELinux enforcing you'll need to use `audit2allow` to allow the Omni container to create wireguard tunnels. Something like `sudo ausearch -m avc -ts recent | grep -v mlsconstrain | audit2allow -M omni-container` should work.</Info>
 
