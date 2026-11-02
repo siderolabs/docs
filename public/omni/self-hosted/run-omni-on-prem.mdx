@@ -16,14 +16,13 @@ You will need:
 - **Docker** installed on the host
 - The following ports open and accessible:
 
-| Port | Protocol | Purpose |
-|------|----------|---------|
-| 443 | TCP | Omni UI and API |
-| 8090 | TCP | SideroLink API |
-| 8091 | TCP | Event sink |
-| 8100 | TCP | Kubernetes proxy |
-| 5556 | TCP | Dex OIDC |
-| 50180 | UDP | WireGuard |
+| Port | Protocol | Reached by | Purpose |
+|------|----------|------------|---------|
+| 443 | TCP | Users | Omni UI and API |
+| 8090 | TCP | Machines | SideroLink API |
+| 8100 | TCP | Users | Kubernetes proxy, for `kubectl` access to clusters |
+| 5556 | TCP | Users | Dex OIDC login |
+| 50180 | UDP | Machines | SideroLink WireGuard tunnel |
 
 ## Step 1: Install Docker
 
@@ -310,59 +309,30 @@ This command creates the directory on the host that will be mounted into the con
 mkdir -p $HOME/sqlite
 ```
 
-### 7.4: Configure EULA acceptance
+### 7.4: Accept the EULA
 
-Self-hosted Omni requires the first user to accept the End User License Agreement (EULA) before the instance can be used. Until the EULA is accepted, all UI and CLI actions are blocked at the API level.
-
-You can accept the EULA programmatically when starting Omni by using CLI flags or a configuration file, or you can complete acceptance through the Omni UI after **Step 9**. Choose the method that best fits your deployment workflow.
+Omni requires acceptance of the [End User License Agreement](https://siderolabs.com/eula/) (EULA) to start. Acceptance is recorded the first time Omni starts with a name and email address, and starting Omni with a different name or email updates the record.
 
 <Note>
-If your organization has a separate agreement with Sidero Labs, that agreement takes precedence and the EULA does not apply.
+If your organization has a separate agreement with Sidero Labs, that agreement takes precedence and the EULA does not apply. Omni still requires the acceptance values below to start.
 </Note>
 
-<Tabs>
-  <Tab title="CLI flags">
+The commands in **Step 7.5** set the `--eula-accept-name` and `--eula-accept-email` flags from the `EULA_NAME` and `EULA_EMAIL` environment variables. Set them to your own values:
 
-  You can pass your EULA details as CLI flags when starting your Omni instance in **Step 7.5**:
+```bash
+export EULA_NAME="Your Name"
+export EULA_EMAIL="your@email.com"
+```
 
-  ```bash
-  --eula-accept-name="John Doe"
-  --eula-accept-email="john@doe.com"
-  ```
-  
-  You can also store this information as environment variables and pass them to your Omni instance. Replace the placeholders with your own values:
-
-  ```bash
-  export EULA_NAME="Your Name"
-  export EULA_EMAIL="your@email.com"
-  ```
-
-  </Tab>
-  <Tab title="Configuration file">
-
-  If you prefer to configure EULA acceptance using the Omni configuration file, and you are passing the configuration using the `--config-path` flag, add the following to your configuration file instead. Replace the placeholders with your own values:
- 
-  ```yaml
-  eulaAccept:
-    name: Your Name
-    email: your@email.com
-  ```
- 
-  See the [Omni configuration reference](../reference/omni-configuration) for the full list of supported options.
-  
-  </Tab>
-  <Tab title="UI">
-  If you prefer to accept the EULA through the browser, skip this step and continue to **Step 7.5** without the EULA flags.
-
-  When you open the Omni UI in **Step 9.4**, Omni redirects you to `/eula`, where you must complete EULA acceptance before you can log in.
-  </Tab>
-</Tabs>
+To accept the EULA in an Omni configuration file instead, see [`eulaAccept`](../reference/omni-configuration#eulaaccept) in the Omni configuration reference.
 
 ### 7.5: Start Omni
 
 Choose the etcd mode that matches your setup. Embedded etcd is suitable for a single Omni instance. External etcd is required for high availability or if you need to manage the datastore independently.
 
 The commands below use CLI flags to start Omni. If you prefer to use a configuration file instead, see [Omni configuration Examples](../reference/omni-configuration).
+
+The OIDC client secret from **Step 6.2** is set with the `OMNI_AUTH_OIDC_CLIENT_SECRET` environment variable.
 
 <Tabs>
   <Tab title="Embedded etcd (default)">
@@ -382,6 +352,7 @@ The commands below use CLI flags to start Omni. If you prefer to use a configura
     --cap-add=NET_ADMIN \
     --device /dev/net/tun:/dev/net/tun \
     --restart=unless-stopped \
+    -e OMNI_AUTH_OIDC_CLIENT_SECRET=omni-dex-secret \
     -v $(pwd)/combined-ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro,Z \
     -v $(pwd)/server-key.pem:/server-key.pem:ro,Z \
     -v $(pwd)/server-chain.pem:/server-chain.pem:ro,Z \
@@ -400,14 +371,13 @@ The commands below use CLI flags to start Omni. If you prefer to use a configura
       --bind-addr=0.0.0.0:443 \
       --k8s-proxy-bind-addr=0.0.0.0:8100 \
       --advertised-api-url=https://${OMNI_ENDPOINT}/ \
-      --siderolink-api-advertised-url=https://${OMNI_ENDPOINT}:8090/ \
+      --machine-api-advertised-url=https://${OMNI_ENDPOINT}:8090/ \
       --siderolink-wireguard-advertised-addr=${HOST_PUBLIC_IP}:50180 \
       --advertised-kubernetes-proxy-url=https://${OMNI_ENDPOINT}:8100/ \
       --auth-auth0-enabled=false \
       --auth-oidc-enabled=true \
       --auth-oidc-provider-url=https://${AUTH_ENDPOINT}:5556 \
       --auth-oidc-client-id=omni \
-      --auth-oidc-client-secret=omni-dex-secret \
       --auth-oidc-scopes=openid \
       --auth-oidc-scopes=profile \
       --auth-oidc-scopes=email \
@@ -438,6 +408,7 @@ The commands below use CLI flags to start Omni. If you prefer to use a configura
     --cap-add=NET_ADMIN \
     --device /dev/net/tun:/dev/net/tun \
     --restart=unless-stopped \
+    -e OMNI_AUTH_OIDC_CLIENT_SECRET=omni-dex-secret \
     -v $(pwd)/combined-ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro,Z \
     -v $(pwd)/server-key.pem:/server-key.pem:ro,Z \
     -v $(pwd)/server-chain.pem:/server-chain.pem:ro,Z \
@@ -458,7 +429,7 @@ The commands below use CLI flags to start Omni. If you prefer to use a configura
       --bind-addr=0.0.0.0:443 \
       --k8s-proxy-bind-addr=0.0.0.0:8100 \
       --advertised-api-url=https://${OMNI_ENDPOINT}/ \
-      --siderolink-api-advertised-url=https://${OMNI_ENDPOINT}:8090/ \
+      --machine-api-advertised-url=https://${OMNI_ENDPOINT}:8090/ \
       --siderolink-wireguard-advertised-addr=${HOST_PUBLIC_IP}:50180 \
       --advertised-kubernetes-proxy-url=https://${OMNI_ENDPOINT}:8100/ \
       --etcd-embedded=false \
@@ -467,7 +438,6 @@ The commands below use CLI flags to start Omni. If you prefer to use a configura
       --auth-oidc-enabled=true \
       --auth-oidc-provider-url=https://${AUTH_ENDPOINT}:5556 \
       --auth-oidc-client-id=omni \
-      --auth-oidc-client-secret=omni-dex-secret \
       --auth-oidc-scopes=openid \
       --auth-oidc-scopes=profile \
       --auth-oidc-scopes=email \
@@ -561,7 +531,13 @@ Add the CA to your local machine's system trust store. This tells your browser a
   ```
   </Tab>
   <Tab title="macOS">
-  For macOS you should open the *Keychain Access* application and drag the `ca.pem` file into the window to install it.
+  On macOS, add the CA to the System keychain as a trusted root. Run the command from the directory that contains `ca.pem`, and enter your password when prompted:
+
+  ```bash
+  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ca.pem
+  ```
+
+  Restart the browser to apply the new trust setting.
   </Tab>
   <Tab title="Windows">
   On Windows you should rename the certificate extension from `.pem` to `.crt`. You can then double click on the file and select *Install Certificate* -> *Local Machine*. You then need to select "Place all certificates in the following store" and select the *Trusted Root Certification Authorities*.
@@ -595,4 +571,51 @@ Map the Omni and Dex hostnames to your host's public IP so your local machine ca
 
 ### 9.4: Log into Omni
 
-Open `https://omni.internal` in your browser and sign in with the email and password you set in **Step 6.2**.
+Open `https://omni.internal` in your browser and sign in with the email from **Step 3** and the password from **Step 6.1**.
+
+## Step 10: Connect machines
+
+Machines connect to Omni through the SideroLink API at `https://omni.internal:8090`. Because `omni.internal` is not a public DNS name and its certificate is signed by the CA from **Step 4**, machines need to resolve the hostname and trust the CA. Each requirement is met by the following:
+
+- **Name resolution:** A DNS record for `omni.internal` on the machines' network, or a [`StaticHostConfig`](../../talos/v1.14/reference/configuration/network/statichostconfig) document. `StaticHostConfig` requires Talos Linux 1.12 or later.
+- **CA trust:** A [`TrustedRootsConfig`](../../talos/v1.14/reference/configuration/security/trustedrootsconfig) document with the CA certificate.
+
+To connect a machine, add these documents to the Omni join configuration and provide the result to the machine at first boot:
+
+1. On your local machine, open the Omni **Home** page and click **Download Machine Join Config**. The browser saves the join configuration to your downloads folder as `machine-config.yaml`, or with a number added to the name if a file with that name already exists.
+
+2. On your local machine, set the public IP of the Omni host. Replace `<HOST_PUBLIC_IP>` with the public IP:
+
+   ```bash
+   export HOST_PUBLIC_IP=<HOST_PUBLIC_IP>
+   ```
+
+3. In the same terminal, append the `StaticHostConfig` and `TrustedRootsConfig` documents to `machine-config.yaml`, with the `ca.pem` file you copied in **Step 9.1**. Run the command from the folder that contains both files, and replace `machine-config.yaml` with the name of the downloaded file if it differs:
+
+   ```bash
+   cat <<EOF >> machine-config.yaml
+   ---
+   apiVersion: v1alpha1
+   kind: StaticHostConfig
+   name: ${HOST_PUBLIC_IP}
+   hostnames:
+     - omni.internal
+   ---
+   apiVersion: v1alpha1
+   kind: TrustedRootsConfig
+   name: omni-internal-ca
+   certificates: |
+   $(awk '{print "  " $0}' ca.pem)
+   EOF
+   ```
+
+4. Provide the combined file to each machine at first boot. The method depends on the platform:
+
+   - **Cloud platforms**, such as AWS, GCP, Azure, and DigitalOcean: Paste the file into the user data of the instance.
+   - **Proxmox**: Provide the file through the NoCloud datasource.
+   - **Bare metal**: Serve the file over HTTP and add the [`talos.config`](../../talos/v1.14/reference/kernel#talosconfig) kernel argument with its URL to the default kernel arguments, for example through a PXE boot or an [Image Factory](https://factory.talos.dev) schematic.
+
+   [Acquiring Machine Configuration](../../talos/v1.14/configure-your-talos-cluster/system-configuration/acquire) lists every method. The combined file only connects the machine to Omni. Omni generates the full Talos Linux machine configuration when the machine joins a cluster.
+
+
+
