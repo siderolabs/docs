@@ -12,10 +12,10 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 import { release_v1_14, nvidia_driver_release_v1_14, nvidia_container_toolkit_release_v1_14 } from '/snippets/custom-variables.mdx';
 
-NVIDIA GPUs that have nvlink support (for eg: A100) will need the [nvidia-fabricmanager](https://github.com/siderolabs/extensions/pkgs/container/nvidia-fabricmanager) system extension also enabled in addition to the [NVIDIA drivers](./nvidia-gpu).
+NVIDIA GPUs that have nvlink support (for eg: A100) will need the [nvidia-fabricmanager](https://github.com/siderolabs/extensions/pkgs/container/nvidia-fabricmanager-lts) system extension also enabled in addition to the [NVIDIA drivers](./nvidia-gpu).
 For more information on Fabric Manager refer https://docs.nvidia.com/datacenter/tesla/fabric-manager-user-guide/index.html
 
-The published versions of the NVIDIA fabricmanager system extensions is available [here](https://github.com/siderolabs/extensions/pkgs/container/nvidia-fabricmanager)
+The published versions of the NVIDIA fabricmanager system extension are listed on the [`nvidia-fabricmanager-lts` package page](https://github.com/siderolabs/extensions/pkgs/container/nvidia-fabricmanager-lts).
 
 > The `nvidia-fabricmanager` extension version has to match with the NVIDIA driver version in use.
 
@@ -27,7 +27,7 @@ Create the [boot assets](../../platform-specific-installations/boot-assets) or a
 {`
 ghcr.io/siderolabs/nvidia-open-gpu-kernel-modules-lts:${nvidia_driver_release_v1_14}-${release_v1_14}
 ghcr.io/siderolabs/nvidia-container-toolkit-lts:${nvidia_driver_release_v1_14}-${nvidia_container_toolkit_release_v1_14}
-ghcr.io/siderolabs/nvidia-fabricmanager:${nvidia_driver_release_v1_14}
+ghcr.io/siderolabs/nvidia-fabricmanager-lts:${nvidia_driver_release_v1_14}
 
 `}
 </CodeBlock>
