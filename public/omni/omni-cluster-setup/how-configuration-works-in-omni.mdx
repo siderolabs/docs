@@ -83,16 +83,16 @@ The most common scoping mistake is writing a cluster scoped patch for something 
 
 #### Precedence: scope first
 
-When multiple patches set the same field, the more specific scope always wins. The priority order, from lowest to highest, is: Machine -> Cluster -> MachineSet -> ClusterMachine.
+When multiple patches set the same field, scope determines which one wins. The priority order, from lowest to highest, is: Cluster -> MachineSet -> ClusterMachine -> Machine.
 
 Merging proceeds from lowest priority to highest:
 
-1. Machine scoped patches are applied first.
-2. Cluster scoped patches are applied next.
-3. MachineSet scoped patches are applied next.
-4. ClusterMachine scoped patches are applied last, and win on any conflicts.
+1. Cluster scoped patches are applied first.
+2. MachineSet scoped patches are applied next.
+3. ClusterMachine scoped patches are applied next.
+4. Machine scoped patches are applied last, and win on any conflicts.
 
-**Example.** A MachineSet patch sets `kubelet.maxPods = 200` across all workers. A ClusterMachine scoped patch on one specific worker sets `kubelet.maxPods = 100`. That worker ends up with `maxPods = 100`. The ClusterMachine scoped patch wins because it is highest in the priority order, regardless of what was set at MachineSet scope.
+**Example.** A MachineSet patch sets `kubelet.maxPods = 200` across all workers. A ClusterMachine scoped patch on one specific worker sets `kubelet.maxPods = 100`. That worker ends up with `maxPods = 100`. The ClusterMachine scoped patch wins because it is higher in the priority order than MachineSet, regardless of what was set at MachineSet scope. If a Machine scoped patch for that same machine also set `maxPods`, it would override both.
 
 #### Precedence: weight within a scope
 
