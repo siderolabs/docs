@@ -199,7 +199,7 @@ Applies to every machine in the cluster.
 | Add a registry mirror | Configuration Patches or Cluster Templates | — |
 | Configure KubeSpan | Configuration Patches or Cluster Templates | — |
 | Sync a Kubernetes manifest | Cluster Templates | Backed by the `KubernetesManifestGroup` resource. Not available as a configuration patch; manifests can currently only be viewed in the UI, not set there. See [Sync Kubernetes Manifests](../cluster-management/sync-kubernetes-manifests). |
-| Add a custom CA certificate | Configuration Patches or Cluster Templates | Use a `TrustedRootsConfig` document in the patch. This appends to the system trusted certificate store and is distinct from the cluster CA which is reserved by Omni. |
+| Add a custom CA certificate | Configuration Patches or Cluster Templates | Use a `TrustedRootsConfig` document in the patch. This appends to the system trusted certificate store and is distinct from the cluster CA which is reserved by Omni. For a CA that machines must trust from their first boot, such as the CA of Omni's own certificates, see [Use a Custom Certificate Authority](../self-hosted/use-a-custom-ca). |
 
 ### Role-specific settings
 
