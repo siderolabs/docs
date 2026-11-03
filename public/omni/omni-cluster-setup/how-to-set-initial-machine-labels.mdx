@@ -9,11 +9,12 @@ Machine labels help you organize and manage machines in your Omni environment mo
 
 For example, you can use labels to group machines by environment (production, staging, or development) or by location (regions and zones). This makes it easier to automate workflows such as CI/CD pipelines and targeted deployments.
 
-This guide shows how to set machine labels at boot time when generating installation media or PXE URLs. You can add labels using one of the following methods:
+This guide shows how to set machine labels at boot time when generating installation media, PXE URLs, or join configurations. You can add labels using one of the following methods:
 
 - Through the Omni UI
 - Using the `omnictl` CLI  
 - Using Image Factory 
+- Using a join token
 
 ## Set machine labels using the Omni UI
 
@@ -39,7 +40,7 @@ To set machine labels using the Omni UI:
 
 When generating Talos installation media or a PXE boot URL with `omnictl`, you can define initial machine labels using the `--initial-labels` flag. This lets you assign key-value pairs to any machine that boots from that media.
 
-Here is how to create a preset with machine user labels and download from it. This command creates a preset with the machine labels `environment=production` and `region=us-west` and downloads an image from that preset. For all available options, see the [CLI reference](/omni/reference/cli#omnictl-media-preset-create).
+This command creates a preset with the machine labels `environment=production` and `region=us-west` and downloads an image from that preset. For all available preset options, see the [CLI reference](/omni/reference/cli#omnictl-media-preset-create).
 
 ```bash
 omnictl media preset create labels-preset --arch amd64 \
@@ -149,6 +150,39 @@ The standalone [Image Factory web UI](https://factory.talos.dev) does not curren
 
 However, the Image Factory UI built into Omni **does** support initial machine labels.
 </Warning>
+
+## Set machine user labels using a join token
+
+Use the `--set-labels` flag to add machine labels to the kernel arguments or the join configuration that `omnictl jointoken` generates. A machine that joins Omni with them gets these labels as user labels. This suits machines that join with a join configuration instead of Omni installation media, such as cloud instances that receive it as user data.
+
+The labels are not stored on the join token. Kernel arguments or a join configuration generated without `--set-labels` have no labels.
+
+Generate the kernel arguments with the labels, passing `--set-labels` once for each label:
+
+```bash
+omnictl jointoken kernel-args --set-labels environment=production --set-labels region=us-west
+```
+
+Or generate the join configuration:
+
+```bash
+omnictl jointoken machine-config --set-labels environment=production --set-labels region=us-west
+```
+
+Both commands use the default join token. Use `--token-name` or `--token-id` to generate them from another token.
+
+<Warning>
+Unlike `--initial-labels`, `--set-labels` does not split on commas. `--set-labels environment=production,region=us-west` creates a single `environment` label with the value `production,region=us-west`.
+</Warning>
+
+The labels are applied once, when the machine first registers with Omni. After that, they behave like any other user label:
+
+- You can edit or remove them, and rebooting the machine does not add them back.
+- A machine that is removed from Omni and joins again gets the labels again.
+- A machine that's already registered in Omni doesn't get the labels, even if it rejoins with the new kernel arguments or join configuration.
+- A machine that already has user labels when it registers keeps them, and the labels from the join token are not applied.
+
+Labels with the `omni.sidero.dev/` prefix are reserved for Omni and are rejected. The join token and the labels can be at most 1024 bytes together, so use a small number of short labels.
 
 ## Set machine user labels using platform metadata
 
