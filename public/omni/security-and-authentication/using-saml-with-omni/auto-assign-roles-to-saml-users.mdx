@@ -1,16 +1,22 @@
 ---
-title: Auto-assign roles to SAML users
-description: Automatically assign Omni roles to new SAML users based on their SAML attribute labels.
+title: Auto-Assign Roles to SAML and OIDC Users
+description: Automatically assign Omni roles to SAML and OIDC users based on labels from the identity provider.
 ---
 
-When SAML authentication is enabled, Omni can automatically assign roles to new users based on their SAML attributes. To configure this, use `SAMLLabelRule` resources to map SAML attribute labels to Omni roles. If no rules are configured, [roles must be assigned manually](../manage-user-in-omni) by an administrator.
+When SAML or OIDC authentication is enabled, Omni can automatically assign roles to users based on the attributes or claims sent by the identity provider. To configure this, use `SAMLLabelRule` resources to map the resulting labels to Omni roles. Despite its name, a `SAMLLabelRule` applies to labels from both SAML and OIDC logins. If no rules are configured, [roles must be assigned manually](../manage-user-in-omni) by an administrator.
 
 ## Prerequisites
 
-- SAML authentication must be configured on your Omni instance. See [Authentication and Authorization](../authentication-and-authorization) for setup instructions.
+Before creating label rules, make sure you have the following:
+
+- SAML or OIDC authentication must be configured on your Omni instance. See [Authentication and Authorization](../authentication-and-authorization) for setup instructions.
 - `omnictl` must be installed and configured with Admin access to your Omni instance.
 
-## How SAML label rules work
+## How label rules work
+
+Omni turns information from the identity provider into labels on each user, and `SAMLLabelRule` resources assign roles based on those labels. SAML and OIDC logins produce labels in different ways.
+
+### Labels from SAML logins
 
 When a SAML user logs in to Omni, their SAML attributes are read and mapped to labels on the user resource. Omni recognises the following SAML attribute names by default and maps them to the `role` label key:
 
@@ -39,11 +45,57 @@ auth:
 
 For the full list of configuration options, see the [Omni Configuration reference](../../reference/omni-configuration#auth-saml).
 
+### Labels from OIDC logins
+
+When an OIDC user logs in to Omni, the `groups` and `roles` claims of the ID token become labels in the format `oidc.omni.sidero.dev/<claim>/<value>`. For example, an ID token with `"groups": ["engineers"]` labels the user `oidc.omni.sidero.dev/groups/engineers`. Other claims do not create labels. The labels are updated on every login, and labels whose values are no longer in the ID token are removed.
+
+Some identity providers include the `groups` claim only when it is requested with a scope, usually named `groups`. Without it, OIDC users have no labels and no rule matches them. Add the scope with the `--auth-oidc-scopes` flag when starting Omni:
+
+```bash
+--auth-oidc-scopes=openid,profile,email,groups
+```
+
+**Or** via the Omni configuration file:
+
+```yaml
+auth:
+  oidc:
+    scopes:
+      - openid
+      - profile
+      - email
+      - groups
+```
+
+By default, Omni does not create OIDC users on their first login. An administrator creates each OIDC user, and a user who does not exist is refused. To create OIDC users on their first login, as SAML users are, set the `--auth-oidc-auto-create-users` flag:
+
+```bash
+--auth-oidc-auto-create-users
+```
+
+**Or** via the Omni configuration file:
+
+```yaml
+auth:
+  oidc:
+    autoCreateUsers: true
+```
+
+A user created this way gets the role from the matching `SAMLLabelRule` resources, or `None` if no rule matches.
+
+<Warning>
+Enable `autoCreateUsers` only when every account of the identity provider belongs to your organization. Otherwise, any account of the identity provider can create a user in Omni.
+</Warning>
+
+For the full list of OIDC options, see the [Omni Configuration reference](../../reference/omni-configuration#auth-oidc).
+
+### Assign roles with label rules
+
 Once the correct labels are appearing on your users, a `SAMLLabelRule` resource can automatically assign an Omni role when a matching label is found. If multiple rules match the same user, the role with the highest access level is assigned.
 
 ## Create and verify a SAML label rule
 
-The following example creates a rule that assigns the `Operator` role to any new SAML user whose SAML attributes include `Role: engineers`.
+The following example creates a rule that assigns the `Operator` role to any SAML user whose SAML attributes include `Role: engineers`. To match OIDC users instead, use an OIDC label such as `oidc.omni.sidero.dev/groups/engineers` in `matchlabels`.
 
 ### Step 1: Create the rule
 
@@ -68,22 +120,23 @@ The fields in the `spec` are:
 | Field | Description |
 |---|---|
 | `assignrole` | The Omni role to assign to matching users. Valid values are `None`, `Reader`, `Operator`, and `Admin`. The `Auditor` role cannot be assigned this way, so it has to be set on the user directly. Note that a matching rule with `updateoneachlogin` set to true overwrites the user's role on every login, which would undo a manual `Auditor` assignment. |
-| `updateoneachlogin` | If `true`, the role is re-evaluated and updated on every login, not just the first. If `false`, the role is only assigned on the user's first login. |
-| `matchlabels` | A list of SAML-derived labels to match against. Labels follow the format `saml.omni.sidero.dev/<attribute-name>/<attribute-value>`. |
+| `updateoneachlogin` | If `true`, the role is re-evaluated and updated on every login, not just the first. If `false`, the role is only assigned when the user is created. |
+| `matchlabels` | A list of labels to match against. SAML labels follow the format `saml.omni.sidero.dev/<attribute-name>/<attribute-value>`, and OIDC labels follow the format `oidc.omni.sidero.dev/<claim>/<value>`. |
 
 ### Step 2: Verify the rule was applied
 
-Log in to Omni as a SAML user with the matching attribute, then confirm the role was assigned by running the following command, replacing `<user-email>` with the user's email address:
+Log in to Omni as a user with the matching attribute or claim, then list the users of your instance:
 
 ```bash
-omnictl get user <user-email> -o yaml
+omnictl user list
 ```
 
-The output should show the assigned role under the user's spec.
+The output shows the role and labels of each user. The `ROLE` column shows the assigned role. The `LABELS` column lists the labels without their `saml.omni.sidero.dev/` or `oidc.omni.sidero.dev/` prefix, so `oidc.omni.sidero.dev/groups/engineers` appears as `groups/engineers=`.
 
 ## Limitations
 
-The following limitations apply when automatically assigning roles to SAML users:
+The following limitations apply when automatically assigning roles to SAML and OIDC users:
 
-- SAML label rules only apply to users logging in for the first time. If a user has already logged in to Omni at least once, their role will not be updated by a `SAMLLabelRule` and must be updated manually by an administrator.
-- If the SAML user is the first user to log in to an Omni instance, the `SAMLLabelRule` will not apply. The first user is always assigned the `Admin` role, regardless of any label rules.
+- A rule with `updateoneachlogin` set to `false` only assigns a role when the user is created. If the user already exists, their role is not changed by the rule and must be updated manually by an administrator, or by a rule with `updateoneachlogin` set to `true`.
+- If no rule matches when an existing user logs in, the user keeps their current role, even with `updateoneachlogin` set to `true`. For example, removing a user from a group in the identity provider does not change their role in Omni.
+- If the user is the first user to log in to an Omni instance, the `SAMLLabelRule` will not apply. The first user is always assigned the `Admin` role, regardless of any label rules.
