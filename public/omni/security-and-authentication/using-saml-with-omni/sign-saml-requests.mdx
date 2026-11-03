@@ -1,0 +1,58 @@
+---
+title: Sign SAML Requests
+description: Sign the SAML requests that self-hosted Omni sends to your identity provider.
+---
+
+When you log in to Omni with SAML, Omni sends your identity provider a login request. Signing the request lets the identity provider confirm that it really comes from your Omni instance and was not altered, and many identity providers can be set to reject unsigned requests.
+
+Self-hosted Omni v1.13 and later can sign the login request (`AuthnRequest`) and the logout request (`LogoutRequest`) with RSA-SHA256. It also publishes the signing certificate in its SAML metadata at `https://<omni-host>/saml/metadata`.
+
+<Note>
+Signing is configured with Omni server settings, so it applies to self-hosted Omni. On Omni SaaS, contact support@siderolabs.com or your account manager if your identity provider requires signed requests.
+</Note>
+
+To enable signing, create a certificate, register it at your identity provider, configure Omni to use it, and then verify the result.
+
+## Step 1: Create a signing certificate
+
+Omni supports RSA keys only. Create a self-signed certificate and its private key:
+
+```bash
+openssl req -x509 -newkey rsa:2048 -nodes \
+  -keyout omni-saml.key -out omni-saml.crt \
+  -days 365 -subj "/CN=omni-saml-signing"
+```
+
+## Step 2: Register the certificate at your identity provider
+
+Add `omni-saml.crt` to the Omni application in your identity provider as the certificate that signs its requests. Do this before configuring Omni, because an identity provider that does not have the certificate rejects the signed requests, and logins fail.
+
+## Step 3: Configure Omni
+
+Make `omni-saml.crt` and `omni-saml.key` available to Omni, then pass both with the `--auth-saml-cert` and `--auth-saml-key` flags when starting Omni:
+
+```bash
+--auth-saml-cert=/path/to/omni-saml.crt
+--auth-saml-key=/path/to/omni-saml.key
+```
+
+**Or** via the Omni configuration file:
+
+```yaml
+auth:
+  saml:
+    certFile: /path/to/omni-saml.crt
+    keyFile: /path/to/omni-saml.key
+```
+
+Both values are required: Omni does not start if only one of them is set. For the full list of SAML options, see the [Omni Configuration reference](../../reference/omni-configuration#auth-saml).
+
+## Step 4: Verify that requests are signed
+
+After restarting Omni, check that its metadata announces signed requests, replacing `<omni-host>` with the address of your Omni instance:
+
+```bash
+curl -s https://<omni-host>/saml/metadata | grep -o 'AuthnRequestsSigned="true"'
+```
+
+The command prints `AuthnRequestsSigned="true"` when signing is enabled. Then log in to Omni to confirm that your identity provider accepts the signed requests.

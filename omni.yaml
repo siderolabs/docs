@@ -121,6 +121,7 @@ navigation:
                 - "using-saml-with-omni/configure-saml-and-acls"
                 - "using-saml-with-omni/configure-okta-for-omni"
                 - "using-saml-with-omni/auto-assign-roles-to-saml-users"
+                - "using-saml-with-omni/sign-saml-requests"
                 - "using-saml-with-omni/configure-unifi-identity-enterprise-for-omni"
                 - "using-saml-with-omni/configure-workspace-one-access-for-omni"
                 - "using-saml-with-omni/how-to-configure-entraid-for-omni"
