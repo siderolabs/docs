@@ -9,30 +9,19 @@ Audit logs are useful for security reviews, compliance requirements, and investi
 
 Each log entry captures who performed the action, when it occurred, what resource was affected, and session details such as IP address, user role, and email.
 
-<Note>
-Audit logs are enabled by default for Omni SaaS customers.
-</Note>
+Audit logs are enabled by default on both Omni SaaS and self-hosted Omni.
 
-## Enable audit logs (self-hosted)
+## Configure audit logs (self-hosted)
 
-Audit logging is disabled by default on self-hosted Omni instances. To enable audit logs, pass the `--audit-log-dir` flag when starting the Omni server, specifying the directory where log files should be stored:
+On self-hosted Omni, audit log entries are stored in the Omni SQLite database, the file set with `--sqlite-storage-path`. Omni removes entries older than the retention period, 30 days by default. The following flags change this behavior when starting Omni:
 
-```bash
-docker run \
-  ... \
-  ghcr.io/siderolabs/omni:<tag> \
-    --name=onprem-omni \
-    ... \
-    --audit-log-dir=/tmp/omni/audit-log
-```
+| Flag | Default | Description |
+|---|---|---|
+| `--audit-log-enabled` | `true` | Set to `false` to disable audit logging. |
+| `--audit-log-retention-period` | `720h` (30 days) | How long entries are kept before they are removed. |
+| `--audit-log-max-size` | `0` (no limit) | The maximum size of the audit log in bytes. When it is exceeded, the oldest entries are removed. |
 
-Omitting `--audit-log-dir` or setting it to an empty value disables audit logging.
-
-### Log file storage and retention
-
-Log files are written to the directory specified by `--audit-log-dir`. Each file covers one calendar day and is named using the format `<year>-<month>-<day>.jsonlog` — for example, `2024-08-12.jsonlog`.
-
-Log files are retained for 30 days, including the current day. Files older than 30 days are deleted automatically.
+The same settings are available under `logs.audit` in the Omni configuration file. See the [Omni configuration reference](../reference/omni-configuration#logs-audit) for all audit log options.
 
 ## Access the audit log
 
@@ -45,22 +34,34 @@ Audit log access is granted by exact role rather than by seniority. The `Operato
 <Tabs>
 <Tab title="CLI">
 
-To stream the audit log to stdout, run:
+To print the entries of the last 29 days to stdout, run:
 
 ```bash
 omnictl audit-log
 ```
 
-To retrieve logs for a specific date range, provide start and end dates in `YYYY-MM-DD` format:
+To keep the command running and print new entries as they are written, add `--follow`:
+
+```bash
+omnictl audit-log --follow
+```
+
+To retrieve entries for a date range, provide start and end dates in `YYYY-MM-DD` format, interpreted in the time zone of the Omni server:
 
 ```bash
 omnictl audit-log <start-date> <end-date>
 ```
 
-For example, to retrieve logs for the first week of August 2024:
+The range starts at the beginning of the start date and stops at the beginning of the end date, so entries from the end date itself are not included. For example, to retrieve the entries for the first week of August 2024, use `2024-08-08` as the end date:
 
 ```bash
-omnictl audit-log 2024-08-01 2024-08-07
+omnictl audit-log 2024-08-01 2024-08-08
+```
+
+To narrow the output, filter by `--actor`, `--event-type`, `--cluster-id`, or `--resource-id`. For example, to list the resources destroyed by one user:
+
+```bash
+omnictl audit-log --actor user@example.com --event-type destroy
 ```
 
 <Note>The CLI method is preferable for large audit logs or when piping output to a search or filtering tool such as `jq`, as it streams directly to stdout without buffering the entire log in memory.</Note>
@@ -96,6 +97,7 @@ The following is an example log entry, formatted for readability:
     },
     "session": {
       "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+      "client_address": "203.0.113.10",
       "user_id": "fa02ea7c-6eb1-491e-b053-b5db63a4384f",
       "role": "Admin",
       "email": "user@example.com",
@@ -107,6 +109,8 @@ The following is an example log entry, formatted for readability:
 
 ### Top-level fields
 
+Every audit log entry has the following top-level fields:
+
 | Field | Description |
 |---|---|
 | `event_type` | The type of action that occurred. See [Event types](#event-types) below. |
@@ -116,6 +120,8 @@ The following is an example log entry, formatted for readability:
 | `event_data` | A JSON object containing details about the event. See [Event data fields](#event-data-fields) below. |
 
 ### Event types
+
+The `event_type` field takes one of the following values:
 
 | Value | Description |
 |---|---|
@@ -139,12 +145,17 @@ The `session` field describes the user session associated with the event.
 | Field | Description |
 |---|---|
 | `user_agent` | The HTTP user agent. For actions performed internally by Omni, this will be `Omni-Internal-Agent` and all other session fields will be empty. |
+| `client_address` | The IP address of the client that made the request, including requests through the Kubernetes proxy. See [Client address behind a proxy](#client-address-behind-a-proxy). |
 | `user_id` | The ID of the user who performed the action. |
 | `role` | The role of the user at the time of the action. |
 | `email` | The email address of the user. |
 | `fingerprint` | The fingerprint of the user's public key. |
 | `confirmation_type` | How the key was confirmed, when applicable. |
 | `public_key_expiration` | When the user's public key expires, in seconds since Unix epoch. |
+
+#### Client address behind a proxy
+
+When Omni runs behind a reverse proxy or load balancer, it reads the client address from the `X-Forwarded-For` header only when the connection comes from a private, loopback, link-local, or shared (`100.64.0.0/10`) IP address. Omni reads the header from right to left and stops at the first address outside these ranges, so addresses that a client adds to the header before it reaches the proxy are ignored. A client that connects to Omni directly from one of these ranges can set any address in the header. If the proxy connects from a public IP address, such as some cloud load balancers, `client_address` records the address of the proxy for every request.
 
 #### Resource-specific fields
 
