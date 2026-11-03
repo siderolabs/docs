@@ -1,0 +1,194 @@
+---
+title: Select the Install Disk
+description: Select the disk Omni installs Talos on, by its path or by a disk selector.
+---
+
+import { version } from '/snippets/custom-variables.mdx';
+
+A machine that boots Talos from an ISO or over PXE runs it in memory until Talos is installed to a disk.
+Omni installs Talos when the machine is added to a cluster, or when you select **Install Talos** for it on the **Machines** page.
+A machine booted from a disk image is already installed, so the install disk does not apply to it.
+
+Installing Talos is a one-time operation.
+On an installed machine, Omni always uses the disk Talos is installed on.
+A different install disk is used only after the machine is wiped and Talos is installed again.
+
+Omni selects the install disk automatically.
+To use a different disk, select it for the machine.
+The selection is stored in the `MachineInstallDiskConfig` resource, which has the machine ID as its ID.
+It belongs to the machine, not to a cluster, so it is kept when the machine is removed from a cluster.
+
+<Note>
+  The `MachineInstallDiskConfig` resource and disk selectors require Omni v1.11.0 or later.
+
+  Config patches cannot set the install disk.
+  Omni rejects patches that set `machine.install.disk` and patches that contain an `UnattendedInstallConfig` document.
+</Note>
+
+## Select the install disk
+
+You can select the disk by its path, e.g., `/dev/sdb`, or by a [disk selector](#disk-selectors).
+A disk path or a disk selector can select any disk of the machine, including the disks the automatic selection skips.
+Make sure it does not match a member of an MD RAID array, since installing Talos to it breaks the array.
+
+<Tabs>
+<Tab title="UI">
+
+On the cluster create and scale pages, assign the machine to the control plane or to a worker machine set.
+An **Install Disk** dropdown then appears next to it, unless the machine is already installed:
+
+- **Auto**: no selection, Omni selects the disk automatically.
+  The disk it currently selects is shown next to it in parentheses.
+- A disk path, e.g., **/dev/sdb**: selects that disk.
+  Disks built on top of other disks show their member disks, e.g., **/dev/md0 (on sdb, sdc)**.
+- **Selector**: shown when the machine has a disk selector.
+  The disk the selector currently matches is shown next to it in parentheses.
+  Hover over it to see the expression.
+
+The dropdown lists only the disks marked `selectable` in [`MachineInstallDiskStatus`](#check-the-install-disk-of-a-machine).
+The UI cannot create disk selectors.
+Use cluster templates, `omnictl` or Terraform for them.
+
+The **Install Talos** action on the **Machines** page has its own **Install Disk** dropdown.
+It defaults to the disk Omni selects for the machine.
+The disk you pick there is used only for that install, and it is not stored in `MachineInstallDiskConfig`.
+
+</Tab>
+<Tab title="Cluster templates">
+
+Set `install.disk` or `install.diskSelector` in the `Machine` document.
+They are mutually exclusive.
+
+```yaml
+kind: Machine
+name: 27c16241-96bf-4f17-9579-ea3a6c4a3ca8
+install:
+  diskSelector: disk.serial == "S3EVNX0K123456"
+```
+
+- Removing the `install` section deletes the `MachineInstallDiskConfig` created by the template, so Omni selects the disk automatically again.
+  A `MachineInstallDiskConfig` created in the UI, with `omnictl` or with Terraform is kept.
+- Removing the machine from the template keeps its `MachineInstallDiskConfig`.
+
+See the [cluster templates reference](../reference/cluster-templates#machine) for the other fields of the `Machine` document.
+
+</Tab>
+<Tab title="CLI">
+
+1. Create a `MachineInstallDiskConfig` file named `install-disk.yaml`, using the machine ID as the resource ID:
+
+   ```yaml
+   metadata:
+     namespace: default
+     type: MachineInstallDiskConfigs.omni.sidero.dev
+     id: <machine-id>
+   spec:
+     diskselector: disk.serial == "S3EVNX0K123456"
+   ```
+
+   To select the disk by its path, set `disk: /dev/sdb` instead of `diskselector`.
+
+2. Apply it:
+
+   ```bash
+   omnictl apply -f install-disk.yaml
+   ```
+
+To let Omni select the disk automatically again, delete the resource:
+
+```bash
+omnictl delete machineinstalldiskconfigs <machine-id>
+```
+
+</Tab>
+<Tab title="Terraform">
+
+Use the [`omni_machine_install_disk`](https://registry.terraform.io/providers/siderolabs/omni/latest/docs/resources/machine_install_disk) resource:
+
+```hcl
+resource "omni_machine_install_disk" "this" {
+  machine_id    = "27c16241-96bf-4f17-9579-ea3a6c4a3ca8"
+  disk_selector = "disk.serial == \"S3EVNX0K123456\""
+}
+```
+
+To select the disk by its path, set `disk = "/dev/sdb"` instead of `disk_selector`.
+
+</Tab>
+</Tabs>
+
+## Automatic selection
+
+When a machine has no `MachineInstallDiskConfig`, Omni selects the smallest disk that is:
+
+- larger than 5 GB
+- not read-only and not a CD-ROM drive
+- not a member of another disk, e.g., a disk in an MD RAID array
+- not built on top of other disks, e.g., an MD RAID array or a device-mapper volume
+
+USB disks are selected only when no other disk qualifies.
+From disks of the same size, Omni selects the first one by path.
+
+## Disk selectors
+
+A disk selector is a Common Expression Language (CEL) expression evaluated against every disk of the machine.
+It uses the same variables as the <a href={`../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/disk-management/common#disk-selector`}>Talos disk selectors</a>.
+
+A disk selector can target disks by their stable properties:
+
+- `disk.serial == "S3EVNX0K123456"`: the disk with this serial number.
+- `'/dev/disk/by-path/pci-0000:00:1f.2-ata-1' in disk.symlinks`: the disk with this stable symlink.
+- `'/dev/disk/by-id/md-name-talos:boot' in disk.symlinks`: the MD RAID array named `boot`.
+
+An expression that starts with a quote must be quoted in YAML, e.g., `diskSelector: "'/dev/disk/by-id/md-name-talos:boot' in disk.symlinks"`.
+
+When a disk selector matches more than one disk, Omni selects the first regular disk by path.
+A disk built on top of other disks, such as an MD RAID array, is selected only when it is the only match.
+
+Installing Talos to an MD RAID array requires Talos v1.14 or later.
+Create the array with the config patches in <a href={`../../talos/${version}/configure-your-talos-cluster/storage-and-disk-management/raid#boot-from-a-raid1-array`}>Boot from a RAID1 array</a>.
+Select it as the install disk with a disk selector instead of the `UnattendedInstallConfig` document shown there, which Omni does not accept.
+
+## Check the install disk of a machine
+
+Omni stores the install disk it uses for each machine in the `MachineInstallDiskStatus` resource:
+
+```bash
+omnictl get machineinstalldiskstatuses <machine-id> -o yaml
+```
+
+```yaml
+spec:
+  disk: /dev/nvme0n1
+  message: selected by the install disk selector
+  disks:
+    - devpath: /dev/nvme0n1
+      selectable: true
+      skipreason: ""
+      members: []
+    - devpath: /dev/md0
+      selectable: true
+      skipreason: built on top of other disks
+      members:
+        - sdb
+        - sdc
+    - devpath: /dev/sdb
+      selectable: false
+      skipreason: a member of /dev/md0
+      members: []
+```
+
+- `disk`: the install disk. It is empty when no disk can be used.
+- `message`: why `disk` is empty, or how the disk was selected.
+- `disks`: every disk of the machine.
+  `selectable` says whether the UI offers the disk, and `skipreason` says why the automatic selection skips it.
+
+When `disk` is empty, Omni does not generate the configuration of the machine, so the machine waits in its cluster.
+Check the `message` field to see why, e.g., `no disk matches the install disk selector`.
+
+The resource carries the cluster label of the machine, so you can list the install disks of a cluster.
+Replace `<cluster-name>` with the name of the cluster:
+
+```bash
+omnictl get machineinstalldiskstatuses -l omni.sidero.dev/cluster=<cluster-name>
+```

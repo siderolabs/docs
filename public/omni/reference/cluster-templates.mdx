@@ -293,15 +293,17 @@ systemExtensions:
 | `labels`           | map[string]string        | Labels to be applied to the machine set node.                                                          |
 | `annotations`      | map[string]string        | Annotations to be applied to the machine set node.                                                     |
 | `locked`           | boolean                  | Whether the machine should be marked as locked. Can be `true` only if the machine is used as a worker. |
-| `install.disk`     | string                   | Disk to install Talos on. Matters only for Talos running from ISO or iPXE.                             |
+| `install.disk`     | string                   | Path of the disk to install Talos on. Mutually exclusive with `install.diskSelector`.                  |
+| `install.diskSelector` | string               | CEL expression selecting the disk to install Talos on. Mutually exclusive with `install.disk`. Requires Omni v1.11.0 or later. |
 | `patches`          | array[[Patch](#patches)] | List of patches to apply to the machine.                                                               |
 | `systemExtensions` | array[string]            | The list of system extensions to be installed on the machine.                                          |
 | `kernelArgs`       | array[string]            | The list of [kernel args](#kernelArgs) to be set on this machine.                                      |
 
-<Warning>
-When Talos is not installed and you do not specify the install disk, Omni tries to pick the install disk automatically.
-It finds the smallest disk larger than 5GB.
-</Warning>
+<Note>
+The install disk matters only for machines that are not installed yet.
+Without an `install` section, Omni uses the existing `MachineInstallDiskConfig` of the machine, or selects the install disk automatically when there is none.
+See [Select the install disk](../omni-cluster-setup/select-the-install-disk) for the automatic selection and the disk selectors.
+</Note>
 
 ## Common fields
 

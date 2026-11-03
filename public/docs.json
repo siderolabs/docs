@@ -2776,6 +2776,7 @@
               "omni/omni-cluster-setup/how-configuration-works-in-omni",
               "omni/omni-cluster-setup/cluster-template",
               "omni/omni-cluster-setup/create-a-patch-for-cluster-machines",
+              "omni/omni-cluster-setup/select-the-install-disk",
               "omni/omni-cluster-setup/create-an-omni-service-account",
               "omni/omni-cluster-setup/how-to-set-initial-machine-labels",
               "omni/omni-cluster-setup/setting-up-the-bare-metal-infrastructure-provider",

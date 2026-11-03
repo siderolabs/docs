@@ -11,7 +11,7 @@ This page lists the Talos configuration options that don’t work with Omni, exp
 ## Why certain Talos config fields are forbidden
 
 Omni assumes full control of critical configuration aspects such as certificates, endpoints, and secrets. Allowing users to modify these values directly could break Omni’s internal reconciliation process or expose sensitive data.  
-Forbidden fields are therefore stripped or ignored at runtime when a machine joins or syncs with Omni.
+Omni therefore rejects config patches that set these fields.
 
 ## Forbidden or ignored fields
 
@@ -20,20 +20,25 @@ Here are specific Talos configuration fields that Omni either forbids or silentl
 | Field | Scope | Reason / Managed By Omni |
 |-------|--------|---------------------------|
 | `cluster.clusterName` | Cluster | Cluster naming is managed automatically by Omni. Custom names are not supported to ensure consistency with the Omni control plane. |
+| `cluster.id` / `cluster.secret` | Cluster | Omni generates the cluster identity and secret, and uses them for the cluster discovery. |
 | `cluster.controlPlane.endpoint` | Cluster | Omni provides the cluster endpoint (VIP / external endpoint). User-defined endpoints are not allowed. |
-| `cluster.secret` | Cluster | Omni manages all cluster secrets to avoid data leakage and to maintain a secure join process. |
-| `cluster.ca` / `cluster.etcdCA` / `cluster.kubernetesCA` | Cluster | Omni generates and rotates certificates automatically. Manually defining them in Talos config is not supported. |
-| `cluster.discoveryConfig` | Cluster | Omni handles peer discovery internally. Custom discovery configuration is ignored. |
-| `cluster.sealedDiskEncryptionSecret` / `machine.sealedDiskEncryptionSecret` | Machine | Omni does not currently support user-supplied disk encryption secrets; encryption is handled internally if enabled. |
-| `cluster.vip` | Cluster | The concept of a cluster VIP does not apply since Omni exposes a managed external endpoint. |
+| `cluster.ca` / `cluster.acceptedCAs` | Cluster | Omni generates and rotates the Kubernetes CA. |
+| `cluster.serviceAccount` | Cluster | Omni generates the Kubernetes service account key. |
+| `cluster.aescbcEncryptionSecret` / `cluster.secretboxEncryptionSecret` | Cluster | Omni generates the keys Kubernetes uses to encrypt secrets. |
+| `machine.ca` / `machine.acceptedCAs` | Machine | Omni generates and rotates the Talos API CA. |
+| `machine.token` | Machine | Omni generates the token machines use to join the cluster. |
+| `machine.type` | Machine | Omni sets the machine type by the machine set the machine is in (control plane or workers). |
+| `machine.install.disk` / `UnattendedInstallConfig` | Machine | Omni installs Talos itself. The install disk is selected through the `MachineInstallDiskConfig` resource, see [Select the install disk](../omni-cluster-setup/select-the-install-disk). |
+| `machine.install.image` | Machine | Omni sets the installer image from the Talos version of the cluster and the schematic of the machine. |
 | `machine.install.extensions` | Machine | Omni controls Talos extensions installed on machines to maintain environment consistency. |
-| `machine.install.extraKernelArgs` | Machine | Kernel arguments that modify networking, certificates, or cluster identity are not allowed. |
-| `machine.network.acceptedCAs` | Machine | Omni manages which CAs are trusted by the machine; overriding this is not permitted. |
+| `os:admin` in `machine.features.kubernetesTalosAPIAccess.allowedRoles` / `KubeTalosAPIAccessConfig` | Machine | Kubernetes workloads cannot get admin access to the Talos API. Omni also removes the role when it generates the configuration. |
+| `DiscoveryIdentityConfig`, `KubeClusterConfig`, `KubeEtcdEncryptionConfig`, `KubeAPIServerCAConfig`, `KubeAggregatorCAConfig` | Cluster | These documents hold values Omni generates: the cluster identity, the cluster name and endpoint, the Kubernetes secrets encryption keys, the Kubernetes CA and the aggregator CA. |
+| `issuer.privateKey` in `KubeServiceAccountConfig` | Cluster | Omni generates the Kubernetes service account key. |
 
 ## How Omni handles forbidden or ignored fields
 
 If a Talos machine configuration contains any of the above fields:
 
-- Omni strips or overrides the values automatically before applying them to the node.  
+- Omni rejects config patches that contain them. When a cluster is imported, Omni removes them from the imported configuration.
 - Attempting to manually modify these fields through the Talos API or `talosctl` is ignored after the node is managed by Omni.
 - Machine configuration updates must always be made through Omni to ensure they remain in sync with the control plane.
