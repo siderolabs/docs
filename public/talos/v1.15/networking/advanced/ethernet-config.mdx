@@ -110,6 +110,8 @@ features:
 
 For rings and channels configuration, values can be increased if they do not exceed the maximum supported by the network card (the maximum values are reported in the status with `-max` suffix).
 
+The following sections cover Wake-on-LAN and flow control, which have their own fields in the document.
+
 ### Enable Wake-on-LAN support
 
 Starting with 1.12, Talos Linux now supports configuring Wake-on-LAN (WOL) directly in the Ethernet configuration.
@@ -149,3 +151,39 @@ talosctl get ethernetstatus <interface> -o yaml
 ```
 
 This command will show the current wakeOnLan settings along with other Ethernet features.
+
+### Configure flow control
+
+Flow control lets a link ask its peer to pause sending when it cannot keep up, using 802.3x pause frames.
+Use the `flowControl` field to configure it, similar to the `ethtool -A` command:
+
+```yaml
+apiVersion: v1alpha1
+kind: EthernetConfig
+name: enp0s2
+flowControl:
+  rx: true
+  tx: false
+  autoneg: false
+```
+
+The `flowControl` field has three settings:
+
+- `rx`: accept pause frames from the link peer.
+- `tx`: send pause frames to the link peer.
+- `autoneg`: negotiate flow control with the link peer.
+
+When `autoneg` is on, `rx` and `tx` are only advertised to the link peer, and the result depends on what the peer supports.
+To apply `rx` and `tx` exactly as set, turn `autoneg` off, as in the example above.
+
+A setting that is omitted stays unchanged, and omitting `flowControl` leaves the flow control configuration of the link unchanged.
+When `flowControl` is present, it must set at least one of the three settings.
+
+Not all drivers support flow control; `virtio-net` is one example.
+On such a link, Talos logs a warning and skips the flow control settings.
+
+The current flow control settings appear under `flowControl` in the `EthernetStatus` resource:
+
+```bash
+talosctl get ethernetstatus <interface> -o yaml
+```
