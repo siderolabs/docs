@@ -18,6 +18,7 @@ navigation:
           pages:
             - "what-is-talos-director.mdx"
             - "how-talos-director-works.mdx"
+            - "dashboard.mdx"
 
         - group: "Compute"
           folder: "director/compute"
