@@ -244,6 +244,19 @@ navigation:
                 - "lifecycle-management/unattended-install"
                 - "lifecycle-management/resetting-a-machine"
 
+        - group: "Talos Containers"
+          folder: "talos/v1.14/talos-containers"
+          pages:
+            - "how-talos-containers-work.mdx"
+            - "requirements.mdx"
+            - "run-your-first-talos-container.mdx"
+            - "add-storage-and-configuration-files.mdx"
+            - "configure-startup-order.mdx"
+            - "configure-networking.mdx"
+            - "configure-security.mdx"
+            - "configure-resource-limits.mdx"
+            - "inspect-and-troubleshoot-talos-containers.mdx"
+
         - group: "Advanced guides"
           folder: "talos/v1.14/advanced-guides"
           pages:
