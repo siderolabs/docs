@@ -1,0 +1,62 @@
+---
+title: Dashboard
+description: Read fleet-wide capacity, allocation, and health at a glance from the Talos Director Dashboard, and track how your VM footprint changes over time.
+---
+
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
+
+<DirectorLimitedAvailability />
+
+The **Dashboard** is the landing page of the Talos Director console. It gives an at-a-glance view of infrastructure health, committed capacity, alerts, and VM count over time.
+
+The page is organized into three areas: **Physical Infrastructure** (what the hardware provides), **Virtual Resources** (what workloads consume and allocate), and a **VM Count Over Time** trend chart.
+
+## Physical infrastructure
+
+These cards describe the hardware Talos Director manages: its total capacity and how much of it is in use.
+
+| Card | Figures | Description |
+| --- | --- | --- |
+| **Hosts** | Total, Online, Offline | Hypervisor hosts under management and their connection state. Click this tile to go to the **Compute** > **Hosts** > **All Hosts** screen. See [Hosts](/director/compute/hosts). |
+| **CPU Cores** | Physical, vCPUs Alloc, Ratio | Physical CPU cores across all hosts, vCPUs allocated to VMs, and the vCPU-to-core ratio as a percentage. |
+| **Memory** | Total, Used, Available | Physical memory across all hosts, memory actually in use, and memory remaining. |
+| **Storage** | Total, Used, Free | Combined capacity of all storage pools, with a usage bar showing consumed space. |
+
+## Virtual resources
+
+These cards describe the workloads running on that infrastructure and the resources they have been allocated.
+
+| Card | Figures | Description |
+| --- | --- | --- |
+| **Virtual Machines** | Total, Running, Stopped | Every VM in scope, split by power state. |
+| **vCPUs Allocated** | Allocated, vs Physical | Total vCPUs assigned to VMs, and that total as a percentage of physical cores. A ratio percentage over 100% means vCPUs are overcommitted relative to physical cores. Overcommit is normal and by design, and is bounded per cluster by each cluster's CPU overcommit ratio. |
+| **VM Memory** | Allocated, vs Physical | Total memory assigned to VMs, and that total as a percentage of physical memory. |
+| **Alerts** | Firing, Critical, Warning | Alerts currently firing, broken down by severity. |
+
+### Allocation versus usage
+
+The Dashboard reports two different kinds of memory figures:
+
+- **Memory (Used)** is what all hosts are currently using.
+- **VM Memory (Allocated)** is what VMs have been assigned — the sum of every VM's allocated memory amount.
+
+Allocated memory is typically well above used memory, because guests rarely use their full assignment. A large gap indicates headroom; allocation approaching or exceeding physical memory indicates the cluster is relying on memory overcommit.
+
+## VM count over time
+
+A trend chart of the total number of VMs over a selected time range. Use it to spot growth, sudden drops, and the effect of large provisioning or decommissioning events.
+
+The chart header shows the **current** VM count and the change since the start of the selected range, as an absolute number and a percentage (for example, `+10 (32.3%) vs 30d ago`).
+
+### Controls
+
+| Control | Description |
+| --- | --- |
+| **7d / 30d / 90d / 365d** | Sets the time range shown. |
+| **Refresh** | Reloads the chart data. |
+| **Zoom in / Zoom out** | Narrows or widens the visible time window. |
+| **Selection zoom** | Drag across the chart to zoom into a specific period. |
+| **Pan** | Drag to move the visible window along the time axis. |
+| **Reset** (home icon) | Returns to the full selected range. |
+| **Download** (☰) | Download the chart in SVG, PNG, or CSV format. |
+
