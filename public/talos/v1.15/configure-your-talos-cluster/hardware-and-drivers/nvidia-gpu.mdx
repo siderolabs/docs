@@ -16,13 +16,13 @@ import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
 
 We will be using the following NVIDIA OSS system extensions:
 
-- `nvidia-open-gpu-kernel-modules`
-- `nvidia-container-toolkit`
+- `nvidia-open-gpu-kernel-modules`: the NVIDIA open kernel modules.
+- `nvidia-container-toolkit`: the NVIDIA driver userspace libraries and the NVIDIA persistence daemon. Despite its name, this extension no longer includes the NVIDIA Container Toolkit; the [NVIDIA GPU Operator](#deploying-nvidia-gpu-operator) installs the toolkit.
 
 Create the [boot assets](../../platform-specific-installations/boot-assets) which includes the system extensions mentioned above (or create a custom installer and perform a machine upgrade if Talos is already installed).
 
 > Make sure the driver version matches for both the `nvidia-open-gpu-kernel-modules` and `nvidia-container-toolkit` extensions.
-> The `nvidia-open-gpu-kernel-modules` extension is versioned as `<nvidia-driver-version>-<talos-release-version>` and the `nvidia-container-toolkit` extension is versioned as `<nvidia-driver-version>-<nvidia-container-toolkit-version>`.
+> The `nvidia-open-gpu-kernel-modules` extension is versioned as `<nvidia-driver-version>-<talos-release-version>` and the `nvidia-container-toolkit` extension is versioned as `<nvidia-driver-version>`.
 
 ## Proprietary vs OSS Nvidia Driver Support
 
@@ -90,9 +90,9 @@ talosctl get extensions
 which should produce an output similar to below:
 
 ```text
-NODE           NAMESPACE   TYPE              ID                                                                           VERSION   NAME                             VERSION
-172.31.41.27   runtime     ExtensionStatus   000.ghcr.io-siderolabs-nvidia-container-toolkit-515.65.01-v1.10.0            1         nvidia-container-toolkit         515.65.01-v1.10.0
-172.31.41.27   runtime     ExtensionStatus   000.ghcr.io-siderolabs-nvidia-open-gpu-kernel-modules-515.65.01-v1.2.0       1         nvidia-open-gpu-kernel-modules   515.65.01-v1.2.0
+NODE           NAMESPACE   TYPE              ID   VERSION   NAME                                 VERSION
+172.31.41.27   runtime     ExtensionStatus   0    1         nvidia-container-toolkit-lts         580.178.04
+172.31.41.27   runtime     ExtensionStatus   1    1         nvidia-open-gpu-kernel-modules-lts   580.178.04-v1.15.0-alpha.2
 ```
 
 ## Deploying NVIDIA GPU Operator
