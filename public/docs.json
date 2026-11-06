@@ -2827,6 +2827,7 @@
                   "omni/security-and-authentication/using-saml-with-omni/configure-saml-and-acls",
                   "omni/security-and-authentication/using-saml-with-omni/configure-okta-for-omni",
                   "omni/security-and-authentication/using-saml-with-omni/auto-assign-roles-to-saml-users",
+                  "omni/security-and-authentication/using-saml-with-omni/sign-saml-requests",
                   "omni/security-and-authentication/using-saml-with-omni/configure-unifi-identity-enterprise-for-omni",
                   "omni/security-and-authentication/using-saml-with-omni/configure-workspace-one-access-for-omni",
                   "omni/security-and-authentication/using-saml-with-omni/how-to-configure-entraid-for-omni",
