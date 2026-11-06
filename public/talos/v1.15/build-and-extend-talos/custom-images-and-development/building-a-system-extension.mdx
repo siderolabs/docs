@@ -390,6 +390,10 @@ kind: KernelModuleConfig
 name: my-module
 ```
 
+<Note>
+Modules that the kernel requests on its own, such as a helper module that another driver needs, load automatically and do not need to be listed. A module needed for a mount or a network socket, such as a filesystem module, is not loaded this way and still needs to be listed. Also list a module in `KernelModuleConfig` to load it at boot or to set its parameters.
+</Note>
+
 Apply the machine config and patch to your test machine.
 
 ```bash
