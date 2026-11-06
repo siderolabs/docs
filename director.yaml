@@ -18,6 +18,9 @@ navigation:
           pages:
             - "what-is-talos-director.mdx"
             - "how-talos-director-works.mdx"
+            - "vsphere-concepts.mdx"
+            - "requirements.mdx"
+            - "api-and-automation.mdx"
 
         - group: "Compute"
           folder: "director/compute"
