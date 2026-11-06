@@ -4,15 +4,47 @@ description: Omni support policy for Talos Linux versions, end-of-support timeli
 ---
 
 Omni requires machines to run a supported version of Talos Linux.
-Versions that fall below the minimum supported version are considered **unsupported** and must be upgraded.
+Versions below the minimum supported version are considered **unsupported** and must be upgraded.
 
 For the current minimum supported Talos Linux version and the general support window, see the [Support Matrix](./support-matrix).
 
-## Talos Version Compatibility
+## Unsupported Talos versions
 
-Starting with **Omni v1.11.0** (estimated **October 2026**), Omni requires all registered machines to meet the minimum supported Talos Linux version. To ensure system stability and feature compatibility, Omni will not start if any registered machines are running versions below this baseline.
+Machines running unsupported versions stay connected to Omni, but Omni does not guarantee that it can manage them.
+Omni shows warning notifications for machines running unsupported or soon-to-be-unsupported versions.
 
-Until then, Omni will display warning notifications for machines running unsupported or soon-to-be-unsupported versions.
+## Minimum version to connect
+
+Starting with the first Omni minor release of 2027 (estimated January 2027), Omni will stop communicating with machines running Talos Linux versions below 1.6:
+
+- Omni will reject their SideroLink connection requests.
+- Omni will disconnect them if they are already connected.
+
+Until then, Omni will show a notification for these machines that cannot be dismissed.
+
+From that release on, only machines running one of the last 10 Talos Linux minor versions, counted from the default Talos version in Omni, will be able to communicate with Omni.
+The minimum version will move up every time a new Talos Linux minor version becomes the default in Omni.
+
+If an Omni instance has machines below the minimum version, Omni will refuse to start unless a flag or configuration setting for that minimum version is set.
+For example, for the minimum version 1.6, set the flag:
+
+```bash
+--siderolink-disconnect-talos-below-1-6
+```
+
+or in the configuration file:
+
+```yaml
+services:
+  siderolink:
+    disconnectTalosBelow1_6: true
+```
+
+Setting it means that you accept that these machines will be disconnected.
+Instances without such machines will not need it.
+
+Every time the minimum version moves up, it will come with a new flag and configuration setting.
+The minimum version will only change with a new Omni minor release, never with a patch release.
 
 ## How to upgrade
 
