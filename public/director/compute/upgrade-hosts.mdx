@@ -1,0 +1,166 @@
+---
+title: Upgrade Hosts
+description: Upgrade the Talos Linux operating system, host agent, and witness on Talos Director hosts, across a whole cluster or one host at a time, and roll back when needed.
+---
+
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
+
+<DirectorLimitedAvailability />
+
+A Talos Director host runs three components that you upgrade separately: the operating system, the host agent, and the witness. You upgrade them from the **Updates** tab of a cluster, or of a single host.
+
+An operating system (OS) upgrade replaces the whole image rather than individual packages. Nothing can half-apply, and a host can be rolled back to its previous image.
+
+## Components
+
+Each component has a different upgrade impact and is upgraded from a different place.
+
+| Component | What it is | Upgrade impact | Where to upgrade |
+| --- | --- | --- | --- |
+| **Operating system** | Talos Linux with KVM, QEMU, and libvirt, delivered as one immutable install image. | The host's VMs move to other hosts, and the host reboots. | Cluster **Updates** tab (rolling), or host **Updates** tab (single host) |
+| **Host agent** | The container that carries out control plane instructions on the host. | Agent containers restart in place. VMs keep running. | Cluster **Updates** tab |
+| **Witness** | The heartbeat process that writes the host's datastore heartbeat for High Availability (HA). | Upgraded alongside the agent. | Cluster **Updates** tab |
+
+## Before you begin
+
+Check the following before you start an OS upgrade:
+
+- Confirm the cluster has spare capacity. Each host is taken out of service in turn, and its VMs must fit on the remaining hosts within the cluster's overcommit limits.
+- Check that every host shows **Connected** and **Agent tunnel: Up** on its **Overview** tab. The upgrade preflight fails if the control plane cannot reach a host.
+- Read the release notes for the target version in the host's **Available OS Versions** table.
+- For a two-host cluster, expect one host to carry every VM during the upgrade.
+
+## Image lanes
+
+An image lane is the set of images a cluster's hosts are built from. The cluster's machine config profile names the lane, and every host in the cluster renders its configuration from it.
+
+To view the lane, navigate to **Compute** > **All Host Clusters** > *cluster name* > **Updates**, and find the **Machine config profile** panel.
+
+| Field | Description |
+| --- | --- |
+| **Lane** | The lane name, for example `upstream`. |
+| **Install image** | The Talos Linux installer image, pinned by digest. This is the OS version hosts install. |
+| **Agent image** | The host agent container image, pinned by digest. |
+| **Witness image** | The datastore heartbeat image, pinned by digest. |
+| **Registry mirrors** | Registries hosts pull images through, or **none**. |
+
+Click **Edit lane** to change the lane or its images.
+
+## Run a rolling OS upgrade
+
+A rolling upgrade moves every host in the cluster to a new Talos Linux image, one host at a time, so VMs keep running throughout.
+
+1. Navigate to **Compute** > **All Host Clusters** > *cluster name* > **Updates**.
+2. In the **Operating System — Rolling Upgrade** panel, confirm the host count under **Applies to all *N* hosts**.
+3. Click **Start Rolling Upgrade**.
+4. Click **Refresh** to follow progress. The panel shows the status, the target image digest, hosts completed (for example `1/2 hosts`), and the current phase.
+
+For each host, Talos Director:
+
+1. Runs a preflight check that reads the host's OS status through the agent tunnel.
+2. Puts the host in maintenance mode, which live-migrates its VMs to other hosts.
+3. Stages the new install image and reboots the host into it.
+4. Waits for the host to boot and the host agent to register again.
+5. Moves on to the next host.
+
+<Warning>
+If any host fails, the upgrade stops. The failed host is left in maintenance mode for inspection, and hosts not yet reached stay on the old version. See [Troubleshoot a failed upgrade](#troubleshoot-a-failed-upgrade).
+</Warning>
+
+## Upgrade a single host
+
+Upgrade one host at a time to test a new version before rolling it out, or to bring a host that fell behind back in line.
+
+Navigate to **Compute** > **Hosts** > **All Hosts** > *host name* > **Updates**. The tab has three panels.
+
+### Operating system
+
+This panel shows what the host is running now.
+
+| Field | Description |
+| --- | --- |
+| **Version** | The running Talos Linux version, for example `v1.14.0-upstream-9abd05af4`. |
+| **Stage** | The host's machine stage, for example `running`. |
+| **Ready** | Whether the host is ready. |
+| **Schematic** | The Image Factory schematic the image was built from, if any. |
+
+### Last OS upgrade
+
+This panel shows the result of the most recent OS upgrade on the host.
+
+| Field | Description |
+| --- | --- |
+| **Status** | The result, for example **Done**. |
+| **Phase** | The final step reached, for example that the agent registered and the host was left in maintenance for the operator. |
+| **Target** | The target image digest and the version upgraded from. |
+| **Health** | Boot confirmation, for example that the new version booted over the overlay 11m45s after the handoff. |
+
+### Available OS versions
+
+The catalog of versions this host can move to.
+
+| Column | Description |
+| --- | --- |
+| **Version** | The Talos version and build, for example `v1.14.1-upstream-2f86b9d2a-hw5`. |
+| **Channel** | The release channel, for example **stable**. |
+| **Installer Digest** | The short digest of the install image. |
+| **Release Notes** | What the build contains, such as QEMU, libvirt, microcode, and firmware versions. |
+
+To upgrade the host:
+
+1. Find the target version in **Available OS Versions**.
+2. Click **Upgrade…** on its row.
+3. Follow progress in **Last OS Upgrade**.
+4. When the upgrade finishes, take the host out of maintenance mode.
+
+<Note>
+After a single-host upgrade, the host is left in maintenance mode for the operator. It does not take new VMs until you take it out of maintenance mode.
+</Note>
+
+### Roll back a host
+
+Click **Roll Back** in the **Operating System** panel to return the host to its previous image.
+
+## Run a rolling agent upgrade
+
+An agent upgrade restarts the host agent and witness containers in place. VMs keep running, and hosts do not reboot or enter maintenance mode.
+
+1. Navigate to **Compute** > **All Host Clusters** > *cluster name* > **Updates**.
+2. In the **Agents — Rolling Upgrade** panel, check the host table for each host's current agent version and image.
+3. Complete the fields below.
+4. Click **Start**. The button stays disabled until you select a target agent image.
+
+| Field | Default | Description |
+| --- | --- | --- |
+| **Target agent image** | None | The agent image to roll out, listed by version, channel, and digest. The current pin is labeled **(current pin)**. |
+| **Witness image** | Keep current | The witness image to roll out with the agent. |
+| **Hosts at a time** | 1 | How many hosts upgrade in parallel. The minimum is 1. |
+
+Each run appears as a job, with who started it, hosts completed, and the agent and witness digests before and after. Each host moves through these phases:
+
+| Phase | What happens |
+| --- | --- |
+| **Queued** | The host waits for its turn. |
+| **Applying** | The new image pin is applied to the host. |
+| **Containers** | The agent and witness containers restart on the new image. |
+| **Registering** | The agent reconnects to the control plane. |
+| **Verifying** | The control plane confirms the host runs the target image. |
+| **Done** | The host is on the new version. |
+
+<Warning>
+Increasing the **Hosts at a time** field finishes sooner, but more hosts lose their management connection at once. High Availability treats a host whose agent is down but whose datastore heartbeat is fresh as isolated, not failed, so VMs are not restarted. Even so, keep it at 1 on production clusters so that one bad image affects only one host.
+</Warning>
+
+### Revert an agent upgrade
+
+Click **Revert** in the **Agents — Rolling Upgrade** panel to return hosts to the previously pinned agent image. The panel header shows the current **Pinned agent image** and **Witness** digests.
+
+## Troubleshoot a failed upgrade
+
+When a rolling OS upgrade fails, the panel shows **Failed**, the hosts completed, the host it stopped on, and the full error.
+
+| Symptom | Likely cause | What to do |
+| --- | --- | --- |
+| `pre-flight status read: ... tunnel unavailable` | The control plane cannot reach the host agent through the reverse tunnel. | Check **Agent tunnel** on the host's **Overview** tab. Wait for it to show **Up**, then start the upgrade again. |
+| `dial tcp <address>:50000: i/o timeout` or `network is unreachable` | The Talos API on port 50000 is unreachable over both the overlay and the management (underlay) address. | Check the host's management network and BMC. Confirm the host is powered on and booted. |
+| Phase ends with `host left in maintenance mode for inspection` | The upgrade stopped on this host on purpose. | Fix the cause, then take the host out of maintenance mode or start the upgrade again. |
