@@ -1,6 +1,6 @@
 ---
 title: Configure a Virtual Machine
-description: The settings in a VirtualMachineConfig document, including power state, processors, memory, firmware, disks, consoles, network interfaces, and guest setup with cloud-init, how to check a virtual machine's status, and how to remove it.
+description: The settings in a VirtualMachineConfig document, including power state, processors, memory, firmware, hardware profiles, disks, consoles, network interfaces, and guest setup with cloud-init, how to check a virtual machine's status, how to start, stop, and reboot it with talosctl, and how to remove it.
 ---
 
 import { version } from '/snippets/custom-variables.mdx';
@@ -12,7 +12,7 @@ Each virtual machine is described by a [`VirtualMachineConfig`](../../talos/v1.1
 
 A document is added to the host with `talosctl patch machineconfig`. For a full walkthrough, see [Run your first virtual machine](../getting-started/run-your-first-virtual-machine).
 
-This page describes each setting in the document, how to check a virtual machine's status, and how to remove a virtual machine.
+This page describes each setting in the document, how to check a virtual machine's status, how to start, stop, and reboot a virtual machine without changing the document, and how to remove a virtual machine.
 
 ## Example configuration
 
@@ -62,6 +62,8 @@ The `powerState` field sets the state Talos keeps the virtual machine in:
 - `stopped` turns off the virtual machine immediately, without a clean shutdown of the guest, and removes it from libvirt. Setting `powerState` back to `running` starts it again.
 
 The field also accepts `suspended`, but Talos does not support it. A virtual machine set to `suspended` reports the `error` stage and stays as it is.
+
+To start, stop, or reboot a virtual machine without changing the document, see [Start, stop, and reboot a virtual machine](#start-stop-and-reboot-a-virtual-machine).
 
 ### Processors
 
@@ -121,6 +123,60 @@ The `firmware.type` field sets the firmware the guest boots with: `bios` or `uef
 A guest installed with one firmware type does not boot with the other. Keep `firmware.type` the same after a guest is installed.
 
 To boot the guest with secure boot, set `firmware.secureBoot.enabled` to `true`. Secure boot needs `uefi`.
+
+### Hardware profile
+
+The `profile` field sets the hardware the guest sees: its machine type, which is the emulated chipset, and its CPU model. Talos includes three profiles on amd64 hosts:
+
+- `host`, the default when `profile` is not set, uses the `q35` machine type and a CPU model that matches the host's CPU, with libvirt's `host-model` mode.
+- `passthrough` uses the `q35` machine type and shows the guest the host's CPU as it is, with libvirt's `host-passthrough` mode.
+- `legacy` uses the older `pc-i440fx-9.2` machine type and the basic `kvm64` CPU model, for guests that need a traditional PC chipset.
+
+For example, the following setting gives a guest the host's CPU as it is:
+
+```yaml
+profile: passthrough
+```
+
+A change of profile, or a change to the profile a virtual machine uses, does not affect a running guest, and rebooting the guest does not apply it either. It applies the next time the virtual machine is stopped and started, for example with `talosctl hypervisor stop` and `talosctl hypervisor start`, as described in [Start, stop, and reboot a virtual machine](#start-stop-and-reboot-a-virtual-machine).
+
+A virtual machine that names a profile that does not exist stays at the `pending` stage until the profile is defined.
+
+#### Custom profiles
+
+A [`VirtualMachineProfileConfig`](../../talos/v1.15/reference/configuration/hypervisor/virtualmachineprofileconfig) document defines a profile of your own. It is added to the host's machine configuration like a `VirtualMachineConfig` document.
+
+The following document defines a profile named `rack-a-compat`, with a versioned `q35` machine type and the `Haswell-noTSX-IBRS` CPU model without the `pku` feature:
+
+```yaml
+apiVersion: v1alpha1
+kind: VirtualMachineProfileConfig
+name: rack-a-compat
+machine: pc-q35-9.2
+cpu:
+  mode: custom
+  model: Haswell-noTSX-IBRS
+  features:
+    - name: pku
+      policy: disable
+```
+
+The document has the following fields:
+
+- `name` is the name that virtual machines use in their `profile` field. The names `host`, `legacy`, and `passthrough`, and names that start with `compat-`, are reserved.
+- `machine` is `q35`, `pc`, or a versioned machine type that starts with `pc-q35-` or `pc-i440fx-`, such as `pc-q35-9.2`. A versioned machine type keeps the guest's hardware the same when QEMU is updated, while `q35` and `pc` follow the newest version.
+- `cpu.mode` is `host-model`, `host-passthrough`, or `custom`. The other `cpu` fields work only with `custom`:
+  - `model` names the CPU model, and is required.
+  - `fallback` is `forbid`, the default, or `allow`. With `allow`, libvirt can use a different CPU model if the host cannot provide the one named.
+  - `features` turns individual CPU features on or off. Each entry has a `name` and a `policy`: `require`, `disable`, `optional`, `force`, or `forbid`. For what each policy does, see the [libvirt CPU model documentation](https://libvirt.org/formatdomain.html#cpu-model-and-topology).
+
+Talos checks only that the document is valid. It does not check that the host's CPU supports the model or features.
+
+To list the profiles available on a host, including custom ones, run the following command, replacing `<host-ip>` with the host's IP address:
+
+```bash
+talosctl get virtualmachineprofilespecs --nodes <host-ip>
+```
 
 ### Disks
 
@@ -291,7 +347,7 @@ A change is applied with a patch that has the document's `apiVersion`, `kind`, a
 - Entries in `disks` are matched by name. An entry with an existing name updates that disk, and an entry with a new name adds a disk. A patch cannot remove a disk. To remove one, edit the machine configuration with `talosctl edit machineconfig`.
 - The `networking.interfaces` and `cpu.topology.pinning.vcpus` lists are replaced as a whole by the list in the patch.
 
-If a change alters a running virtual machine's definition, Talos replaces the virtual machine. This interrupts the guest, like turning it off and on again. A change that leaves the definition the same, such as setting a field to its default value, does not interrupt the guest.
+If a change alters a running virtual machine's definition, Talos replaces the virtual machine. This interrupts the guest, like turning it off and on again. A change that leaves the definition the same, such as setting a field to its default value, does not interrupt the guest. A change of [hardware profile](#hardware-profile) is the exception: it waits until the virtual machine is stopped and started.
 
 Talos stops a running virtual machine when it can no longer build its definition. For example, this happens when:
 
@@ -314,8 +370,8 @@ The `POWER` column shows the power state Talos observes: `running`, `stopped`, o
 
 The `STAGE` column shows the progress:
 
-- `unknown` means Talos has not seen the virtual machine in libvirt yet. A virtual machine set to `stopped` stays at `unknown`, because a stopped virtual machine is removed from libvirt.
-- `pending` means Talos is still starting the virtual machine, or is waiting for something on the host, such as a host link or a disk that is not ready.
+- `unknown` means Talos has not seen the virtual machine in libvirt yet.
+- `pending` means Talos is still starting or stopping the virtual machine, or is waiting for something on the host, such as a host link or a disk that is not ready.
 - `ready` means the virtual machine is in its declared state.
 - `error` means something stops the virtual machine from reaching its declared state. For example, a writable disk is set to be provisioned from an image, the host link is not an Ethernet link, the power state is not supported, or the name is already used by a libvirt domain that Talos did not create.
 
@@ -356,6 +412,44 @@ To see other options for these commands, such as following changes as they happe
 ```bash
 talosctl get --help
 ```
+
+## Start, stop, and reboot a virtual machine
+
+The `talosctl hypervisor start`, `stop`, and `reboot` commands change a virtual machine's power without changing its document. Each command targets one host and needs the `os:operator` or `os:admin` role.
+
+Replace `<host-ip>` in the following commands with the host's IP address:
+
+- To start a virtual machine:
+
+  ```bash
+  talosctl hypervisor start vm1 --nodes <host-ip>
+  ```
+
+- To stop a virtual machine:
+
+  ```bash
+  talosctl hypervisor stop vm1 --nodes <host-ip>
+  ```
+
+  By default, Talos presses the virtual machine's power button and waits for the guest to shut itself down, pressing the button again at least 30 seconds apart until it does. While it waits, the virtual machine is at the `pending` stage. A guest that does not respond to the power button keeps running. To turn the virtual machine off immediately, without a clean shutdown of the guest, add `--graceful=false`.
+
+- To reboot a running virtual machine:
+
+  ```bash
+  talosctl hypervisor reboot vm1 --nodes <host-ip>
+  ```
+
+  By default, Talos asks the guest to restart through the power button. With `--graceful=false`, Talos turns the virtual machine off immediately and starts it again. A virtual machine must be running and at the `ready` stage to be rebooted.
+
+The `start` and `stop` commands override `powerState` until the host reboots. While an override is in place, changing `powerState` in the document has no effect. After the host reboots, the virtual machine follows its document again. Running `start` on a virtual machine whose document sets `powerState: running` removes the override.
+
+To see the overrides in place, run:
+
+```bash
+talosctl get virtualmachinepoweroverrides --nodes <host-ip>
+```
+
+The `reboot` command does not change the power state, and does not apply a change of [hardware profile](#hardware-profile).
 
 ## Remove a virtual machine
 
