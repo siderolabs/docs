@@ -1,0 +1,67 @@
+---
+title: "Requirements for Talos Containers"
+description: "The Talos Linux version, cluster setup, disk space, container image, registry access, talosctl version, and roles needed to run Talos Containers."
+canonical: https://docs.siderolabs.com/talos/v1.14/talos-containers/requirements
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos Containers run on a Talos Linux machine that is part of a Kubernetes cluster.
+This page lists the requirements for the cluster and disk, the Talos Linux version, the container image, and the client that runs `talosctl`.
+
+## Cluster and disk requirements
+
+The machine that runs the container must meet the following requirements:
+
+- **Cluster membership**: The machine is a control plane or worker node in a Kubernetes cluster.
+- **Disk space**: Container images are stored in `/var/lib/containerd` on the `EPHEMERAL` volume, together with the images of Kubernetes pods. The volume needs enough free space for every image the machine runs.
+- **Persistent storage (optional)**: A container that keeps data across restarts needs a volume declared with a `UserVolumeConfig` document. [User Volumes](../configure-your-talos-cluster/storage-and-disk-management/disk-management/user) explains how to declare one.
+
+Talos Containers do not need special hardware.
+
+## Talos Linux version requirements
+
+The machine must run Talos Linux v1.14 or later.
+The [`ContainerConfig`](../reference/configuration/container/containerconfig) document that declares a container was introduced in Talos Linux v1.14.
+Talos Linux v1.15 adds the `ContainerStatus` and `ContainerDependencyStatus` resources, and shows Talos Containers in `talosctl dashboard`.
+
+## Container image requirements
+
+Talos pulls a container's image from a registry when its `ContainerConfig` document is applied.
+If the image is already on the machine, Talos uses it instead.
+
+The image and the registry must meet the following requirements:
+
+- **Architecture**: The image must be built for the machine's architecture, amd64 or arm64. For multi-architecture images, Talos pulls the matching variant.
+- **Registry access**: The machine must reach the registry, either directly or through a registry mirror such as a [pull-through image cache](../configure-your-talos-cluster/images-container-runtime/pull-through-cache). A machine without registry access can use images from the [image cache](../configure-your-talos-cluster/images-container-runtime/image-cache).
+- **Image signatures**: If the machine has an image verification policy, Talos checks container images against it. Talos does not run an image that the policy rejects. [Verifying Image Signatures](../security/verifying-image-signatures) describes the policy.
+
+## Client requirements
+
+The `--namespace taloscontainers` flag, which the `talosctl` container commands need to work with Talos Containers, was introduced in Talos Linux v1.14.
+`talosctl` must therefore be v1.14 or later, and v1.15 or later to see Talos Containers in `talosctl dashboard`.
+Using the same `talosctl` version as the Talos Linux version on the machine is recommended.
+
+Each operation also needs a role in the `talosconfig`.
+[Role-Based Access Control](../security/rbac) describes each role.
+
+The following table lists the minimum role for each operation:
+
+| Operation | Command | Minimum role |
+| --- | --- | --- |
+| Apply or patch a `ContainerConfig` document | `talosctl apply-config`, `talosctl patch machineconfig` | `os:admin` |
+| Restart a container | `talosctl restart --namespace taloscontainers` | `os:operator` |
+| List containers, read logs, and read resource usage | `talosctl containers`, `talosctl logs`, `talosctl stats` with `--namespace taloscontainers` | `os:reader` |
+| List pulled images | `talosctl image list --namespace taloscontainers` | `os:reader` |
+
+## CPU and memory limits on Docker clusters
+
+CPU and memory limits in a `ContainerConfig` document have no effect on a [Docker cluster](../platform-specific-installations/local-platforms/docker).
+In a Docker cluster, Talos itself runs inside a Docker container, and Talos does not apply cgroup limits there.
+A [QEMU cluster](../platform-specific-installations/local-platforms/qemu) applies the limits.
+
+## Next steps
+
+To run a first container on a machine that meets these requirements, see [Run Your First Talos Container](./run-your-first-talos-container).
