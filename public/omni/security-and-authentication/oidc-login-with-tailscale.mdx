@@ -3,11 +3,16 @@ title: OIDC login with Tailscale
 description: Enable secure login to Omni over your tailnet with Tailscale's OIDC provider.
 ---
 
+import { omni_release } from '/snippets/custom-variables.mdx';
+
 Tailscale provides seamless OIDC authentication through [tsidp](https://github.com/tailscale/tsidp). When accessing Omni through Tailscale, you can make use of this through the following steps.
 
 ## Prerequisites
 
-You will need [a Tailscale account](https://login.tailscale.com/start) with the MagicDNS and HTTPS certificates features enabled.
+You will need:
+
+- [A Tailscale account](https://login.tailscale.com/start) with the MagicDNS and HTTPS certificates features enabled.
+- A Linux host with Docker and Docker Compose.
 
 ## Tailscale setup
 
@@ -61,18 +66,22 @@ EOF
 
 **Step 2: Generate the Omni encryption key**
 
-Generate a GPG key used to encrypt data written to etcd at rest. Copy the fingerprint printed by `--list-secret-keys` and paste it into the `--quick-add-key` command:
+Generate a GPG key used to encrypt data written to etcd at rest. The key has no passphrase, because Omni reads it at startup without a prompt:
 
 ```bash
-gpg --quick-generate-key "Omni (Used for etcd data encryption) how-to-guide@siderolabs.com" rsa4096 cert never
-gpg --list-secret-keys
-gpg --quick-add-key <fingerprint> rsa4096 encr never
+gpg --batch --passphrase '' \
+  --quick-generate-key "Omni (Used for etcd data encryption) how-to-guide@siderolabs.com" \
+  rsa4096 cert never
+FINGERPRINT=$(gpg --with-colons --list-keys "how-to-guide@siderolabs.com" \
+  | awk -F: '$1 == "fpr" {print $10; exit}')
+gpg --batch --passphrase '' \
+  --quick-add-key ${FINGERPRINT} rsa4096 encr never
 gpg --export-secret-key --armor how-to-guide@siderolabs.com > omni.asc
 ```
 
 **Step 3: Configure the Tailscale reverse proxy**
 
-Create `serve-config.json`. This tells the Tailscale sidecar which ports to expose over HTTPS and where to forward incoming traffic:
+Create `serve-config.json`. This tells the Tailscale sidecar which ports to expose over HTTPS and where to forward incoming traffic. Omni shares the network of the Tailscale sidecar, so traffic is forwarded to `127.0.0.1`:
 
 ```bash
 cat <<EOF > serve-config.json
@@ -92,21 +101,21 @@ cat <<EOF > serve-config.json
     "omni.${TAILNET_DNS}:443": {
       "Handlers": {
         "/": {
-          "Proxy": "http://omni:8080"
+          "Proxy": "http://127.0.0.1:8080"
         }
       }
     },
     "omni.${TAILNET_DNS}:8090": {
       "Handlers": {
         "/": {
-          "Proxy": "http://omni:8090"
+          "Proxy": "http://127.0.0.1:8090"
         }
       }
     },
     "omni.${TAILNET_DNS}:8100": {
       "Handlers": {
         "/": {
-          "Proxy": "http://omni:8100"
+          "Proxy": "http://127.0.0.1:8100"
         }
       }
     }
@@ -117,10 +126,21 @@ EOF
 
 **Step 4: Define the service stack**
 
-Create `docker-compose.yml`. This defines three services: `tsidp` as the OIDC provider, `omni-tailscale` as the Tailscale reverse proxy, and `omni` itself. Replace `<your-admin-email>` with the email address of the first Omni admin.
+Create `docker-compose.yml`. This defines three services:
 
-```bash
-cat <<EOF > docker-compose.yml
+- `tsidp`: the OIDC provider.
+- `omni-tailscale`: the Tailscale sidecar. It connects to the tailnet, serves Omni over HTTPS, and resolves tailnet names such as `tsidp.${TAILNET_DNS}` with MagicDNS.
+- `omni`: Omni itself. It uses the network of `omni-tailscale` and starts after the sidecar's health check passes. The machine API and the Kubernetes proxy listen on `127.0.0.1:8090` and `127.0.0.1:8100`, the addresses that the Tailscale sidecar forwards to.
+
+Replace the placeholders with your own values:
+
+- `<your-admin-email>`: the email address of the first Omni admin.
+- `<your-name>` and `<your-email>`: the name and email address that accept the [End User License Agreement](https://siderolabs.com/eula/) (EULA). Omni requires acceptance of the EULA to start.
+
+The OIDC client secret is passed to Omni with the `OMNI_AUTH_OIDC_CLIENT_SECRET` environment variable.
+
+<CodeBlock lang="bash">
+{`cat <<EOF > docker-compose.yml
 services:
   tsidp:
     image: ghcr.io/tailscale/tsidp:latest
@@ -128,11 +148,11 @@ services:
       - TAILSCALE_USE_WIP_CODE=1
       - TS_HOSTNAME=tsidp
     volumes:
-      - tsidp-data:/var/lib/tsidp
+      - tsidp-data:/data
     env_file:
       - .env
     command:
-      - "--dir=/var/lib/tsidp"
+      - "--dir=/data"
 
   omni-tailscale:
     image: tailscale/tailscale:latest
@@ -140,50 +160,74 @@ services:
       - TS_SERVE_CONFIG=/config/serve.json
       - TS_HOSTNAME=omni
       - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+      - TS_ACCEPT_DNS=true
+      - TS_ENABLE_HEALTH_CHECK=true
+      - TS_LOCAL_ADDR_PORT=127.0.0.1:9002
     env_file:
       - .env
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:9002/healthz"]
+      interval: 5s
+      retries: 12
     volumes:
       - ./serve-config.json:/config/serve.json:ro
       - ts-state:/var/lib/tailscale
 
   omni:
-    image: ghcr.io/siderolabs/omni:latest
+    image: ghcr.io/siderolabs/omni:${omni_release}
+    network_mode: service:omni-tailscale
+    depends_on:
+      omni-tailscale:
+        condition: service_healthy
     volumes:
       - omni-data:/_out/etcd
+      - omni-sqlite:/_out/sqlite
       - ./omni.asc:/omni.asc:ro
       - /dev/net/tun:/dev/net/tun
     cap_add:
       - NET_ADMIN
+    environment:
+      - OMNI_AUTH_OIDC_CLIENT_SECRET=\\\${OIDC_CLIENT_SECRET}
     command:
       - --private-key-source=file:///omni.asc
-      - --advertised-api-url=https://omni.${TAILNET_DNS}/
-      - --machine-api-advertised-url=https://omni.${TAILNET_DNS}:8090/
-      - --advertised-kubernetes-proxy-url=https://omni.${TAILNET_DNS}:8100/
-      - --siderolink-wireguard-advertised-addr=omni.${TAILNET_DNS}:50180
+      - --sqlite-storage-path=/_out/sqlite/omni.db
+      - --advertised-api-url=https://omni.\${TAILNET_DNS}/
+      - --machine-api-advertised-url=https://omni.\${TAILNET_DNS}:8090/
+      - --advertised-kubernetes-proxy-url=https://omni.\${TAILNET_DNS}:8100/
+      - --machine-api-bind-addr=127.0.0.1:8090
+      - --k8s-proxy-bind-addr=127.0.0.1:8100
+      - --siderolink-wireguard-advertised-addr=omni.\${TAILNET_DNS}:50180
       - --auth-oidc-enabled
-      - --auth-oidc-provider-url=\${OIDC_ISSUER_URL}
-      - --auth-oidc-client-id=\${OIDC_CLIENT_ID}
-      - --auth-oidc-client-secret=\${OIDC_CLIENT_SECRET}
+      - --auth-oidc-provider-url=\\\${OIDC_ISSUER_URL}
+      - --auth-oidc-client-id=\\\${OIDC_CLIENT_ID}
       - --auth-oidc-scopes=openid
       - --auth-oidc-scopes=profile
       - --auth-oidc-scopes=email
       - --initial-users=<your-admin-email>
+      - --eula-accept-name=<your-name>
+      - --eula-accept-email=<your-email>
 
 volumes:
   tsidp-data:
   ts-state:
   omni-data:
-EOF
-```
+  omni-sqlite:
+EOF`}
+</CodeBlock>
 
-Alternatively, you can configure the OIDC authentication flags above using a configuration file instead. See [OIDC](../reference/omni-configuration#oidc) in the Omni Configuration Examples.
+Alternatively, you can configure the OIDC authentication flags above using a configuration file instead. See [OIDC](../reference/omni-configuration#oidc) in the Omni Configuration Examples. To accept the EULA in a configuration file, see [`eulaAccept`](../reference/omni-configuration#eulaaccept).
 
 ## OIDC client setup
 
-At this point all that's left to do is register Omni as an OIDC client in tsidp. Start up only tsidp first:
+At this point all that's left to do is register Omni as an OIDC client in tsidp. Start only tsidp first:
 
 ```bash
-docker compose up tsidp
+docker compose up -d tsidp
 ```
 
 Browse to `https://tsidp.${TAILNET_DNS}` and create a new client. For the redirect URI, use `https://omni.${TAILNET_DNS}/oidc/consume`.
@@ -197,10 +241,10 @@ OIDC_CLIENT_SECRET=<paste-secret-here>
 EOF
 ```
 
-Now start up the complete stack:
+Now start the complete stack:
 
 ```bash
-docker compose up
+docker compose up -d
 ```
 
 Browse to `https://omni.${TAILNET_DNS}/`. You should be prompted to log in with your Tailscale user and then taken to the Omni UI.
