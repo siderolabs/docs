@@ -201,10 +201,13 @@ If you don't have direct access to an internal container registry (e.g. air gapp
 
 Download all images from `images.txt`. Create file names that don't contain special characters.
 
+Image Factory needs both `linux/amd64` and `linux/arm64` images, regardless of your machines' architecture. `cache-create` caches only `linux/amd64` by default, so pass `--platform all`. The `all` value requires `talosctl` v1.13.0 or later.
+
 ```bash
 cat images.txt \
   | talosctl images cache-create \
       --layout flat \
+      --platform all \
       --image-cache-path ./image-cache \
       --images=-
 ```
