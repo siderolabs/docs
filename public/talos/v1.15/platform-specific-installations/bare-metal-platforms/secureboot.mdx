@@ -121,8 +121,13 @@ On bare-metal, hit Esc to bring up the boot menu and select the `Enroll Secure B
 
 Once Talos is running in maintenance mode, verify that secure boot is enabled:
 
-```shell
-$ talosctl -n <IP> get securitystate --insecure
+```bash
+talosctl -n <IP> get securitystate --insecure
+```
+
+The output is similar to the following:
+
+```text
 NODE   NAMESPACE   TYPE            ID              VERSION   SECUREBOOT
        runtime     SecurityState   securitystate   1         true
 ```
@@ -180,6 +185,9 @@ Follow the steps above to generate new installer image updating the boot assets:
 Once the new `installer` image is pushed to the registry, [upgrade](../../configure-your-talos-cluster/lifecycle-management/upgrading-talos) the node using the new installer image.
 
 It is important to preserve the UKI signing key and the PCR signing key, otherwise the node will not be able to boot with the new UKI and unlock the encrypted partitions.
+
+With SecureBoot enabled, Talos Linux doesn't use `kexec` to reboot.
+Upgrades and reboots go through the UEFI firmware instead, so each one takes as long as a full boot of the machine, and Talos Linux logs `kexec skipped as secure boot is enabled`.
 
 ## Disk encryption with TPM
 
@@ -362,8 +370,13 @@ The same key might be used for both, but it is recommended to use separate keys 
 
 Talos provides a utility to generate the keys, but existing PKI  can be used as well:
 
-```shell
-$ talosctl gen secureboot uki --common-name "SecureBoot Key"
+```bash
+talosctl gen secureboot uki --common-name "SecureBoot Key"
+```
+
+The output is similar to the following:
+
+```text
 writing _out/uki-signing-cert.pem
 writing _out/uki-signing-cert.der
 writing _out/uki-signing-key.pem
@@ -374,8 +387,13 @@ The certificate is also written in DER format for the systems which expect the c
 
 PCR signing key can be generated with:
 
-```shell
-$ talosctl gen secureboot pcr
+```bash
+talosctl gen secureboot pcr
+```
+
+The output is similar to the following:
+
+```text
 writing _out/pcr-signing-key.pem
 ```
 
@@ -383,8 +401,13 @@ The file containing the private key is written to disk in PEM-encoded format (RS
 
 Optionally, UEFI automatic key enrollment database can be generated using the `_out/uki-signing-*` files as input:
 
-```shell
-$ talosctl gen secureboot database
+```bash
+talosctl gen secureboot database
+```
+
+The output is similar to the following:
+
+```text
 writing _out/db.auth
 writing _out/KEK.auth
 writing _out/PK.auth
