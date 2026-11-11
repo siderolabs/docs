@@ -236,6 +236,18 @@ BGPNeighborConfig configures a concrete BGP neighbor.
       <td>BFD (Bidirectional Forwarding Detection) settings for this neighbor.<br />The presence of this block enables BFD; an empty block uses the implementation defaults.<br />BFD is supported only when the BGP instance uses the default routing domain, not a VRF.</td>
       <td></td>
     </tr>
+    <tr>
+      <td>`authPassword`</td>
+      <td>string</td>
+      <td>Password for TCP MD5 signature authentication (RFC 2385) of the BGP session.<br />The same password must be configured on the neighbor. Supported for VRF-bound BGP instances as well.<br />The password must not exceed 80 bytes. If unset, the session is not authenticated.<br />The kernel matches the password by peer address (and VRF, if any), so unnumbered neighbors<br />sharing the same link-local address on different links must all use the same password (or none).</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`ebgpMultiHop`</td>
+      <td>uint32</td>
+      <td>TTL To be set on BGP packet for eBGPMultiHop feature.<br />Value must be between 2 and 255.</td>
+      <td></td>
+    </tr>
   </tbody>
 </table>
 
