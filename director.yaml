@@ -22,6 +22,11 @@ navigation:
             - "requirements.mdx"
             - "api-and-automation.mdx"
 
+        - group: "Getting Started"
+          folder: "director/getting-started"
+          pages:
+            - "quickstart-zero-to-vm.mdx"
+
         - group: "Compute"
           folder: "director/compute"
           pages:
