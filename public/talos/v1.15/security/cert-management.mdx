@@ -24,6 +24,8 @@ The `talosconfig` file should be renewed at least once a year, using the `talosc
 
 ## Generating new client configuration
 
+A new `talosconfig` can be generated in three ways: from a control plane node, from a secrets bundle, or from the control plane machine configuration.
+
 ### Using control plane node
 
 If you have a valid (not expired) `talosconfig` with `os:admin` role,
@@ -49,33 +51,26 @@ talosctl gen config --with-secrets secrets.yaml --output-types talosconfig -o ta
 
 ### From control plane machine configuration
 
-In order to create a new key pair for client configuration, you will need the root Talos API CA.
-The base64 encoded CA can be found in the control plane node's configuration file.
-Save the CA public key, and CA private key as `ca.crt`, and `ca.key` respectively:
+The control plane machine configuration holds the root Talos API CA, so a new `talosconfig` can be generated from it.
 
-```shell
-yq eval .machine.ca.crt controlplane.yaml | base64 -d > ca.crt
-yq eval .machine.ca.key controlplane.yaml | base64 -d > ca.key
-```
-
-Now, run the following commands to generate a certificate:
+First, extract a secrets bundle from the control plane configuration:
 
 ```bash
-talosctl gen key --name admin
-talosctl gen csr --key admin.key --ip 127.0.0.1
-talosctl gen crt --ca ca --csr admin.csr --name admin
+talosctl gen secrets --from-controlplane-config controlplane.yaml -o secrets.yaml
 ```
 
-Put the base64-encoded files to the respective location to the `talosconfig`:
+Then generate the `talosconfig` from the secrets bundle, as in [From secrets bundle](#from-secrets-bundle):
 
-```yaml
-context: mycluster
-contexts:
-    mycluster:
-        endpoints:
-            - CP1
-            - CP2
-        ca: <base64-encoded ca.crt>
-        crt: <base64-encoded admin.crt>
-        key: <base64-encoded admin.key>
+```bash
+talosctl gen config --with-secrets secrets.yaml --output-types talosconfig -o talosconfig <cluster-name> https://<cluster-endpoint>
 ```
+
+The generated `talosconfig` has no endpoints.
+
+Set the endpoints to your control plane nodes:
+
+```bash
+talosctl --talosconfig talosconfig config endpoint <CP1> <CP2>
+```
+
+The secrets bundle holds every secret of the cluster. Store it securely, or delete it once the `talosconfig` is generated.
