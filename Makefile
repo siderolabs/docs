@@ -8,7 +8,7 @@ DOCS_GEN_IMAGE := ghcr.io/siderolabs/docs-gen:latest
 DOCS_CONVERT_IMAGE := ghcr.io/siderolabs/docs-convert:latest
 CHANGELOG_GEN_IMAGE := ghcr.io/siderolabs/changelog-gen:latest
 VERSION_UPGRADE_IMAGE := ghcr.io/siderolabs/version-upgrade-gen:latest
-TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.15.0-alpha.2
+TALOSCTL_IMAGE := ghcr.io/siderolabs/talosctl:v1.15.0-beta.0
 OMNI_CLI_GEN_IMAGE := ghcr.io/siderolabs/omni-cli-gen:latest
 OMNI_CONFIG_GEN_IMAGE := ghcr.io/siderolabs/omni-config-gen:latest
 OMNI_HELM_CHART_GEN_IMAGE := ghcr.io/siderolabs/omni-helm-chart-gen:latest
@@ -90,6 +90,7 @@ docs.json: common.yaml omni.yaml ## Generate and validate docs.json from multipl
 		talos-v1.10.yaml \
 		talos-v1.9.yaml \
 		talos-v1.8.yaml \
+		talos-v1.15.yaml \
 		talos-enterprise-linux.yaml \
 		omni.yaml \
 		director.yaml \
@@ -108,6 +109,7 @@ docs.json-local: common.yaml omni.yaml tools/docs-gen/main.go ## Generate docs.j
 		../../talos-v1.10.yaml \
 		../../talos-v1.9.yaml \
 		../../talos-v1.8.yaml \
+		../../talos-v1.15.yaml \
 		../../talos-enterprise-linux.yaml \
 		../../omni.yaml \
 		../../director.yaml \
@@ -127,6 +129,7 @@ check-missing: ## Check for MDX files not included in config files
 		talos-v1.10.yaml \
 		talos-v1.9.yaml \
 		talos-v1.8.yaml \
+		talos-v1.15.yaml \
 		talos-enterprise-linux.yaml \
 		omni.yaml \
 		director.yaml \
@@ -145,6 +148,7 @@ check-missing-local: ## Check for missing files using local Go build
 		../../talos-v1.10.yaml \
 		../../talos-v1.9.yaml \
 		../../talos-v1.8.yaml \
+		../../talos-v1.15.yaml \
 		../../talos-enterprise-linux.yaml \
 		../../omni.yaml \
 		../../director.yaml \

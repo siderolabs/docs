@@ -5,7 +5,7 @@ description: |
 
   The container is started as soon as the configuration is applied, with no image rebuild
   and no reboot. It runs against the CRI containerd instance in the dedicated
-  `taloscontainers` namespace, and is restarted automatically 5 seconds after it stops.
+  `taloscontainers` namespace, and by default is restarted 5 seconds after it stops.
 
   Containers are not Talos services: they do not appear in `talosctl services`, and
   `talosctl service` does not apply to them. Status is reported via `ContainerStatus`.
@@ -37,11 +37,11 @@ environment:
     - NGINX_PORT=8080
 # Filesystems to mount into the container.
 mounts:
-    - # Mount a user volume, referenced by the name of its `UserVolumeConfig` document.
-      userVolume:
-        name: web-content # Name of the `UserVolumeConfig` document to mount.
+    - # Mount a user, existing or external volume by name.
+      volume:
+        name: web-content # Name of the volume to mount.
         destination: /usr/share/nginx/html # Absolute path inside the container's mount namespace.
-        # Mount options. User volume mounts are writable by default (`rw`).
+        # Mount options. Volume mounts are writable by default (`rw`).
         options:
             - ro
     - # Mount a tmpfs for scratch space.
@@ -57,15 +57,42 @@ resources:
 
         # # Swap ceiling, mapped onto cgroup v2 `memory.swap.max`.
         # swap: "0"
-# Conditions which must be satisfied before the container is started.
-dependsOn:
-    # Host paths which must exist before the container starts.
-    paths:
-        - /var/mnt/web-content
-    # Network readiness conditions which must be satisfied.
-    networks:
-        - addresses
-    time: true # Whether the clock must be synchronized before the container starts.
+# Lifecycle settings for the container.
+lifecycle:
+    # Conditions which must be satisfied before the container is started.
+    dependsOn:
+        # Host paths which must exist before the container starts.
+        paths:
+            - /var/mnt/web-content
+        # Network readiness conditions which must be satisfied.
+        network:
+            - addresses
+        time: true # Whether the clock must be synchronized before the container starts.
+
+        # # Other containers, by document name, which must be running first, or have succeeded.
+        # containers:
+        #     - name: migrate
+        #       condition: succeeded
+        #     - db
+
+    # # Probe deciding whether the running container is healthy.
+    # healthCheck:
+    #     # Probe by sending an HTTP GET request to the port.
+    #     http:
+    #         port: 8080 # Port to connect to on the container's loopback address.
+    #         path: /healthz # Request path.
+    #     interval: 10s # Interval between checks.
+    #     timeout: 1s # Time after which a single check is considered failed.
+
+    # # Time the container gets to exit after SIGTERM before it is killed with SIGKILL.
+    # stopTimeout: 30s
+
+# # Devices to hand to the container.
+# devices:
+#     - # Hand a raw volume to the container as a block device.
+#       rawVolume:
+#         name: data # Name of the `RawVolumeConfig` document.
+#         destination: /dev/data # Path of the device node inside the container.
 ```
 
 
@@ -128,6 +155,12 @@ dependsOn:
       <td></td>
     </tr>
     <tr>
+      <td>`devices`</td>
+      <td><a href="#devices%5B%5D">ContainerDevice</a></td>
+      <td>Devices to hand to the container.</td>
+      <td></td>
+    </tr>
+    <tr>
       <td>`security`</td>
       <td><a href="#security">ContainerSecurity</a></td>
       <td>Security settings for the container.</td>
@@ -146,9 +179,9 @@ dependsOn:
       <td></td>
     </tr>
     <tr>
-      <td>`dependsOn`</td>
-      <td><a href="#dependson">ContainerDependsOn</a></td>
-      <td>Conditions which must be satisfied before the container is started.</td>
+      <td>`lifecycle`</td>
+      <td><a href="#lifecycle">ContainerLifecycle</a></td>
+      <td>Lifecycle settings for the container.</td>
       <td></td>
     </tr>
   </tbody>
@@ -176,13 +209,13 @@ ContainerRunAs overrides the image's user and group.
     <tr>
       <td>`uid`</td>
       <td>int32</td>
-      <td>UID to run the container's entrypoint as.<br /><br />Unset means use the image's own USER. There are no user namespaces, so uid 0 is host<br />root.</td>
+      <td>UID to run the container's entrypoint as.<br /><br />Unset means use the image's own USER. There are no user namespaces, so uid 0 is host<br />root.<br /><br />Required when the image's USER names its user rather than giving a numeric uid<br />(e.g. `app` or `app:app`): Talos does not read the image's /etc/passwd, and rejects<br />such a container instead of running it as root.</td>
       <td></td>
     </tr>
     <tr>
       <td>`gid`</td>
       <td>int32</td>
-      <td>GID to run the container's entrypoint as.<br /><br />Unset means use the image's own USER.</td>
+      <td>GID to run the container's entrypoint as.<br /><br />Unset means use the image's own USER.<br /><br />Required when the image's USER names its group (e.g. `app:app`), or names only a user<br />(e.g. `app`), whose primary group would come from the image's /etc/passwd: Talos does<br />not read it, and rejects such a container instead of running it as root.</td>
       <td></td>
     </tr>
   </tbody>
@@ -214,9 +247,9 @@ typed so that Talos can reason about what a container is allowed to reach.
   </thead>
   <tbody>
     <tr>
-      <td>`userVolume`</td>
-      <td><a href="#uservolume">UserVolumeMount</a></td>
-      <td>Mount a user volume, referenced by the name of its `UserVolumeConfig` document.<br /><br />The volume is mounted from `/var/mnt/<name>` on the host. Declaring this mount also<br />makes the container wait for the volume to be mounted before it starts.</td>
+      <td>`volume`</td>
+      <td><a href="#volume">VolumeMount</a></td>
+      <td>Mount a user, existing or external volume by name.<br /><br />The name is that of a `UserVolumeConfig`, `ExistingVolumeConfig` or<br />`ExternalVolumeConfig` document. Volume names are unique across those kinds, so the<br />name resolves to one volume. The volume must be declared in the same configuration.<br /><br />The volume is mounted from `/var/mnt/<name>` on the host. Declaring this mount also<br />makes the container wait for the volume to be mounted before it starts.</td>
       <td></td>
     </tr>
     <tr>
@@ -236,9 +269,9 @@ typed so that Talos can reason about what a container is allowed to reach.
 
 
 
-### userVolume
+### volume
 
-UserVolumeMount mounts a user volume by name.
+VolumeMount mounts a volume by name.
 
 
 
@@ -256,7 +289,7 @@ UserVolumeMount mounts a user volume by name.
     <tr>
       <td>`name`</td>
       <td>string</td>
-      <td>Name of the `UserVolumeConfig` document to mount.</td>
+      <td>Name of the volume to mount.<br /><br />The name of a `UserVolumeConfig`, `ExistingVolumeConfig` or `ExternalVolumeConfig` document.</td>
       <td></td>
     </tr>
     <tr>
@@ -268,7 +301,7 @@ UserVolumeMount mounts a user volume by name.
     <tr>
       <td>`options`</td>
       <td>[]string</td>
-      <td>Mount options. User volume mounts are writable by default (`rw`).</td>
+      <td>Mount options. Volume mounts are writable by default (`rw`).<br /><br />A volume whose `ExistingVolumeConfig` or `ExternalVolumeConfig` declares it<br />read-only must be mounted with `ro`.</td>
       <td>`ro`<br />`rw`<br />`noexec`<br />`nosuid`<br />`nodev`<br />`noatime`<br />`rbind`<br />`rshared`<br /></td>
     </tr>
   </tbody>
@@ -364,6 +397,83 @@ HostPathMount bind-mounts a host path.
 
 
 
+## devices[]
+
+ContainerDevice describes a single device to hand to the container.
+
+Exactly one source must be set.
+
+
+
+
+```yaml
+devices:
+    - # Hand a raw volume to the container as a block device.
+      rawVolume:
+        name: data # Name of the `RawVolumeConfig` document.
+        destination: /dev/data # Path of the device node inside the container.
+```
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`rawVolume`</td>
+      <td><a href="#rawvolume">RawVolumeDevice</a></td>
+      <td>Hand a raw volume to the container as a block device.<br /><br />The raw volume is referenced by the name of its `RawVolumeConfig` document.<br />The container gets a device node at the destination and is allowed to read and write<br />that device, and no other block device. This works with the `restricted` profile,<br />no capabilities are added. For an encrypted raw volume the node is the unlocked device.<br /><br />Declaring this device makes the container wait for the raw volume to be ready, and the<br />raw volume is not closed while the container is running. A raw volume can be handed to<br />a single container only.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+### rawVolume
+
+RawVolumeDevice hands a raw volume to the container by name.
+
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`name`</td>
+      <td>string</td>
+      <td>Name of the `RawVolumeConfig` document.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`destination`</td>
+      <td>string</td>
+      <td>Path of the device node inside the container.<br /><br />Must be under `/dev/`, and not one of the entries the container runtime creates there<br />itself (e.g. `/dev/null`, `/dev/pts`). The node keeps the owner and mode of the device<br />on the host.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+
+
 ## security
 
 ContainerSecurity configures the container's security posture.
@@ -384,19 +494,25 @@ ContainerSecurity configures the container's security posture.
     <tr>
       <td>`profile`</td>
       <td>ContainerSecurityProfile</td>
-      <td>Security profile.<br /><br />`restricted` drops all capabilities, allows no device access, and mounts the rootfs<br />and sysfs read-only. `privileged` grants all grantable capabilities and all devices,<br />which is what extension services get implicitly.</td>
+      <td>Security profile.<br /><br />`restricted` drops all capabilities, allows no device access, and mounts the rootfs<br />and sysfs read-only. `privileged` grants all grantable capabilities and all devices,<br />and mounts sysfs read-write.</td>
       <td>`restricted`<br />`privileged`<br /></td>
     </tr>
     <tr>
       <td>`capabilities`</td>
       <td><a href="#capabilities">ContainerCapabilities</a></td>
-      <td>Linux capabilities to add or drop on top of the profile.</td>
+      <td>Linux capabilities to add or drop on top of the profile.<br /><br />When the container runs as a non-root user (through `runAs` or the image's `USER`), the<br />resulting capabilities (the profile's, minus `drop`, plus `add`) are also raised into the<br />ambient set, so that they remain effective after the entrypoint is executed. Ambient<br />capabilities are inherited by every program the container runs, not only its entrypoint,<br />so grant only what the workload needs.</td>
       <td></td>
     </tr>
     <tr>
       <td>`machinedAccess`</td>
       <td>bool</td>
       <td>Publishes the container's PID so machined's API can recognize it, and bind-mounts the<br />machined API socket into the container.<br /><br />This alone does not grant DAC access to the socket, which is owned by the `apid` user:<br />reaching it in practice still requires `profile: privileged` or an equivalent capability/<br />`runAs` grant. Once connected, the container may request any role, same as extension<br />services; the RPC's own role requirements are what actually gate access.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`seccompProfile`</td>
+      <td><a href="#seccompprofile">ContainerSeccomp</a></td>
+      <td>Seccomp profile applied to the container.<br /><br />Unset means the containerd default seccomp profile, independently of the security<br />profile: even a `privileged` container is filtered by it.</td>
       <td></td>
     </tr>
   </tbody>
@@ -431,6 +547,53 @@ ContainerCapabilities adjusts the container's Linux capabilities.
       <td>`drop`</td>
       <td>[]string</td>
       <td>Capabilities to remove, without the `CAP_` prefix. `ALL` removes every capability.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+### seccompProfile
+
+ContainerSeccomp selects the seccomp filter applied to the container.
+
+For compatibility, a bare profile type (e.g. `seccompProfile: unconfined`) is accepted as a
+shorthand for `seccompProfile: {type: unconfined}`.
+
+
+
+
+```yaml
+security:
+    seccompProfile:
+        type: localhost # Seccomp profile type.
+        localhostProfile: audit.json # Name of the seccomp profile to apply, declared by a `SeccompProfileConfig` document
+```
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`type`</td>
+      <td>ContainerSeccompProfile</td>
+      <td>Seccomp profile type.<br /><br />`default` applies the containerd default seccomp profile. `unconfined` applies no<br />seccomp filter at all, which some workloads need, e.g. a nested container runtime<br />creating session keyrings. `localhost` applies the profile named by `localhostProfile`.</td>
+      <td>`default`<br />`unconfined`<br />`localhost`<br /></td>
+    </tr>
+    <tr>
+      <td>`localhostProfile`</td>
+      <td>string</td>
+      <td>Name of the seccomp profile to apply, declared by a `SeccompProfileConfig` document<br />(or the deprecated `.machine.seccompProfiles` field).<br /><br />Required with, and only allowed with, `type: localhost`. Updating the referenced<br />profile restarts the container with the new profile.</td>
       <td></td>
     </tr>
   </tbody>
@@ -544,7 +707,53 @@ ContainerResourceLimits are hard ceilings.
 
 
 
-## dependsOn
+## lifecycle
+
+ContainerLifecycle configures how Talos starts, runs and stops the container.
+
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`dependsOn`</td>
+      <td><a href="#dependson">ContainerDependsOn</a></td>
+      <td>Conditions which must be satisfied before the container is started.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`healthCheck`</td>
+      <td><a href="#healthcheck">ContainerHealthCheck</a></td>
+      <td>Probe deciding whether the running container is healthy.<br /><br />Without a health check, a running container is healthy. With one, it is reported as<br />pending until the first check passes, and as degraded once `failureThreshold` consecutive<br />checks fail. A failing check never restarts the container. Health gates other containers<br />which list this one in `lifecycle.dependsOn.containers`.<br /><br />The probe connects to `127.0.0.1` inside the container's network namespace.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`stopTimeout`</td>
+      <td>Duration</td>
+      <td>Time the container gets to exit after SIGTERM before it is killed with SIGKILL.<br /><br />It applies whenever Talos stops the container: on shutdown, reboot and upgrade, when it is<br />replaced after a change or restarted with `talosctl restart`, and when it is removed.<br />Defaults to 10s. Must be greater than 0 and at most 4m.<br />Changing it replaces the running container, which is still stopped with its previous timeout.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`restart`</td>
+      <td><a href="#restart">ContainerRestart</a></td>
+      <td>How the container is restarted after it exits.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+### dependsOn
 
 ContainerDependsOn gates container startup on external conditions.
 
@@ -568,7 +777,7 @@ ContainerDependsOn gates container startup on external conditions.
       <td></td>
     </tr>
     <tr>
-      <td>`networks`</td>
+      <td>`network`</td>
       <td>[]string</td>
       <td>Network readiness conditions which must be satisfied.</td>
       <td>`addresses`<br />`connectivity`<br />`hostname`<br />`etcfiles`<br /></td>
@@ -581,8 +790,283 @@ ContainerDependsOn gates container startup on external conditions.
     </tr>
     <tr>
       <td>`containers`</td>
-      <td>[]string</td>
-      <td>Other containers, by document name, which must be running first.<br /><br />Cycles are rejected when the machine configuration is applied.</td>
+      <td><a href="#containers%5B%5D">ContainerDependency</a></td>
+      <td>Other containers, by document name, which must be running first, or have succeeded.<br /><br />An entry is either the name of a container which must be running and healthy, or a name with<br />a condition.<br /><br />On shutdown, reboot and upgrade, the container is stopped before them, as long as that fits<br />into the time the shutdown gives the containers. The order applies to the containers on the<br />same node only.<br /><br />Cycles are rejected when the machine configuration is applied.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+#### containers[]
+
+ContainerDependency is a container which must be running, or have succeeded, first.
+
+
+
+```yaml
+lifecycle:
+    dependsOn:
+        containers:
+            - name: migrate
+              condition: succeeded
+            - db
+```
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`name`</td>
+      <td>string</td>
+      <td>Name of the ContainerConfig document.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`condition`</td>
+      <td>ContainerDependencyCondition</td>
+      <td>`running` (the default) waits for the container to be running and healthy, `succeeded` for<br />it to have exited with code 0 and not to be restarted, e.g. a container preparing what this one<br />needs. It is checked again on every boot, as the containers run again.</td>
+      <td>`running`<br />`succeeded`<br /></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+
+
+### healthCheck
+
+ContainerHealthCheck configures a probe which decides whether a running container is healthy.
+
+Exactly one of tcp, http or grpc must be set.
+
+
+
+
+```yaml
+lifecycle:
+    healthCheck:
+        # Probe by sending an HTTP GET request to the port.
+        http:
+            port: 8080 # Port to connect to on the container's loopback address.
+            path: /healthz # Request path.
+        interval: 10s # Interval between checks.
+        timeout: 1s # Time after which a single check is considered failed.
+```
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`tcp`</td>
+      <td><a href="#tcp">ContainerTCPHealthCheck</a></td>
+      <td>Probe by opening a TCP connection to the port.<br /><br />The check passes if the connection is established.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`http`</td>
+      <td><a href="#http">ContainerHTTPHealthCheck</a></td>
+      <td>Probe by sending an HTTP GET request to the port.<br /><br />The check passes if the response status is in the 200-399 range.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`grpc`</td>
+      <td><a href="#grpc">ContainerGRPCHealthCheck</a></td>
+      <td>Probe by calling the gRPC health checking protocol (`grpc.health.v1.Health/Check`) on the port.<br /><br />The check passes if the reported status is `SERVING`.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`initialDelay`</td>
+      <td>Duration</td>
+      <td>Delay after the container starts before the first check runs.<br /><br />Defaults to `0s`.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`interval`</td>
+      <td>Duration</td>
+      <td>Interval between checks.<br /><br />Defaults to `10s`.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`timeout`</td>
+      <td>Duration</td>
+      <td>Time after which a single check is considered failed.<br /><br />Defaults to `1s`, and may not exceed the interval.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`failureThreshold`</td>
+      <td>uint32</td>
+      <td>Number of consecutive failed checks after which the container is reported degraded.<br /><br />Defaults to `3`.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+#### tcp
+
+ContainerTCPHealthCheck probes a TCP port.
+
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`port`</td>
+      <td>uint16</td>
+      <td>Port to connect to on the container's loopback address.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+#### http
+
+ContainerHTTPHealthCheck probes an HTTP endpoint.
+
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`port`</td>
+      <td>uint16</td>
+      <td>Port to connect to on the container's loopback address.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`path`</td>
+      <td>string</td>
+      <td>Request path.<br /><br />Defaults to `/`.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+#### grpc
+
+ContainerGRPCHealthCheck probes a gRPC health service.
+
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`port`</td>
+      <td>uint16</td>
+      <td>Port to connect to on the container's loopback address.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`service`</td>
+      <td>string</td>
+      <td>Service name to pass in the health check request.<br /><br />Empty asks for the overall health of the server.</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+
+
+### restart
+
+ContainerRestart configures how the container is restarted after it exits.
+
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Value(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>`policy`</td>
+      <td>ContainerRestartPolicy</td>
+      <td>When the container is restarted after it exits.<br /><br />`always` restarts it after every exit, `on-failure` after it failed (a non-zero exit code<br />or a failure to start), and `never` runs it once.<br />A container which is not restarted keeps its outcome until its configuration changes or it<br />is removed, and runs again after a reboot or a restart of machined.<br />`talosctl restart` only signals the container, so it doesn't run such a container again.</td>
+      <td>`always`<br />`on-failure`<br />`never`<br /></td>
+    </tr>
+    <tr>
+      <td>`maxRetries`</td>
+      <td>int</td>
+      <td>How many times a failed container is restarted at most, with the `on-failure` policy.<br /><br />Unset restarts it until it succeeds.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`delay`</td>
+      <td>Duration</td>
+      <td>Time to wait after the container exited before it is restarted.<br />Defaults to 5s.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>`maxDelay`</td>
+      <td>Duration</td>
+      <td>Longest time to wait before a restart.<br /><br />The delay doubles with each restart of a container which ran for a shorter time than this,<br />up to this. Defaults to the delay, so the delay doesn't grow.</td>
       <td></td>
     </tr>
   </tbody>

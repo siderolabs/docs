@@ -1,5 +1,5 @@
 navigation:
-  version: "v1.15"
+  version: "v1.15.0-beta.0"
   products:
     - product: "Talos Linux"
       family: "kubernetes"
@@ -281,6 +281,7 @@ navigation:
                   pages:
                     - "configuration/cluster/discoveryidentityconfig.mdx"
                     - "configuration/cluster/discoveryserviceconfig.mdx"
+                    - "configuration/cluster/staticendpointsconfig.mdx"
                 - group: "CRI"
                   pages:
                     - "configuration/cri/cribaseruntimespecconfig.mdx"
@@ -289,6 +290,7 @@ navigation:
                     - "configuration/cri/registryauthconfig.mdx"
                     - "configuration/cri/registrymirrorconfig.mdx"
                     - "configuration/cri/registrytlsconfig.mdx"
+                    - "configuration/cri/seccompprofileconfig.mdx"
                 - group: "Container"
                   pages:
                     - "configuration/container/containerconfig.mdx"
@@ -312,6 +314,7 @@ navigation:
                     - "configuration/kubernetes/kubeapiserverconfig.mdx"
                     - "configuration/kubernetes/kubeauditpolicyconfig.mdx"
                     - "configuration/kubernetes/kubeauthenticationconfig.mdx"
+                    - "configuration/kubernetes/kubeauthenticationwebhookconfig.mdx"
                     - "configuration/kubernetes/kubeauthorizerconfig.mdx"
                     - "configuration/kubernetes/kubeclusterconfig.mdx"
                     - "configuration/kubernetes/kubecontrollermanagerconfig.mdx"
@@ -350,6 +353,7 @@ navigation:
                     - "configuration/network/linkconfig.mdx"
                     - "configuration/network/macvlanconfig.mdx"
                     - "configuration/network/networkdefaultactionconfig.mdx"
+                    - "configuration/network/networklinkingressconfig.mdx"
                     - "configuration/network/networkruleconfig.mdx"
                     - "configuration/network/resolverconfig.mdx"
                     - "configuration/network/routingruleconfig.mdx"

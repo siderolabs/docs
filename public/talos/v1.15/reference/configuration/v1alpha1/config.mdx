@@ -128,12 +128,6 @@ machine:
       <td>Configures the logging system.</td>
       <td></td>
     </tr>
-    <tr>
-      <td>`seccompProfiles`</td>
-      <td><a href="#seccompprofiles%5B%5D">MachineSeccompProfile</a></td>
-      <td>Configures the seccomp profiles for the machine.</td>
-      <td></td>
-    </tr>
   </tbody>
 </table>
 
@@ -162,6 +156,12 @@ machine:
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td>`trustdCheckExtKeyUsage`</td>
+      <td>bool</td>
+      <td>Enable strict verification of the trustd server certificate on worker nodes.<br />When enabled, worker nodes only accept trustd server certificates with the trustd-specific extended key usage.<br />This setting has effect only on worker nodes, and requires all control plane nodes to run Talos 1.15+.</td>
+      <td></td>
+    </tr>
     <tr>
       <td>`diskQuotaSupport`</td>
       <td>bool</td>
@@ -294,51 +294,6 @@ Endpoint represents the endpoint URL parsed out of the machine config.
 
 
 
-
-
-
-
-
-### seccompProfiles[]
-
-MachineSeccompProfile defines seccomp profiles for the machine.
-
-
-
-```yaml
-machine:
-    seccompProfiles:
-        - name: audit.json # The `name` field is used to provide the file name of the seccomp profile.
-          # The `value` field is used to provide the seccomp profile.
-          value:
-            defaultAction: SCMP_ACT_LOG
-```
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Field</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Value(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>`name`</td>
-      <td>string</td>
-      <td>The `name` field is used to provide the file name of the seccomp profile.</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>`value`</td>
-      <td>Unstructured</td>
-      <td>The `value` field is used to provide the seccomp profile.</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
 
 
 
