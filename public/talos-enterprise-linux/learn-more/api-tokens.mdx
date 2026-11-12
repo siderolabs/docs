@@ -33,13 +33,15 @@ Scopes do not imply one another. `schematic:create` does not grant `schematic:re
 
 A token that is valid but carries no scope for the requested route does not authenticate the request.
 
-The web UI does not expose individual scopes. It offers four fixed actor profiles, each carrying a predefined set.
+The web UI does not expose individual scopes. It offers five fixed actor profiles, each carrying a predefined set.
 
 ### Token actor profiles
 
 Choose a profile when creating a token in the web UI. The profile determines the full set of scopes that the token carries, and it cannot be changed after creation.
 
 - **Talos:** This profile carries the `image:read` scope. It is intended for nodes that pull enterprise images. The scope allows access to generated image downloads, PXE scripts, and installer OCI pulls. It does not grant access to security reports or token management.
+
+- **On Premises:** This profile carries the `source:pull` scope. It is intended for mirroring source images from Enterprise Image Factory into an on-premises installation. The scope allows read-only pulls under `/v2/siderolabs/` of the installer, installer base, and imager images, the extension and overlay manifests, `talosctl`, the Image Factory image, and the Talos Linux VEX data. It does not grant access to generated images, schematics, the security report endpoints, or token management.
 
 - **Automation (Omni / Terraform):** This profile carries the `image:read`, `report:read`, `schematic:create`, `schematic:read`, and `token:issue` scopes. It is intended for tooling that builds and consumes schematics. It allows the tooling to create and read schematics, pull images, read security reports, and issue bounded Talos or Automation tokens.
 
