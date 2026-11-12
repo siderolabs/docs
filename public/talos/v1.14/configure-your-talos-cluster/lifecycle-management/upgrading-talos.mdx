@@ -112,7 +112,8 @@ as:
 
 The `--image` flag defaults to the installer image of the `talosctl` version in use, so it can be omitted when upgrading a machine without system extensions to the version matching `talosctl`.
 
-Note that because Talos Linux reboots via the `kexec` syscall, the extra reboot adds very little time.
+Talos Linux reboots via the `kexec` syscall, which skips the firmware, so the extra reboot adds very little time.
+On machines with [SecureBoot](../../platform-specific-installations/bare-metal-platforms/secureboot) enabled, Talos Linux doesn't use `kexec`, and the machine reboots through its firmware instead, so each reboot takes as long as a full boot.
 
 ## Machine configuration changes
 
