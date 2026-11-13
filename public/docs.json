@@ -3260,6 +3260,7 @@
               "omni/self-hosted/run-omni-on-k8s",
               "omni/self-hosted/run-omni-airgapped",
               "omni/self-hosted/run-image-factory-on-prem",
+              "omni/self-hosted/connect-omni-to-enterprise-image-factory",
               "omni/self-hosted/configure-keycloak-for-omni",
               "omni/self-hosted/expose-omni-with-nginx-https",
               "omni/self-hosted/back-up-omni-db",
