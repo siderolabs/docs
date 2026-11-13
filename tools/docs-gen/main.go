@@ -204,7 +204,12 @@ type ProductConfig struct {
 	// Sidebar set to false hides the navigation sidebar on this product's
 	// pages. Meant for a single-page node like the changelog, whose sidebar
 	// would hold one link to the page already being read. Defaults to true.
-	Sidebar *bool         `yaml:"sidebar,omitempty"`
+	Sidebar *bool `yaml:"sidebar,omitempty"`
+	// Href turns the product into a link in the product switcher, for a
+	// product whose pages live inside another product's navigation (Talos
+	// Containers is a group in the Talos Linux versions). A linked product
+	// has no groups of its own, and its homepage card points at the href.
+	Href    string        `yaml:"href,omitempty"`
 	Version string        `yaml:"-"` // Set internally from NavigationConfig.Version
 	Groups  []GroupConfig `yaml:"groups"`
 }
@@ -399,6 +404,7 @@ type MintlifyProduct struct {
 	Color       string            `json:"color,omitempty"`
 	Description string            `json:"description,omitempty"`
 	Hidden      bool              `json:"hidden,omitempty"`
+	Href        string            `json:"href,omitempty"`
 	Versions    []MintlifyVersion `json:"versions,omitempty"`
 	Groups      []MintlifyGroup   `json:"groups,omitempty"`
 }
@@ -618,6 +624,7 @@ func main() {
 					Color:       candidate.Color,
 					Description: candidate.Description,
 					Hidden:      candidate.Hidden,
+					Href:        candidate.Href,
 					Groups:      buildGroups(candidate.Groups),
 				}
 				found = true
@@ -742,8 +749,12 @@ func firstPagePath(pages interface{}) string {
 	return ""
 }
 
-// productHref is where a product's homepage card points: its first page.
+// productHref is where a product's homepage card points: its href for a
+// linked product, otherwise its first page.
 func productHref(product MintlifyProduct) string {
+	if product.Href != "" {
+		return product.Href
+	}
 	groups := product.Groups
 	if len(product.Versions) > 0 {
 		groups = product.Versions[0].Groups
@@ -1133,6 +1144,11 @@ func writeProductNav(path string, products []MintlifyProduct, primary *NavPrimar
 
 	nav := make(map[string]entry)
 	for _, product := range products {
+		// A linked product's pages belong to the product it links into, so
+		// its url segment would overwrite that product's entry.
+		if product.Href != "" {
+			continue
+		}
 		segment := urlSegment(product)
 		if segment == "" {
 			if product.CTA != nil {
