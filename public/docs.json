@@ -3411,6 +3411,7 @@
             "pages": [
               "director/compute/clusters",
               "director/compute/hosts",
+              "director/compute/upgrade-hosts",
               "director/compute/virtual-machines",
               "director/compute/migrate-from-vmware",
               "director/compute/what-happens-during-a-migration",
