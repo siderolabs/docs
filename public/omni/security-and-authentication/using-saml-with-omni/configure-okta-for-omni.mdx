@@ -14,3 +14,25 @@ description: Configure an Okta SAML application to authenticate users into your 
 6. Click **Next**, optionally provide feedback, then select **Finish**.
 
 Once setup is complete, go to the **Assignments** tab for the new application to manage user access as needed.
+
+An Okta Bookmark App pointing at the Omni URL should be used as Omni uses "Service Provider Initiated" login.
+
+## Okta groups
+
+Ensure users are assigned the correct role as defined by their Okta group.
+
+1. In the Okta SAML app, open Group Attribute Statements and add: Name `role`, Filter “Starts with” `omni-`. 
+2. Create Okta groups such as `omni-admins`, `omni-operators` and `omni-readers`, and assign users to them.
+3. In Omni, create one `SAMLLabelRule` per group, matching `saml.omni.sidero.dev/role/<group>` with `assignrole: Admin / Operator / Reader`.
+   Example:
+   ```yaml
+   metadata:
+     namespace: default
+     type: SAMLLabelRules.omni.sidero.dev
+     id: omni-admins
+   spec:
+      assignrole: Admin
+      updateoneachlogin: true
+      matchlabels:
+        - saml.omni.sidero.dev/role/omni-admins
+   ```
