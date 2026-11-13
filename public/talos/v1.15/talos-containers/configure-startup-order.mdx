@@ -1,0 +1,87 @@
+---
+title: "Configure Startup Order for a Talos Container"
+description: "Use lifecycle.dependsOn to make a Talos Container wait for host paths, network readiness, time synchronization, or other containers before it starts."
+canonical: https://docs.siderolabs.com/talos/v1.14/talos-containers/configure-startup-order
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+A Talos Container can wait for the machine to be ready before it starts, such as for a host path to exist or for the network to come up, or wait for another container to finish first.
+This page explains how to set those start conditions.
+For more information, see the [`ContainerConfig` reference](../reference/configuration/container/containerconfig).
+
+## Set start conditions
+
+By default, Talos starts a container once its image is pulled and its mounts are ready.
+Conditions in the `lifecycle.dependsOn` field make the container wait until each of them is also met.
+
+The following conditions are available:
+
+- **`paths`**: Host paths that must exist. Talos checks for them repeatedly and does not create them, so a path that never appears keeps the container waiting indefinitely.
+- **`network`**: Network conditions that must be ready. The conditions are `addresses`, `connectivity`, `hostname`, and `etcfiles`, which match the fields of the machine's `NetworkStatus` resource.
+- **`time`**: When set to `true`, the clock must be synchronized. If time synchronization is turned off on the machine, this condition is never met.
+- **`containers`**: Other Talos Containers, by name, that must be running or must have finished first. Talos rejects a machine configuration in which containers depend on each other in a cycle.
+
+<Note>
+Talos v1.15 moved `dependsOn` into the `lifecycle` field, and renamed `dependsOn.networks` to `dependsOn.network`.
+The old forms still work, but they are deprecated, and Talos logs a warning when it applies them.
+</Note>
+
+**Example:** The following document waits for the machine's network addresses, a synchronized clock, and a file at `/var/mnt/app-config/config.yaml`:
+
+```yaml
+apiVersion: v1alpha1
+kind: ContainerConfig
+name: my-app
+image: registry.example.com/my-app@sha256:...
+lifecycle:
+  dependsOn:
+    paths:
+      - /var/mnt/app-config/config.yaml
+    network:
+      - addresses
+    time: true
+```
+
+A container that waits on a condition does not appear in `talosctl containers`.
+[Inspect and Troubleshoot Talos Containers](./inspect-and-troubleshoot-talos-containers#a-container-never-starts) shows how to find the condition that a container is waiting for.
+
+## Wait for another container
+
+Each entry in `containers` names another Talos Container and sets a `condition`:
+
+- **`running`**: The default. The other container must be running and healthy, and must have been running for at least 5 seconds.
+- **`succeeded`**: The other container must have exited with code 0, and must not be restarted. This suits a container that runs once to prepare something, with the `never` restart policy. Talos checks the condition again on every boot, because both containers run again.
+
+An entry can also be just the name, which uses the `running` condition.
+
+**Example:** The following documents run a `migrate` container once, and start `my-app` after it finishes successfully:
+
+```yaml
+apiVersion: v1alpha1
+kind: ContainerConfig
+name: migrate
+image: registry.example.com/migrate@sha256:...
+lifecycle:
+  restart:
+    policy: never
+---
+apiVersion: v1alpha1
+kind: ContainerConfig
+name: my-app
+image: registry.example.com/my-app@sha256:...
+lifecycle:
+  dependsOn:
+    containers:
+      - name: migrate
+        condition: succeeded
+```
+
+## Next steps
+
+The following pages cover related topics:
+
+- **[Inspect and Troubleshoot Talos Containers](./inspect-and-troubleshoot-talos-containers)**: How to see what a container is waiting for, and fix a container that never starts.
+- **[Configure Networking](./configure-networking)**: How to choose the network a container uses.
