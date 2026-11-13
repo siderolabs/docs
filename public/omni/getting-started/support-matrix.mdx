@@ -19,12 +19,18 @@ Talos Linux 1.10
 
 Note that each version of Talos Linux generally supports up to five prior versions of Kubernetes at the time it was released. See the <a href={`../../talos/${version}/getting-started/support-matrix`}>Talos Support Matrix</a> for details.
 
+## Minimum Talos Linux version to connect to Omni
+
+Talos Linux 1.6, starting with the first Omni minor release of 2027 (estimated January 2027)
+
+Talos Linux versions below it will be incompatible with Omni, and machines running them will not be able to connect. See the [Talos Version Support Policy](./talos-version-support-policy#incompatible-talos-versions).
+
 ## Effect of non-supported Talos Linux versions
 
 If you neglect to update Talos Linux to a version where the initial minor version was released within the prior 18 months, your cluster will be out of support, and you must upgrade in order to receive support.
 
 Clusters running unsupported versions of Talos Linux or Kubernetes may have limited ability to manage their clusters within Omni - clusters may not be able to have new nodes provisioned to scale up the cluster, for example.
 
-Omni provides status notifications for machines running Talos versions approaching end-of-support. To ensure platform stability, Omni will transition to a minimum supported version model in a future release. Please refer to the [Talos Version Support Policy](./talos-version-support-policy) for details on support timelines and notification windows.
+Omni provides status notifications for machines running Talos versions approaching end-of-support. Please refer to the [Talos Version Support Policy](./talos-version-support-policy) for details on support timelines and notification windows.
 
 We encourage all users to take advantage of how easy Omni makes Talos Linux and Kubernetes upgrades, to ensure they are always running the latest security and bug fixes.
