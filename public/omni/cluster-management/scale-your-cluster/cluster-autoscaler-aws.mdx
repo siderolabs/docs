@@ -3,7 +3,7 @@ title: Autoscale Your Cluster with Cluster AutoScaler in AWS
 description: Configure Cluster Autoscaler for Talos Linux clusters running on AWS using Omni
 ---
 
-import { version } from '/snippets/custom-variables.mdx';
+import { version, release, k8s_release } from '/snippets/custom-variables.mdx';
 
 This guide shows you how to enable automatic scaling for your Talos Linux cluster on AWS using Cluster Autoscaler and Omni.
 
@@ -146,17 +146,15 @@ These control plane instances are not managed by an Auto Scaling Group. They are
 
 ### 2.1: Define environment variables
 
-Start by defining the AWS region, Talos version, architecture, instance type, and the number of control plane machines to create.
+Start by defining the AWS region, Talos version, Kubernetes version, architecture, instance type, and the number of control plane machines to create.
 
 <Note>For high availability, we recommend creating three control plane machines.</Note>
 
-```bash
-AWS_REGION=$(aws configure get region)
-TALOS_VERSION=v1.12.4
-ARCH=amd64
-INSTANCE_TYPE=t3.small
-CONTROL_PLANE_NO=3
-```
+<CodeBlock lang="bash">
+{`
+AWS_REGION=$(aws configure get region)\nTALOS_VERSION=${release}\nKUBERNETES_VERSION=v${k8s_release}\nARCH=amd64\nINSTANCE_TYPE=t3.small\nCONTROL_PLANE_NO=3
+`}
+</CodeBlock>
 
 ### 2.2: Retrieve the official Talos AMI
 
@@ -286,7 +284,7 @@ cat <<EOF > cluster-template.yaml
 kind: Cluster
 name: $CLUSTER_NAME
 kubernetes:
-  version: v1.34.1
+  version: ${KUBERNETES_VERSION}
 talos:
   version: ${TALOS_VERSION}
 
@@ -349,7 +347,7 @@ Your cluster template should now look similar to this:
 kind: Cluster
 name: $CLUSTER_NAME
 kubernetes:
-  version: v1.34.1
+  version: ${KUBERNETES_VERSION}
 talos:
   version: ${TALOS_VERSION}
 patches:
