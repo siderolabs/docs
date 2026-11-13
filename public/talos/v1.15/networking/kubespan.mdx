@@ -213,6 +213,30 @@ In this example, the `172.16.64.0/20` subnet will not be advertised to other clu
 
 > **Note**: Excluded networks must remain reachable via another route (for example, direct L2/L3 routing). Otherwise, they will become unreachable from other nodes.
 
+`filters.peerEndpoints`
+
+Filters the endpoints this node receives from other peers, before it tries to connect to them.
+
+`filters.endpoints` changes how every peer connects to this node, while `filters.peerEndpoints` changes only the connections this node makes to its peers.
+This is useful when peers advertise addresses that this node can't reach, such as addresses on a private network that this node isn't connected to.
+
+By default, peer endpoints aren't filtered.
+`filters.peerEndpoints` is only available in the `KubeSpanConfig` document.
+
+**Example:**
+
+```yaml
+apiVersion: v1alpha1
+kind: KubeSpanConfig
+filters:
+  peerEndpoints:
+    - 0.0.0.0/0
+    - "!192.168.0.0/16"
+    - ::/0
+```
+
+In this example, the node doesn't try to connect to peer endpoints in the `192.168.0.0/16` subnet.
+
 #### Additional Announced Endpoints
 
 To announce additional endpoints (for example, inbound NAT mappings), use the separate machine configuration document:
@@ -230,8 +254,13 @@ extraAnnouncedEndpoints:
 
 A node's WireGuard identities can be obtained with:
 
-```sh
-$ talosctl get kubespanidentities -o yaml
+```bash
+talosctl get kubespanidentities -o yaml
+```
+
+The output is similar to the following:
+
+```text
 ...
 spec:
     address: fd83:b1f7:fcb5:2802:8c13:71ff:feaf:7c94/128
@@ -250,8 +279,13 @@ The Wireguard private key is generated and never leaves the node, while the publ
 
 A node's WireGuard peers can be obtained with:
 
-```sh
-$ talosctl get kubespanpeerspecs
+```bash
+talosctl get kubespanpeerspecs
+```
+
+The output is similar to the following:
+
+```text
 ID                                             VERSION   LABEL                          ENDPOINTS
 06D9QQOydzKrOL7oeLiqHy9OWE8KtmJzZII2A5/FLFI=   2         talos-default-controlplane-2   ["172.20.0.3:51820"]
 THtfKtfNnzJs1nMQKs5IXqK0DFXmM//0WMY+NnaZrhU=   2         talos-default-controlplane-3   ["172.20.0.4:51820"]
@@ -266,8 +300,13 @@ The peer ID is the Wireguard public key.
 
 The status of a node's WireGuard peers can be obtained with:
 
-```sh
-$ talosctl get kubespanpeerstatuses
+```bash
+talosctl get kubespanpeerstatuses
+```
+
+The output is similar to the following:
+
+```text
 ID                                             VERSION   LABEL                          ENDPOINT           STATE   RX         TX
 06D9QQOydzKrOL7oeLiqHy9OWE8KtmJzZII2A5/FLFI=   63        talos-default-controlplane-2   172.20.0.3:51820   up      15043220   17869488
 THtfKtfNnzJs1nMQKs5IXqK0DFXmM//0WMY+NnaZrhU=   62        talos-default-controlplane-3   172.20.0.4:51820   up      14573208   18157680
@@ -292,8 +331,13 @@ Peer status information is updated every 30 seconds.
 
 A node's WireGuard endpoints (peer addresses) can be obtained with:
 
-```sh
-$ talosctl get kubespanendpoints
+```bash
+talosctl get kubespanendpoints
+```
+
+The output is similar to the following:
+
+```text
 ID                                             VERSION   ENDPOINT           AFFILIATE ID
 06D9QQOydzKrOL7oeLiqHy9OWE8KtmJzZII2A5/FLFI=   1         172.20.0.3:51820   2VfX3nu67ZtZPl57IdJrU87BMjVWkSBJiL9ulP9TCnF
 THtfKtfNnzJs1nMQKs5IXqK0DFXmM//0WMY+NnaZrhU=   1         172.20.0.4:51820   b3DebkPaCRLTLLWaeRF1ejGaR0lK3m79jRJcPn0mfA6C
