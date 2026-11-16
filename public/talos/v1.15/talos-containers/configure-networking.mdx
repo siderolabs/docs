@@ -1,0 +1,43 @@
+---
+title: "Configure Networking for a Talos Container"
+description: "Choose between the none and host network modes for a Talos Container, and listen on ports on the machine's IP addresses."
+canonical: https://docs.siderolabs.com/talos/v1.14/talos-containers/configure-networking
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+A Talos Container either has no network access or shares the machine's network.
+This page explains how to choose between the two, and which ports a container on the machine's network can listen on.
+For more information, see the [`ContainerConfig` reference](../reference/configuration/container/containerconfig).
+
+## Choose a network mode
+
+The `network.mode` field sets which network the container uses.
+
+Talos supports two network modes:
+
+- **`none`**: The default. The container gets its own empty network namespace and has no network access.
+- **`host`**: The container shares the machine's network namespace. It sees every network interface on the machine, uses the machine's `/etc/hosts` and `/etc/resolv.conf`, and can listen on the machine's IP addresses.
+
+  **Example:** The following document runs a container on the host network:
+
+  ```yaml
+  apiVersion: v1alpha1
+  kind: ContainerConfig
+  name: my-app
+  image: registry.example.com/my-app@sha256:...
+  network:
+    mode: host
+  ```
+
+A container on the host network can listen on ports 1024 and higher.
+Listening on a lower port also needs the `NET_BIND_SERVICE` capability, as described in [Configure Security](./configure-security#add-or-drop-linux-capabilities).
+
+## Next steps
+
+The following pages cover related topics:
+
+- **[Configure Security](./configure-security)**: How to set security profiles, capabilities, users, and Talos API access.
+- **[Inspect and Troubleshoot Talos Containers](./inspect-and-troubleshoot-talos-containers)**: How to check status and logs, and fix common failures.
