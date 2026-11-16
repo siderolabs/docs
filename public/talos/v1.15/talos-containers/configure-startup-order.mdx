@@ -1,0 +1,87 @@
+---
+title: "Configure Startup Order for a Talos Container"
+description: "Use lifecycle.dependsOn to make a Talos Container wait for host paths, network readiness, time synchronization, or other containers before it starts."
+canonical: https://docs.siderolabs.com/talos/v1.14/talos-containers/configure-startup-order
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+A Talos Container can wait for a host path to exist, for the network to come up, or for another container to be running before it starts.
+This page explains how to set these start conditions.
+For more information, see the [`ContainerConfig` reference](../reference/configuration/container/containerconfig).
+
+## Set start conditions
+
+By default, Talos starts a container as soon as its image is pulled and its mounts are ready.
+The `lifecycle.dependsOn` field adds more conditions, and Talos starts the container only after all of them are met.
+
+The `lifecycle.dependsOn` field accepts the following conditions:
+
+- **`paths`**: The container waits until each listed host path exists. Talos only checks for the paths, and doesn't create them.
+- **`network`**: The container waits until each listed network condition is met. Each condition matches a field of the machine's [`NetworkStatus`](../learn-more/networking-resources#other-network-resources) resource:
+  - **`addresses`**: The machine has at least one network address.
+  - **`connectivity`**: The machine has a default route, or all of its network probes succeed.
+  - **`hostname`**: The machine's hostname is set.
+  - **`etcfiles`**: Talos has written the machine's `/etc/hosts` and `/etc/resolv.conf` files.
+- **`time`**: When set to `true`, the container waits until the clock is synchronized.
+- **`containers`**: The container waits for each listed Talos Container. Each entry names a container and sets a `condition`:
+  - **`running`**: The default. The listed container must be running and healthy, and must have been running for at least 5 seconds.
+  - **`succeeded`**: The listed container must have exited with code 0, and Talos must not restart it. Talos checks this condition again on every boot, because both containers run again.
+
+  An entry that has only a name uses the `running` condition.
+  Talos rejects a configuration in which containers wait for each other in a cycle.
+
+A container that waits on a condition does not appear in `talosctl containers`.
+Refer to the [Inspect and Troubleshoot Talos Containers](./inspect-and-troubleshoot-talos-containers#a-container-never-starts) page to find the condition that a container is waiting for.
+
+### Example 1: Wait for the network, the clock, and a file
+
+The following document starts `my-app` only after the machine has a network address, the clock is synchronized, and the file `/var/mnt/app-config/config.yaml` exists:
+
+```yaml
+apiVersion: v1alpha1
+kind: ContainerConfig
+name: my-app
+image: registry.example.com/my-app@sha256:...
+lifecycle:
+  dependsOn:
+    paths:
+      - /var/mnt/app-config/config.yaml
+    network:
+      - addresses
+    time: true
+```
+
+### Example 2: Wait for another container to finish
+
+The following documents run a `migrate` container once, with the `never` restart policy.
+Talos starts `my-app` only after `migrate` exits with code 0:
+
+```yaml
+apiVersion: v1alpha1
+kind: ContainerConfig
+name: migrate
+image: registry.example.com/migrate@sha256:...
+lifecycle:
+  restart:
+    policy: never
+---
+apiVersion: v1alpha1
+kind: ContainerConfig
+name: my-app
+image: registry.example.com/my-app@sha256:...
+lifecycle:
+  dependsOn:
+    containers:
+      - name: migrate
+        condition: succeeded
+```
+
+## Next steps
+
+The following pages cover related topics:
+
+- **[Inspect and Troubleshoot Talos Containers](./inspect-and-troubleshoot-talos-containers)**: How to see what a container is waiting for, and fix a container that never starts.
+- **[Configure Networking](./configure-networking)**: How to choose the network a container uses.
