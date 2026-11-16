@@ -44,6 +44,7 @@ navigation:
             - "run-omni-on-k8s.mdx"
             - "run-omni-airgapped.mdx"
             - "run-image-factory-on-prem.mdx"
+            - "use-a-custom-ca.mdx"
             - "configure-keycloak-for-omni.mdx"
             - "expose-omni-with-nginx-https.mdx"
             - "back-up-omni-db.mdx"

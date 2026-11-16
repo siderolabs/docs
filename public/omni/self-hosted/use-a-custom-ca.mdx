@@ -1,0 +1,96 @@
+---
+title: Use a Custom Certificate Authority
+description: Make Talos machines trust your organization's CA, so that Omni and the Image Factory can serve certificates signed by it
+---
+
+When Omni's machine API (SideroLink) or the Image Factory serves a certificate signed by your organization's own CA, every Talos machine must trust that CA from its first boot. Otherwise the machine cannot connect to Omni.
+
+Starting with Omni v1.14.0, you can give Omni the CA, and Omni delivers it to the machines.
+
+## How it works
+
+Omni reads the CA certificates from the file set with `--trusted-roots-file` (`trustedRootsFile` in the configuration file) at startup. It adds them as a `TrustedRootsConfig` document named `omni-trusted-roots` to every join configuration it generates:
+
+* installation media downloaded from the UI or with `omnictl`
+* the install and upgrade images of the machines
+* the join configuration handed to infrastructure providers
+* the output of `omnictl jointoken machine-config`
+* the configuration of machines in maintenance mode and of the machines in clusters
+
+Machines that are already connected get the CA through a configuration update, without a reboot.
+
+Omni itself does not use this file. Omni trusts the CAs in its own trust store, so add the CA there too, as described in [Configure the CA](#configure-the-ca).
+
+## Requirements
+
+* **Talos 1.12 or later** for the boot media. Boot media for older Talos versions cannot carry the CA. Machines booting from such media cannot connect to a machine API served with a certificate from your CA. The UI warns when you pick such a version.
+* **Infrastructure providers** get the CA depending on how they pass the join configuration to the machines:
+  * Providers that put the join configuration into the boot media (for example, libvirt) need no change.
+  * Providers that pass the join configuration as user data (KubeVirt, Proxmox, vSphere) need a release that supports it.
+  * The bare metal provider reads the CA from Omni at startup. Restart it after you set or change the CA in Omni.
+* When an infrastructure provider downloads boot media from an Image Factory with a certificate from your CA, whatever downloads it must trust the CA too (for example, the Proxmox node or the KubeVirt CDI). Omni does not configure that.
+
+## Configure the CA
+
+1. Put your CA certificates into one PEM file. Use only your organization's own CAs, not a full system CA bundle: every machine configuration carries the file.
+2. Mount the file into the Omni container under `/etc/ssl/certs/`, and point `--trusted-roots-file` at it:
+
+   ```bash
+   docker run \
+     ...
+     -v $PWD/ca.pem:/etc/ssl/certs/omni-trusted-roots.pem:ro \
+     ghcr.io/siderolabs/omni:<version> \
+     ...
+     --trusted-roots-file=/etc/ssl/certs/omni-trusted-roots.pem
+   ```
+
+   Mounting a single file into `/etc/ssl/certs/` adds your CA to the public CAs Omni already trusts. Do not mount a directory over `/etc/ssl/certs/` and do not set `SSL_CERT_DIR`. Both replace the public CAs, and Omni can no longer reach public services.
+
+   With the Helm chart, mount the file the same way with `extraVolumes` and `extraVolumeMounts`, and set `config.trustedRootsFile`. The chart's README has an example.
+3. Restart Omni.
+
+## Existing machines
+
+Configure the CA before the first machine joins whenever you can. Machines that join after that carry the CA everywhere from their first boot.
+
+Machines that existed before you set the CA get it in their running configuration immediately. That configuration is kept across reboots, so an ordinary reboot is fine.
+
+Their **boot image** (the installed Talos image, or the boot media of a machine that is not installed) gets the CA only at their next install or upgrade. Omni does not upgrade machines to deliver the CA.
+
+A machine boots with the configuration of its boot image alone when:
+
+* it is removed from a cluster (the cluster is deleted or scaled down). Omni resets the machine, which wipes its configuration.
+* it is not installed (runs from boot media) and reboots.
+
+If the machine API certificate is signed by a CA that this boot image does not contain, the machine cannot connect to Omni anymore. Boot it from new installation media to bring it back.
+
+<Warning>
+Omni does not update these boot images on its own. Update them yourself before you switch the machine API to a certificate from the new CA.
+
+The `omni_machine_schematic_trusted_roots` metric counts the machines by whether their boot image carries the CA document (`present="true"` or `present="false"`). It checks only that the document is there, not which certificates it holds, so during a [rotation](#rotate-the-ca) it cannot tell an old CA from the new one.
+</Warning>
+
+To get the CA into the boot image of a machine:
+
+* **Installed machines:** upgrade them. Upgrading Talos to another version (a patch release is enough) or changing their extensions or kernel arguments installs a new image with the CA.
+* **Machines that are not installed:** boot them from new installation media.
+* **Machines created by an infrastructure provider that passes user data:** they keep the user data they were created with. That user data replaces the configuration of the boot image, so recreate them with a provider version that supports the CA.
+
+### Moving an existing Omni to a certificate from your CA
+
+1. Add the CA to the file and restart Omni. Keep serving the machine API with its current certificate.
+2. Get the CA into the boot images of the existing machines, as described above.
+3. Switch the machine API to the certificate signed by your CA.
+
+## Rotate the CA
+
+Renewing the server certificates or an intermediate CA under the same root CA needs no change in Omni, as long as the file contains the root CA.
+
+To replace the root CA:
+
+1. Put both the old and the new root CA into the file and restart Omni. The machines get both through a configuration update, without a reboot.
+2. Get the new root CA into the boot images of the machines, as described in [Existing machines](#existing-machines).
+3. Switch the machine API and the Image Factory to certificates signed by the new root CA.
+4. Remove the old root CA from the file and restart Omni.
+
+Each time the file changes, Omni updates the configuration of all machines, and newly generated installation media get a new schematic. Restart the bare metal infrastructure provider after each change.
