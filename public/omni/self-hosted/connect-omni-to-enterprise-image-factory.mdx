@@ -1,0 +1,134 @@
+---
+title: Connect Self-Hosted Omni to the Enterprise Image Factory
+description: Configure a self-hosted Omni to use the Enterprise Image Factory as its primary image factory, authenticate with an API token file, keep your current image factory as the secondary image factory, and rotate the token without a restart.
+---
+
+This page shows how to connect a self-hosted Omni to the Enterprise Image Factory, so that Omni builds installation media and installer images from it.
+
+## Before you begin
+
+You need the following:
+
+- A self-hosted Omni running v1.12.0 or later. Earlier versions can't read the factory token from a file.
+- An Enterprise Image Factory API token created with the **Automation (Omni / Terraform)** token actor. To create one, see [Manage Enterprise Image Factory Credentials](../../talos-enterprise-linux/working-with-talos-enterprise-linux/manage-credentials#create-an-api-token).
+- Network access from Omni and from your machines to the Enterprise Image Factory at `https://factory.siderolabs.com`. Omni builds schematics and installation media there, and machines pull their installer images from it.
+
+## Primary and secondary image factories
+
+Omni can use two image factories:
+
+- **Primary image factory**: Omni uses the primary image factory to create all new schematics, installation media, and installer images. If the image factory requires authentication, as the Enterprise Image Factory does, Omni connects to it with the API token.
+- **Secondary image factory**: An optional image factory that keeps serving the machines installed from it and the Talos versions that only it offers.
+
+When both image factories offer a Talos version, Omni uses the primary image factory.
+
+Set the Enterprise Image Factory as the primary image factory.
+If Omni manages machines installed from another image factory, such as `factory.talos.dev`, set that image factory as the secondary image factory.
+
+The two image factories let Omni migrate existing machines to the Enterprise Image Factory gradually, without upgrading every machine at once.
+Each machine moves on its next Talos version or schematic change, if the Enterprise Image Factory serves that Talos version.
+
+## Connect Omni to the Enterprise Image Factory
+
+The following steps save the API token to a file, configure the two image factories, check that Omni connects to the Enterprise Image Factory, and rotate the token later.
+
+### Step 1: Save the token to a file
+
+Omni reads the API token from a file. Save the token you created in [Before you begin](#before-you-begin) to a file on the Omni host that only the user running Omni can read:
+
+```bash
+umask 077
+echo -n '<eif-api-token>' > eif-token
+```
+
+Replace `<eif-api-token>` with your token.
+
+Omni stops at startup if it can't read the file.
+
+### Step 2: Configure the factories
+
+Set the Enterprise Image Factory and the token file as the primary image factory, and your current image factory as the secondary image factory.
+If all your machines were installed from the Enterprise Image Factory, leave out the secondary image factory settings.
+Use Omni flags or the Omni configuration file:
+
+<Tabs>
+<Tab title="Flags">
+
+When Omni runs in Docker, mount the token file into the container read-only, and pass the factory flags to Omni. Add the following to your `docker run` command:
+
+```bash
+  -v $(pwd)/eif-token:/eif-token:ro,Z \
+  ...
+  --primary-factory-url=https://factory.siderolabs.com \
+  --primary-factory-token-file=/eif-token \
+  --secondary-factory-url=https://factory.talos.dev
+```
+
+</Tab>
+<Tab title="Configuration file">
+
+Add the factories to the `registries` section of your Omni configuration file:
+
+```yaml
+registries:
+  factories:
+    primary:
+      url: https://factory.siderolabs.com
+      tokenFile: /eif-token
+    secondary:
+      url: https://factory.talos.dev
+```
+
+</Tab>
+</Tabs>
+
+Omni checks the factory settings when it starts, and **does not** start when any of the following is true:
+
+- The primary and secondary image factories have the same URL.
+- A factory has both a token file and a username and password. Use only the token file.
+- The token file can't be read.
+
+The `--primary-factory-*` settings replace the deprecated `--image-factory-address`, `--image-factory-username`, and `--image-factory-password` flags. When `--primary-factory-url` is set, Omni ignores the deprecated flags.
+
+For all factory settings, including the optional PXE URLs, see [`registries.factories`](../reference/omni-configuration#registries-factories) in the Omni configuration reference.
+
+### Step 3: Check the connection
+
+After Omni restarts, check the factory settings that Omni reports. Run the following command:
+
+```bash
+omnictl get featuresconfig -o yaml
+```
+
+The output includes the following fields:
+
+```yaml
+    imagefactorybaseurl: https://factory.siderolabs.com
+    isenterpriseimagefactory: true
+    secondaryimagefactorybaseurl: https://factory.talos.dev
+    imagefactoryrequiresauth: true
+```
+
+`isenterpriseimagefactory: true` shows that Omni uses the Enterprise Image Factory as its primary image factory.
+
+To see which factory each Talos version comes from, run:
+
+```bash
+omnictl get talosversions -o yaml
+```
+
+The `imagefactoryurl` field of each version shows the factory that Omni uses for it, and `isenterprise` shows whether that factory is an Enterprise Image Factory.
+
+### Step 4: Rotate the token
+
+Omni reads the token file again when it changes, and at least once a minute, so a new token takes effect without a restart.
+
+To rotate the token, create a new API token with the **Automation (Omni / Terraform)** token actor, and write it into the existing file:
+
+```bash
+echo -n '<new-eif-api-token>' > eif-token
+```
+
+Don't replace the file with a new one. When the file is mounted into a container, Omni keeps reading the old file.
+
+Omni logs `the image factory token changed` when it reads the new token. Then revoke the old token in the Enterprise Image Factory. For more on rotating tokens, see [Rotate an API token](../../talos-enterprise-linux/working-with-talos-enterprise-linux/manage-credentials#rotate-an-api-token).
