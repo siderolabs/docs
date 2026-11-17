@@ -21,6 +21,7 @@ navigation:
             - "vsphere-concepts.mdx"
             - "requirements.mdx"
             - "api-and-automation.mdx"
+            - "dashboard.mdx"
 
         - group: "Compute"
           folder: "director/compute"

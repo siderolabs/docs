@@ -3404,7 +3404,8 @@
               "director/overview/how-talos-director-works",
               "director/overview/vsphere-concepts",
               "director/overview/requirements",
-              "director/overview/api-and-automation"
+              "director/overview/api-and-automation",
+              "director/overview/dashboard"
             ]
           },
           {
