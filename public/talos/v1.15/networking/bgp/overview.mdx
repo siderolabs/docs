@@ -134,6 +134,9 @@ The remaining fields control session behavior:
 | `passive`  | Waits for the peer to establish the TCP session instead of initiating it.                            |
 | `holdTime` | Configures the negotiated BGP hold time. Zero uses the implementation default.                       |
 | `bfd`      | Enables BFD and optionally configures transmit interval, receive interval, and detection multiplier. |
+| `authPassword` | Password for the session, up to 80 bytes. The neighbor must use the same password. Talos uses it for TCP MD5 authentication (RFC 2385). |
+
+The kernel matches `authPassword` by peer address, so unnumbered neighbors that share a link-local address on different links must all use the same password, or none.
 
 Use `passive: true` when the remote speaker must initiate the session, such as a workload speaker connecting to a listener bound to a VRF.
 Allow inbound TCP port `179` from the peer through the network and the [Talos ingress firewall](../ingress-firewall) when passive sessions are configured.
