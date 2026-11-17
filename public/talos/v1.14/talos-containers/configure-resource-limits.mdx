@@ -1,0 +1,45 @@
+---
+title: "Configure Resource Limits for a Talos Container"
+description: "Limit the CPU and memory that a Talos Container can use."
+canonical: https://docs.siderolabs.com/talos/v1.14/talos-containers/configure-resource-limits
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+Talos Containers share the machine's CPU and memory with Kubernetes workloads and system services.
+This page explains how to limit the CPU and memory a container uses.
+For more information, see the [`ContainerConfig` reference](../reference/configuration/container/containerconfig).
+
+## Limit CPU and memory
+
+The `resources.limits` field sets the most CPU and memory a container can use.
+Talos applies the limits to the container's cgroup.
+
+The two limits behave differently:
+
+- **`cpu`**: Set in millicores, where `1000m` is one core. A container that reaches its CPU limit is slowed down.
+- **`memory`**: Set as a size, such as `512MiB`. A container that goes over its memory limit is stopped by the kernel, and Talos starts it again 5 seconds later.
+
+**Example:** The following document limits a container to one and a half cores and 512 MiB of memory:
+
+```yaml
+apiVersion: v1alpha1
+kind: ContainerConfig
+name: web
+image: registry.example.com/web@sha256:...
+resources:
+  limits:
+    cpu: 1500m
+    memory: 512MiB
+```
+
+Both limits are optional, and a limit that is not set means no limit.
+On a local Docker cluster, Talos itself runs inside a Docker container and does not apply cgroup limits, so these limits have no effect there.
+
+## Next steps
+
+The following pages cover related topics:
+
+- **[Inspect and Troubleshoot Talos Containers](./inspect-and-troubleshoot-talos-containers)**: How to check a container's resource usage with `talosctl stats`.

@@ -1,0 +1,10 @@
+navigation:
+  products:
+    # Talos Containers is documented inside the Talos Linux versions, so this
+    # product is only a link in the product switcher and on the homepage.
+    - product: "Talos Containers"
+      family: "containers"
+      tag: "Open source"
+      description: "Run OCI containers directly on Talos at the edge, with no Kubernetes control plane to operate."
+      icon: "cube"
+      href: "/talos/v1.14/talos-containers/how-talos-containers-work"

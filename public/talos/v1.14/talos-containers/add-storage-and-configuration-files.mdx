@@ -1,0 +1,145 @@
+---
+title: "Add Storage and Configuration Files to a Talos Container"
+description: "Give a Talos Container persistent storage with a user volume, temporary storage with tmpfs, files from the host with hostPath, and configuration files with EtcFileConfig."
+canonical: https://docs.siderolabs.com/talos/v1.14/talos-containers/add-storage-and-configuration-files
+---
+
+import { VersionWarningBanner } from "/snippets/version-warning-banner.jsx"
+
+<VersionWarningBanner />
+
+A Talos Container's filesystem holds only its image, and anything the container writes there is lost when it stops.
+This page explains how to give a container storage that persists, temporary storage, files from the host, and configuration files.
+For more information, see the [`ContainerConfig` reference](../reference/configuration/container/containerconfig).
+
+## Choose a mount type
+
+The `mounts` field lists the filesystems that Talos mounts into a container.
+
+Each entry sets one of the following sources:
+
+- **`userVolume`**: A volume declared by a [`UserVolumeConfig`](../reference/configuration/block/uservolumeconfig) document. Its data persists when the container stops and when the machine reboots.
+- **`tmpfs`**: An in-memory filesystem. Its contents are lost when the container stops.
+- **`hostPath`**: An existing path on the host.
+
+Each entry also sets a `destination`, which is the path inside the container.
+Mounts are writable unless their `options` include `ro`.
+
+## Store data in a user volume
+
+A user volume keeps a container's data across restarts, updates, and reboots.
+Talos mounts each user volume at `/var/mnt/<name>` on the host, and a container that mounts a user volume waits for it before it starts.
+
+**Example:** The following documents declare a user volume named `data` on an NVMe disk, and mount it into a container at `/data`:
+
+```yaml
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: data
+provisioning:
+  diskSelector:
+    match: disk.transport == 'nvme'
+  maxSize: 10GiB
+---
+apiVersion: v1alpha1
+kind: ContainerConfig
+name: my-app
+image: registry.example.com/my-app@sha256:...
+mounts:
+  - userVolume:
+      name: data
+      destination: /data
+```
+
+If no `UserVolumeConfig` document declares the volume, the container waits for it indefinitely.
+[User Volumes](../configure-your-talos-cluster/storage-and-disk-management/disk-management/user) explains how to declare a user volume.
+
+Talos creates the volume's directory owned by root, with mode `0755`, so only a container that runs as root can write to it.
+
+## Use temporary storage
+
+A `tmpfs` mount gives a container a writable directory in memory.
+It suits temporary files, because the default `restricted` profile makes the container's root filesystem read-only.
+Its contents are lost when the container stops.
+
+The `size` field limits how much the mount can hold, and a process that writes more gets a `No space left on device` error.
+Without `size`, the kernel default applies.
+
+**Example:** The following document gives a container a 64 MiB `tmpfs` mount at `/tmp`:
+
+```yaml
+apiVersion: v1alpha1
+kind: ContainerConfig
+name: my-app
+image: registry.example.com/my-app@sha256:...
+mounts:
+  - tmpfs:
+      destination: /tmp
+      size: 64MiB
+```
+
+## Mount a path from the host
+
+A `hostPath` mount makes an existing path on the host visible inside the container.
+It can expose any part of the host, so it gives the container the widest access of the three mount sources.
+
+The path must exist when the container starts.
+Talos doesn't create it, and a container whose source path is missing fails to start and is restarted in a loop.
+To make the container wait for the path instead, list it in `dependsOn.paths`, as described in [Configure Startup Order](./configure-startup-order).
+
+**Example:** The following document mounts the host's `/var/log` directory into a container, read-only:
+
+```yaml
+apiVersion: v1alpha1
+kind: ContainerConfig
+name: log-reader
+image: registry.example.com/log-reader@sha256:...
+mounts:
+  - hostPath:
+      source: /var/log
+      destination: /host/var/log
+      options:
+        - ro
+```
+
+## Add a configuration file
+
+Talos has no dedicated way to pass a file to a container.
+An [`EtcFileConfig`](../reference/configuration/runtime/etcfileconfig) document writes a file under `/etc` on the host, and a `hostPath` mount makes it visible in the container.
+
+Mount the file's directory rather than the file itself.
+Talos replaces the file when its contents change, and a container that mounts only the file keeps seeing the old version until it is started again.
+A container that mounts the directory sees the new version.
+
+**Example:** The following documents write `/etc/my-app/config.yaml` on the host, and mount the `/etc/my-app` directory into a container, read-only:
+
+```yaml
+apiVersion: v1alpha1
+kind: EtcFileConfig
+name: my-app/config.yaml
+mode: 0o644
+contents: |
+  listen: 0.0.0.0:8080
+---
+apiVersion: v1alpha1
+kind: ContainerConfig
+name: my-app
+image: registry.example.com/my-app@sha256:...
+mounts:
+  - hostPath:
+      source: /etc/my-app
+      destination: /etc/my-app
+      options:
+        - ro
+```
+
+Talos creates the `my-app` directory under `/etc` when it writes the file.
+The file's contents are part of the machine configuration, so they have the same protection as the rest of it, as described in [How Talos Containers Work](./how-talos-containers-work#secrets).
+
+## Next steps
+
+The following pages cover related topics:
+
+- **[Configure Startup Order](./configure-startup-order)**: How to make a container wait for a host path.
+- **[Configure Security](./configure-security)**: How to set the user a container runs as.
+- **[Inspect and Troubleshoot Talos Containers](./inspect-and-troubleshoot-talos-containers)**: How to check a container's mounts, and fix a container that never starts.
