@@ -28,6 +28,7 @@ navigation:
           pages:
             - "clusters.mdx"
             - "hosts.mdx"
+            - "add-a-host.mdx"
             - "virtual-machines.mdx"
             - "migrate-from-vmware.mdx"
             - "what-happens-during-a-migration.mdx"

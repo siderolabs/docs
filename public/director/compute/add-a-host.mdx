@@ -1,0 +1,141 @@
+---
+title: Add a Host
+description: Bring a bare-metal server under Talos Director management by booting it from boot media or starting it through its BMC, then accept it into a cluster.
+---
+
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
+
+<DirectorLimitedAvailability />
+
+Talos Director runs virtual machines on hosts, which are bare-metal servers that it manages. The server boots a Talos Linux installer image, connects to Talos Director, and waits on the **Onboarding** page until it is accepted. Accepting the server installs Talos Linux on it and turns it into a managed host.
+
+The installer image can reach the server in one of two ways: from boot media that the server is started from, or through the server's baseboard management controller (BMC), which Talos Director uses to start the server remotely. Both ways lead to the same accept step and the same result.
+
+For the design behind onboarding, see [How a server becomes a host](/director/overview/how-talos-director-works#how-a-server-becomes-a-host). For monitoring a host once it is connected, see [Hosts](/director/compute/hosts).
+
+## Before you begin
+
+Onboarding depends on the server, the network, and Talos Director all being ready. Confirm the following before starting:
+
+- The server meets the host requirements in [Requirements](/director/overview/requirements#hosts).
+- The server can reach the addresses and ports listed under **Host link** in the onboarding setup. Hosts only open outbound connections, so no inbound ports are needed.
+- If Talos Director will start the server through its BMC, Talos Director can reach the BMC over the network.
+- If the host will join a cluster, the cluster already exists. See [Clusters](/director/compute/clusters).
+- The **Setup** checklist on the **Onboarding** page reports no blocking settings, as described in [Check the onboarding setup](#check-the-onboarding-setup).
+
+### Check the onboarding setup
+
+The **Setup** checklist at the top of **Compute** > **Hosts** > **Onboarding** reports whether Talos Director is ready to onboard hosts. Each item that needs attention links to the setting that fixes it. The checklist has three sections:
+
+- **Host connection**: This section covers how a host reaches Talos Director and registers. It includes the **Manager URL**, the **Host link** addresses and ports that hosts connect to, and the **Join token** that authorizes them.
+- **Boot images**: This section covers what a host boots and installs. It includes the image catalog, the **Default image**, the **Image factory**, and the install images.
+- **Config profiles**: This section covers the configuration a host receives once it is accepted. A standalone host renders its configuration from a host profile, and a host accepted on an empty profile has no VM network. If no standalone host profile exists yet, **New profile from template** creates one.
+
+## Step 1: Choose how to start the server
+
+The **+ Add hosts** button on the **Onboarding** page offers the two ways to start a server. Choose the one that fits the server's hardware:
+
+| **Option** | **How the server starts** | **Suited to** |
+| --- | --- | --- |
+| **Option 1: Boot media** | The server boots from a USB stick, an ISO in a virtual drive, or PXE. One image can start any number of servers. | Servers without a Redfish-capable BMC, or environments where booting is managed outside Talos Director. |
+| **Option 2: BMC** | Talos Director boots the installer through the server's BMC, such as iDRAC or iLO. | Servers with a Redfish-capable BMC, from a single server to a whole rack. |
+
+Complete only one of the following options for each server, then continue to [Step 2: Accept the host](#step-2-accept-the-host).
+
+### Option 1: Start the server from boot media
+
+Boot media is an installer image with the Talos Director address and the join token built in. The image only starts the server and connects it to Talos Director; what gets installed comes from the config profile chosen when the host is accepted.
+
+To build boot media and start a server from it:
+
+1. Navigate to **Compute** > **Hosts** > **Onboarding**.
+2. Select **+ Add hosts**, then select **Get boot media**.
+3. Complete the following fields:
+   - **Talos version**: The Talos Linux version to build the image from.
+   - **Boot network**: How the server gets an address while it boots. **DHCP on the boot port** builds one image for many servers, and **Static address** builds one image per server.
+   - **Firmware extensions**: The firmware the server's hardware needs, such as CPU microcode or network interface card (NIC) firmware. Select every option that matches the hardware.
+4. Select **Create Boot Media** to build the image. The **Kernel arguments** and **Schematic** fields show the values the image is built from, and **Build by Hand** uses those values to build the image outside Talos Director.
+5. Boot the server from the image.
+
+Each server that boots from the image appears in the **Onboarding** list as **Discovered**, ready for [Step 2: Accept the host](#step-2-accept-the-host).
+
+<Note>
+The join token is part of the boot media, so anyone with the image can connect a server to Talos Director until the token changes. Rotate the join token once the servers started from the image are installed.
+</Note>
+
+### Option 2: Start the server through its BMC
+
+Talos Director can start servers through their BMC one at a time or as a rack. Starting one server registers it and starts its installer in a single step, while starting several registers them together and starts each installer separately.
+
+#### Start one server
+
+A single server needs its BMC details, a name, and the address it uses on the network.
+
+To start one server through its BMC:
+
+1. Navigate to **Compute** > **Hosts** > **Onboarding**.
+2. Select **+ Add hosts**, select **Use the BMC**, then select **One server**.
+3. Complete the following fields:
+
+   | **Field** | **Description** |
+   | --- | --- |
+   | **What do you call it?** | The host's name. |
+   | **MAC address of the network port it boots from** | The MAC address of the server's boot network port, printed on the BMC's network page. Talos Director recognizes the server by this address when it checks in. |
+   | **BMC address** and **Port** | The address and port of the server's BMC. |
+   | **BMC username** and **BMC password** | The credentials Talos Director uses to control the BMC. |
+   | **Which address should it use?** | **Whatever the network gives it (DHCP)**, or **A fixed address I choose** with an **Address**, **Netmask**, and **Gateway**. |
+   | **VLAN** | Optional. Required only if the port the server boots from is tagged. |
+   | **Hardware profile** | **Auto-detect from the server model** lets Talos Director choose the hardware profile. Picking a profile overrides it. |
+   | **Secure Boot override** | **Inherit** follows the config profile, then the site setting. **On (signed installer)** or **Off (plain installer)** applies to this host only. |
+
+4. Select **Add and start installer**.
+
+Talos Director starts the installer through the BMC. When the server checks in, it appears in the **Onboarding** list, ready for [Step 2: Accept the host](#step-2-accept-the-host).
+
+#### Start several servers
+
+Bulk registration adds a rack of servers that share credentials and a boot network. Registration is idempotent by name, so submitting again after fixing a row corrects the existing record instead of creating a duplicate.
+
+To start several servers through their BMCs:
+
+1. Navigate to **Compute** > **Hosts** > **Onboarding**.
+2. Select **+ Add hosts**, select **Use the BMC**, then select **Several servers**.
+3. Under **Hosts**, paste one line per server in the form `name, bmc_address, boot_mac, static_ip`. Commas, tabs, and spaces all work as separators, so rows copied from a spreadsheet paste directly. Blank lines and lines starting with `#` are ignored.
+4. Under **Shared by every host**, complete the following fields:
+
+   | **Field** | **Description** |
+   | --- | --- |
+   | **BMC username** and **BMC password** | Required. The credentials for every server's BMC. |
+   | **BMC port** | The port of every server's BMC. |
+   | **Machine type** | The machine profile key that selects each server's boot assets. It must match a machine profile key in the provisioner configuration. |
+   | **Boot interface name** | Empty by default, which pins the boot interface by its MAC address. Set it only for unusual network layouts. |
+   | **Boot network** | **static** or **dhcp**. |
+   | **VLAN ID**, **Netmask**, and **Gateway** | The boot network settings every server shares. |
+   | **Cluster** | The cluster the servers join, or **— none —**. |
+   | **Boot over HTTPS (TLS)** | Boots the installer over HTTPS. |
+
+5. Select **Register hosts**.
+
+The servers appear in the **Onboarding** list as **Registered**. Selecting **Provision** on a server's row starts its installer through the BMC, and once the server checks in, it is ready for [Step 2: Accept the host](#step-2-accept-the-host).
+
+## Step 2: Accept the host
+
+Every server waits on the **Onboarding** page until it is accepted. Accepting a server assigns it to a cluster and selects the disk that Talos Linux installs on.
+
+<Warning>
+Accepting a host erases the selected disk and installs Talos Linux on it. Confirm the server and the disk before accepting.
+</Warning>
+
+To accept a server:
+
+1. Navigate to **Compute** > **Hosts** > **Onboarding**.
+2. Find the server in the list. The **Needs you** filter shows only the servers waiting for an action.
+3. Accept the server, and select the cluster it joins and the disk it installs on.
+
+Talos Director installs Talos Linux on the server with the configuration rendered from the cluster's config profile, and the server reboots into the installed system.
+
+## Step 3: Verify the host
+
+The **State** column on the **Onboarding** page shows each server's progress. A server starts as **Discovered** or **Registered**, moves to **In progress** while Talos Linux installs, and ends as **Ready**.
+
+A **Ready** server is a managed host. It is listed under **Compute** > **Hosts** > **All Hosts** with the status `Connected`, and **Open host** on its **Onboarding** row opens its detail screen.
