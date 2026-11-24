@@ -3414,6 +3414,7 @@
               "director/compute/clusters",
               "director/compute/hosts",
               "director/compute/virtual-machines",
+              "director/compute/create-a-virtual-machine",
               "director/compute/migrate-from-vmware",
               "director/compute/what-happens-during-a-migration",
               "director/compute/storage-pools"
