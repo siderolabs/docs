@@ -253,6 +253,11 @@ Siderolink contains SideroLink service configuration. It is the service responsi
       <td>DisableLastEndpoint controls whether the SideroLink service should stop using the last known endpoint of a node when it becomes unreachable via WireGuard.<br />**CLI flag:** `--siderolink-disable-last-endpoint`</td>
     </tr>
     <tr>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`disconnectTalosBelow`</td>
+      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
+      <td>DisconnectTalosBelow confirms that the machines running Talos versions below this version can be disconnected from Omni. The value must be in the major.minor.0 format (e.g., 1.6.0) and cannot be higher than the Talos version floor (currently 1.6.0). When it is set, Omni disconnects the machines running Talos versions below the floor. When a future Omni release raises the floor, Omni will refuse to start if there are machines running Talos versions between this value and the new floor. Format: must be a Talos version in the major.minor.0 format, e.g., 1.6.0.<br />**CLI flag:** `--siderolink-disconnect-talos-below`</td>
+    </tr>
+    <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`useGRPCTunnel`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>boolean</td>
       <td>UseGRPCTunnel controls whether the SideroLink service should tunnel WireGuard traffic over gRPC, in setups where direct Wireguard connectivity is not possible (e.g., due to firewall restrictions). When enabled, the SideroLink connections from Talos machines will be configured to use the tunnel mode, regardless of their individual configuration.<br />**CLI flag:** `--siderolink-use-grpc-tunnel`</td>
@@ -524,7 +529,7 @@ Auth contains authentication-related configuration.
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`recoveryAdmin`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
-      <td>RecoveryAdmin is the email of a user raised to the Admin role on every Omni start. The user must already exist. Once configured, SAML label rules never lower its role, for both SAML and OIDC logins. Intended as a break-glass path when a misconfigured rule removes admin access from everyone.<br />**CLI flag:** `--recovery-admin`</td>
+      <td>RecoveryAdmin is the email of a user raised to the Admin role on every Omni start. The user must already exist. Once configured, identity label rules never lower its role, for both SAML and OIDC logins. Intended as a break-glass path when a misconfigured rule removes admin access from everyone.<br />**CLI flag:** `--recovery-admin`</td>
     </tr>
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`requireReauthForNewKeys`</td>
@@ -552,11 +557,6 @@ Auth0 contains Auth0 authentication provider configuration.
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`initialUsers`</td>
-      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string[]</td>
-      <td>**Deprecated.** InitialUsers is a list of emails which should be created as admins when Omni is run for the first time. DEPRECATED: use params.auth.initialUsers instead, this will be removed.</td>
-    </tr>
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`domain`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
@@ -718,7 +718,7 @@ Oidc contains OIDC authentication provider configuration.
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`autoCreateUsers`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>boolean</td>
-      <td>AutoCreateUsers controls whether OIDC users are created on their first login. They get the role from the matching SAML label rules, or None. The very first user of an instance becomes Admin. Enable it only when every account of the OIDC provider belongs to your organization.<br />**CLI flag:** `--auth-oidc-auto-create-users`</td>
+      <td>AutoCreateUsers controls whether OIDC users are created on their first login. They get the role from the matching identity label rules, or None. The very first user of an instance becomes Admin. Enable it only when every account of the OIDC provider belongs to your organization.<br />**CLI flag:** `--auth-oidc-auto-create-users`</td>
     </tr>
   </tbody>
 </table>
@@ -827,7 +827,7 @@ Logs contains logging-related configuration.
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`level`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
-      <td>Level is the log level for the Omni application logger. Defaults to info, unless the --debug flag is set, in which case it defaults to debug. Values: `debug`, `info`, `warn`, `error`.<br />**CLI flag:** `--log-level`</td>
+      <td>Level is the log level for the Omni application logger. Defaults to info, debug for debug builds. Values: `debug`, `info`, `warn`, `error`.<br />**CLI flag:** `--log-level`</td>
     </tr>
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`format`</td>
@@ -1420,26 +1420,6 @@ Registries contains container image registries configuration.
       <td>**Required.** Kubernetes is the Kubernetes container registry configuration. Must not be empty.<br />**CLI flag:** `--kubernetes-registry`<br />**Default:** `ghcr.io/siderolabs/kubelet`</td>
     </tr>
     <tr>
-      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`imageFactoryBaseURL`</td>
-      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
-      <td>**Required.** **Deprecated.** ImageFactoryBaseURL is the base URL of the Image Factory service used to build custom machine images.  Deprecated: use factories.primary.url instead. Must not be empty.<br />**CLI flag:** `--image-factory-address`<br />**Default:** `https://factory.talos.dev`</td>
-    </tr>
-    <tr>
-      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`imageFactoryPXEBaseURL`</td>
-      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
-      <td>**Deprecated.** ImageFactoryPXEBaseURL is the base URL of the Image Factory PXE endpoint used to build custom PXE boot images.  Deprecated: use factories.primary.pxeURL instead.<br />**CLI flag:** `--image-factory-pxe-address`</td>
-    </tr>
-    <tr>
-      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`imageFactoryUsername`</td>
-      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
-      <td>**Deprecated.** ImageFactoryUsername is the username used to authenticate against the Image Factory Enterprise service.  Deprecated: use factories.primary.username instead.<br />**CLI flag:** `--image-factory-username`</td>
-    </tr>
-    <tr>
-      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`imageFactoryPassword`</td>
-      <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
-      <td>**Deprecated.** ImageFactoryPassword is the password used to authenticate against the Image Factory Enterprise service.  Deprecated: use factories.primary.password instead.<br />**CLI flag:** `--image-factory-password`</td>
-    </tr>
-    <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`mirrors`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string[]</td>
       <td>Mirrors is the list of container image registry mirrors. Used mainly for the development purposes. It must be in the format: &lt;registry host&gt;=&lt;mirror URL&gt;<br />**CLI flag:** `--registry-mirror`</td>
@@ -1467,7 +1447,7 @@ Primary is the primary Image Factory configuration.
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`url`</td>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>string</td>
-      <td>URL is the base URL of the Image Factory service used to build custom machine images.<br />**CLI flag:** `--primary-factory-url`</td>
+      <td>URL is the base URL of the Image Factory service used to build custom machine images.<br />**CLI flag:** `--primary-factory-url`<br />**Default:** `https://factory.talos.dev`</td>
     </tr>
     <tr>
       <td style={{whiteSpace: 'nowrap', padding: '8px'}}>`pxeURL`</td>
@@ -1732,4 +1712,8 @@ OfficeHours contains the configuration for the monthly office hours shown in the
     </tr>
   </tbody>
 </table>
+
+## trustedRootsFile
+
+TrustedRootsFile is the path of a PEM file with the certificates of the organization's own root and intermediate CAs. Omni adds them to the configuration of every machine, so that machines trust Omni, the Image Factory and other services serving certificates signed by these CAs. Boot media for Talos 1.12 and later carry them from the first boot. Boot media for older Talos versions cannot carry them, so machines booting from such media cannot connect to Omni while its machine API serves a certificate signed by these CAs. Put only the organization's CAs in the file, not a system CA bundle: Omni copies the whole file into every machine configuration. This setting does not make Omni itself trust these CAs. Add them to the trust store of the Omni container too, e.g., by mounting the file as a single file into /etc/ssl/certs/, which adds them to the public CAs instead of replacing them.
 
