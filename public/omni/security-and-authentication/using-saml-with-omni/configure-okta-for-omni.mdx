@@ -23,12 +23,12 @@ Ensure users are assigned the correct role as defined by their Okta group.
 
 1. In the Okta SAML app, open Group Attribute Statements and add: Name `role`, Filter “Starts with” `omni-`. 
 2. Create Okta groups such as `omni-admins`, `omni-operators` and `omni-readers`, and assign users to them.
-3. In Omni, create one `SAMLLabelRule` per group, matching `saml.omni.sidero.dev/role/<group>` with `assignrole: Admin / Operator / Reader`.
+3. In Omni, create one `IdentityLabelRule` per group, matching `saml.omni.sidero.dev/role/<group>` with `assignrole: Admin / Operator / Reader`.
    Example:
    ```yaml
    metadata:
      namespace: default
-     type: SAMLLabelRules.omni.sidero.dev
+     type: IdentityLabelRules.omni.sidero.dev
      id: omni-admins
    spec:
       assignrole: Admin
