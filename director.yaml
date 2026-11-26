@@ -29,6 +29,8 @@ navigation:
             - "clusters.mdx"
             - "hosts.mdx"
             - "virtual-machines.mdx"
+            - "templates-and-content-libraries.mdx"
+            - "manage-templates-and-content-libraries.mdx"
             - "migrate-from-vmware.mdx"
             - "what-happens-during-a-migration.mdx"
             - "storage-pools.mdx"

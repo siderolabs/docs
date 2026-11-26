@@ -1,0 +1,129 @@
+---
+title: Templates and Content Libraries
+description: What templates and content libraries are in Talos Director, how they relate, and a walkthrough of the Templates screen where both are managed.
+---
+
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
+
+<DirectorLimitedAvailability />
+
+A template in Talos Director is a disk image or an ISO image that virtual machines (VMs) are created from. A content library is a store of templates. Both are managed on the **Templates** screen.
+
+This page explains what content libraries and templates are, and then walks through the **Templates** screen. For the steps to create content libraries, add templates, and deploy VMs from them, see [Manage Templates and Content Libraries](/director/compute/manage-templates-and-content-libraries).
+
+## Content libraries and templates
+
+Every template belongs to one content library. The content library decides where the template's files are stored, and whether its templates are shared with other Talos Director instances.
+
+For example, a content library called `linux-images`, stored in an S3 bucket, might hold two templates: an Ubuntu Server disk image and a Debian installer ISO. A VM deployed from the Ubuntu template boots from a copy of that disk. A VM that mounts the Debian ISO installs Debian from it.
+
+### Content libraries
+
+A content library is one of the following types:
+
+- **Owned**: A content library created in this Talos Director instance. It stores its templates on S3-compatible object storage, an NFS export, an SMB share, or a directory on every host.
+- **Subscribed**: A copy of a content library that another Talos Director instance publishes. It syncs that library's templates according to its sync policy. To publish a content library and subscribe to it, see [Share a content library between instances](/director/compute/manage-templates-and-content-libraries#share-a-content-library-between-instances).
+
+### Templates
+
+A template is one of the following types:
+
+- **VM template** (`vm_template`): A disk image in RAW, compressed RAW, or QCOW2 format. A VM deployed from it boots from a copy of that disk.
+- **ISO image** (`iso`): An installer or live ISO. A VM mounts it to install an operating system.
+
+The first time a VM mounts an ISO from a content library, Talos Director copies the ISO to that VM's storage pool. Every VM on that pool then reuses the copy.
+
+## The Templates screen
+
+The **Templates** screen is at **Compute** > **Virtual Machines** > **Templates** (`/templates`).
+
+The cards at the top of the screen show the following totals:
+
+- **Libraries**: The number of content libraries.
+- **Templates**: The number of templates, and how many of them are ISO images.
+- **Total Size**: The size of every template across all content libraries.
+- **Active Syncs**: The number of subscribed content libraries syncing now.
+
+Below the cards are three tabs:
+
+- **Templates**: Lists every template.
+- **Libraries**: Lists every content library.
+- **Activity**: Lists the jobs that ran against content libraries.
+
+### Templates tab
+
+The **Templates** tab lists every template in every content library. The **Add template** button adds a template from a file or a URL. To add one, see [Add a template](/director/compute/manage-templates-and-content-libraries#add-a-template).
+
+#### Template list filters
+
+The following controls filter and change the template list:
+
+- **All libraries**: Shows the templates in one content library.
+- **All OS**: Shows **Linux** or **Windows** templates.
+- **All Types**: Shows **VM Templates**, **ISO Images**, or **Cloud Configs**.
+- **List** and **Grid**: Switch between a table and cards.
+
+#### Template table columns
+
+The template table shows the following columns:
+
+| **Column** | **Description** |
+| --- | --- |
+| **Template** | The template name and description. |
+| **Library** | The content library that holds the template. |
+| **Type** | `vm_template` or `iso`. |
+| **OS** | The operating system type and version, when set. |
+| **Version** | The latest version, for example `v1.0`. |
+| **Size** | The size of the image. |
+| **Deployments** | The number of VMs deployed from the template. |
+| **Hosts** | How many of the cluster's hosts have the template's file, for example `3/4`. Shown as a warning when some hosts don't have it yet, and as `-` when Talos Director doesn't track the template on each host. |
+| **Status** | Shows **Cached**. |
+| **Actions** | The template's actions menu. |
+
+#### Template actions menu
+
+The **Actions** menu on each template has the following items:
+
+- **Deploy VM**: Creates a VM from the template. See [Deploy a VM from a template](/director/compute/manage-templates-and-content-libraries#deploy-a-vm-from-a-template).
+- **Download**: Downloads the image through the browser. While it runs, the item changes to **Cancel download** with the progress, and the browser tab must stay open.
+- **New Version**: Uploads a new version of the image under the same template name. See [Upload a new version of a template](/director/compute/manage-templates-and-content-libraries#upload-a-new-version-of-a-template).
+- **Details**: Shows the template's type, latest version, total size, number of deployments, and tags.
+- **Version History**: Lists each version with its checksum and sync time.
+- **Delete**: Deletes the template.
+
+### Libraries tab
+
+The **Libraries** tab lists every content library. The **New Library** button creates an owned content library, and the **Subscribe to Library** button creates a subscribed one. To create either, see [Create a content library](/director/compute/manage-templates-and-content-libraries#create-a-content-library) or [Share a content library between instances](/director/compute/manage-templates-and-content-libraries#share-a-content-library-between-instances).
+
+#### Library table columns
+
+The library table shows the following columns:
+
+| **Column** | **Description** |
+| --- | --- |
+| **Name** | The content library's name and description. A subscribed library also shows its source library. |
+| **Kind** | **Owned** or **Subscribed**. |
+| **State** | The content library's state, for example `active`. |
+| **Type** | The backing storage type, for example **S3**. |
+| **Backing** | Where the templates are stored, for example an S3 bucket and its region. |
+| **Items** | The number of templates in the content library. |
+| **Size** | The total size of the content library's templates. |
+| **Last Sync** | When a subscribed library last synced, and the result. **Never** for a library that hasn't synced. After a failed sync, it shows when the next retry runs, or that all retries are used up and a manual sync is needed. |
+| **Actions** | The content library's actions menu. |
+
+#### Library actions menu
+
+The **Actions** menu on each content library has the following items:
+
+- **Show templates**: Opens the **Templates** tab, filtered to this content library.
+- **Activity**: Shows the content library's jobs.
+- **Library Settings**: Edits the content library's name, description, and storage settings. The backing storage type can't be changed.
+- **Publish Library**: Generates a subscription URL and authentication token that other Talos Director instances use to subscribe. See [Share a content library between instances](/director/compute/manage-templates-and-content-libraries#share-a-content-library-between-instances).
+- **Sync Now**: For a subscribed content library, syncs templates from the source library without waiting for the schedule.
+- **Edit Sync Schedule**: For a subscribed content library, changes when it syncs: immediately, on demand when a VM is deployed, or on a schedule.
+- **Unsubscribe**: For a subscribed content library, stops syncing and removes the library. Templates already synced are kept.
+- **Delete Library**: Deletes the content library.
+
+### Activity tab
+
+The **Activity** tab lists the jobs that ran against content libraries, such as syncs from a published library. Each job shows its status, what it did, when it finished, and how long it took.

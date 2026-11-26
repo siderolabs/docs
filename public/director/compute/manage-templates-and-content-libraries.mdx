@@ -1,0 +1,261 @@
+---
+title: Manage Templates and Content Libraries
+description: Create and share content libraries, add templates to them, deploy VMs from templates, and upload new template versions in Talos Director.
+---
+
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
+
+<DirectorLimitedAvailability />
+
+This page shows how to create and share content libraries, fill them with templates, and use those templates to deploy virtual machines (VMs).
+
+For what content libraries and templates are, and a walkthrough of the **Templates** screen, see [Templates and Content Libraries](/director/compute/templates-and-content-libraries).
+
+## Before you begin
+
+Ensure you have the following:
+
+- Access to the **Templates** screen at **Compute** > **Virtual Machines** > **Templates**.
+- A place to store the content library, such as an S3-compatible bucket with its access keys, an NFS export, an SMB share, or a directory on the hosts.
+
+## Manage content libraries
+
+Every template is stored in a content library. This section covers how to create a content library and how to share it with another Talos Director instance.
+
+### Create a content library
+
+The **Create Content Library** wizard sets the content library's name and where it stores its templates.
+
+To create a content library:
+
+1. On the **Templates** screen, open the **Libraries** tab and select **New Library**.
+2. In the **Basic Information** step, complete the following fields, and then select **Next**:
+   - **Library Name**: Required. The name of the content library, at least 3 characters long.
+   - **Description**: A description of the content library.
+   - **Backing Storage**: Required. **S3-compatible object storage**, **NFS export**, **SMB / CIFS share**, or **Local directory (per-host)**. You can't change it after the content library is created.
+3. In the **Storage Configuration** step, complete the fields for your backing storage, and then select **Next**. Select the tab for your backing:
+
+   <Tabs>
+     <Tab title="S3-compatible object storage">
+       S3-compatible storage includes AWS S3, NetApp StorageGRID, MinIO, and Ceph. Talos Director reaches it from its control plane.
+
+       Complete the following fields:
+
+       - **S3 Endpoint URL**: Required. The full URL of the endpoint, including `http://` or `https://`.
+       - **Bucket Name**: Required. The bucket that stores the templates.
+       - **Region**: The bucket's region for AWS S3, for example `us-west-2`. Leave it empty for other S3-compatible storage.
+       - **Bucket Path / Prefix**: Optional. A path inside the bucket. Use it to share one bucket between content libraries.
+       - **Access Key**: Required. The S3 access key ID.
+       - **Secret Key**: Required. The S3 secret access key. Talos Director encrypts it at rest.
+       - **Use SSL/TLS (HTTPS)**: On by default. Turn it off if the endpoint doesn't use HTTPS.
+       - **Skip SSL Certificate Verification**: Off by default. Turn it on if the endpoint uses a self-signed certificate.
+
+       To check the settings before you continue, select **Test S3 Connection**.
+     </Tab>
+     <Tab title="NFS export">
+       Talos Director mounts the export on a host and stores templates as files beneath it. It checks the mount when you create the content library.
+
+       Complete the following fields:
+
+       - **NFS Server**: Required. The NFS server, for example `nas01.example.com`.
+       - **Export Path**: Required. The exported path, for example `/exports/templates`.
+       - **Subdirectory**: Optional. A directory inside the export to use as the library root.
+       - **Mount Options**: Optional. NFS mount options, for example `nfsvers=4.1,hard`. Leave it empty to use the defaults.
+     </Tab>
+     <Tab title="SMB / CIFS share">
+       Talos Director mounts the share on a host as `//server/share` and stores templates as files beneath it. It checks the mount when you create the content library.
+
+       Complete the following fields:
+
+       - **SMB Server**: Required. The file server, for example `fileserver.example.com`.
+       - **Share**: Required. The share name.
+       - **Subdirectory**: Optional. A directory inside the share to use as the library root.
+       - **Username**: Optional. The account to mount the share with.
+       - **Domain**: Optional. The account's domain, for example `WORKGROUP`.
+       - **Password**: Optional. Leave it empty for a guest share. Talos Director encrypts it at rest and never returns it through the API.
+       - **Mount Options**: Optional. SMB mount options, for example `vers=3.1.1,hard`. Leave it empty to use the defaults.
+     </Tab>
+     <Tab title="Local directory (per-host)">
+       Talos Director stores the content library in a directory on every host in the cluster, and creates the directory if it doesn't exist.
+
+       Complete the following field:
+
+       - **Directory Path**: Required. Choose a parent directory from the hosts' storage paths, such as `/var/lib/libvirt/images/`, and then enter the name of the directory to create in it, such as `templates`.
+     </Tab>
+   </Tabs>
+
+4. In the **Review Configuration** step, check the summary, and then select **Create Library**.
+
+The new content library appears on the **Libraries** tab. To understand what each column shows, see [Library table columns](/director/compute/templates-and-content-libraries#library-table-columns).
+
+### Share a content library between instances
+
+Sharing a content library makes the same templates available on more than one Talos Director instance, without uploading each template to every instance.
+
+Sharing works in two parts. The source instance publishes the content library, which generates a subscription URL and an authentication token. The destination instance uses them to subscribe, and then syncs the templates according to its sync policy.
+
+#### Step 1: Publish the content library
+
+On the source instance, publishing generates the subscription URL and authentication token that the destination instance needs.
+
+To publish a content library:
+
+1. On the **Libraries** tab, select **Actions** > **Publish Library** on the content library.
+2. Select **Publish**.
+3. Copy the subscription URL and authentication token.
+
+#### Step 2: Subscribe to the content library
+
+On the destination instance, subscribing creates a subscribed content library that syncs templates from the source.
+
+To subscribe to a content library:
+
+1. On the **Libraries** tab, select **Subscribe to Library**.
+2. Under **Subscription Details**, complete the following fields:
+   - **Local Library Name**: Required. The name of the content library on this instance.
+   - **Sync Policy**: When to sync templates. Defaults to **Scheduled**. Choose one of the following:
+     - **Immediate**: Syncs every template now and on every update.
+     - **On-Demand**: Downloads a template when a VM is deployed from it.
+     - **Scheduled**: Syncs at a fixed interval in hours, or on a cron schedule.
+   - **Sync Interval (hours)**: How often a scheduled content library syncs. Defaults to `24`.
+   - **Advanced schedule (cron expression)**: Optional. A cron expression to use instead of the interval.
+   - **Description**: A description of the content library.
+3. Under **Remote Library Connection**, complete the following fields:
+   - **Subscription URL**: Required. The URL from Step 1.
+   - **Authentication Token**: Required. The token from Step 1.
+   - **Bandwidth Limit (MB/s)**: Optional. The maximum download speed. `0` means unlimited.
+   - **Item Name Filter**: Optional. A glob pattern, for example `linux-*`. Only templates whose names match are synced. Leave it empty to sync every template.
+4. Under **Local S3 Storage**, enter where this instance stores the synced templates:
+   - **S3 Endpoint URL**: Required. The local S3-compatible storage endpoint.
+   - **Bucket Name**: Required. The local bucket.
+   - **Access Key**: Required. The local storage's access key ID.
+   - **Secret Key**: Required. The local storage's secret access key.
+   - **Use SSL/TLS (HTTPS)**: On by default.
+   - **Skip SSL Certificate Verification**: Off by default.
+5. Select **Subscribe**.
+
+The subscribed content library appears on the **Libraries** tab with the kind **Subscribed**. To follow its syncs, open the [Activity tab](/director/compute/templates-and-content-libraries#activity-tab).
+
+#### Step 3: Manage the subscription (optional)
+
+After you subscribe, manage the subscription from the content library's **Actions** menu on the **Libraries** tab. For every item in that menu, see [Library actions menu](/director/compute/templates-and-content-libraries#library-actions-menu).
+
+The menu has the following subscription items:
+
+- **Sync Now**: Syncs templates from the source library without waiting for the schedule.
+- **Edit Sync Schedule**: Changes the sync policy.
+- **Unsubscribe**: Stops syncing and removes the content library. Templates already synced are kept. To resume syncing, subscribe again.
+
+## Manage templates
+
+Templates are the images that VMs are created from. This section covers adding a template to a content library, deploying a VM from it, and uploading a new version.
+
+### Add a template
+
+Add a template from a file, a URL, or an existing VM. A template can be a VM template or an ISO image. To choose between them, see [Templates](/director/compute/templates-and-content-libraries#templates).
+
+Select the tab for your source:
+
+<Tabs>
+  <Tab title="Upload a file">
+    To add a template from a file:
+
+    1. On the **Templates** tab, select **Add template**.
+    2. Under **Source**, select **File from this computer**.
+    3. Complete the following fields:
+       - **Library**: Required. The content library to add the template to.
+       - **Template Name**: Required. The template's name, for example `rocky-9-minimal`.
+       - **Description**: A description that appears under the name in the template list.
+       - **OS Type**: **Linux** or **Windows**.
+       - **OS Version**: The operating system version, for example `Rocky Linux 9.3`.
+       - **Version**: The template version. It is part of the image's storage path. Defaults to `1.0`.
+       - **Disk Format**: **Auto-detect from filename**, **RAW (.raw, .img)**, **RAW compressed (.raw.zst)**, **QCOW2 (.qcow2)**, or **ISO (.iso)**.
+       - **File**: Required. The image to upload.
+    4. Select **Upload**.
+
+    The upload runs in the background. To follow its progress, open **Transfers** in the top bar.
+
+    <Note>
+    A proxy in front of the console can refuse a large file. If the upload fails, add the image from a URL instead.
+    </Note>
+  </Tab>
+  <Tab title="Add from a URL">
+    To add a template from a URL:
+
+    1. On the **Templates** tab, select **Add template**.
+    2. Under **Source**, select **From URL**.
+    3. Complete the following fields:
+       - **Library**: Required. The content library to add the template to.
+       - **Template Name**: Required. The template's name, for example `rocky-9-minimal`.
+       - **Description**: A description that appears under the name in the template list.
+       - **Disk Format**: **Auto-detect from filename**, **RAW (.raw, .img)**, **RAW compressed (.raw.zst)**, **QCOW2 (.qcow2)**, or **ISO (.iso)**.
+       - **Image URL**: Required. The address of the image. Talos Director must be able to reach it.
+       - **SHA-256 checksum**: Optional. When set, Talos Director verifies the download and removes it if the checksum doesn't match.
+    4. Select **Add from URL**.
+
+    The download runs in the background. To follow its progress, open **Transfers** in the top bar.
+  </Tab>
+  <Tab title="Create from a VM">
+    Creating a template from a VM copies the VM's disk into a content library. The VM itself isn't changed.
+
+    To create a template from a VM:
+
+    1. Shut down the VM. It must be stopped before you can create a template from it.
+    2. Open the VM, and then select **Actions** > **Create Template**.
+    3. Complete the following fields:
+       - **Content Library**: Required. The content library to store the template in.
+       - **Template Name**: Required. Use lowercase letters and hyphens, for example `ubuntu-22-04-web-server`.
+       - **Description**: A description of the template.
+       - **Version**: Required. The template version, for example `1.0` or `2.1.3`. Defaults to `1.0`.
+       - **Supports Cloud-Init**: Turn it on if the VM has cloud-init installed and configured.
+    4. Select **Create Template**.
+  </Tab>
+</Tabs>
+
+The new template appears on the **Templates** tab. To understand what each column shows, including **Hosts** and **Status**, see [Template table columns](/director/compute/templates-and-content-libraries#template-table-columns).
+
+### Deploy a VM from a template
+
+Each VM deployed from a template gets its own copy of the template's disk, so changes inside the VM don't affect the template or other VMs.
+
+To deploy a VM from a template:
+
+1. On the **Templates** tab, select **Actions** > **Deploy VM** on the template.
+2. Complete the following fields:
+   - **VM Name**: Required. The name of the new VM.
+   - **Cluster**: Required. The cluster to deploy the VM to.
+   - **Host**: Required. The host to run the VM on, from the selected cluster.
+   - **Storage Pool**: Required. The pool for the VM's disk, from the selected cluster.
+   - **Network**: Required. The virtual network for the VM, from the selected cluster.
+   - **Network Adapter Type**: **VirtIO (Recommended)**, **Intel E1000**, **Intel E1000e**, or **Realtek RTL8139**.
+   - **CPU Cores**: The number of vCPUs. Defaults to the template's value.
+   - **Memory (GiB)**: The VM's memory. Defaults to the template's value.
+   - **Disk Size (GiB)**: Optional. Leave it at `0` to keep the template's disk size, or set a larger value to expand the disk.
+   - **Power on after creation**: On by default. Starts the VM once it is created.
+3. Optional: Turn on **Guest customization** to set the guest's identity, network, and SSH keys with cloud-init on Linux or cloudbase-init on Windows, and then complete the following fields:
+   - **Start from a saved spec**: Optional. A saved guest customization spec to fill in the fields.
+   - **OS family**: **Auto-detect (from template / VM)**, **Linux (cloud-init)**, or **Windows (cloudbase-init)**. **Auto-detect** uses the template's guest OS.
+   - **Hostname**: The guest's hostname. Defaults to the VM name.
+   - **IP address**: A static address in CIDR notation, such as `192.168.1.50/24`, or an address and a prefix length. Leave it empty to use DHCP.
+   - **Gateway**: The default gateway.
+   - **DNS servers**: The DNS servers, separated by commas or new lines.
+   - **SSH authorized keys**: The public keys to add to the guest, one per line.
+   - **Advanced: extra cloud-config**: Linux only. Additional cloud-init configuration, merged into the seed.
+4. Select **Deploy VM**.
+
+The new VM appears under **Compute** > **Virtual Machines** > **All VMs**. To create a VM with more options, such as firmware or CPU topology, see [Create a Virtual Machine](/director/compute/create-a-virtual-machine).
+
+### Upload a new version of a template
+
+A new version adds an updated image under the same template name. The **Version** column on the **Templates** tab shows the latest version.
+
+To upload a new version:
+
+1. On the **Templates** tab, select **Actions** > **New Version** on the template.
+2. Complete the following fields:
+   - **Version**: The new version. Defaults to the next minor version, for example `1.1` after `1.0`.
+   - **Disk Format**: The image format, with the same options as the **Upload Template** dialog.
+   - **File**: Required. The image to upload.
+3. Select **Upload**.
+
+To see the template's versions with their checksums, select **Actions** > **Version History** on the template. For the other items in that menu, see [Template actions menu](/director/compute/templates-and-content-libraries#template-actions-menu).
