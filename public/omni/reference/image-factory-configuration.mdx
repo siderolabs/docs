@@ -69,6 +69,21 @@ ExternalURL is the public URL for the image factory HTTP frontend, used in links
 
 ExternalPXEURL is the public URL for the PXE frontend, used for booting nodes via PXE.
 
+### `http.spa`
+
+SPA configures the browser UI, a single-page app built from frontend/.
+
+### `http.spa.dev`
+
+Dev configures browser UI development.
+
+### `http.spa.dev.serverURL`
+
+- **Type:** `string`
+- **Env:** `HTTP_SPA_DEV_SERVERURL`
+
+ServerURL takes the browser UI from a running Vite dev server (`npm run serve` in frontend/).
+
 ### `http.allowedOrigins`
 
 - **Type:** `[]string`
@@ -268,6 +283,26 @@ Host is the CDN URL used to serve cached assets.
 - **Env:** `CACHE_CDN_TRIMPREFIX`
 
 TrimPrefix removes a prefix from asset paths before redirecting to the CDN.
+
+### `cache.cdn.hmacSecretPath`
+
+- **Type:** `string`
+- **Env:** `CACHE_CDN_HMACSECRETPATH`
+
+HMACSecretPath is the path to a file holding the shared secret used to sign CDN URLs.
+
+When set, every CDN redirect carries a timed-HMAC token, which a WAF rule can validate at the edge.
+The same secret must be configured in the WAF rule and in the registry's cfhmac storage middleware.
+
+When empty, URL signing is disabled and the CDN serves any object whose key is known.
+
+### `cache.cdn.hmacParam`
+
+- **Type:** `string`
+- **Env:** `CACHE_CDN_HMACPARAM`
+
+HMACParam is the query parameter carrying the token.
+Defaults to "verify".
 
 ### `cache.cdn.enabled`
 
@@ -534,6 +569,14 @@ Talosctl is the image containing the Talos CLI tool (talosctl-all).
 - **Env:** `ARTIFACTS_CORE_COMPONENTS_IMAGEFACTORY`
 
 ImageFactory is the image containing the Image Factory itself.
+
+### `artifacts.core.components.talosVexData`
+
+- **Type:** `string`
+- **Env:** `ARTIFACTS_CORE_COMPONENTS_TALOSVEXDATA`
+
+TalosVexData is the image containing Talos VEX data.
+This image is available only in the Enterprise edition and is used for vulnerability and exposure data.
 
 ### `artifacts.core.insecure`
 
@@ -1172,6 +1215,7 @@ artifacts:
             installer: siderolabs/installer
             installerBase: siderolabs/installer-base
             overlayManifest: siderolabs/overlays
+            talosVexData: ""
             talosctl: siderolabs/talosctl-all
         insecure: false
         namespace: ""
@@ -1240,6 +1284,8 @@ build:
 cache:
     cdn:
         enabled: false
+        hmacParam: ""
+        hmacSecretPath: ""
         host: ""
         trimPrefix: ""
     gsa:
@@ -1308,6 +1354,9 @@ http:
     externalURL: https://localhost/
     httpListenAddr: :8080
     keyFile: ""
+    spa:
+        dev:
+            serverURL: ""
 metrics:
     addr: :2122
 registry:
@@ -1341,6 +1390,7 @@ IF_ARTIFACTS_CORE_COMPONENTS_INSTALLER=siderolabs/installer
 IF_ARTIFACTS_CORE_COMPONENTS_INSTALLERBASE=siderolabs/installer-base
 IF_ARTIFACTS_CORE_COMPONENTS_OVERLAYMANIFEST=siderolabs/overlays
 IF_ARTIFACTS_CORE_COMPONENTS_TALOSCTL=siderolabs/talosctl-all
+IF_ARTIFACTS_CORE_COMPONENTS_TALOSVEXDATA=
 IF_ARTIFACTS_CORE_INSECURE=false
 IF_ARTIFACTS_CORE_NAMESPACE=
 IF_ARTIFACTS_CORE_REGISTRY=ghcr.io
@@ -1391,6 +1441,8 @@ IF_BUILD_BROKENTALOSVERSIONS=[]
 IF_BUILD_MAXCONCURRENCY=6
 IF_BUILD_MINTALOSVERSION=1.2.0
 IF_CACHE_CDN_ENABLED=false
+IF_CACHE_CDN_HMACPARAM=
+IF_CACHE_CDN_HMACSECRETPATH=
 IF_CACHE_CDN_HOST=
 IF_CACHE_CDN_TRIMPREFIX=
 IF_CACHE_GSA_FULCIOURL=
@@ -1442,6 +1494,7 @@ IF_HTTP_EXTERNALPXEURL=
 IF_HTTP_EXTERNALURL=https://localhost/
 IF_HTTP_HTTPLISTENADDR=:8080
 IF_HTTP_KEYFILE=
+IF_HTTP_SPA_DEV_SERVERURL=
 IF_METRICS_ADDR=:2122
 IF_REGISTRY_DEBUG=false
 IF_REGISTRY_JOBS=64

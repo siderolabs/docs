@@ -23,19 +23,19 @@ omnictl apply [flags]
 ### Options
 
 ```
-  -d, --dry-run       Dry run, implies verbose
-  -f, --file string   Resource file or directory to load and apply
-  -h, --help          help for apply
-  -v, --verbose       Verbose output
+  -d, --dry-run[=true|false]   Dry run, implies verbose
+  -f, --file string            Resource file or directory to load and apply
+  -h, --help[=true|false]      help for apply
+  -v, --verbose[=true|false]   Verbose output
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -58,12 +58,13 @@ omnictl audit-log [start] [end] [flags]
 
 ```
       --actor string                                                                                               filter events by actor email
+      --client-ip string                                                                                           filter events by exact client IP address
       --cluster-id string                                                                                          filter events by cluster ID
       --event-type audit_log_access|create|destroy|k8s_access|talos_access|teardown|update|update_with_conflicts   filter events by event type
-  -f, --follow                                                                                                     stream new events as they are written, starting at the current tail unless --since is given. Cannot be combined with filters. The stream is re-established transparently whenever the server ends it cleanly, while errors terminate the command.
-  -h, --help                                                                                                       help for audit-log
+  -f, --follow[=true|false]                                                                                        stream new events as they are written, starting at the current tail unless --since is given. Cannot be combined with filters. The stream is re-established transparently whenever the server ends it cleanly, while errors terminate the command.
+  -h, --help[=true|false]                                                                                          help for audit-log
       --order-by-dir asc|desc                                                                                      sort direction
-      --order-by-field actor|cluster_id|event_ts_ms|event_type|resource_id|resource_type                           field to sort results by
+      --order-by-field actor|client_ip|cluster_id|event_ts_ms|event_type|resource_id|resource_type                 field to sort results by
       --resource-id string                                                                                         filter events by resource ID
       --resource-type string                                                                                       filter events by resource type
       --search string                                                                                              filter events by a search string
@@ -73,10 +74,10 @@ omnictl audit-log [start] [end] [flags]
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -98,19 +99,19 @@ omnictl cluster delete cluster-name [flags]
 ### Options
 
 ```
-      --destroy-disconnected-machines   removes all disconnected machines which are part of the cluster from Omni
-  -d, --dry-run                         dry run
-  -h, --help                            help for delete
-  -v, --verbose                         verbose output (show diff for each resource)
+      --destroy-disconnected-machines[=true|false]   removes all disconnected machines which are part of the cluster from Omni
+  -d, --dry-run[=true|false]                         dry run
+  -h, --help[=true|false]                            help for delete
+  -v, --verbose[=true|false]                         verbose output (show diff for each resource)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -133,16 +134,16 @@ omnictl cluster import abort <cluster name> [flags]
 ### Options
 
 ```
-  -h, --help   help for abort
+  -h, --help[=true|false]   help for abort
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -165,14 +166,14 @@ omnictl cluster import [flags]
 
 ```
   -O, --backup-output string                backup file for storing node machine configs before import
-  -d, --dry-run                             skip the actual import and show the import plan instead
-      --force                               force import even if validations fail
-  -h, --help                                help for import
+  -d, --dry-run[=true|false]                skip the actual import and show the import plan instead
+      --force[=true|false]                  force import even if validations fail
+  -h, --help[=true|false]                   help for import
       --initial-kubernetes-version string   initial kubernetes version used on cluster creation, if not set current kubernetes version will be used
       --initial-talos-version string        initial talos version used on cluster creation, if not set current talos version will be used
       --kubernetes-version string           kubernetes version of the cluster, if not set, will be detected from the nodes
   -n, --nodes strings                       endpoints of all nodes to import
-      --skip-health-check                   skip performing cluster health check before import
+      --skip-health-check[=true|false]      skip performing cluster health check before import
       --talos-context string                the context to be used for accessing talos. defaults to the selected context in the Talos configuration file
       --talos-endpoints strings             override default endpoints in Talos configuration file
       --talos-version string                talos version of the cluster, if not set, will be detected from the nodes
@@ -183,10 +184,10 @@ omnictl cluster import [flags]
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -211,17 +212,17 @@ omnictl cluster kubernetes manifest-sync cluster-name [flags]
 ### Options
 
 ```
-      --dry-run   don't actually sync manifests, just print what would be done (default true)
-  -h, --help      help for manifest-sync
+      --dry-run[=true|false]   don't actually sync manifests, just print what would be done (default true)
+  -h, --help[=true|false]      help for manifest-sync
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -243,17 +244,17 @@ omnictl cluster kubernetes upgrade-pre-checks cluster-name [flags]
 ### Options
 
 ```
-  -h, --help        help for upgrade-pre-checks
-      --to string   target Kubernetes version for the planned upgrade
+  -h, --help[=true|false]   help for upgrade-pre-checks
+      --to string           target Kubernetes version for the planned upgrade
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -271,16 +272,16 @@ Commands to render, validate, manage cluster templates.
 ### Options
 
 ```
-  -h, --help   help for kubernetes
+  -h, --help[=true|false]   help for kubernetes
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -304,16 +305,16 @@ omnictl cluster lock cluster-id [flags]
 ### Options
 
 ```
-  -h, --help   help for lock
+  -h, --help[=true|false]   help for lock
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -335,20 +336,20 @@ omnictl cluster machine delete machine-id [flags]
 ### Options
 
 ```
-  -f, --force                  force delete the machine, skipping wipe
-      --force-etcd-leave       force leave etcd
-  -h, --help                   help for delete
-  -t, --timeout duration       timeout for the machine deletion (default 5m0s)
-  -y, --yes-i-am-really-sure   do not ask for confirmation when using --force-etcd-leave
+  -f, --force[=true|false]                  force delete the machine, skipping wipe
+      --force-etcd-leave[=true|false]       force leave etcd
+  -h, --help[=true|false]                   help for delete
+  -t, --timeout duration                    timeout for the machine deletion (default 5m0s)
+  -y, --yes-i-am-really-sure[=true|false]   do not ask for confirmation when using --force-etcd-leave
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -370,16 +371,16 @@ omnictl cluster machine lock machine-id [flags]
 ### Options
 
 ```
-  -h, --help   help for lock
+  -h, --help[=true|false]   help for lock
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -401,16 +402,16 @@ omnictl cluster machine unlock machine-id [flags]
 ### Options
 
 ```
-  -h, --help   help for unlock
+  -h, --help[=true|false]   help for unlock
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -428,16 +429,16 @@ Commands to manage cluster machines.
 ### Options
 
 ```
-  -h, --help   help for machine
+  -h, --help[=true|false]   help for machine
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -462,19 +463,19 @@ omnictl cluster secret rotate kubernetes-ca [flags]
 ### Options
 
 ```
-  -h, --help   help for kubernetes-ca
+  -h, --help[=true|false]   help for kubernetes-ca
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-  -n, --name string                cluster name
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
-  -w, --wait                       wait for the secret rotation to complete (default true)
-  -t, --wait-timeout duration      wait timeout for secret rotation, if zero, wait indefinitely (default 5m0s)
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+  -n, --name string                             cluster name
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+  -w, --wait[=true|false]                       wait for the secret rotation to complete (default true)
+  -t, --wait-timeout duration                   wait timeout for secret rotation, if zero, wait indefinitely (default 5m0s)
 ```
 
 ### SEE ALSO
@@ -496,19 +497,19 @@ omnictl cluster secret rotate status [flags]
 ### Options
 
 ```
-  -h, --help   help for status
+  -h, --help[=true|false]   help for status
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-  -n, --name string                cluster name
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
-  -w, --wait                       wait for the secret rotation to complete (default true)
-  -t, --wait-timeout duration      wait timeout for secret rotation, if zero, wait indefinitely (default 5m0s)
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+  -n, --name string                             cluster name
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+  -w, --wait[=true|false]                       wait for the secret rotation to complete (default true)
+  -t, --wait-timeout duration                   wait timeout for secret rotation, if zero, wait indefinitely (default 5m0s)
 ```
 
 ### SEE ALSO
@@ -530,19 +531,19 @@ omnictl cluster secret rotate talos-ca [flags]
 ### Options
 
 ```
-  -h, --help   help for talos-ca
+  -h, --help[=true|false]   help for talos-ca
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-  -n, --name string                cluster name
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
-  -w, --wait                       wait for the secret rotation to complete (default true)
-  -t, --wait-timeout duration      wait timeout for secret rotation, if zero, wait indefinitely (default 5m0s)
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+  -n, --name string                             cluster name
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+  -w, --wait[=true|false]                       wait for the secret rotation to complete (default true)
+  -t, --wait-timeout duration                   wait timeout for secret rotation, if zero, wait indefinitely (default 5m0s)
 ```
 
 ### SEE ALSO
@@ -560,19 +561,19 @@ Rotates specified cluster secret, if the terminal supports it, watch the secret 
 ### Options
 
 ```
-  -h, --help                    help for rotate
-  -w, --wait                    wait for the secret rotation to complete (default true)
+  -h, --help[=true|false]       help for rotate
+  -w, --wait[=true|false]       wait for the secret rotation to complete (default true)
   -t, --wait-timeout duration   wait timeout for secret rotation, if zero, wait indefinitely (default 5m0s)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-  -n, --name string                cluster name
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+  -n, --name string                             cluster name
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -593,17 +594,17 @@ Commands to manage cluster secrets.
 ### Options
 
 ```
-  -h, --help          help for secret
-  -n, --name string   cluster name
+  -h, --help[=true|false]   help for secret
+  -n, --name string         cluster name
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -626,18 +627,18 @@ omnictl cluster status cluster-name [flags]
 ### Options
 
 ```
-  -h, --help            help for status
-  -q, --quiet           suppress output
-  -w, --wait duration   wait timeout, if zero, report current status and exit (default 5m0s)
+  -h, --help[=true|false]    help for status
+  -q, --quiet[=true|false]   suppress output
+  -w, --wait duration        wait timeout, if zero, report current status and exit (default 5m0s)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -659,21 +660,21 @@ omnictl cluster template delete [flags]
 ### Options
 
 ```
-      --destroy-disconnected-machines   removes all disconnected machines which are part of the cluster from Omni
-  -d, --dry-run                         dry run
-  -f, --file string                     path to the cluster template file or directory.
-  -h, --help                            help for delete
-  -v, --verbose                         verbose output (show diff for each resource)
+      --destroy-disconnected-machines[=true|false]   removes all disconnected machines which are part of the cluster from Omni
+  -d, --dry-run[=true|false]                         dry run
+  -f, --file string                                  path to the cluster template file or directory.
+  -h, --help[=true|false]                            help for delete
+  -v, --verbose[=true|false]                         verbose output (show diff for each resource)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --allowed-dir string         allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --allowed-dir string                      allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -695,18 +696,18 @@ omnictl cluster template diff [flags]
 ### Options
 
 ```
-  -f, --file string   path to the cluster template file or directory.
-  -h, --help          help for diff
+  -f, --file string         path to the cluster template file or directory.
+  -h, --help[=true|false]   help for diff
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --allowed-dir string         allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --allowed-dir string                      allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -728,21 +729,21 @@ omnictl cluster template export cluster-name [flags]
 ### Options
 
 ```
-  -c, --cluster string        cluster name
-  -f, --force                 overwrite output file if it exists
-  -h, --help                  help for export
-      --include-kernel-args   include kernel arguments (KernelArgs resources) in the exported template
-  -o, --output string         output file (default: stdout)
+  -c, --cluster string                     cluster name
+  -f, --force[=true|false]                 overwrite output file if it exists
+  -h, --help[=true|false]                  help for export
+      --include-kernel-args[=true|false]   include kernel arguments (KernelArgs resources) in the exported template
+  -o, --output string                      output file (default: stdout)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --allowed-dir string         allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --allowed-dir string                      allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -764,18 +765,18 @@ omnictl cluster template render [flags]
 ### Options
 
 ```
-  -f, --file string   path to the cluster template file or directory.
-  -h, --help          help for render
+  -f, --file string         path to the cluster template file or directory.
+  -h, --help[=true|false]   help for render
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --allowed-dir string         allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --allowed-dir string                      allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -797,20 +798,20 @@ omnictl cluster template status [flags]
 ### Options
 
 ```
-  -f, --file string     path to the cluster template file or directory.
-  -h, --help            help for status
-  -q, --quiet           suppress output
-  -w, --wait duration   wait timeout, if zero, report current status and exit (default 5m0s)
+  -f, --file string          path to the cluster template file or directory.
+  -h, --help[=true|false]    help for status
+  -q, --quiet[=true|false]   suppress output
+  -w, --wait duration        wait timeout, if zero, report current status and exit (default 5m0s)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --allowed-dir string         allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --allowed-dir string                      allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -837,20 +838,20 @@ omnictl cluster template sync [flags]
 ### Options
 
 ```
-  -d, --dry-run       dry run
-  -f, --file string   path to the cluster template file or directory.
-  -h, --help          help for sync
-  -v, --verbose       verbose output (show diff for each resource)
+  -d, --dry-run[=true|false]   dry run
+  -f, --file string            path to the cluster template file or directory.
+  -h, --help[=true|false]      help for sync
+  -v, --verbose[=true|false]   verbose output (show diff for each resource)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --allowed-dir string         allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --allowed-dir string                      allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -872,18 +873,18 @@ omnictl cluster template validate [flags]
 ### Options
 
 ```
-  -f, --file string   path to the cluster template file or directory.
-  -h, --help          help for validate
+  -f, --file string         path to the cluster template file or directory.
+  -h, --help[=true|false]   help for validate
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --allowed-dir string         allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --allowed-dir string                      allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -902,16 +903,16 @@ Commands to render, validate, manage cluster templates.
 
 ```
       --allowed-dir string   allowed directory for file access in the template; relative paths are resolved against the template file's directory. (default "./")
-  -h, --help                 help for template
+  -h, --help[=true|false]    help for template
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -940,16 +941,16 @@ omnictl cluster unlock cluster-id [flags]
 ### Options
 
 ```
-  -h, --help   help for unlock
+  -h, --help[=true|false]   help for unlock
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -967,16 +968,16 @@ Commands to destroy clusters and manage cluster templates.
 ### Options
 
 ```
-  -h, --help   help for cluster
+  -h, --help[=true|false]   help for cluster
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1033,17 +1034,17 @@ omnictl completion bash
 ### Options
 
 ```
-  -h, --help              help for bash
-      --no-descriptions   disable completion descriptions
+  -h, --help[=true|false]              help for bash
+      --no-descriptions[=true|false]   disable completion descriptions
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1080,17 +1081,17 @@ omnictl completion fish [flags]
 ### Options
 
 ```
-  -h, --help              help for fish
-      --no-descriptions   disable completion descriptions
+  -h, --help[=true|false]              help for fish
+      --no-descriptions[=true|false]   disable completion descriptions
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1122,17 +1123,17 @@ omnictl completion powershell [flags]
 ### Options
 
 ```
-  -h, --help              help for powershell
-      --no-descriptions   disable completion descriptions
+  -h, --help[=true|false]              help for powershell
+      --no-descriptions[=true|false]   disable completion descriptions
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1184,17 +1185,17 @@ omnictl completion zsh [flags]
 ### Options
 
 ```
-  -h, --help              help for zsh
-      --no-descriptions   disable completion descriptions
+  -h, --help[=true|false]              help for zsh
+      --no-descriptions[=true|false]   disable completion descriptions
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1214,16 +1215,16 @@ See each sub-command's help for details on how to use the generated script.
 ### Options
 
 ```
-  -h, --help   help for completion
+  -h, --help[=true|false]   help for completion
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1245,18 +1246,18 @@ omnictl config add <context> [flags]
 ### Options
 
 ```
-  -h, --help              help for add
-      --identity string   identity to use for authentication
-      --url string        URL of the server (default "grpc://127.0.0.1:8080")
+  -h, --help[=true|false]   help for add
+      --identity string     identity to use for authentication
+      --url string          URL of the server (default "grpc://127.0.0.1:8080")
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1274,16 +1275,16 @@ omnictl config context <context> [flags]
 ### Options
 
 ```
-  -h, --help   help for context
+  -h, --help[=true|false]   help for context
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1301,16 +1302,16 @@ omnictl config contexts [flags]
 ### Options
 
 ```
-  -h, --help   help for contexts
+  -h, --help[=true|false]   help for contexts
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1328,16 +1329,16 @@ omnictl config identity <identity> [flags]
 ### Options
 
 ```
-  -h, --help   help for identity
+  -h, --help[=true|false]   help for identity
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1355,16 +1356,16 @@ omnictl config info [flags]
 ### Options
 
 ```
-  -h, --help   help for info
+  -h, --help[=true|false]   help for info
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1386,16 +1387,16 @@ omnictl config merge <from> [flags]
 ### Options
 
 ```
-  -h, --help   help for merge
+  -h, --help[=true|false]   help for merge
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1417,18 +1418,18 @@ omnictl config new [<path>] [flags]
 ### Options
 
 ```
-  -h, --help              help for new
-      --identity string   identity to use for authentication
-      --url string        URL of the server (default "grpc://127.0.0.1:8080")
+  -h, --help[=true|false]   help for new
+      --identity string     identity to use for authentication
+      --url string          URL of the server (default "grpc://127.0.0.1:8080")
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1446,16 +1447,16 @@ omnictl config url <url> [flags]
 ### Options
 
 ```
-  -h, --help   help for url
+  -h, --help[=true|false]   help for url
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1469,16 +1470,16 @@ Manage the client configuration file (omniconfig)
 ### Options
 
 ```
-  -h, --help   help for config
+  -h, --help[=true|false]   help for config
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1504,18 +1505,18 @@ omnictl configure machine <uuid1> <uuid2> [flags]
 ### Options
 
 ```
-  -h, --help                                                  help for machine
-      --reset-node-unique-token                               reset the node unique token for the machine
+  -h, --help[=true|false]                                     help for machine
+      --reset-node-unique-token[=true|false]                  reset the node unique token for the machine
       --siderolink-connection one of [udp,http-tunnel,auto]   configure SideroLink connection mode
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1529,16 +1530,16 @@ Configuration subcommands.
 ### Options
 
 ```
-  -h, --help   help for configure
+  -h, --help[=true|false]   help for configure
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1561,19 +1562,19 @@ omnictl delete <type> [<id>] [flags]
 ### Options
 
 ```
-      --all                Delete all resources of the type.
-  -h, --help               help for delete
-  -n, --namespace string   The resource namespace. (default "default")
-  -l, --selector string    Selector (label query) to filter on, supports '=' and '==' (e.g. -l key1=value1,key2=value2)
+      --all[=true|false]    Delete all resources of the type.
+  -h, --help[=true|false]   help for delete
+  -n, --namespace string    The resource namespace. (default "default")
+  -l, --selector string     Selector (label query) to filter on, supports '=' and '==' (e.g. -l key1=value1,key2=value2)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1600,21 +1601,21 @@ omnictl edit <type> [<id>] [flags]
 ### Options
 
 ```
-      --dry-run                  do not apply the change after editing and print the change summary instead
-  -h, --help                     help for edit
+      --dry-run[=true|false]     do not apply the change after editing and print the change summary instead
+  -h, --help[=true|false]        help for edit
       --id-match-regexp string   Match resource ID against a regular expression.
       --namespace string         resource namespace (default is to use default namespace per resource)
       --selector string          Selector (label query) to filter on, supports '=' and '==' (e.g. -l key1=value1,key2=value2)
-  -v, --verbose                  Verbose output
+  -v, --verbose[=true|false]     Verbose output
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1637,21 +1638,21 @@ omnictl get <type> [<id>] [flags]
 ### Options
 
 ```
-  -h, --help                     help for get
+  -h, --help[=true|false]        help for get
       --id-match-regexp string   Match resource ID against a regular expression.
   -n, --namespace string         The resource namespace.
   -o, --output string            Output format (json, table, yaml, jsonpath). (default "table")
   -l, --selector string          Selector (label query) to filter on, supports '=' and '==' (e.g. -l key1=value1,key2=value2)
-  -w, --watch                    Watch the resource state.
+  -w, --watch[=true|false]       Watch the resource state.
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1669,17 +1670,17 @@ omnictl infraprovider create <name> [flags]
 ### Options
 
 ```
-  -h, --help           help for create
-  -t, --ttl duration   TTL for the infra provider service account key (default 8760h0m0s)
+  -h, --help[=true|false]   help for create
+  -t, --ttl duration        TTL for the infra provider service account key (default 8760h0m0s)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1697,16 +1698,16 @@ omnictl infraprovider delete <name> [flags]
 ### Options
 
 ```
-  -h, --help   help for delete
+  -h, --help[=true|false]   help for delete
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1724,16 +1725,16 @@ omnictl infraprovider list [flags]
 ### Options
 
 ```
-  -h, --help   help for list
+  -h, --help[=true|false]   help for list
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1751,17 +1752,17 @@ omnictl infraprovider renewkey <name> [flags]
 ### Options
 
 ```
-  -h, --help           help for renewkey
-  -t, --ttl duration   TTL for the infra provider service account key (default 8760h0m0s)
+  -h, --help[=true|false]   help for renewkey
+  -t, --ttl duration        TTL for the infra provider service account key (default 8760h0m0s)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1775,16 +1776,16 @@ Manage infra providers
 ### Options
 
 ```
-  -h, --help   help for infraprovider
+  -h, --help[=true|false]   help for infraprovider
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1806,17 +1807,17 @@ omnictl jointoken create <name> [flags]
 ### Options
 
 ```
-  -h, --help           help for create
-  -t, --ttl duration   TTL for the join token
+  -h, --help[=true|false]   help for create
+  -t, --ttl duration        TTL for the join token
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1834,17 +1835,17 @@ omnictl jointoken delete <id> [flags]
 ### Options
 
 ```
-  -f, --force   Delete the token even if it is going to make the machines to disconnect
-  -h, --help    help for delete
+  -f, --force[=true|false]   Delete the token even if it is going to make the machines to disconnect
+  -h, --help[=true|false]    help for delete
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1862,20 +1863,20 @@ omnictl jointoken kernel-args [flags]
 ### Options
 
 ```
-  -h, --help                     help for kernel-args
-      --set-labels stringArray   Initial labels to assign to any machine joining with this config, as key=value pairs. The user can override them on the machine afterwards
-      --token-id string          Generate using specific token ID (uses default if empty)
-      --token-name string        Looks up the token by name and generates the config using the token (uses default if empty)
-      --use-grpc-tunnel          Use gRPC tunnel in the config
+  -h, --help[=true|false]              help for kernel-args
+      --set-labels stringArray         Initial labels to assign to any machine joining with this config, as key=value pairs. The user can override them on the machine afterwards
+      --token-id string                Generate using specific token ID (uses default if empty)
+      --token-name string              Looks up the token by name and generates the config using the token (uses default if empty)
+      --use-grpc-tunnel[=true|false]   Use gRPC tunnel in the config
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1893,16 +1894,16 @@ omnictl jointoken list [flags]
 ### Options
 
 ```
-  -h, --help   help for list
+  -h, --help[=true|false]   help for list
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1920,20 +1921,20 @@ omnictl jointoken machine-config <id> [flags]
 ### Options
 
 ```
-  -h, --help                     help for machine-config
-      --set-labels stringArray   Initial labels to assign to any machine joining with this config, as key=value pairs. The user can override them on the machine afterwards
-      --token-id string          Generate using specific token ID (uses default if empty)
-      --token-name string        Looks up the token by name and generates the config using the token (uses default if empty)
-      --use-grpc-tunnel          Use gRPC tunnel in the config
+  -h, --help[=true|false]              help for machine-config
+      --set-labels stringArray         Initial labels to assign to any machine joining with this config, as key=value pairs. The user can override them on the machine afterwards
+      --token-id string                Generate using specific token ID (uses default if empty)
+      --token-name string              Looks up the token by name and generates the config using the token (uses default if empty)
+      --use-grpc-tunnel[=true|false]   Use gRPC tunnel in the config
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1951,16 +1952,16 @@ omnictl jointoken make-default <id> [flags]
 ### Options
 
 ```
-  -h, --help   help for make-default
+  -h, --help[=true|false]   help for make-default
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -1978,7 +1979,7 @@ omnictl jointoken omni-endpoint [flags]
 ### Options
 
 ```
-  -h, --help                help for omni-endpoint
+  -h, --help[=true|false]   help for omni-endpoint
       --token-id string     Generate using specific token ID (uses default if empty)
       --token-name string   Looks up the token by name and generates the config using the token (uses default if empty)
 ```
@@ -1986,10 +1987,10 @@ omnictl jointoken omni-endpoint [flags]
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2007,17 +2008,17 @@ omnictl jointoken renew <id> [flags]
 ### Options
 
 ```
-  -h, --help           help for renew
-  -t, --ttl duration   TTL for the join token
+  -h, --help[=true|false]   help for renew
+  -t, --ttl duration        TTL for the join token
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2035,17 +2036,17 @@ omnictl jointoken revoke <id> [flags]
 ### Options
 
 ```
-  -f, --force   Revoke the token even if it is going to make the machines to disconnect
-  -h, --help    help for revoke
+  -f, --force[=true|false]   Revoke the token even if it is going to make the machines to disconnect
+  -h, --help[=true|false]    help for revoke
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2063,16 +2064,16 @@ omnictl jointoken unrevoke <id> [flags]
 ### Options
 
 ```
-  -h, --help   help for unrevoke
+  -h, --help[=true|false]   help for unrevoke
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2086,16 +2087,16 @@ Manage join tokens
 ### Options
 
 ```
-  -h, --help   help for jointoken
+  -h, --help[=true|false]   help for jointoken
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2129,28 +2130,28 @@ omnictl kubeconfig [local-path] [flags]
 ### Options
 
 ```
-      --break-glass                  get kubeconfig that allows accessing nodes bypasing Omni (if enabled for the account)
-  -c, --cluster string               cluster to use
-  -f, --force                        force overwrite of kubeconfig if already present, force overwrite on kubeconfig merge
-      --force-context-name string    force context name in the resulting kubeconfig
-      --grant-type string            Authorization grant type to use. One of (auto|authcode|authcode-keyboard)
-      --groups strings               group to be used in the service account token (groups). only used when --service-account is set to true (default [system:masters])
-  -h, --help                         help for kubeconfig
-  -m, --merge                        merge with existing kubeconfig (default true)
-      --oidc-cache-base-dir string   override the base cache directory for kubelogin in the generated kubeconfig
-      --oidc-cache-isolation         isolate OIDC token caches across clusters by appending a per-context subdirectory to the cache directory
-      --service-account              create a service account type kubeconfig instead of a OIDC-authenticated user type
-      --ttl duration                 ttl for the service account token. only used when --service-account is set to true (default 8760h0m0s)
-      --user string                  user to be used in the service account token (sub). required when --service-account is set to true
+      --break-glass[=true|false]            get kubeconfig that allows accessing nodes bypasing Omni (if enabled for the account)
+  -c, --cluster string                      cluster to use
+  -f, --force[=true|false]                  force overwrite of kubeconfig if already present, force overwrite on kubeconfig merge
+      --force-context-name string           force context name in the resulting kubeconfig
+      --grant-type string                   Authorization grant type to use. One of (auto|authcode|authcode-keyboard)
+      --groups strings                      group to be used in the service account token (groups). only used when --service-account is set to true (default [system:masters])
+  -h, --help[=true|false]                   help for kubeconfig
+  -m, --merge[=true|false]                  merge with existing kubeconfig (default true)
+      --oidc-cache-base-dir string          override the base cache directory for kubelogin in the generated kubeconfig
+      --oidc-cache-isolation[=true|false]   isolate OIDC token caches across clusters by appending a per-context subdirectory to the cache directory
+      --service-account[=true|false]        create a service account type kubeconfig instead of a OIDC-authenticated user type
+      --ttl duration                        ttl for the service account token. only used when --service-account is set to true (default 8760h0m0s)
+      --user string                         user to be used in the service account token (sub). required when --service-account is set to true
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2178,18 +2179,18 @@ omnictl machine install machine-id [flags]
 ### Options
 
 ```
-      --disk string      target install disk (e.g. /dev/sda)
-  -h, --help             help for install
-      --version string   Talos version to install; defaults to the version running in memory on the machine
+      --disk string         target install disk (e.g. /dev/sda)
+  -h, --help[=true|false]   help for install
+      --version string      Talos version to install; defaults to the version running in memory on the machine
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2212,16 +2213,16 @@ omnictl machine power-on machine-id [flags]
 ### Options
 
 ```
-  -h, --help   help for power-on
+  -h, --help[=true|false]   help for power-on
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2244,16 +2245,16 @@ omnictl machine shutdown machine-id [flags]
 ### Options
 
 ```
-  -h, --help   help for shutdown
+  -h, --help[=true|false]   help for shutdown
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2278,17 +2279,17 @@ omnictl machine upgrade machine-id [flags]
 ### Options
 
 ```
-  -h, --help             help for upgrade
-      --version string   Talos version to upgrade to
+  -h, --help[=true|false]   help for upgrade
+      --version string      Talos version to upgrade to
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2306,16 +2307,16 @@ Commands to manage machines.
 ### Options
 
 ```
-  -h, --help   help for machine
+  -h, --help[=true|false]   help for machine
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2341,19 +2342,19 @@ omnictl machine-logs machineID [flags]
 ### Options
 
 ```
-  -f, --follow              specify if the logs should be streamed
-  -h, --help                help for machine-logs
-      --log-format string   log format (raw, omni, dmesg) to display (default is to display in raw format) (default "raw")
-      --tail int32          lines of log file to display (default is to show from the beginning) (default -1)
+  -f, --follow[=true|false]   specify if the logs should be streamed
+  -h, --help[=true|false]     help for machine-logs
+      --log-format string     log format (raw, omni, dmesg) to display (default is to display in raw format) (default "raw")
+      --tail int32            lines of log file to display (default is to show from the beginning) (default -1)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2407,27 +2408,27 @@ omnictl media download <preset-name> [flags]
 ### Options
 
 ```
-      --arch string                           Image architecture override (amd64, arm64; uses preset value if empty)
-      --embedded-machine-config-file string   Override the embedded machine config, reading it from a file or "-" for stdin
-      --extensions strings                    Override extensions to pre-install
-      --extra-kernel-args stringArray         Override extra kernel args
-      --format string                         Output format for metal presets: iso, raw, qcow2, pxe (auto-detected if omitted)
-  -h, --help                                  help for download
-      --initial-labels strings                Override initial machine labels (key=value)
-      --join-token string                     Join token ID override (uses preset token if empty)
-      --output string                         Output file or directory, defaults to current working directory (default ".")
-      --secureboot                            Override secure boot setting
-      --talos-version string                  Talos version override (uses preset value if empty)
-      --use-siderolink-grpc-tunnel            Configure Talos to use the SideroLink (WireGuard) gRPC tunnel over HTTP/2 for Omni management traffic, instead of UDP. Only enable this if the network blocks UDP packets, as HTTP tunneling adds significant overhead for communications.
+      --arch string                               Image architecture override (amd64, arm64; uses preset value if empty)
+      --embedded-machine-config-file string       Override the embedded machine config, reading it from a file or "-" for stdin
+      --extensions strings                        Override extensions to pre-install
+      --extra-kernel-args stringArray             Override extra kernel args
+      --format string                             Output format for metal presets: iso, raw, qcow2, pxe (auto-detected if omitted)
+  -h, --help[=true|false]                         help for download
+      --initial-labels strings                    Override initial machine labels (key=value)
+      --join-token string                         Join token ID override (uses preset token if empty)
+      --output string                             Output file or directory, defaults to current working directory (default ".")
+      --secureboot[=true|false]                   Override secure boot setting
+      --talos-version string                      Talos version override (uses preset value if empty)
+      --use-siderolink-grpc-tunnel[=true|false]   Configure Talos to use the SideroLink (WireGuard) gRPC tunnel over HTTP/2 for Omni management traffic, instead of UDP. Only enable this if the network blocks UDP packets, as HTTP tunneling adds significant overhead for communications.
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2471,29 +2472,29 @@ omnictl media preset create <name> [flags]
 ### Options
 
 ```
-      --arch string                           Image architecture (amd64, arm64) (default "amd64")
-      --bootloader string                     Bootloader type (auto, uefi, bios, dual) (default "auto")
-      --embedded-machine-config-file string   Embedded machine config read from a file, or "-" for stdin
-      --extensions strings                    Extensions to pre-install in the preset
-      --extra-kernel-args stringArray         Extra kernel args to include in the preset
-  -h, --help                                  help for create
-      --initial-labels strings                Initial machine labels in key=value format
-      --join-token string                     Join token ID (uses default token if empty)
-      --overlay string                        SBC overlay name (e.g., rpi_generic, rockpi_4c)
-      --overlay-options string                SBC overlay options (YAML string)
-      --platform string                       Cloud platform (e.g., aws, gcp, azure, vultr)
-      --secureboot                            Enable SecureBoot in the preset
-      --talos-version string                  Talos version for the preset (leave empty to track the server's default at download time)
-      --use-siderolink-grpc-tunnel            Configure Talos to use the SideroLink (WireGuard) gRPC tunnel over HTTP/2 for Omni management traffic, instead of UDP. Only enable this if the network blocks UDP packets, as HTTP tunneling adds significant overhead for communications.
+      --arch string                               Image architecture (amd64, arm64) (default "amd64")
+      --bootloader string                         Bootloader type (auto, uefi, bios, dual) (default "auto")
+      --embedded-machine-config-file string       Embedded machine config read from a file, or "-" for stdin
+      --extensions strings                        Extensions to pre-install in the preset
+      --extra-kernel-args stringArray             Extra kernel args to include in the preset
+  -h, --help[=true|false]                         help for create
+      --initial-labels strings                    Initial machine labels in key=value format
+      --join-token string                         Join token ID (uses default token if empty)
+      --overlay string                            SBC overlay name (e.g., rpi_generic, rockpi_4c)
+      --overlay-options string                    SBC overlay options (YAML string)
+      --platform string                           Cloud platform (e.g., aws, gcp, azure, vultr)
+      --secureboot[=true|false]                   Enable SecureBoot in the preset
+      --talos-version string                      Talos version for the preset (leave empty to track the server's default at download time)
+      --use-siderolink-grpc-tunnel[=true|false]   Configure Talos to use the SideroLink (WireGuard) gRPC tunnel over HTTP/2 for Omni management traffic, instead of UDP. Only enable this if the network blocks UDP packets, as HTTP tunneling adds significant overhead for communications.
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2511,16 +2512,16 @@ omnictl media preset delete <name> [flags]
 ### Options
 
 ```
-  -h, --help   help for delete
+  -h, --help[=true|false]   help for delete
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2538,17 +2539,17 @@ omnictl media preset list [flags]
 ### Options
 
 ```
-  -h, --help            help for list
-  -o, --output string   Output format. One of: wide
+  -h, --help[=true|false]   help for list
+  -o, --output string       Output format. One of: wide
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2566,16 +2567,16 @@ Commands to create, list, and delete installation media presets.
 ### Options
 
 ```
-  -h, --help   help for preset
+  -h, --help[=true|false]   help for preset
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2596,16 +2597,16 @@ Commands to create, list, delete, and download from installation media presets.
 ### Options
 
 ```
-  -h, --help   help for media
+  -h, --help[=true|false]   help for media
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2641,22 +2642,22 @@ omnictl security sbom [flags]
 ### Options
 
 ```
-      --arch string            Architecture to fetch an artifact for (amd64, arm64).
-      --cluster-id string      Resolve targets from a cluster's installed schematics.
-  -h, --help                   help for sbom
-  -o, --output string          Output format (json, yaml). (default "json")
-      --schematic string       Schematic ID to fetch an artifact for.
-      --talos-version string   Talos version to fetch an artifact for.
-      --upgrade-paths          Also fetch the cluster's upgrade-target versions, not just the current one (requires --cluster-id).
+      --arch string                  Architecture to fetch an artifact for (amd64, arm64).
+      --cluster-id string            Resolve targets from a cluster's installed schematics.
+  -h, --help[=true|false]            help for sbom
+  -o, --output string                Output format (json, yaml). (default "json")
+      --schematic string             Schematic ID to fetch an artifact for.
+      --talos-version string         Talos version to fetch an artifact for.
+      --upgrade-paths[=true|false]   Also fetch the cluster's upgrade-target versions, not just the current one (requires --cluster-id).
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2707,23 +2708,23 @@ omnictl security scan [flags]
 ### Options
 
 ```
-      --arch string            Architecture to fetch an artifact for (amd64, arm64).
-      --cluster-id string      Resolve targets from a cluster's installed schematics.
-      --format string          Report format to fetch (json, sarif, cyclonedx). (default "json")
-  -h, --help                   help for scan
-  -o, --output string          Output format (table, json, yaml). (default "table")
-      --schematic string       Schematic ID to fetch an artifact for.
-      --talos-version string   Talos version to fetch an artifact for.
-      --upgrade-paths          Also fetch the cluster's upgrade-target versions, not just the current one (requires --cluster-id).
+      --arch string                  Architecture to fetch an artifact for (amd64, arm64).
+      --cluster-id string            Resolve targets from a cluster's installed schematics.
+      --format string                Report format to fetch (json, sarif, cyclonedx). (default "json")
+  -h, --help[=true|false]            help for scan
+  -o, --output string                Output format (table, json, yaml). (default "table")
+      --schematic string             Schematic ID to fetch an artifact for.
+      --talos-version string         Talos version to fetch an artifact for.
+      --upgrade-paths[=true|false]   Also fetch the cluster's upgrade-target versions, not just the current one (requires --cluster-id).
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2758,20 +2759,20 @@ omnictl security vex [flags]
 ### Options
 
 ```
-      --cluster-id string      Resolve versions from a cluster's current and upgrade-target Talos versions.
-  -h, --help                   help for vex
-  -o, --output string          Output format (json, yaml). (default "json")
-      --talos-version string   Talos version to fetch an artifact for.
-      --upgrade-paths          Also fetch the cluster's upgrade-target versions, not just the current one (requires --cluster-id).
+      --cluster-id string            Resolve versions from a cluster's current and upgrade-target Talos versions.
+  -h, --help[=true|false]            help for vex
+  -o, --output string                Output format (json, yaml). (default "json")
+      --talos-version string         Talos version to fetch an artifact for.
+      --upgrade-paths[=true|false]   Also fetch the cluster's upgrade-target versions, not just the current one (requires --cluster-id).
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2790,16 +2791,16 @@ named explicitly or resolved from a cluster's installed schematics.
 ### Options
 
 ```
-  -h, --help   help for security
+  -h, --help[=true|false]   help for security
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2820,19 +2821,19 @@ omnictl serviceaccount create <name> [flags]
 ### Options
 
 ```
-  -h, --help            help for create
-  -r, --role string     role of the service account. only used when --use-user-role=false
-  -t, --ttl duration    TTL for the service account key (default 8760h0m0s)
-  -u, --use-user-role   use the role of the creating user. if true, --role is ignored (default true)
+  -h, --help[=true|false]            help for create
+  -r, --role string                  role of the service account. only used when --use-user-role=false
+  -t, --ttl duration                 TTL for the service account key (default 8760h0m0s)
+  -u, --use-user-role[=true|false]   use the role of the creating user. if true, --role is ignored (default true)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2850,16 +2851,16 @@ omnictl serviceaccount destroy <name> [flags]
 ### Options
 
 ```
-  -h, --help   help for destroy
+  -h, --help[=true|false]   help for destroy
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2877,16 +2878,16 @@ omnictl serviceaccount list [flags]
 ### Options
 
 ```
-  -h, --help   help for list
+  -h, --help[=true|false]   help for list
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2908,17 +2909,17 @@ omnictl serviceaccount renew <name> [flags]
 ### Options
 
 ```
-  -h, --help           help for renew
-  -t, --ttl duration   TTL for the service account key (default 8760h0m0s)
+  -h, --help[=true|false]   help for renew
+  -t, --ttl duration        TTL for the service account key (default 8760h0m0s)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2940,16 +2941,16 @@ omnictl serviceaccount revoke-key <name> <public-key-id> [flags]
 ### Options
 
 ```
-  -h, --help   help for revoke-key
+  -h, --help[=true|false]   help for revoke-key
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -2963,16 +2964,16 @@ Manage service accounts
 ### Options
 
 ```
-  -h, --help   help for serviceaccount
+  -h, --help[=true|false]   help for serviceaccount
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -3005,22 +3006,22 @@ omnictl support [local-path] [flags]
 ### Options
 
 ```
-  -c, --cluster string                      cluster to use
-      --encryption-no-default-recipients    do not encrypt to the default recipients, only to the ones provided via --encryption-recipients
-      --encryption-recipients stringArray   additional age recipients (SSH or age public keys) to encrypt the support bundle to (can be specified multiple times)
-  -h, --help                                help for support
-      --no-encryption                       do not encrypt the support bundle (output is written as-is)
-  -O, --output string                       support bundle output (default "support.zip.age", or "support.zip" with --no-encryption)
-  -v, --verbose                             verbose output
+  -c, --cluster string                                  cluster to use
+      --encryption-no-default-recipients[=true|false]   do not encrypt to the default recipients, only to the ones provided via --encryption-recipients
+      --encryption-recipients stringArray               additional age recipients (SSH or age public keys) to encrypt the support bundle to (can be specified multiple times)
+  -h, --help[=true|false]                               help for support
+      --no-encryption[=true|false]                      do not encrypt the support bundle (output is written as-is)
+  -O, --output string                                   support bundle output (default "support.zip.age", or "support.zip" with --no-encryption)
+  -v, --verbose[=true|false]                            verbose output
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -3045,20 +3046,20 @@ omnictl talosconfig [local-path] [flags]
 ### Options
 
 ```
-      --break-glass      get operator talosconfig that allows bypassing Omni (if enabled for the account)
-  -c, --cluster string   cluster to use. If omitted, download the generic talosconfig for the Omni instance.
-  -f, --force            force overwrite of talosconfig if already present
-  -h, --help             help for talosconfig
-  -m, --merge            merge with existing talosconfig (default true)
+      --break-glass[=true|false]   get operator talosconfig that allows bypassing Omni (if enabled for the account)
+  -c, --cluster string             cluster to use. If omitted, download the generic talosconfig for the Omni instance.
+  -f, --force[=true|false]         force overwrite of talosconfig if already present
+  -h, --help[=true|false]          help for talosconfig
+  -m, --merge[=true|false]         merge with existing talosconfig (default true)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -3080,17 +3081,17 @@ omnictl user create [email] [flags]
 ### Options
 
 ```
-  -h, --help          help for create
-  -r, --role string   Role to use for the user creation
+  -h, --help[=true|false]   help for create
+  -r, --role string         Role to use for the user creation
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -3112,16 +3113,16 @@ omnictl user delete [email1 email2] [flags]
 ### Options
 
 ```
-  -h, --help   help for delete
+  -h, --help[=true|false]   help for delete
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -3143,16 +3144,16 @@ omnictl user list [flags]
 ### Options
 
 ```
-  -h, --help   help for list
+  -h, --help[=true|false]   help for list
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -3174,17 +3175,17 @@ omnictl user set-role [email] [flags]
 ### Options
 
 ```
-  -h, --help          help for set-role
-  -r, --role string   Role to use
+  -h, --help[=true|false]   help for set-role
+  -r, --role string         Role to use
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -3202,16 +3203,16 @@ Commands to manage users.
 ### Options
 
 ```
-  -h, --help   help for user
+  -h, --help[=true|false]   help for user
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
@@ -3229,11 +3230,11 @@ A CLI for accessing Omni API.
 ### Options
 
 ```
-      --context string             The context to be used. Defaults to the selected context in the omniconfig file.
-  -h, --help                       help for omnictl
-      --insecure-skip-tls-verify   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
-      --omniconfig string          The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
-      --siderov1-keys-dir string   The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
+      --context string                          The context to be used. Defaults to the selected context in the omniconfig file.
+  -h, --help[=true|false]                       help for omnictl
+      --insecure-skip-tls-verify[=true|false]   Skip TLS verification for the Omni GRPC and HTTP API endpoints.
+      --omniconfig string                       The path to the omni configuration file. Defaults to 'OMNICONFIG' env variable if set, otherwise '$HOME/.talos/omni/config'. '$XDG_CONFIG_HOME/omni/config' is Deprecated and only used as a last resort for reading existing configuration file.
+      --siderov1-keys-dir string                The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'.
 ```
 
 ### SEE ALSO
