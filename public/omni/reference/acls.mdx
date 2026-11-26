@@ -141,7 +141,7 @@ Possible values: `None`, `Reader`, `Operator`, `Admin`. The `Auditor` role canno
 
 A rule that grants `Operator` or `Admin` also assigns the Kubernetes group `system:masters`. A rule without a `role` grants no role, but still assigns its Kubernetes groups.
 
-The user's effective role on a cluster is the higher of their Omni role and the role granted by the ACL. Downloading a `kubeconfig` requires at least `Reader` on the cluster.
+The user's effective role on a cluster is the higher of their Omni role and the role granted by the ACL.
 
 ## `Test`
 
