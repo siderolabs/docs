@@ -88,7 +88,11 @@ Omni checks the factory settings when it starts, and **does not** start when any
 - A factory has both a token file and a username and password. Use only the token file.
 - The token file can't be read.
 
-The `--primary-factory-*` settings replace the deprecated `--image-factory-address`, `--image-factory-username`, and `--image-factory-password` flags. When `--primary-factory-url` is set, Omni ignores the deprecated flags.
+<Note>
+The factory settings in this step replace the older `--image-factory-*` flags and their `imageFactory*` configuration file keys.
+Omni v1.14.0 removes the older flags and keys, and does not start when it gets one of them.
+In Omni v1.13 and earlier, they are deprecated, and Omni ignores them when `--primary-factory-url` is set.
+</Note>
 
 For all factory settings, including the optional PXE URLs, see [`registries.factories`](../reference/omni-configuration#registries-factories) in the Omni configuration reference.
 

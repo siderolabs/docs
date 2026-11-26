@@ -54,8 +54,8 @@ Before starting the Omni instance using either `docker run` or `docker compose`,
 	--private-key-source=file:///omni.asc \
 	--bind-addr=127.0.0.1:8080 \
 	--advertised-api-url=https://$OMNI_DOMAIN_NAME/ \
-	--siderolink-api-bind-addr=127.0.0.1:8090 \
-	--siderolink-api-advertised-url=https://api.$OMNI_DOMAIN_NAME:443 \
+	--machine-api-bind-addr=127.0.0.1:8090 \
+	--machine-api-advertised-url=https://api.$OMNI_DOMAIN_NAME:443 \
 	--k8s-proxy-bind-addr=127.0.0.1:8100 \
 	--advertised-kubernetes-proxy-url=https://kube.$OMNI_DOMAIN_NAME/ \
 	--account-id=$OMNI_ACCOUNT_UUID
@@ -78,8 +78,8 @@ Before starting the Omni instance using either `docker run` or `docker compose`,
             --private-key-source=file:///omni.asc \
             --bind-addr=127.0.0.1:8080 \
             --advertised-api-url=https://$OMNI_DOMAIN_NAME/ \
-            --siderolink-api-bind-addr=127.0.0.1:8090 \
-            --siderolink-api-advertised-url=https://api.$OMNI_DOMAIN_NAME:443 \
+            --machine-api-bind-addr=127.0.0.1:8090 \
+            --machine-api-advertised-url=https://api.$OMNI_DOMAIN_NAME:443 \
             --k8s-proxy-bind-addr=127.0.0.1:8100 \
             --advertised-kubernetes-proxy-url=https://kube.$OMNI_DOMAIN_NAME/ \
             --account-id=$OMNI_ACCOUNT_UUID \
