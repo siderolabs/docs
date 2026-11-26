@@ -104,6 +104,7 @@ labels:
   my-label: my-value
 annotations:
   my-annotation: my-value
+locked: false
 kubernetes:
   version: v1.26.1
 talos:
@@ -129,6 +130,7 @@ kernelArgs:
 | `name`                                  | string                   | Cluster name: only letters, digits and `-` and `_` are allowed.<br/>The cluster name is used as a key by all other documents, so if the cluster name changes, Omni creates a new cluster.                                   |
 | `labels`                                | map[string]string        | Labels to be applied to the cluster.                                                                                                                                                                                        |
 | `annotations`                           | map[string]string        | Annotations to be applied to the cluster.                                                                                                                                                                                   |
+| `locked`                                | boolean                  | Locks the cluster when set to `true`. Omni does not apply configuration updates, upgrades, or downgrades to a locked cluster.<br/>Syncing a template without `locked: true` unlocks the cluster, including a cluster locked in the UI or with `omnictl cluster lock`. A template with `locked: true` cannot create the cluster or change its machine sets.<br/>Defaults to `false`. |
 | `kubernetes.version`                    | string                   | Kubernetes version to use, `vA.B.C`.                                                                                                                                                                                        |
 | `kubernetes.manifests`                  | array[Manifest]          | List of Kubernetes manifests to deploy and sync to the cluster. Each entry is applied independently. See [Sync Kubernetes Manifests](../cluster-management/sync-kubernetes-manifests).                                                                                         |
 | `kubernetes.healthchecks`               | array[Healthcheck]       | List of advanced healthchecks that gate Talos Linux upgrades. See [Gate Talos Upgrades with Healthchecks](../cluster-management/gate-talos-upgrades-with-healthchecks).                                                                                                      |
