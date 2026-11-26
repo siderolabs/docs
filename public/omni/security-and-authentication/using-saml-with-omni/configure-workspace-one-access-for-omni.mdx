@@ -120,17 +120,17 @@ For example:
 --auth-saml-label-rules='{"groups": "groups"}'
 ```
 
-Once Omni is running with these flags, refer to the [Auto-assign roles to SAML users](https://omni.siderolabs.com/docs/how-to-guides/how-to-auto-assign-roles-to-saml-users/) guide to automatically assign roles based on SAML group attributes.
+Once Omni is running with these flags, refer to [Auto-Assign Roles to SAML and OIDC Users](./auto-assign-roles-to-saml-and-oidc-users) to automatically assign roles based on SAML group attributes.
 
 When using groups, the label prefix is `saml.omni.sidero.dev/groups/` rather than a role name directly. For example:
 
 ```yaml
 metadata:
   namespace: default
-  type: SAMLLabelRules.omni.sidero.dev
+  type: IdentityLabelRules.omni.sidero.dev
   id: assign-admin-to-platform-admins-label
 spec:
-  assignroleonregistration: Operator
+  assignrole: Operator
   matchlabels:
     - saml.omni.sidero.dev/groups/omni-platform-administrators
 ```
