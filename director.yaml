@@ -23,6 +23,11 @@ navigation:
             - "api-and-automation.mdx"
             - "dashboard.mdx"
 
+        - group: "Getting Started"
+          folder: "director/getting-started"
+          pages:
+            - "quickstart-zero-to-vm.mdx"
+
         - group: "Compute"
           folder: "director/compute"
           pages:
