@@ -91,6 +91,10 @@
       "destination": "/talos/v1.14/:slug*"
     },
     {
+      "source": "/omni/security-and-authentication/using-saml-with-omni/auto-assign-roles-to-saml-users",
+      "destination": "/omni/security-and-authentication/using-saml-with-omni/auto-assign-roles-to-saml-and-oidc-users"
+    },
+    {
       "source": "/omni/cluster-management/expose-an-http-service-from-a-cluster",
       "destination": "/omni/cluster-management/expose-a-workload-via-service-proxy"
     },
@@ -3349,7 +3353,7 @@
                   "omni/security-and-authentication/using-saml-with-omni/overview",
                   "omni/security-and-authentication/using-saml-with-omni/configure-saml-and-acls",
                   "omni/security-and-authentication/using-saml-with-omni/configure-okta-for-omni",
-                  "omni/security-and-authentication/using-saml-with-omni/auto-assign-roles-to-saml-users",
+                  "omni/security-and-authentication/using-saml-with-omni/auto-assign-roles-to-saml-and-oidc-users",
                   "omni/security-and-authentication/using-saml-with-omni/sign-saml-requests",
                   "omni/security-and-authentication/using-saml-with-omni/configure-unifi-identity-enterprise-for-omni",
                   "omni/security-and-authentication/using-saml-with-omni/configure-workspace-one-access-for-omni",
