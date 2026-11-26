@@ -1,6 +1,6 @@
 ---
 title: Virtual Machines
-description: Find and filter VMs in the Virtual Machines view, create a VM, and operate it from the VM detail screen, including power, console, disks, networking, firewall activity, snapshots, backups, and migration.
+description: Find and filter VMs in the Virtual Machines view, and operate each VM from its detail screen, including power, console, disks, networking, firewall activity, snapshots, backups, and migration.
 ---
 
 import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
@@ -42,7 +42,7 @@ Select **Columns** to show more of the available columns.
 - **Export CSV**: download the current view.
 - **Columns**: choose which columns are visible.
 - **Refresh**: reload VM data on demand.
-- **Create VM**: create a new virtual machine. See [Create a virtual machine](#create-a-virtual-machine).
+- **Create VM**: create a new virtual machine. See [Create a Virtual Machine](/director/compute/create-a-virtual-machine).
 
 ### Row actions
 
@@ -52,53 +52,7 @@ The **Actions** menu on each row offers **Power On**, **Shutdown (Graceful)**, *
 
 ## Create a virtual machine
 
-Select **Create VM** to open the **Create Virtual Machine** form. A **VM Summary** panel beside the form updates as you fill it in, and **Equivalent CLI / API** shows the same request in a form you can script.
-
-![The Create Virtual Machine form](./images/create-virtual-machine.png)
-
-### Basic configuration
-
-| **Field** | **Description** |
-| --- | --- |
-| **VM Name** | A unique name for the VM. |
-| **Description** | An optional description. |
-| **Project** | The project that owns the VM. Defaults to the project selected in the top bar. |
-| **Template** | Optionally create the VM from a template in a content library, rather than from scratch. |
-| **Target Cluster** | The cluster to place the VM in, or **No cluster (standalone hosts)**. |
-| **Target Host** | The physical host the VM runs on. |
-| **Operating System Type** | **Linux**, **Windows**, or **Other**. Windows guests need VirtIO drivers during installation. |
-
-### CPU and memory
-
-Pick a preset size, from **Micro** (1 vCPU, 1 GB) to **2XL** (32 vCPU, 64 GB), or choose **Custom** and set **vCPUs** and **Memory (GB)** yourself. **Advanced CPU Topology** and **Scheduling & NUMA** let you set sockets, cores, threads, and NUMA placement when a workload needs them.
-
-Guests can scale to 1,024 vCPUs and to memory beyond 1 TiB. A VM can also be created with a virtual TPM 2.0, which Windows 11 and Windows Server 2025 require, and the scheduler places those VMs only on hosts that provide one.
-
-### Storage
-
-| **Field** | **Description** |
-| --- | --- |
-| **Storage Pool** | The [storage pool](/director/compute/storage-pools) that holds the VM's disk. The list is filtered to pools the selected cluster or host can reach. |
-| **Disk Source** | Create a new disk, or use an existing disk from the storage pool. |
-| **Disk Size (GB)** | The size of a new disk. |
-| **Disk Format** | **Raw** (the default: fully allocated, best performance and NFS stability) or **QCOW2** (thin-provisioned, with snapshots and incremental backup). |
-| **Disk Bus Type** | **VirtIO-SCSI** (recommended, especially on NFS storage), **VirtIO-blk**, **SATA** (works with Windows without extra drivers), or **IDE** (legacy). |
-
-### Network interface
-
-| **Field** | **Description** |
-| --- | --- |
-| **Network** | The [virtual network](/director/networking/virtual-networks) the VM's network interface attaches to. |
-| **Network Adapter Model** | **VirtIO** (best performance), or an emulated Intel or Realtek adapter for guests without VirtIO drivers. |
-
-### Advanced options
-
-- **Firmware**: **BIOS (Legacy)** or **UEFI**, with **Enable Secure Boot** available for UEFI.
-- **Enable VNC Console**: adds a graphical console. A serial console is always available.
-- **Advanced VM Parameters**: lower-level hypervisor settings.
-- **Guest customization**: off by default, so the VM boots the image unchanged. Turn it on to set the hostname, network, SSH keys, and more through cloud-init (Linux) or cloudbase-init (Windows).
-
-Select **Create Virtual Machine** to create the VM.
+Select **Create VM** to open the **Create Virtual Machine** form, which sets where the VM runs, its CPU and memory, its disk and network, and optional firmware, scheduling, and guest customization settings. For the full procedure, see [Create a Virtual Machine](/director/compute/create-a-virtual-machine).
 
 ## The VM detail screen
 
