@@ -1,0 +1,98 @@
+---
+title: Live-Migrate a Virtual Machine
+description: Move a running virtual machine to another host in Talos Director with only a short pause at cutover, and follow the migration on the Migrations screen.
+---
+
+import DirectorLimitedAvailability from '/snippets/director-limited-availability.mdx';
+
+<DirectorLimitedAvailability />
+
+Live migration moves a running virtual machine (VM) from one host to another. The VM keeps running during the move and pauses only briefly at cutover, when it switches to the destination host. Live-migrate a VM to free a host before maintenance, or to move load off a busy host.
+
+This page shows how to live-migrate a single VM from the Talos Director console.
+
+## Before you begin
+
+Ensure you have the following:
+
+- A role that grants the **VMs - Migrate** permission (`vms:migrate`). The built-in **Administrator**, **Operator**, **VM Admin**, **Project administrator**, and **Project member** roles grant it.
+- A VM that is powered on.
+- A destination host that meets the [host requirements](/director/overview/requirements#hosts).
+
+<Note>
+A VM that passes PCI devices through can't live-migrate, because a live migration can't carry the devices. For such a VM, the dialog switches to cold migration, which moves the VM while it's shut down.
+</Note>
+
+## Step 1: Choose the destination
+
+Open the **Migrate VM** dialog from the VM's detail screen, then choose where the VM moves to.
+
+To choose the destination:
+
+1. Go to **Compute** > **Virtual Machines** and select the VM's name.
+2. Select **Actions** > **Migrate VM**.
+3. Leave **Migration Type** set to **Live Migration (Zero Downtime)**.
+
+   If the VM isn't powered on, the dialog asks you to use cold migration instead.
+
+4. Optionally, select a **Target Cluster**. The default, **All Clusters (show all hosts)**, lists hosts from every cluster and marks the VM's own cluster **(Current)**. Select a cluster to list only its hosts and to let the Resource Scheduler pick the host.
+5. Choose the destination host in one of the following ways:
+
+   <Tabs>
+     <Tab title="Let the Resource Scheduler choose">
+       The Resource Scheduler picks a host in the selected cluster based on its CPU and memory availability. It's available only after you select a **Target Cluster**.
+
+       To let the Resource Scheduler choose the host:
+
+       1. Select **Use Resource Scheduler for automatic host selection**.
+       2. Check the host shown under **Resource Scheduler Recommendation**.
+
+       If the Resource Scheduler recommends the host the VM already runs on, the dialog blocks the migration. If placement fails, clear the checkbox and choose a host yourself.
+     </Tab>
+     <Tab title="Choose a host yourself">
+       To choose the host yourself, select it from **Target Host**.
+
+       Each host in the list shows its cluster and its current CPU and memory usage. The list marks the host the Resource Scheduler recommends with **(RS recommended)**, and leaves out hosts that are disconnected or in maintenance. If no host qualifies, the dialog shows **No eligible destination hosts**. If Talos Director can't move the VM to the selected host, the dialog shows the reason.
+     </Tab>
+   </Tabs>
+
+6. If the dialog shows a **Disk copy** or **Cross-Cluster Migration** notice, set where the VM's disks go.
+
+   The dialog shows **Disk copy** when the destination host doesn't share the VM's storage, and **Cross-Cluster Migration** when the destination host is in a different cluster. In both cases, Talos Director copies the VM's disks to the destination and mirrors them while the VM keeps running.
+
+   Set the following fields:
+
+   - **Destination Storage Pool**: The storage pool on the destination host that receives the VM's disks. A cross-cluster migration requires it.
+   - **Bandwidth limit (MB/s, optional)**: Caps the rate of the disk copy. Leave it empty to use the site default, or enter `0` for no limit. This field appears only with the **Disk copy** notice.
+
+## Step 2: Review and start the migration
+
+When the migration copies disks or needs your confirmation, the dialog shows a **Review and confirm** section. A migration between hosts that share storage skips this section.
+
+The **Review and confirm** section shows the following:
+
+- **Data to copy**: How much disk data Talos Director copies to the destination.
+- **Transport**: How the disks move, for example **Shared storage (no copy)** or **Live disk mirror**.
+- **Estimated time**: How long the move should take, and what the estimate is based on.
+- **Guest downtime**: For a live migration, **a short pause at cutover**.
+- **Destination pool**: The storage pool that receives the disks.
+
+Some migrations also list items under **Confirm each of these to start:**. For example, a migration might drop the VM's ZFS snapshots, or make a replicated VM send its replica again in full. Select each item to confirm it.
+
+Select **Start Live Migration**. The button stays unavailable until you choose a destination host and confirm every item.
+
+## Step 3: Follow the migration
+
+After the migration starts, the VM's detail screen opens a progress window that shows the migration's state.
+
+To follow the migration from the **Migrations** screen:
+
+1. Go to **Compute** > **Migrations**.
+
+   The **Migration Operations** table lists every migration with its VM, source and destination hosts, status, progress, initiator, start time, and duration.
+
+2. Select **Details** for the migration.
+
+   The details show the migration's status, source and destination hosts, timestamps, and an **Event Log** of each state change.
+
+To stop a migration that's still running, select **Cancel migration**. Cancelling stops the disk copy, removes partial files on the destination, and resumes the VM on the source host if it was paused. The VM stays on the source host.

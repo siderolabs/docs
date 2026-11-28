@@ -29,6 +29,7 @@ navigation:
             - "clusters.mdx"
             - "hosts.mdx"
             - "virtual-machines.mdx"
+            - "live-migrate-a-virtual-machine.mdx"
             - "migrate-from-vmware.mdx"
             - "what-happens-during-a-migration.mdx"
             - "storage-pools.mdx"
